@@ -11,6 +11,18 @@ export interface PageProblems {
   readonly violations: string[];
 }
 
+// Notes a browser writes about its own behaviour. They say that third-party cookies and storage are
+// blocked in this configuration, which is what the tests ask for; they are not errors of the page.
+const BROWSER_NOTICES = [
+  /has been rejected as third-party/, // Firefox, for every request of a third-party frame
+  /Request to access cookie or storage on .* was blocked/, // Firefox, when a frame reaches for storage
+  /Layout was forced before the page was fully loaded/, // Firefox, when a test measures early
+  /Partitioned cookie or storage access was provided/, // Firefox
+  // WebKit, on every page while the baseline policy is report-only and no report address exists yet
+  // (an open point of 0.1.0: the address needs a route in the API).
+  /was delivered in report-only mode, but does not specify a 'report-(?:uri|to)'/,
+];
+
 /** Starts recording what must not happen on a page. Call it before the page is loaded. */
 export function watchPage(page: Page): PageProblems {
   const messages: string[] = [];
@@ -19,6 +31,7 @@ export function watchPage(page: Page): PageProblems {
   page.on('console', (message: ConsoleMessage) => {
     if (message.type() !== 'error' && message.type() !== 'warning') return;
     if (isLocalSecuritySoftware(message.location().url)) return;
+    if (BROWSER_NOTICES.some((notice) => notice.test(message.text()))) return;
     messages.push(`console.${message.type()}: ${message.text()} (${message.location().url})`);
   });
   page.on('pageerror', (error) => messages.push(`pageerror: ${error.message}`));

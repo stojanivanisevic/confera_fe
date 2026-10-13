@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A conference site that fights every embed</title>
+<style>
+  /* What themes and page builders really do to pasted content, and worse. */
+  html { font-size: 62.5%; }
+  body { margin: 0; font-family: "Comic Sans MS", "Times New Roman", serif; color: #400; background: #ffe; }
+  * { box-sizing: content-box !important; letter-spacing: 3px !important; }
+  header { position: sticky; top: 0; z-index: 9999; padding: 12px 20px; background: #603; color: #fff; }
+  main { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  h1 { font-size: 4rem; }
+  a { color: #909 !important; }
+  input, select, textarea, button { all: unset !important; border: 5px dashed red !important; font-family: fantasy !important; font-size: 30px !important; }
+  label, fieldset, legend { display: none !important; }
+  /* Rules aimed at frames. */
+  iframe { height: auto !important; min-height: 0 !important; max-height: 150px !important; width: 50% !important; max-width: 300px !important; border: 9px solid red !important; display: inline !important; opacity: .3 !important; visibility: hidden !important; margin: 40px !important; padding: 40px !important; }
+  /* Rules aimed at the class names of the design system. */
+  .ud-btn, .ud-btn--primary { background: purple !important; color: lime !important; border-radius: 0 !important; }
+  .ud-field__control, .ud-form-card, .ud-field__label { display: none !important; }
+  [class^="ud-"], [class*=" ud-"] { font-family: fantasy !important; }
+</style>
+</head>
+<body>
+<header id="host-header">ITEMA 2026: a site that fights every embed</header>
+<main>
+  <h1 id="host-title">Submit your abstract</h1>
+  <p id="host-text">The form below comes from Confera.</p>
+  <p><input id="host-input" value="an input of the site"></p>
+  <div id="confera-slot"><!--CONFERA_SNIPPET--></div>
+  <p id="host-after">Text of the site after the form.</p>
+</main>
+<script>
+  // A hostile script of the site: it listens to everything, tries to drive the
+  // height of the frame with messages of its own, and writes into the frame.
+  window.__received = [];
+  window.addEventListener('message', function (e) {
+    var frame = document.querySelector('#confera-slot iframe');
+    window.__received.push({ origin: e.origin, fromFrame: !!frame && e.source === frame.contentWindow, data: e.data });
+  });
+  window.__attack = setInterval(function () {
+    window.postMessage({ type: 'confera:height', height: 5 }, '*');
+    window.postMessage({ type: 'confera:height', height: 99999999 }, '*');
+    var frame = document.querySelector('#confera-slot iframe');
+    if (frame && frame.contentWindow) {
+      try { frame.contentWindow.postMessage({ type: 'confera:height', height: 1, submit: true }, '*'); } catch (error) { /* blocked */ }
+    }
+  }, 40);
+</script>
+</body>
+</html>
