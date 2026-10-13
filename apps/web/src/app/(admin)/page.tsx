@@ -1,13 +1,17 @@
 import type { Metadata } from 'next';
 
+import { PageHeader } from '@confera/ui';
+
+import { ApiStatus } from '@/components/ApiStatus';
+
 export const metadata: Metadata = { title: 'Admin' };
 
-/** Admin home. The real dashboard arrives with 0.2.0; this is the 0.1.0 foundation page. */
+/** Admin home of 0.1.0: the foundation page. The dashboard arrives with 0.2.0. */
 export default function AdminHomePage() {
   return (
-    <main>
-      <h1>Confera</h1>
-      <p>Foundations 0.1.0.</p>
+    <main className="confera-page">
+      <PageHeader title="Confera" description="Conferences and membership of UdEkoM Balkans. Release 0.1.0: foundations." />
+      <ApiStatus />
     </main>
   );
 }

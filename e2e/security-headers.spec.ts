@@ -148,7 +148,7 @@ test.describe('ST-66 (routing part): the host separation is enforced in the appl
       expect(response.status()).toBe(404);
       expect(response.headers()['set-cookie']).toBeUndefined();
       const body = await response.text();
-      expect(body).not.toMatch(/Sign in|Foundations/); // nothing of the admin surface is shown
+      expect(body).not.toMatch(/Sign-in arrives|foundations|confera-api/i); // nothing of the admin surface is shown
       expect(response.headers()['cache-control']).toContain('no-store');
     });
   }
