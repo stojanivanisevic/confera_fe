@@ -66,10 +66,20 @@ async function zoomed(browser: Browser, cssWidth: number, cssHeight: number, fac
   return { context, page: await context.newPage() };
 }
 
+/**
+ * Ticks the consent box as an author does: by its text. The box itself is a drawn one; the
+ * real input next to it is one invisible pixel, and a click aimed at that pixel (a forced
+ * `check`) can land beside it when the page is zoomed. That would test the aim, not the form.
+ */
+async function accept(target: Page | Frame): Promise<void> {
+  await target.getByText('I accept the terms of publication').click();
+  await expect(target.getByLabel('I accept the terms of publication')).toBeChecked();
+}
+
 async function fillAndSend(target: Page | Frame): Promise<void> {
   await target.getByLabel('Title of the paper').fill('Održivi turizam na Balkanu');
   await target.getByLabel('Name of author 1').fill('Živana Đorđević');
-  await target.getByLabel('I accept the terms of publication').check({ force: true });
+  await accept(target);
   await target.getByRole('button', { name: 'Send abstract' }).click();
   await expect(target.locator('.ud-alert--success')).toContainText('Thank you');
 }
@@ -181,7 +191,11 @@ test.describe('a conference site whose width keeps changing', () => {
 
     // What was typed survived all of it.
     await expect(frame.getByLabel('Title of the paper')).toHaveValue('Šta đaci čitaju');
-    expect(problems.messages).toEqual([]);
+    // One engine notes, about the conference site's own document, that it stopped re-anchoring the
+    // scroll position after ten adjustments of 0 px: its note on a window resized 28 times in a row,
+    // not a message of the form. Everything else still counts.
+    const notOurs = /Scroll anchoring was disabled in a scroll container/;
+    expect(problems.messages.filter((message) => !notOurs.test(message))).toEqual([]);
   });
 });
 
@@ -305,7 +319,7 @@ test.describe('storage that throws', () => {
     await page.getByRole('button', { name: 'Add author' }).click();
     await page.getByRole('button', { name: 'Remove author 2' }).click();
     await page.getByLabel('Name of author 1').fill('Živana Đorđević');
-    await page.getByLabel('I accept the terms of publication').check({ force: true });
+    await accept(page);
     await page.getByRole('button', { name: 'Send abstract' }).click();
     await expect(page.locator('.ud-alert--success')).toContainText('Thank you');
     expect(problems.messages).toEqual([]);
