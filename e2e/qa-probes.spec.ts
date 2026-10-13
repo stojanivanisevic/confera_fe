@@ -494,6 +494,34 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
   });
 });
 
+test.describe('a slow connection: the form is on the screen before its scripts arrive', () => {
+  // The server sends the whole form as markup; the scripts that attach it can take seconds on a
+  // phone. What an author types in that time must not be thrown away when they arrive.
+  test('what is typed before the form is attached is still there afterwards', async ({ page }) => {
+    let release: () => void = () => undefined;
+    const scriptsMayLoad = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\/_next\/static\/.*\.js(?:\?.*)?$/, async (route) => {
+      await scriptsMayLoad;
+      await route.continue();
+    });
+
+    await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`, { waitUntil: 'commit' });
+    const form = page.locator('[data-confera-form]');
+    await form.waitFor();
+    await expect(form, 'the control: the form is on the screen and not attached yet').toHaveAttribute('data-hydrated', 'false');
+
+    const title = page.getByLabel('Title of the paper');
+    // Focused, not clicked: one engine does not call a page settled while its scripts are held back.
+    await title.focus();
+    await page.keyboard.type('Održivi turizam na Balkanu');
+    await expect(title).toHaveValue('Održivi turizam na Balkanu');
+
+    release();
+    await expect(form).toHaveAttribute('data-hydrated', 'true', { timeout: 30_000 });
+    await expect(title, 'the text typed before the scripts arrived').toHaveValue('Održivi turizam na Balkanu');
+  });
+});
+
 test.describe('a visitor who asked for reduced motion', () => {
   test.use({ contextOptions: { reducedMotion: 'reduce' } });
 
