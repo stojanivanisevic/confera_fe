@@ -6,6 +6,8 @@
 //   external-url     no address of another origin in a stylesheet (fonts, images)
 //   no-import        no @import: stylesheets are imported from code, never from elsewhere
 //   no-tailwind      no Tailwind at-rules
+//   ds-override      outside design-system/: no restyling of ud-* classes and no redefined
+//                    token, so no override layer can grow next to the design system (ADR-22)
 //
 // Why not Stylelint: see README, "Lint". The planted violations in
 // lint-fixtures/ prove each rule (tests/lint-fixtures.test.ts).
@@ -54,6 +56,8 @@ const MESSAGES = {
   'external-url': 'No address of another origin in a stylesheet (ADR-21, ADR-28).',
   'no-import': 'No @import: stylesheets are imported from code, never from another origin (ADR-21).',
   'no-tailwind': 'No Tailwind: styling is CSS Modules on design-system tokens (NFR-UI-01).',
+  'ds-override':
+    'No override layer: application styles do not restyle ud-* classes or redefine a token. Change the design system in a release instead (ADR-21, ADR-22).',
 };
 
 /** The names of the custom properties that tokens.css defines. */
@@ -67,7 +71,7 @@ export function readTokenNames(tokensCssPath = join(root, 'design-system', 'toke
 /**
  * Lints one stylesheet.
  * @param {string} css
- * @param {{ filename?: string, tokens?: Set<string> }} [options]
+ * @param {{ filename?: string, tokens?: Set<string>, designSystem?: boolean }} [options]
  * @returns {Array<{ rule: string, message: string, line: number, column: number, text: string }>}
  */
 export function lintCss(css, options = {}) {
@@ -104,7 +108,11 @@ export function lintCss(css, options = {}) {
   };
 
   cssRoot.walk((node) => {
+    if (node.type === 'rule' && !options.designSystem && /\.ud-[a-z]/.test(node.selector)) {
+      report('ds-override', node, node.selector);
+    }
     if (node.type === 'decl') {
+      if (!options.designSystem && node.prop.startsWith('--') && tokens.has(node.prop)) report('ds-override', node, node.prop);
       checkValue(node.value, node, node.prop.toLowerCase());
     } else if (node.type === 'atrule') {
       const name = node.name.toLowerCase();
@@ -141,7 +149,8 @@ export function lintPaths(paths, options = {}) {
     if (!existsSync(path)) continue;
     for (const file of cssFiles(path)) {
       count += 1;
-      for (const finding of lintCss(readFileSync(file, 'utf8'), { filename: file, tokens })) all.push({ file, ...finding });
+      const designSystem = file.startsWith(join(root, 'design-system'));
+      for (const finding of lintCss(readFileSync(file, 'utf8'), { filename: file, tokens, designSystem })) all.push({ file, ...finding });
     }
   }
   return { findings: all, files: count };
@@ -161,5 +170,5 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     console.error(`\n✗ ${findings.length} style problem(s) in ${files} stylesheet(s)`);
     process.exit(1);
   }
-  console.log(`✓ ${files} stylesheet(s): no colour literal, unknown token, external address, @import or Tailwind`);
+  console.log(`✓ ${files} stylesheet(s): no colour literal, unknown token, external address, @import, Tailwind or design-system override`);
 }

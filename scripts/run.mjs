@@ -23,7 +23,7 @@ const tasks = {
     let status = runBin('eslint', 'eslint', ['.', '--max-warnings', '0', ...extra]);
     if (status !== 0) return status;
     heading('style lint');
-    status = runNode(join(root, 'scripts', 'lint-styles.mjs'), extra.length ? [] : ['apps', 'packages']);
+    status = runNode(join(root, 'scripts', 'lint-styles.mjs'));
     return status;
   },
   typecheck() {

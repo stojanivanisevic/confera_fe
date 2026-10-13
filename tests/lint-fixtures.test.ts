@@ -41,6 +41,7 @@ const STYLE_PLANTED: Record<string, string> = {
   'tailwind.css': 'no-tailwind',
   'external-font.css': 'external-url',
   'external-import.css': 'no-import',
+  'ds-override.css': 'ds-override',
 };
 const STYLE_FINE = ['ok-tokens.css'];
 
@@ -96,6 +97,10 @@ describe('style lint: planted violations (M1-FE-01)', () => {
 
   it.each(STYLE_FINE)('%s passes', (file) => {
     expect(lint(file)).toEqual([]);
+  });
+
+  it('an override layer is refused twice: a restyled ud-* class and a redefined token', () => {
+    expect(lint('ds-override.css').filter((f) => f.rule === 'ds-override')).toHaveLength(2);
   });
 
   it('a word that is also a colour name is fine where a name is expected', () => {
