@@ -1,0 +1,6 @@
+.fine {
+  color: var(--ink);
+  background: var(--surface-1);
+  border: 1px solid transparent;
+  outline-color: currentColor;
+}
