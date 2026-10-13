@@ -12,7 +12,7 @@ import { checkRoutes, FRAMEWORK_ROUTES } from '../scripts/verify-build.mjs';
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const declared = JSON.parse(readFileSync(join(root, 'apps/web/src/server/security/routes.json'), 'utf8'));
 const productionRoutes = [
-  ...declared.routes.filter((r: { devOnly?: boolean; planned?: string }) => !r.devOnly && !r.planned).map((r: { route: string }) => r.route),
+  ...declared.routes.filter((r: { planned?: string }) => !r.planned).map((r: { route: string }) => r.route),
   ...FRAMEWORK_ROUTES,
 ];
 

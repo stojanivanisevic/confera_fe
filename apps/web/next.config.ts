@@ -7,6 +7,17 @@ import type { NextConfig } from 'next';
 // (ADR-20, ADR-24: dev tools are absent, not switched off).
 const devPages = process.env.CONFERA_DEV_PAGES === '1';
 
+// `next dev` serves its own resources only to the host names listed here (and to "localhost").
+// Both surfaces must work in development, so both configured host names are listed.
+const hostnameOf = (origin: string | undefined): string | null => {
+  try {
+    return origin ? new URL(origin).hostname : null;
+  } catch {
+    return null;
+  }
+};
+const devHosts = [hostnameOf(process.env.CONFERA_PUBLIC_ORIGIN), hostnameOf(process.env.CONFERA_ADMIN_ORIGIN)].filter((host): host is string => host !== null);
+
 const nextConfig: NextConfig = {
   // The two builds never share an output directory.
   distDir: devPages ? '.next-test' : '.next',
@@ -16,6 +27,7 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false, // no public source maps
   images: { unoptimized: true }, // the image optimiser (a fetch-any-address feature) is off
   devIndicators: false,
+  allowedDevOrigins: devHosts, // development server only
   reactStrictMode: true,
 
   pageExtensions: devPages ? ['tsx', 'ts', 'dev.tsx', 'dev.ts'] : ['tsx', 'ts'],

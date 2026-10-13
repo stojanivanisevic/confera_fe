@@ -1,14 +1,13 @@
 {
-  "$comment": "Every route of the web application declares its kind and its surface here (ADR-28, ADR-02). A page that is not listed fails `pnpm verify:build` and the header tests. `devOnly` routes exist only in a test build (--dev-pages).",
+  "$comment": "Every route of the web application declares its kind and its surface here (ADR-28, ADR-02). A page that is not listed fails `pnpm verify:build` and the header tests. The routes of a test build (--dev-pages) are declared with the dev fixtures, so that not even their names are in a production build.",
   "routes": [
     { "route": "/", "kind": "admin", "surface": "admin" },
     { "route": "/sign-in", "kind": "auth", "surface": "admin" },
-    { "route": "/f/[form]", "kind": "hosted-form", "surface": "public", "planned": "0.1.0 embed spike" },
-    { "route": "/embed/[form]", "kind": "frame", "surface": "public", "planned": "0.1.0 embed spike" },
+    { "route": "/f/[form]", "kind": "hosted-form", "surface": "public" },
+    { "route": "/embed/[form]", "kind": "frame", "surface": "public" },
     { "route": "/s/[token]", "kind": "secure-link", "surface": "public", "planned": "0.5.0" },
     { "route": "/pay/[token]", "kind": "secure-link", "surface": "public", "planned": "0.7.0" },
-    { "route": "/icon.png", "kind": "asset", "surface": "any" },
-    { "route": "/dev/gallery", "kind": "dev", "surface": "any", "devOnly": true }
+    { "route": "/icon.png", "kind": "asset", "surface": "any" }
   ],
   "forwarded": [
     { "prefix": "/api/v1/", "kind": "admin-api", "surface": "admin" },

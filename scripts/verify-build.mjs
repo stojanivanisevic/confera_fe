@@ -21,10 +21,10 @@ export const DEV_ONLY_MARKERS = ['dev/gallery', 'spike-abstract', 'spike-unliste
 export function checkRoutes(buildRoutes, declared) {
   const problems = [];
   const declaredAll = new Map(declared.routes.map((r) => [r.route, r]));
-  const expected = new Set([...declared.routes.filter((r) => !r.devOnly && !r.planned).map((r) => r.route), ...FRAMEWORK_ROUTES]);
+  const expected = new Set([...declared.routes.filter((r) => !r.planned).map((r) => r.route), ...FRAMEWORK_ROUTES]);
   for (const route of buildRoutes) {
     const entry = declaredAll.get(route);
-    if (entry?.devOnly) problems.push(`dev-only route in a production build: ${route}`);
+    if (route === '/dev' || route.startsWith('/dev/')) problems.push(`dev-only route in a production build: ${route}`);
     else if (!entry && !FRAMEWORK_ROUTES.includes(route)) problems.push(`route without a declared kind (add it to routes.json): ${route}`);
     else if (entry?.planned) problems.push(`route is built but still marked as planned in routes.json: ${route}`);
   }

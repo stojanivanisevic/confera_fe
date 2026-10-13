@@ -4,8 +4,8 @@ import { ConfigError, parseConfig } from './env';
 
 const local = {
   STAGE: 'local',
-  CONFERA_PUBLIC_ORIGIN: 'http://localhost:3000',
-  CONFERA_ADMIN_ORIGIN: 'http://127.0.0.1:3000',
+  CONFERA_PUBLIC_ORIGIN: 'http://127.0.0.1:3000',
+  CONFERA_ADMIN_ORIGIN: 'http://localhost:3000',
   CONFERA_API_ORIGIN: 'http://127.0.0.1:3001',
 };
 const prod = {
@@ -29,10 +29,10 @@ describe('web configuration (ADR-24, ADR-02)', () => {
   it('accepts the documented local settings', () => {
     expect(parseConfig(local)).toEqual({
       stage: 'local',
-      publicOrigin: 'http://localhost:3000',
-      adminOrigin: 'http://127.0.0.1:3000',
-      publicHost: 'localhost:3000',
-      adminHost: '127.0.0.1:3000',
+      publicOrigin: 'http://127.0.0.1:3000',
+      adminOrigin: 'http://localhost:3000',
+      publicHost: '127.0.0.1:3000',
+      adminHost: 'localhost:3000',
       apiOrigin: 'http://127.0.0.1:3001',
       devPages: false,
     });
@@ -58,7 +58,7 @@ describe('web configuration (ADR-24, ADR-02)', () => {
   it.each(['http://localhost:3000', 'http://admin.localhost:3000', 'http://127.0.0.1:3000', 'http://[::1]:3000', 'https://confera.test'])(
     'a non-production stage accepts %s',
     (origin) => {
-      const other = origin === 'http://127.0.0.1:3000' ? 'http://localhost:3000' : 'http://127.0.0.1:3000';
+      const other = origin === 'http://localhost:3000' ? 'http://127.0.0.1:3000' : 'http://localhost:3000';
       expect(parseConfig({ ...local, CONFERA_PUBLIC_ORIGIN: origin, CONFERA_ADMIN_ORIGIN: other }).publicOrigin).toBe(origin);
     },
   );

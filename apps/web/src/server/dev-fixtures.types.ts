@@ -6,4 +6,6 @@ export interface DevFixtureForm {
 
 export interface DevFixtures {
   readonly forms: Readonly<Record<string, DevFixtureForm>>;
+  /** Routes that exist only in a test build, declared like the routes of routes.json. */
+  readonly routes: readonly { readonly route: string; readonly kind: string; readonly surface: string }[];
 }

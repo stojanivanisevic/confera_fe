@@ -5,4 +5,4 @@
  */
 import type { DevFixtures } from './dev-fixtures.types';
 
-export const devFixtures: DevFixtures = { forms: {} };
+export const devFixtures: DevFixtures = { forms: {}, routes: [] };
