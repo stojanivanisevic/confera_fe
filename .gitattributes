@@ -1,0 +1,8 @@
+# Line endings: LF everywhere, whatever core.autocrlf says on the machine (ADR-01).
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
+*.zip binary

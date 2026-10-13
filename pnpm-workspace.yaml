@@ -1,0 +1,37 @@
+packages:
+  - apps/*
+  - packages/*
+
+# ---- Supply-chain rules (ADR-01, SEC-A-29) ---------------------------------
+# Versions are pinned exactly; `pnpm add` writes exact versions.
+saveExact: true
+savePrefix: ''
+
+# A version must be at least 3 days old before it can be resolved (minutes).
+# A fresher release needs a deliberate, reviewed entry in minimumReleaseAgeExclude.
+minimumReleaseAge: 4320
+
+# Dependency build scripts run only when the package is named here.
+# Every other package with a build script must be named in
+# ignoredBuiltDependencies, otherwise the install fails (strictDepBuilds).
+onlyBuiltDependencies: []
+# Reviewed and deliberately NOT run:
+#  - unrs-resolver: its script only re-checks that the prebuilt native binding
+#    is present; the binding arrives as a normal optional dependency.
+ignoredBuiltDependencies:
+  - unrs-resolver
+strictDepBuilds: true
+
+# Peer ranges are checked, not ignored.
+strictPeerDependencies: true
+
+# Refuse to run on a Node or pnpm outside the ranges in package.json.
+engineStrict: true
+
+# The one deliberate peer exception (ADR-19 open point, risk R-04):
+# openapi-typescript 7.13.0 declares typescript ^5.x. It was run under 6.0.3
+# and 5.9.3 on the same contract and produced byte-identical output, and
+# `pnpm api:check` regenerates the types on every check. See README, "API client".
+peerDependencyRules:
+  allowedVersions:
+    'openapi-typescript>typescript': '6.0.3'

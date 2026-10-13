@@ -1,0 +1,21 @@
+node_modules/
+.next/
+.next-test/
+out/
+dist/
+coverage/
+.artifacts/
+test-results/
+playwright-report/
+blob-report/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local environment: never committed. .env.example is the template.
+.env
+.env.*
+!.env.example
+
+.DS_Store
+Thumbs.db
+*.log

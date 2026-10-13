@@ -1,0 +1,15 @@
+{
+  "name": "@confera/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@confera/api-client": "workspace:*",
+    "@confera/embed-loader": "workspace:*",
+    "@confera/form-renderer": "workspace:*",
+    "@confera/ui": "workspace:*",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}
