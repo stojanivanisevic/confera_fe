@@ -13,7 +13,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { buildAdapter, checkTransforms, generatedDir, NON_COMPONENT_EXPORTS, runtimeExports } from './ds-build.mjs';
+import { buildAdapter, checkTransforms, fixedTexts, generatedDir, iconNames, NON_COMPONENT_EXPORTS, runtimeExports } from './ds-build.mjs';
 import { checksumsText, dsDir, fontRelease, paths, readBundleVersion, readManifest, readText, readTokens, sha256, tokensCss } from './ds-lib.mjs';
 import { lintCss, readTokenNames } from './lint-styles.mjs';
 
@@ -124,6 +124,32 @@ export function checkDesignSystem(options = {}) {
     for (const name of manifest.componentNames) if (!typed.includes(name)) problems.push(`no ${name}Props in index.d.ts`);
     for (const name of typed) if (!manifest.componentNames.includes(name)) problems.push(`${name}Props in index.d.ts has no component`);
     if (new Set(manifest.componentNames).size !== manifest.componentNames.length) problems.push('the manifest names a component twice');
+    for (const name of manifest.componentNames) {
+      for (const doc of ['README.md', 'preview.html']) {
+        if (!existsSync(at('components', name, doc))) problems.push(`components/${name}/${doc} is missing`);
+      }
+    }
+
+    // The icons the bundle draws are exactly the ones the type IconName lists.
+    const drawn = iconNames(bundle);
+    const union = /export type IconName =([^;]*);/.exec(types);
+    const typedIcons = union ? [...union[1].matchAll(/"([a-z0-9-]+)"/g)].map((m) => m[1]) : [];
+    if (!union) problems.push('index.d.ts does not export the type IconName');
+    for (const name of drawn) if (!typedIcons.includes(name)) problems.push(`icon drawn by the bundle, missing from IconName: ${name}`);
+    for (const name of typedIcons) if (!drawn.includes(name)) problems.push(`icon in IconName that the bundle cannot draw: ${name}`);
+
+    // No fixed text in a component: every text comes from the labels (translatable).
+    for (const text of fixedTexts(bundle)) problems.push(`fixed text in a component (move it to DEFAULT_LABELS): "${text}"`);
+    const defaults = /var DEFAULT_LABELS = \{([\s\S]*?)\n {2}\};/.exec(bundle);
+    const labelKeys = defaults ? [...defaults[1].matchAll(/\b([a-zA-Z]+): "/g)].map((m) => m[1]) : [];
+    const labelsType = /export interface UdekomLabels \{([\s\S]*?)\n\}/.exec(types);
+    const typedKeys = labelsType ? [...labelsType[1].replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/\b([a-zA-Z]+): string;/g)].map((m) => m[1]) : [];
+    if (!defaults) problems.push('the bundle has no DEFAULT_LABELS');
+    for (const key of labelKeys) if (!typedKeys.includes(key)) problems.push(`label in the bundle, missing from UdekomLabels: ${key}`);
+    for (const key of typedKeys) if (!labelKeys.includes(key)) problems.push(`label in UdekomLabels that the bundle does not define: ${key}`);
+    for (const used of new Set([...bundle.matchAll(/\bt[l]?\("([a-zA-Z]+)"/g)].map((m) => m[1]))) {
+      if (!labelKeys.includes(used)) problems.push(`a component asks for the label "${used}", which DEFAULT_LABELS does not define`);
+    }
   } catch (error) {
     problems.push(`the bundle cannot be read: ${error.message}`);
   }
@@ -163,6 +189,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     process.exit(1);
   }
   const release = sha256(lf(readText(paths.checksums)));
-  console.log(`✓ design system: release intact (${release.slice(0, 16)}…), ${manifest.componentNames.length} components in manifest, exports and types, every custom property is a token,`);
+  console.log(`✓ design system: release intact (${release.slice(0, 16)}…), ${manifest.componentNames.length} components in manifest, exports and types,`);
+  console.log('  icons and labels agree with the types, no fixed text, every custom property is a token,');
   console.log('  no address of another origin, no raw-markup write, adapter up to date');
 }

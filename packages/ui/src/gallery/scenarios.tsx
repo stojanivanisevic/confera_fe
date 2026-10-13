@@ -8,8 +8,9 @@
 // People and organisations are invented; addresses are on example.test (NFR-PRIV-05).
 import { useState, type FC, type ReactNode } from 'react';
 
-import type { ComponentName } from '../generated/manifest';
+import { ICON_NAMES, type ComponentName } from '../generated/manifest';
 import * as U from '../generated/udekom.client';
+import { LABELS_SR } from '../labels';
 import styles from './gallery.module.css';
 
 export interface ScenarioProps {
@@ -36,14 +37,7 @@ const PEOPLE: Person[] = [
 const TONE = { Accepted: 'success', 'In review': 'info', Rejected: 'danger' } as const;
 const COUNTRIES = ['Serbia', 'Montenegro', 'Croatia', 'Slovenia', 'North Macedonia'];
 
-const ICONS = [
-  'mail', 'alert-circle', 'check-circle-2', 'check', 'x', 'chevron-down', 'arrow-left', 'arrow-right', 'arrow-up-right',
-  'upload', 'info', 'search', 'eye', 'eye-off', 'calendar', 'chevron-up', 'chevron-left', 'chevron-right',
-  'chevrons-up-down', 'plus', 'trash', 'more', 'file', 'alert-triangle', 'menu', 'users', 'home', 'settings', 'inbox',
-  'send', 'refresh', 'filter', 'minus',
-];
-
-const NAV = [
+const NAV: NonNullable<U.SidebarNavProps['sections']> = [
   { title: 'Conference', items: [
     { value: 'submissions', label: 'Submissions', icon: 'inbox', badge: 12 },
     { value: 'reviews', label: 'Reviews', icon: 'users' },
@@ -56,7 +50,7 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
     <Row>
       <U.Button>Send application</U.Button>
       <U.Button variant="dark">Read more</U.Button>
-      <U.Button variant={'danger' as 'primary'}>Delete</U.Button>
+      <U.Button variant="danger">Delete</U.Button>
       <U.Button icon="arrow-right" iconPosition="end">Next step</U.Button>
       <U.Button disabled>Saving</U.Button>
     </Row>
@@ -94,7 +88,7 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
           options={[
             { value: 'individuals', label: 'Individuals', content: <p className={styles.text}>Membership for one person.</p> },
             { value: 'companies', label: 'Companies', content: <p className={styles.text}>Membership for an institution.</p> },
-          ] as unknown as U.SegmentedTabsProps['options']}
+          ]}
         />
         <U.SegmentedTabs label="Language" value={language} onChange={setLanguage} options={[{ value: 'en', label: 'English' }, { value: 'sr', label: 'Srpski' }]} />
       </Stack>
@@ -176,9 +170,9 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
 
   Icon: () => (
     <div className={styles.icons}>
-      {ICONS.map((name) => (
+      {ICON_NAMES.map((name) => (
         <span key={name} className={styles.icon}>
-          <U.Icon name={name as U.IconProps['name']} size={20} />
+          <U.Icon name={name} size={20} />
           <span>{name}</span>
         </span>
       ))}
@@ -428,7 +422,7 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
     const [open, setOpen] = useState(initialOpen);
     return (
       <Row>
-        <U.Button variant={'danger' as 'primary'} onClick={() => setOpen(true)}>Delete the mail server</U.Button>
+        <U.Button variant="danger" onClick={() => setOpen(true)}>Delete the mail server</U.Button>
         <U.ConfirmDialog open={open} title="Delete ITEMA office server?" confirmText="Delete" destructive onConfirm={() => setOpen(false)} onCancel={() => setOpen(false)}>
           Emails already sent stay in the log.
         </U.ConfirmDialog>
@@ -548,10 +542,22 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
     );
   },
 
+  LabelsProvider: () => (
+    <U.LabelsProvider labels={LABELS_SR}>
+      <div lang="sr">
+        <Stack>
+          <U.Pagination page={2} pageSize={10} total={48} pageSizeOptions={[10, 25]} />
+          <U.FileButton label="Fotografija" hint="Najviše 20 MB" />
+          <U.Alert tone="info" title="Prijava je sačuvana" onClose={() => undefined}>Poruka o potvrdi je poslata.</U.Alert>
+        </Stack>
+      </div>
+    </U.LabelsProvider>
+  ),
+
   FilterBar: function FilterBarScenario() {
     const [query, setQuery] = useState('');
     return (
-      <U.FilterBar onReset={() => setQuery('')} actions={<U.Button variant="dark" icon={'filter' as U.IconProps['name']}>Apply</U.Button>}>
+      <U.FilterBar onReset={() => setQuery('')} actions={<U.Button variant="dark" icon="filter">Apply</U.Button>}>
         <U.SearchField label="Search" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
         <U.Select label="Status" defaultValue="all" options={[{ value: 'all', label: 'All statuses' }, { value: 'accepted', label: 'Accepted' }]} />
       </U.FilterBar>

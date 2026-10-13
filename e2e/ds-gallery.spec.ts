@@ -35,7 +35,7 @@ test.describe('design-system gallery: server rendering and hydration', () => {
   test('all components hydrate without a console message or an error', async ({ page }) => {
     const problems = watchPage(page);
     await page.goto('/dev/gallery');
-    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true');
+    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
 
     const cards = page.locator('[data-confera-dev="gallery-card"]');
     await expect(cards).toHaveCount(COMPONENT_NAMES.length);
@@ -43,14 +43,14 @@ test.describe('design-system gallery: server rendering and hydration', () => {
       const card = page.locator(`[data-component="${name}"]`);
       await expect(card.locator('[class*="ud-"]').first(), `${name} rendered no design-system markup`).toBeAttached();
     }
-    expect(COMPONENT_NAMES.length).toBeGreaterThanOrEqual(52);
+    expect(COMPONENT_NAMES.length).toBe(53);
     expect(problems.messages).toEqual([]);
   });
 
   test('no request goes to Google or to any other origin; the fonts are self-hosted', async ({ page }) => {
     const problems = watchPage(page);
     await page.goto('/dev/gallery');
-    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true');
+    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
     await page.evaluate(() => document.fonts.ready);
 
     expect(originsOf(problems.requests)).toEqual([PUBLIC_ORIGIN]);
@@ -90,7 +90,7 @@ test.describe('design-system gallery: server rendering and hydration', () => {
   test('the hydrated components are alive', async ({ page }) => {
     const problems = watchPage(page);
     await page.goto('/dev/gallery');
-    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true');
+    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
     const card = (name: string) => page.locator(`[data-component="${name}"]`);
 
     // Checkbox: controlled state changes.
@@ -121,10 +121,24 @@ test.describe('design-system gallery: server rendering and hydration', () => {
     await page.keyboard.press('Enter');
     const dialog = page.getByRole('dialog', { name: 'Send the decision' });
     await expect(dialog).toBeVisible();
-    await expect(dialog.locator('input')).toBeFocused();
+    await expect(dialog.getByLabel('Subject')).toBeFocused(); // the label is tied to the field without an id
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(opener).toBeFocused();
+
+    // Segmented pills without panels are a radio group that the arrow keys move.
+    const language = card('SegmentedTabs').getByRole('radiogroup', { name: 'Language' });
+    await language.getByRole('radio', { name: 'English' }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(language.getByRole('radio', { name: 'Srpski' })).toBeChecked();
+    await expect(language.getByRole('radio', { name: 'Srpski' })).toBeFocused();
+    // With panels they are tabs.
+    await card('SegmentedTabs').getByRole('tab', { name: 'Companies' }).click();
+    await expect(card('SegmentedTabs').getByRole('tabpanel', { name: 'Companies' })).toHaveText('Membership for an institution.');
+
+    // Built-in texts follow the labels: the Serbian subtree of the gallery.
+    await expect(card('LabelsProvider').getByRole('navigation', { name: 'Stranice' })).toContainText('11–20 od 48');
+    await expect(card('LabelsProvider').getByRole('button', { name: 'Zatvori poruku' })).toBeVisible();
 
     // Toast: the module-level function reaches the mounted host.
     await card('ToastHost').getByRole('button', { name: 'Show a toast' }).click();

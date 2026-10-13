@@ -7,7 +7,8 @@
 // The components are the design system's own, wrapped unchanged by
 // `pnpm ds:build` so that they render on the server and hydrate.
 export * from './generated/udekom.client';
-export { COMPONENT_NAMES, DS_BUNDLE_SHA256, DS_VERSION } from './generated/manifest';
+export { COMPONENT_NAMES, DS_BUNDLE_SHA256, DS_VERSION, ICON_NAMES } from './generated/manifest';
+export { LABELS_SR } from './labels';
 export type { ComponentName } from './generated/manifest';
 
 export { SandboxedMarkupFrame } from './reviewed/SandboxedMarkupFrame';

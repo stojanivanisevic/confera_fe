@@ -17,7 +17,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
-  workers: process.env.CI ? 2 : undefined,
+  // Three engines at once is what this suite is sized for; more only makes the scans slower.
+  workers: process.env.CI ? 2 : 3,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   timeout: 60_000,
   expect: { timeout: 10_000 },

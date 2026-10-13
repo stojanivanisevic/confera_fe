@@ -62,6 +62,36 @@ export function runtimeExports(bundle) {
   return Object.keys(sandbox.Udekom);
 }
 
+/** The names of the icons the bundle can draw, in the order it defines them. */
+export function iconNames(bundle) {
+  const names = [];
+  for (const block of bundle.matchAll(/var ICONS2? = \{([\s\S]*?)\n {2}\};/g)) {
+    for (const m of block[1].matchAll(/^ {4}"([a-z0-9-]+)": \[\[/gm)) names.push(m[1]);
+  }
+  return names;
+}
+
+/**
+ * Text a component would show or announce by itself. Version 2 has none outside the
+ * DEFAULT_LABELS list: every string literal that reads like words must come from the labels.
+ */
+export function fixedTexts(bundle) {
+  const code = bundle
+    .replace(/\/\*[\s\S]*?\*\//g, '') // comments
+    .replace(/var DEFAULT_LABELS = \{[\s\S]*?\n {2}\};/, '') // the one place where texts live
+    .replace(/var ICONS2? = \{[\s\S]*?\n {2}\};/g, ''); // path data
+  const KEYS = new Set(['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Escape', 'Enter', 'Backspace', 'Tab', 'Home', 'End']);
+  const found = [];
+  for (const m of code.matchAll(/"((?:[^"\\\n]|\\.)*)"/g)) {
+    const text = m[1];
+    if (KEYS.has(text)) continue;
+    const startsLikeASentence = /^[A-Z][a-z]/.test(text);
+    const hasAWordBetweenSpaces = /(^| )[a-z]{2,} /.test(text) && !/[[\]:=,()]/.test(text) && !/^ud-| ud-/.test(text);
+    if (startsLikeASentence || hasAWordBetweenSpaces) found.push(text);
+  }
+  return found;
+}
+
 function propsInterfaces(types) {
   const found = new Map(); // name → generic parameter list or ''
   for (const m of types.matchAll(/^export interface (\w+)Props(<[^>{]*>)?/gm)) found.set(m[1], m[2] ?? '');
@@ -134,6 +164,9 @@ export const DS_BUNDLE_SHA256 = ${JSON.stringify(checksum)};
 export const COMPONENT_NAMES = ${JSON.stringify(manifest.componentNames, null, 2).replace(/"/g, "'")} as const;
 
 export type ComponentName = (typeof COMPONENT_NAMES)[number];
+
+/** The icons of the design system, in the order the bundle defines them. */
+export const ICON_NAMES = ${JSON.stringify(iconNames(bundle)).replace(/"/g, "'").replace(/,/g, ', ')} as const;
 `;
 
   return new Map([
