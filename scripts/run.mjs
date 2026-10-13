@@ -2,6 +2,7 @@
 //   node scripts/run.mjs <task> [...arguments passed on to the tool]
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { refusedBrowserWindow } from './browser-windows.mjs';
 import { fail, heading, root, runBin, runNode } from './lib.mjs';
 
 const [task, ...extra] = process.argv.slice(2);
@@ -15,6 +16,13 @@ function tsProjects() {
     }
   }
   return projects;
+}
+
+/** The browser tests start only in a way that keeps every Chromium on the isolated profile (./browser-windows.mjs). */
+function browserTests(args) {
+  const refused = refusedBrowserWindow(extra, process.env);
+  if (refused) fail(refused);
+  return runBin('@playwright/test', 'playwright', ['test', ...args, ...extra]);
 }
 
 const tasks = {
@@ -46,13 +54,13 @@ const tasks = {
     return runBin('vitest', 'vitest', ['run', ...extra]);
   },
   e2e() {
-    return runBin('@playwright/test', 'playwright', ['test', ...extra]);
+    return browserTests([]);
   },
   'e2e-install'() {
     return runBin('@playwright/test', 'playwright', ['install', '--no-shell', 'chromium', 'firefox', 'webkit', ...extra]);
   },
   'ds-visual'() {
-    return runBin('@playwright/test', 'playwright', ['test', '--config', 'playwright.ds-visual.config.ts', ...extra]);
+    return browserTests(['--config', 'playwright.ds-visual.config.ts']);
   },
 };
 
