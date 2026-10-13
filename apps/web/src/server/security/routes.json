@@ -7,6 +7,7 @@
     { "route": "/embed/[form]", "kind": "frame", "surface": "public", "planned": "0.1.0 embed spike" },
     { "route": "/s/[token]", "kind": "secure-link", "surface": "public", "planned": "0.5.0" },
     { "route": "/pay/[token]", "kind": "secure-link", "surface": "public", "planned": "0.7.0" },
+    { "route": "/icon.png", "kind": "asset", "surface": "any" },
     { "route": "/dev/gallery", "kind": "dev", "surface": "any", "devOnly": true }
   ],
   "forwarded": [
