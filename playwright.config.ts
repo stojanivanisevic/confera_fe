@@ -41,7 +41,7 @@ export default defineConfig({
     },
     {
       name: 'firefox',
-      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts'], // the start-up guard involves no browser: once is enough
+      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts'], // the start-up guard and the Host-header requests involve no browser: once is enough
       use: {
         ...devices['Desktop Firefox'],
         viewport: { width: 1440, height: 900 },
@@ -50,7 +50,7 @@ export default defineConfig({
     },
     {
       name: 'webkit',
-      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts'], // the start-up guard involves no browser: once is enough
+      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts'], // the start-up guard and the Host-header requests involve no browser: once is enough
       use: { ...devices['Desktop Safari'], viewport: { width: 1440, height: 900 } },
     },
     {
