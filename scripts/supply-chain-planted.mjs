@@ -181,6 +181,12 @@ function plantedSecrets() {
     { what: 'a password under a lower-case key of a configuration file (password: value)', file: 'apps/web/planted-config.yml', text: `smtp:\n  host: mail.example.test\n  password: ${random(24, ALNUM)}\n` },
     { what: 'a session secret in code, declared with a type (const name: string = value)', file: 'apps/web/src/planted/typed-secret.ts', text: `export const sessionSecret: string = '${random(48, ALNUM)}';\n` },
     { what: 'a session secret in code, as the fallback of an environment variable (?? value)', file: 'apps/web/src/planted/fallback-secret.ts', text: `export const sessionSecret = process.env.SESSION_SECRET ?? '${random(48, ALNUM)}';\n` },
+    // Caught today. These three hold the edges of the rules that let something through: a placeholder STARTS
+    // with `invented-` or `local-only-`; a branch of a choice is the quoted text right after the question mark,
+    // not everything after one; the `credentials` of fetch is one of its three words, not any text.
+    { what: 'a session secret that only contains the placeholder words, not at its start', file: 'apps/web/planted-not-a-placeholder.env', text: `SESSION_SECRET=${random(6, ALNUM)}-invented-${random(6, ALNUM)}-local-only-${random(6, ALNUM)}\n` },
+    { what: 'a client secret after a question mark on the same line (not a branch of a choice)', file: 'apps/web/src/planted/after-question.ts', text: `export const paypal = isLive() ? { clientSecret: '${random(80, ALNUM)}' } : null;\n` },
+    { what: 'a value under the name credentials that is not a mode of fetch', file: 'apps/web/src/planted/credentials.ts', text: `export const service = { credentials: '${random(40, ALNUM)}' };\n` },
   ];
   const control = {
     file: 'tests/planted/no-secret.test.ts',
