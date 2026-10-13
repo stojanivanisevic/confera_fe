@@ -173,6 +173,14 @@ function plantedSecrets() {
     // it will most likely look like these: a name and a random value, in no token format.
     { what: 'a session secret in an environment file (no known token format)', file: 'apps/web/planted-server.env', text: `STAGE=prod\nSESSION_SECRET=${random(48, ALNUM)}\n` },
     { what: 'a PayPal client secret in an environment file (no known token format)', file: 'apps/web/planted-payments.env', text: `PAYPAL_CLIENT_SECRET=${random(80, ALNUM)}\nDATA_KEY=${randomBytes(32).toString('hex')}\n` },
+    // Second round: the same kind of secret, written the other ways a secret is commonly written
+    // into the files of a server and into code. None has a token format; the name gives each away.
+    { what: 'a session secret as a list entry of a compose file (- NAME=value)', file: 'apps/web/planted-compose.yml', text: `services:\n  web:\n    environment:\n      - STAGE=prod\n      - SESSION_SECRET=${random(48, ALNUM)}\n` },
+    { what: 'a session secret in a Dockerfile (ENV NAME=value)', file: 'apps/web/planted.Dockerfile', text: `ENV STAGE=prod\nENV SESSION_SECRET=${random(48, ALNUM)}\n` },
+    { what: 'a generated password with a dollar sign in an environment file', file: 'apps/web/planted-generated.env', text: `SMTP_PASSWORD=${random(8, ALNUM)}$${random(12, ALNUM)}\n` },
+    { what: 'a password under a lower-case key of a configuration file (password: value)', file: 'apps/web/planted-config.yml', text: `smtp:\n  host: mail.example.test\n  password: ${random(24, ALNUM)}\n` },
+    { what: 'a session secret in code, declared with a type (const name: string = value)', file: 'apps/web/src/planted/typed-secret.ts', text: `export const sessionSecret: string = '${random(48, ALNUM)}';\n` },
+    { what: 'a session secret in code, as the fallback of an environment variable (?? value)', file: 'apps/web/src/planted/fallback-secret.ts', text: `export const sessionSecret = process.env.SESSION_SECRET ?? '${random(48, ALNUM)}';\n` },
   ];
   const control = {
     file: 'tests/planted/no-secret.test.ts',
