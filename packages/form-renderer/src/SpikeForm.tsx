@@ -1,57 +1,51 @@
 'use client';
 
 // The form of the 0.1.0 embed spike (M1-FE-04). It is NOT the form renderer of
-// 0.3.0 (ADR-09: a definition from the API, react-hook-form, the rule
-// interpreter); it is a small form built only from design-system components
-// that already behaves the way the Spec asks of the real ones (section 4.3):
-// the language is switched in place and keeps the values, authors repeat,
-// words are counted, errors are summarised and tied to their fields, the
-// thank-you appears in place, and a draft stays in the tab. Nothing is sent.
-import { useState, useSyncExternalStore } from 'react';
+// 0.3.0 (ADR-09: a definition from the API, the rule interpreter); it is a
+// small form built only from design-system components that already behaves
+// the way the Spec asks of the real ones (section 4.3): the language is
+// switched in place and keeps the values, authors repeat, words are counted,
+// errors are summarised and tied to their fields, the thank-you appears in
+// place, and a draft stays in the tab. Nothing is sent.
+//
+// The fields are plain controls with a name and no `value` from the page: the
+// browser holds what the author types, also in the seconds before the scripts
+// arrive, and the page reads it through a store (./form-values). That is the
+// pattern the renderer of 0.3.0 keeps.
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import { Alert, Button, Checkbox, FormCard, LABELS_SR, LabelsProvider, Repeater, SegmentedTabs, TextButton, TextField, Textarea } from '@confera/ui';
 
+import { createFormValueStore, useFormRef, useFormValues, type FormValues } from './form-values';
 import { draftStorage } from './safe-storage';
 import styles from './spike-form.module.css';
 import { countWords, fill, FORM_LANGUAGES, SPIKE_FORM_TEXTS, type FormLanguage } from './texts';
 
 const MAX_WORDS = 300;
 
-interface Author {
+/** A row of the authors. Its fields are the controls named `authors.<key>.name` and `authors.<key>.email`. */
+interface AuthorRow {
   key: number;
-  name: string;
-  email: string;
 }
-interface Draft {
-  title: string;
-  abstract: string;
-}
-const EMPTY: Draft = { title: '', abstract: '' };
+const authorName = (row: AuthorRow) => `authors.${row.key}.name`;
+const authorEmail = (row: AuthorRow) => `authors.${row.key}.email`;
 
-function parseDraft(text: string | null): Draft {
-  if (!text) return EMPTY;
+/** What is kept in the tab: the two long texts. */
+function parseDraft(text: string | null): FormValues {
+  if (!text) return {};
   try {
-    const value = JSON.parse(text) as Partial<Draft>;
-    return { title: typeof value.title === 'string' ? value.title : '', abstract: typeof value.abstract === 'string' ? value.abstract : '' };
+    const value = JSON.parse(text) as { title?: unknown; abstract?: unknown } | null;
+    const draft: Record<string, string> = {};
+    if (typeof value?.title === 'string') draft.title = value.title;
+    if (typeof value?.abstract === 'string') draft.abstract = value.abstract;
+    return draft;
   } catch {
-    return EMPTY;
+    return {};
   }
 }
 
-// The draft is read once per form, after hydration: the server renders an empty form.
-const firstRead = new Map<string, string | null>();
 const subscribeToNothing = () => () => undefined;
-function useStoredDraft(key: string): string | null {
-  return useSyncExternalStore(
-    subscribeToNothing,
-    () => {
-      if (!firstRead.has(key)) firstRead.set(key, draftStorage().get(key));
-      return firstRead.get(key) ?? null;
-    },
-    () => null,
-  );
-}
-/** False in the server markup, true once the browser has attached the form: until then typing is not seen. */
+/** False in the server markup, true once the browser has attached the form. */
 const useHydrated = () => useSyncExternalStore(subscribeToNothing, () => true, () => false);
 const usePersistentStorage = () => useSyncExternalStore(subscribeToNothing, () => draftStorage().persistent, () => true);
 
@@ -61,35 +55,46 @@ export interface SpikeFormProps {
 }
 
 export function SpikeForm({ slug }: SpikeFormProps) {
-  const key = `confera:draft:${slug}`;
-  const stored = useStoredDraft(key);
-  // The fields start from the draft: a new key when the draft arrives after hydration.
-  return <SpikeFormFields key={stored ?? ''} storageKey={key} initial={parseDraft(stored)} />;
-}
-
-function SpikeFormFields({ storageKey, initial }: { storageKey: string; initial: Draft }) {
+  const storageKey = `confera:draft:${slug}`;
+  const [store] = useState(() => createFormValueStore());
+  const values = useFormValues(store);
+  const formRef = useFormRef(store);
   const [language, setLanguage] = useState<FormLanguage>('en');
-  const [title, setTitle] = useState(initial.title);
-  const [abstract, setAbstract] = useState(initial.abstract);
-  const [authors, setAuthors] = useState<Author[]>([{ key: 1, name: '', email: '' }]);
-  const [consent, setConsent] = useState(false);
+  const [authors, setAuthors] = useState<AuthorRow[]>([{ key: 1 }]);
   const [checked, setChecked] = useState(false);
   const [sent, setSent] = useState(false);
   const persistent = usePersistentStorage();
   const hydrated = useHydrated();
   const t = SPIKE_FORM_TEXTS[language];
 
-  const save = (draft: Draft) => draftStorage().set(storageKey, JSON.stringify(draft));
-  const chooseLanguage = (value: string) => {
-    const next = FORM_LANGUAGES.find((l) => l === value) ?? 'en';
-    setLanguage(next);
-    document.documentElement.lang = next; // the frame is its own document: its language follows the form
+  const value = (name: string) => values[name] ?? '';
+  const saveDraft = () => {
+    const now = store.getSnapshot();
+    draftStorage().set(storageKey, JSON.stringify({ title: now.title ?? '', abstract: now.abstract ?? '' }));
+  };
+
+  // Once the form is attached: a draft kept in this tab goes into the fields the author has
+  // not touched. What was typed before the scripts arrived stays, and is kept as the draft.
+  useEffect(() => {
+    store.fillUntouched(parseDraft(draftStorage().get(storageKey)));
+    const now = store.getSnapshot();
+    if ((now.title ?? '') !== '' || (now.abstract ?? '') !== '') draftStorage().set(storageKey, JSON.stringify({ title: now.title ?? '', abstract: now.abstract ?? '' }));
+  }, [store, storageKey]);
+  // Rows and the fields themselves come and go without an input event: the store looks again.
+  useEffect(() => {
+    store.refresh();
+  }, [store, authors.length, sent]);
+
+  const chooseLanguage = (next: string) => {
+    const chosen = FORM_LANGUAGES.find((l) => l === next) ?? 'en';
+    setLanguage(chosen);
+    document.documentElement.lang = chosen; // the frame is its own document: its language follows the form
   };
 
   const errors = {
-    title: title.trim() === '' ? t.titleRequired : null,
-    authors: authors.some((a) => a.name.trim() === '') ? t.nameRequired : null,
-    consent: consent ? null : t.consentRequired,
+    title: value('title').trim() === '' ? t.titleRequired : null,
+    authors: authors.some((row) => value(authorName(row)).trim() === '') ? t.nameRequired : null,
+    consent: value('consent') === '' ? t.consentRequired : null,
   };
   const problems = [errors.title, errors.authors, errors.consent].filter((e): e is string => e !== null);
   const show = checked && problems.length > 0;
@@ -98,14 +103,10 @@ function SpikeFormFields({ storageKey, initial }: { storageKey: string; initial:
     setChecked(true);
     if (problems.length > 0) return;
     draftStorage().remove(storageKey);
-    firstRead.delete(storageKey);
     setSent(true);
   };
   const again = () => {
-    setTitle('');
-    setAbstract('');
-    setAuthors([{ key: 1, name: '', email: '' }]);
-    setConsent(false);
+    setAuthors([{ key: 1 }]);
     setChecked(false);
     setSent(false);
   };
@@ -133,60 +134,34 @@ function SpikeFormFields({ storageKey, initial }: { storageKey: string; initial:
         </div>
       ) : null}
       <div className={styles.all}>
-        <TextField
-          label={t.paperTitle}
-          name="title"
-          required
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            save({ title: e.target.value, abstract });
-          }}
-          status={show && errors.title ? 'error' : 'default'}
-          message={show && errors.title ? errors.title : undefined}
-        />
+        <TextField label={t.paperTitle} name="title" required status={show && errors.title ? 'error' : 'default'} message={show && errors.title ? errors.title : undefined} />
       </div>
       <div className={styles.all}>
-        <Textarea
-          label={t.abstract}
-          name="abstract"
-          rows={5}
-          value={abstract}
-          onChange={(e) => {
-            setAbstract(e.target.value);
-            save({ title, abstract: e.target.value });
-          }}
-          message={fill(t.words, { count: countWords(abstract), max: MAX_WORDS })}
-        />
+        <Textarea label={t.abstract} name="abstract" rows={5} message={fill(t.words, { count: countWords(value('abstract')), max: MAX_WORDS })} />
       </div>
       <div className={styles.all}>
-        <Repeater<Author>
+        <Repeater<AuthorRow>
           label={t.authors}
           items={authors}
           onChange={setAuthors}
           min={1}
           max={8}
-          newItem={() => ({ name: '', email: '' })}
           addLabel={t.addAuthor}
           removeLabel={t.removeAuthor}
           message={t.authorsNote}
-          renderRow={(author, index, update) => (
-            <>
-              <TextField
-                label={fill(t.authorName, { n: index + 1 })}
-                required
-                value={author.name}
-                onChange={(e) => update({ name: e.target.value })}
-                status={show && author.name.trim() === '' ? 'error' : 'default'}
-                message={show && author.name.trim() === '' ? t.nameRequired : undefined}
-              />
-              <TextField label={fill(t.authorEmail, { n: index + 1 })} type="email" icon="mail" value={author.email} onChange={(e) => update({ email: e.target.value })} />
-            </>
-          )}
+          renderRow={(row, index) => {
+            const missing = show && value(authorName(row)).trim() === '';
+            return (
+              <>
+                <TextField label={fill(t.authorName, { n: index + 1 })} name={authorName(row)} required status={missing ? 'error' : 'default'} message={missing ? t.nameRequired : undefined} />
+                <TextField label={fill(t.authorEmail, { n: index + 1 })} name={authorEmail(row)} type="email" icon="mail" />
+              </>
+            );
+          }}
         />
       </div>
       <div className={styles.all}>
-        <Checkbox label={t.consent} checked={consent} onChange={() => setConsent(!consent)} aria-invalid={show && errors.consent ? true : undefined} />
+        <Checkbox label={t.consent} name="consent" aria-invalid={show && errors.consent ? true : undefined} />
       </div>
       <p className={styles.note}>{persistent ? t.draftKept : t.draftInMemory}</p>
     </>
@@ -194,7 +169,7 @@ function SpikeFormFields({ storageKey, initial }: { storageKey: string; initial:
 
   return (
     <LabelsProvider labels={language === 'sr' ? LABELS_SR : {}}>
-      <div className={styles.form} data-confera-form={storageKey.slice('confera:draft:'.length)} data-hydrated={hydrated ? 'true' : 'false'} lang={language}>
+      <div className={styles.form} data-confera-form={slug} data-hydrated={hydrated ? 'true' : 'false'} lang={language}>
         <h1 className={styles.heading}>{t.heading}</h1>
         <SegmentedTabs
           label={t.language}
@@ -206,7 +181,9 @@ function SpikeFormFields({ storageKey, initial }: { storageKey: string; initial:
           ]}
         />
         <form
+          ref={formRef}
           noValidate
+          onChange={saveDraft}
           onSubmit={(event) => {
             event.preventDefault();
             submit();

@@ -89,7 +89,7 @@ apps/web                 the Next 16 application (App Router)
   src/config/env.ts      the only file that reads the environment
   src/server/security    route kinds (routes.json), headers, the site list of a frame
 packages/ui              the adapter around the design system; application code imports only this
-packages/form-renderer   forms as authors see them (0.1.0: the spike form, draft storage)
+packages/form-renderer   forms as authors see them (0.1.0: the spike form, the store its fields are read through, draft storage)
 packages/embed-loader    the snippet for conference sites and the frame's height reporter
 packages/api-client      the vendored API contract, generated types, typed calls
 design-system            UdEkoM Balkans design system, version 2 (its own README and CHANGELOG)
@@ -128,14 +128,14 @@ Things a newcomer trips over:
 
 ## 7. Design system
 
-`design-system/` is the UdEkoM Balkans design system, **version 2.0.0**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
+`design-system/` is the UdEkoM Balkans design system, **version 2.0.1**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
 
 - The UI comes only from it: no other UI kit, no Tailwind, no colour literal outside `design-system/tokens.css`. The lint enforces this, and `lint-fixtures/` holds a planted violation for every rule.
 - Application code imports `@confera/ui`, never the folder. `packages/ui/src/generated/` is the design-system script wrapped, unchanged, in a client module so that it renders on the server and hydrates. `corepack pnpm ds:build` regenerates it.
 - **The folder is changed only as a release.** After a change: update `CHANGELOG.md`, then `corepack pnpm ds:release` (regenerates `tokens.css` and the fonts, records `CHECKSUMS.sha256`) and `corepack pnpm ds:build`. Until then `ds:check` fails and names the file.
 - `corepack pnpm ds:check` also fails on an address of another origin or a raw-markup write in the script, on a custom property without a token, on a fixed English text in a component, and when manifest, exports and types disagree.
 - `corepack pnpm ds:visual` (needs the browsers) renders every preview of v1 and v2 as a plain script and writes `.artifacts/ds-visual/index.html`.
-- `corepack pnpm ds:snapshot` writes the release as a reproducible zip to `.artifacts/`.
+- `corepack pnpm ds:snapshot` writes the release as a reproducible zip to `.artifacts/udekom-design-system-v<version>.zip` and prints its checksum.
 
 ## 8. API contract
 
@@ -169,6 +169,8 @@ A **test build** (`corepack pnpm build:test`, used by `dev` and `e2e`) also cont
 ## 10. The embed
 
 `buildEmbedSnippet` in `@confera/embed-loader` produces what an admin pastes into a conference site: a frame, a link to the hosted form, and a few inline lines that only set the frame's height. No code is loaded from Confera into the site; to change the snippet it is pasted again. Where a site strips scripts, the frame keeps its fixed height. `e2e/embed.spec.ts` is the proof on the hostile page.
+
+**The fields of a form are plain controls.** The server sends the whole form as markup, and the scripts that attach it can take seconds on a phone; an author who starts typing in that time must not lose the text. So a field never takes its text from component state (no `value=`, no `checked=`): it is a control with a `name`, the browser holds what is typed, and the page reads the controls through a store (`createFormValueStore`, `useFormValues` and `useFormRef` in `@confera/form-renderer`). While the form is being attached the store answers with the initial values, so the markup matches; right after, with what is really in the controls. A draft kept in the tab is written only into controls the author has not touched. The form renderer of 0.3.0 builds on the same store; `tests/form-typed-before-attach.test.tsx` holds the behaviour on the spike form.
 
 ## 11. Dependencies and the supply chain
 
