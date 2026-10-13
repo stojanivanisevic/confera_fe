@@ -2,6 +2,13 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.0.1 (2026-10-13)
+
+One accessibility fix in the script; no token, stylesheet or type changed.
+
+- **Repeater: the focus stays in the repeater when a row is removed** (WCAG 2.4.3 Focus Order). The "remove" button of a row disappears with its row, and in 2.0.0 the focus fell back to the page: a keyboard user was thrown to the start of the page (inside a frame, of the form). Now the focus goes to the first control of the row that takes the removed row's place, to the row before it when the last one was removed, and to the "add" button when no row is left. A field is chosen rather than the next "remove" button so that a held-down Enter cannot remove one row after another. The focus is moved only when it really fell back to the page; a page that places it itself is left alone, and so is a repeater whose owner refused the removal.
+- `components/bundle.js` carries `@ds-version: 2.0.1` and `Udekom.version` is `"2.0.1"`. `tokens.json` stays at version 2.
+
 ## 2.0.0 (2026-10-13)
 
 Version 2 is made by the Confera team (decision ADR-21 of the Confera register). It keeps the form of version 1: one script that puts the components on `window.Udekom`, the `ud-*` class names and the token names. The brand does not change: `brand-orange` is still `#ef7b06`.
