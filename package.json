@@ -19,6 +19,7 @@
     "typecheck": "node scripts/run.mjs typecheck",
     "test": "node scripts/run.mjs test",
     "secrets": "node scripts/run.mjs secrets",
+    "test:supply-chain": "node scripts/supply-chain-planted.mjs",
     "check": "node scripts/check.mjs",
     "verify:build": "node scripts/verify-build.mjs",
     "ds:tokens": "node scripts/ds-tokens.mjs",

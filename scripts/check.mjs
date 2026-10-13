@@ -17,6 +17,9 @@ const steps = [
   ['Secret scan (pnpm secrets)', script('run.mjs', 'secrets')],
   // Supply chain (ADR-01, SEC-A-29): fails on a known vulnerability rated high or critical.
   ['Dependency audit (pnpm audit --audit-level high)', () => runPnpm(['audit', '--audit-level', 'high'])],
+  // Do the secret scan, the audit and the install settings catch what they are there for? Plants a fake secret,
+  // a vulnerable package and an unlisted build script in a copy under .artifacts/ and expects each to be caught (ST-11).
+  ['Supply chain: planted cases are caught (pnpm test:supply-chain)', script('supply-chain-planted.mjs')],
 ];
 
 const started = Date.now();
