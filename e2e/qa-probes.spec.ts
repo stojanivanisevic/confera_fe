@@ -347,8 +347,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
     await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
   }
 
-  test('Tab reaches every control of every form component, in order, and each shows where the focus is', async ({ page, browserName }) => {
-    test.skip(browserName === 'webkit', 'WebKit moves Tab only between text fields and lists unless the system setting "full keyboard access" is on; the walk is made in Chromium and Firefox');
+  test('Tab reaches every control of every form component, in order, and each shows where the focus is', async ({ page }) => {
     test.setTimeout(180_000);
     await openGallery(page);
 
@@ -415,8 +414,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
     }
   });
 
-  test('the controls answer to the keyboard: space, arrows, typing and Enter', async ({ page, browserName }) => {
-    test.skip(browserName === 'webkit', 'see the test above: the walk is made in Chromium and Firefox');
+  test('the controls answer to the keyboard: space, arrows, typing and Enter', async ({ page }) => {
     const problems = watchPage(page);
     await openGallery(page);
     const card = (name: string) => page.locator(`[data-component="${name}"]`);
@@ -483,8 +481,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
 
   // WCAG 2.4.3 Focus Order (level A), NFR-A11Y-02 "focus is always visible": a keyboard user who
   // removes a row must not be thrown back to the start of the page (inside a frame: of the form).
-  test('after a row of a repeater is removed with the keyboard, the focus stays in the repeater', async ({ page, browserName }) => {
-    test.skip(browserName === 'webkit', 'see the first test of this group: the walk is made in Chromium and Firefox');
+  test('after a row of a repeater is removed with the keyboard, the focus stays in the repeater', async ({ page }) => {
     const focusAfterRemoving = async (repeater: ReturnType<Page['locator']>) => {
       await repeater.getByRole('button', { name: /^Add author|^Dodaj autora/ }).focus();
       await page.keyboard.press('Enter');
