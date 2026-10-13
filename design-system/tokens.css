@@ -1,0 +1,82 @@
+/* UdEkoM Balkans design tokens, version 2.
+   GENERATED from tokens.json by `pnpm ds:tokens`. Do not edit: change tokens.json.
+   This is the only stylesheet that holds colour values. */
+:root {
+  /* Colour */
+  --brand-orange: #ef7b06;
+  --brand-orange-hover: #d86e03;
+  --brand-orange-halo: rgba(255, 106, 61, 0.12);
+  --brand-orange-halo-strong: rgba(255, 106, 61, 0.3);
+  --brand-orange-strong: #a85300;
+  --on-brand: #17191b;
+  --ink: #373232;
+  --ink-hover: #1d1a1a;
+  --ink-halo: rgba(0, 0, 0, 0.12);
+  --ink-halo-strong: rgba(0, 0, 0, 0.3);
+  --text-secondary: #635d5d;
+  --text-on-dark: #fff7f7;
+  --surface-1: #ffffff;
+  --surface-2: #eedbdb;
+  --background: #f3efec;
+  --background-2: #fafbfd;
+  --background-dark: #161616;
+  --neutral-100: #f4f4f5;
+  --neutral-300: #e4e5e7;
+  --neutral-400: var(--neutral-500);
+  --neutral-500: #93989f;
+  --neutral-700: #787f88;
+  --neutral-900: #2f3236;
+  --neutral-950: #17191b;
+  --control-border: #cbd5e1;
+  --text-field: #334155;
+  --danger: #ee3a3a;
+  --danger-strong: #be2e2e;
+  --danger-hover: #a82828;
+  --success: #18a94d;
+  --success-strong: #117a37;
+  --focus: #0b76d7;
+  --scrim: rgba(22, 22, 22, 0.5);
+  --danger-surface: #fdecec;
+  --danger-border: #f6c4c4;
+  --success-surface: #e8f6ed;
+  --success-border: #b9e3c8;
+  --warning: #92400e;
+  --warning-surface: #fef3c7;
+  --warning-border: #f6d79a;
+  --info-strong: #08589f;
+  --info-surface: #e8f2fc;
+  --info-border: #bcd8f5;
+  --on-dark-muted: rgba(255, 247, 247, 0.8);
+  --on-dark-subtle: rgba(255, 247, 247, 0.55);
+  --on-dark-hover: rgba(255, 255, 255, 0.06);
+  --on-dark-chip: rgba(255, 255, 255, 0.12);
+  --success-on-dark: #4ade80;
+  --danger-on-dark: #f87171;
+  --warning-on-dark: #fbbf24;
+  --info-on-dark: #7cc0ff;
+  /* Type */
+  --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Spacing */
+  --gutter-null: 0px;
+  --gutter-xxs: 2px;
+  --gutter-xs: 4px;
+  --gutter-s: 8px;
+  /* Radius */
+  --radius-xs: 3px;
+  --radius-checkbox: 4px;
+  --radius-sm: 6px;
+  --radius-field: 12px;
+  --radius-card: 24px;
+  --radius-pill: 80px;
+  /* Shadow */
+  --focus-ring: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 0 3px #0b76d7;
+  --shadow-overlay: 0 12px 32px rgba(22, 22, 22, 0.16), 0 2px 6px rgba(22, 22, 22, 0.08);
+  --shadow-thumb: 0 1px 2px rgba(0, 0, 0, 0.2);
+  /* Size */
+  --button-height: 40px;
+  --checkbox-size: 17.5px;
+  --checkbox-icon: 12.25px;
+  --radio-size: 17.5px;
+  --radio-dot: 10.5px;
+}

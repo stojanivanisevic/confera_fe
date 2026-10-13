@@ -13,17 +13,21 @@ The design system of the Association of Economists and Managers of the Balkans (
 
 ## Colour
 
-- **Orange is the brand.** `brand-orange` marks the main action, the active state, checked controls and accents: one orange focus per screen.
+- **Orange is the brand.** `brand-orange` (#ef7b06) marks the main action, the active state, checked controls and accents: one orange focus per screen. It is a fill, never the colour of text.
 - **Ink, not black.** Text and dark buttons use `ink` (#373232). Pure black appears only as `background-dark` (#161616) for the events band and the footer, with `text-on-dark` on it.
 - **Warm grounds.** Pages sit on `background` (#f3efec). `background-2` (#fafbfd) alternates sections, `surface-1` (white) holds cards and forms, and `surface-2` (blush) is for soft panels.
-- **States.** Errors use `danger` / `danger-strong`, success uses `success` / `success-strong`, and keyboard focus on fields uses the blue `focus` ring.
-- **Contrast notes.** White text on `brand-orange` (buttons) is about 2.9:1, and orange text on `background` is about 2.6:1. Both are below WCAG AA for small text. Keep orange text for 24px+ headings and icons, keep button labels short, and review this before public launch of Confera.
+- **States.** Errors use `danger` / `danger-strong`, success uses `success` / `success-strong`, and keyboard focus on fields and on choice controls (checkbox, radio, switch, scale) uses the blue `focus` ring.
+- **Contrast (version 2, WCAG 2.1 AA).** White on `brand-orange` is 2.80:1 and orange text on `background` 2.45:1, so the orange has three roles with their own tokens:
+  - On an orange fill, labels and glyphs are `on-brand` (#17191b): 6.30:1, and 5.16:1 on hover.
+  - Orange text, orange icons, checked borders and the "on" track of the switch are `brand-orange-strong` (#a85300): 5.38:1 on `surface-1`, 4.71:1 on `background`. On the blush `surface-2` it reaches 4.05:1 only: no small orange text there.
+  - Muted text is `text-secondary`; the border of every control is `neutral-700`. `neutral-500` is for disabled text only.
+  - The full table of pairs is in `CHANGELOG.md`.
 
 ## Type
 
 - **Manrope** for everything on the site, at a tight -3% letter-spacing. The scale is `h1` 48 Bold, `h2` 32 Bold, `metrics` 36 Medium, `h4` 24 SemiBold, `h5` 20 Bold, `h6` 16 SemiBold. Text styles are `body-lg` 20 Medium, `body-md` 16, `body-sm` 14 and `caption` 14 SemiBold. Buttons use `button-md` 14 SemiBold and `button-lg` 20 SemiBold.
 - **Inter** only inside the input kit: field labels (`field-label`, 14 Bold) and messages (`field-message`, 12 Medium).
-- Both families load from Google Fonts. `components/bundle.css` imports them, so a page that loads `bundle.css` gets them.
+- Both families are self-hosted since version 2: `fonts/` holds the variable-weight files for Latin and Latin Extended (š č ć ž đ) and `fonts/fonts.css` declares them. A page loads `fonts/fonts.css`, `tokens.css` and `components/bundle.css`, in that order; nothing is requested from another site.
 - The Figma file has no H3 style. Use `h4` for third-level headings.
 
 ## Shape and layout
@@ -82,7 +86,7 @@ Assets → Logos holds the mark for light grounds, the mark for dark grounds and
 ## Not synced
 
 - **Vector logo files (SVG).** Export of SVG from Figma was blocked in this session. The logos here are PNG renders at drawn size: header lockup 120×44, marks 44px and 101px. The light-ground horizontal lockup is missing. Export "Frame 1475" and "Group 2" as SVG from Figma and drop them on the Assets page.
-- **Font files.** Manrope and Inter are Google Fonts. No files are stored.
+- **Font files.** Stored since version 2 in `fonts/` (SIL Open Font License 1.1, licences included). Only the Latin and Latin Extended subsets and the upright style are included.
 - **Dark mode.** The file has one mode. Dark sections are built from `background-dark` and `text-on-dark`, not from a theme.
 - **Confera additions.** Status surfaces and borders, `warning`, `info-strong`, the on-dark tints, `scrim`, `shadow-overlay` and `shadow-thumb` are not in the Figma file. Their usage notes say so.
 - **Exact specs for some components.** The Figma Starter plan's tool-call limit stopped the import after Button, Checkbox and TextField. CircleButton, ArrowButton, NavLink, SegmentedTabs, Radio, Tag, FileButton and FormCard were drawn from screenshots, and their sizes are measured. Re-sync them when the limit resets.
