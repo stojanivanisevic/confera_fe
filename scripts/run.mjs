@@ -4,6 +4,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { refusedBrowserWindow } from './browser-windows.mjs';
 import { fail, heading, root, runBin, runNode } from './lib.mjs';
+import { formatFindings, scanDirectory } from './secret-assignments.mjs';
 
 const [task, ...extra] = process.argv.slice(2);
 
@@ -46,9 +47,17 @@ const tasks = {
     }
     return 0;
   },
-  // No secret in the files of the repository (ADR-01). Same tool and preset as confera_be.
+  // No secret in the files of the repository (ADR-01). Two scans, one verdict, as in confera_be:
+  // secretlint knows the format of many credentials; the second scan catches a secret that has
+  // no format and is given away only by the name it is assigned to (scripts/secret-assignments.mjs).
   secrets() {
-    return runBin('secretlint', 'secretlint', ['**/*', '--secretlintignore', '.secretlintignore', ...extra]);
+    const formats = runBin('secretlint', 'secretlint', ['**/*', '--secretlintignore', '.secretlintignore', ...extra]);
+    const assignments = scanDirectory(root);
+    if (assignments.length > 0) {
+      console.error(formatFindings(root, assignments));
+      console.error(`\n✗ ${assignments.length} literal value(s) assigned to a name like a secret`);
+    }
+    return formats !== 0 || assignments.length > 0 ? 1 : 0;
   },
   test() {
     return runBin('vitest', 'vitest', ['run', ...extra]);

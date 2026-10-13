@@ -72,7 +72,7 @@ So http://localhost:3000/f/spike-abstract and http://127.0.0.1:3000/sign-in answ
 | `corepack pnpm test` | unit tests (Vitest) |
 | `corepack pnpm build` / `start` | the production build, and serving it |
 | `corepack pnpm verify:build` | the production build has only the declared routes, no dev-only text, no public source map |
-| `corepack pnpm secrets` | secret scan (secretlint) |
+| `corepack pnpm secrets` | secret scan: credentials by format (secretlint) and values assigned to names like a secret |
 | `corepack pnpm test:supply-chain` | plants a fake secret, a vulnerable package and an unlisted build script in a copy under `.artifacts/` and expects each to be caught; the last step of `check` |
 | `corepack pnpm dev` | the development server, with the gallery and the spike form |
 | `corepack pnpm e2e:install` | downloads the three browser engines, once |
@@ -172,11 +172,17 @@ A **test build** (`corepack pnpm build:test`, used by `dev` and `e2e`) also cont
 
 ## 11. Dependencies and the supply chain
 
-The rules of ADR-01 are settings in `pnpm-workspace.yaml`, the same as in `confera_be`: exact versions; a frozen lockfile; a version must be public for 3 days; a dependency's build script runs only if `allowBuilds` names it; strict engines and peers; `pnpm audit` fails `check` on high or critical; secretlint scans for secrets.
+The rules of ADR-01 are settings in `pnpm-workspace.yaml`, the same as in `confera_be`: exact versions; a frozen lockfile; a version must be public for 3 days; a dependency's build script runs only if `allowBuilds` names it; strict engines and peers; `pnpm audit` fails `check` on high or critical; a secret scan.
 
 ```
 corepack pnpm add --filter @confera/web <name>@<exact version>     # or -w for the root
 ```
+
+**Secret scan** (`corepack pnpm secrets`), in two parts with one verdict, as in `confera_be`:
+- secretlint finds credentials by their **format**: tokens of known services, private keys, an address with a user and a password.
+- `scripts/secret-assignments.mjs` finds a secret that has no format by the **name** it is assigned to: a literal value of 8 characters or more assigned to a name with `PASSWORD`, `SECRET`, `TOKEN`, `CREDENTIAL` or `KEY` in it. In an environment or configuration file that is `NAME=value` or `NAME: value`; in source code and JSON a quoted value (`clientSecret: '...'`). It names the file, the line and the variable, never the value.
+
+A placeholder starts with `invented-` or `local-only-`; an empty value and a reference such as `${VAR}` are fine too. Anything else fails, `changeme` included. In a test, build such a text from parts. A name that ends in `FILE`, `PATH`, `URL`, `NAME` or `HEADER` says where a secret is and is not reported; nor is one branch of a choice (`a ? "hidePassword" : "showPassword"`) or the `credentials` option of `fetch`. The web application itself must never be given a secret (section 9).
 
 `corepack pnpm test:supply-chain` (part of `check`) proves that these rules bite, on planted cases in a copy of the repository under `.artifacts/`; it plants nothing in your working tree and removes its copy. `tests/supply-chain-settings.test.ts` holds the settings themselves: a rule that is switched off or a version range fails the unit tests.
 
