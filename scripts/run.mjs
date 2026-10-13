@@ -38,6 +38,10 @@ const tasks = {
     }
     return 0;
   },
+  // No secret in the files of the repository (ADR-01). Same tool and preset as confera_be.
+  secrets() {
+    return runBin('secretlint', 'secretlint', ['**/*', '--secretlintignore', '.secretlintignore', ...extra]);
+  },
   test() {
     return runBin('vitest', 'vitest', ['run', ...extra]);
   },

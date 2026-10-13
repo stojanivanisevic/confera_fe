@@ -14,6 +14,7 @@ const steps = [
   ['Unit tests (pnpm test)', script('run.mjs', 'test')],
   ['Production build (pnpm build)', script('next.mjs', 'build')],
   ['Production build contents (pnpm verify:build)', script('verify-build.mjs')],
+  ['Secret scan (pnpm secrets)', script('run.mjs', 'secrets')],
   // Supply chain (ADR-01, SEC-A-29): fails on a known vulnerability rated high or critical.
   ['Dependency audit (pnpm audit --audit-level high)', () => runPnpm(['audit', '--audit-level', 'high'])],
 ];

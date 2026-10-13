@@ -4,10 +4,10 @@
   "private": true,
   "description": "Confera web application: admin, hosted and embedded forms (UdEkoM Balkans)",
   "type": "module",
-  "packageManager": "pnpm@10.34.6+sha512.7e1ae66a83a9143c118cc1944f37cc4f2b8acddeda4b001cfa78908f6e46e45e15292739ca6c9d026426cc757e9318cc98c5551d6a16c165097b0028ba87b4e6",
+  "packageManager": "pnpm@11.28.2+sha512.755ce2fe3c05bfd7bb412b42aff3c5c55cd38c529c6eca810475497ae36746c571e4b6e1814e6e7e4b97d7ee864b8a0e44673c3b297a50e0ac28771c5ce15d27",
   "engines": {
     "node": ">=22.13.0 <23",
-    "pnpm": "10.34.6"
+    "pnpm": "11.28.2"
   },
   "scripts": {
     "dev": "node scripts/next.mjs dev",
@@ -18,6 +18,7 @@
     "lint": "node scripts/run.mjs lint",
     "typecheck": "node scripts/run.mjs typecheck",
     "test": "node scripts/run.mjs test",
+    "secrets": "node scripts/run.mjs secrets",
     "check": "node scripts/check.mjs",
     "verify:build": "node scripts/verify-build.mjs",
     "ds:tokens": "node scripts/ds-tokens.mjs",
@@ -38,6 +39,7 @@
     "@fontsource-variable/inter": "5.3.0",
     "@fontsource-variable/manrope": "5.3.0",
     "@playwright/test": "1.64.0",
+    "@secretlint/secretlint-rule-preset-recommend": "13.0.7",
     "@types/node": "22.20.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
@@ -53,6 +55,7 @@
     "postcss-value-parser": "4.2.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "secretlint": "13.0.7",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.1",
     "vite": "8.3.4",
