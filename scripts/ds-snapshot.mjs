@@ -1,5 +1,5 @@
 // `pnpm ds:snapshot`: writes the design-system release as a zip for the vault
-// (ADR-21): .artifacts/udekom-design-system-v<major>.zip, with the same top
+// (ADR-21): .artifacts/udekom-design-system-v<version>.zip, with the same top
 // folder as the version 1 zip.
 //
 // The zip is reproducible: entries are sorted, text has LF line endings and
@@ -12,7 +12,7 @@ import { crc32, deflateRawSync } from 'node:zlib';
 
 import { fail, root } from './lib.mjs';
 import { checkDesignSystem } from './ds-check.mjs';
-import { dsDir, paths, readText, readTokens, releaseFiles, sha256 } from './ds-lib.mjs';
+import { dsDir, paths, readText, releaseFiles, sha256 } from './ds-lib.mjs';
 
 const { problems } = checkDesignSystem();
 if (problems.length > 0) fail(`The design system is not a clean release:\n  - ${problems.join('\n  - ')}`);
@@ -75,7 +75,7 @@ end.writeUInt32LE(directory.length, 12);
 end.writeUInt32LE(offset, 16);
 
 const zip = Buffer.concat([...local, directory, end]);
-const out = join(root, '.artifacts', `udekom-design-system-v${readTokens().version}.zip`);
+const out = join(root, '.artifacts', `udekom-design-system-v${version}.zip`);
 mkdirSync(join(root, '.artifacts'), { recursive: true });
 writeFileSync(out, zip);
 
