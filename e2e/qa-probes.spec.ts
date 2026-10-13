@@ -503,6 +503,98 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
     await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
     expect(await focusAfterRemoving(page.locator('.ud-repeater').first()), 'the authors of the hosted form').toEqual({ onTheBody: false, inTheRepeater: true });
   });
+
+  // Second round, after design system 2.0.1: not only the last row. The focus goes to the row that
+  // took the place of the removed one (the row before it when the last one went), the rows that
+  // stay keep their text, and what is typed next lands in the field that has the focus.
+  test('a middle row, the first row and the last row of the authors are removed with the keyboard: each time the focus lands on the right row', async ({ page }) => {
+    await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
+    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    const repeater = page.locator('.ud-repeater').first();
+
+    const add = repeater.getByRole('button', { name: 'Add author' });
+    for (let row = 2; row <= 4; row += 1) {
+      await add.focus();
+      await page.keyboard.press('Enter');
+      await expect(repeater.locator('.ud-repeater__row')).toHaveCount(row);
+    }
+    const people = ['Ana Anić', 'Božo Božić', 'Ćira Ćirić', 'Đorđe Đorđević'];
+    for (const [index, name] of people.entries()) {
+      await repeater.getByLabel(`Name of author ${index + 1}`).fill(name);
+      await repeater.getByLabel(`Email of author ${index + 1}`).fill(`author${index + 1}@example.test`);
+    }
+
+    const names = () => repeater.getByLabel(/^Name of author \d+/).evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+    const emails = () => repeater.getByLabel(/^Email of author \d+/).evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+    const focus = () =>
+      repeater.evaluate((root) => {
+        const el = document.activeElement;
+        return {
+          inTheRepeater: el !== null && el !== document.body && root.contains(el),
+          // The label of the field, without the mark of a required field.
+          field: el instanceof HTMLInputElement ? (/(?:Name|Email) of author \d+/.exec(el.labels?.[0]?.textContent ?? '')?.[0] ?? '') : (el?.tagName ?? 'nothing'),
+          value: el instanceof HTMLInputElement ? el.value : null,
+        };
+      });
+    const removeWith = async (row: number, key: 'Enter' | 'Space') => {
+      await repeater.getByRole('button', { name: `Remove author ${row}` }).focus();
+      await page.keyboard.press(key);
+    };
+
+    // A row in the middle: the row after it moves up, and the focus is on its first field.
+    await removeWith(2, 'Enter');
+    await expect(repeater.locator('.ud-repeater__row')).toHaveCount(3);
+    expect(await names()).toEqual(['Ana Anić', 'Ćira Ćirić', 'Đorđe Đorđević']);
+    expect(await emails()).toEqual(['author1@example.test', 'author3@example.test', 'author4@example.test']);
+    await expect.poll(focus).toEqual({ inTheRepeater: true, field: 'Name of author 2', value: 'Ćira Ćirić' });
+
+    // The first row: the row that is first now.
+    await removeWith(1, 'Space');
+    await expect(repeater.locator('.ud-repeater__row')).toHaveCount(2);
+    expect(await names()).toEqual(['Ćira Ćirić', 'Đorđe Đorđević']);
+    await expect.poll(focus).toEqual({ inTheRepeater: true, field: 'Name of author 1', value: 'Ćira Ćirić' });
+
+    // The last row: the row before it. One row is left, which cannot be removed (the form asks for one author).
+    await removeWith(2, 'Enter');
+    await expect(repeater.locator('.ud-repeater__row')).toHaveCount(1);
+    expect(await names()).toEqual(['Ćira Ćirić']);
+    expect(await emails()).toEqual(['author3@example.test']);
+    await expect.poll(focus).toEqual({ inTheRepeater: true, field: 'Name of author 1', value: 'Ćira Ćirić' });
+    await expect(repeater.getByRole('button', { name: /^Remove author/ })).toHaveCount(0);
+
+    // The focus is a real one: the next key goes into that field, and Tab goes on from there.
+    await page.keyboard.press('End');
+    await page.keyboard.type(' ml.');
+    expect(await names()).toEqual(['Ćira Ćirić ml.']);
+    await page.keyboard.press('Tab');
+    expect((await focus()).field).toBe('Email of author 1');
+  });
+
+  test('inside the frame of a conference site, removing a middle row leaves the focus in the form and on the right row', async ({ page }) => {
+    await openSite(page);
+    const frame = await formFrame(page);
+    const repeater = frame.locator('.ud-repeater').first();
+    for (let row = 2; row <= 3; row += 1) {
+      await repeater.getByRole('button', { name: 'Add author' }).focus();
+      await page.keyboard.press('Enter');
+      await expect(repeater.locator('.ud-repeater__row')).toHaveCount(row);
+    }
+    for (const [index, name] of ['Ana Anić', 'Božo Božić', 'Ćira Ćirić'].entries()) await repeater.getByLabel(`Name of author ${index + 1}`).fill(name);
+
+    await repeater.getByRole('button', { name: 'Remove author 2' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(repeater.locator('.ud-repeater__row')).toHaveCount(2);
+    // In the frame's own document the focus is on the row that moved up ...
+    expect(
+      await repeater.evaluate((root) => {
+        const el = document.activeElement;
+        return { inTheRepeater: el !== null && el !== document.body && root.contains(el), value: el instanceof HTMLInputElement ? el.value : null };
+      }),
+    ).toEqual({ inTheRepeater: true, value: 'Ćira Ćirić' });
+    // ... and for the conference site the focus is still in the frame, not back on the site.
+    expect(await page.evaluate((selector) => document.activeElement === document.querySelector(selector), FRAME)).toBe(true);
+    await expectHeightFollows(page, frame);
+  });
 });
 
 test.describe('a slow connection: the form is on the screen before its scripts arrive', () => {
@@ -530,6 +622,92 @@ test.describe('a slow connection: the form is on the screen before its scripts a
     release();
     await expect(form).toHaveAttribute('data-hydrated', 'true', { timeout: 30_000 });
     await expect(title, 'the text typed before the scripts arrived').toHaveValue('Održivi turizam na Balkanu');
+  });
+
+  /** Holds the scripts of the page back until `release` is called; the markup of the server arrives at once. */
+  async function holdScripts(page: Page): Promise<() => void> {
+    let release: () => void = () => undefined;
+    const scriptsMayLoad = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\/_next\/static\/.*\.js(?:\?.*)?$/, async (route) => {
+      await scriptsMayLoad;
+      await route.continue();
+    });
+    return release;
+  }
+
+  // Second round, after the form-value store: not only the title. Every kind of field the form has.
+  test('every kind of field keeps what was entered before the form was attached, and the form can be sent with it', async ({ page }) => {
+    const problems = watchPage(page);
+    const release = await holdScripts(page);
+    await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`, { waitUntil: 'commit' });
+    const form = page.locator('[data-confera-form]');
+    await form.waitFor();
+    await expect(form, 'the control: the form is on the screen and not attached yet').toHaveAttribute('data-hydrated', 'false');
+
+    // Focused and typed, as with the keyboard: a text field, a long text, a name, an e-mail address, a box.
+    const typeInto = async (label: string, text: string) => {
+      await page.getByLabel(label).focus();
+      await page.keyboard.type(text);
+    };
+    await typeInto('Title of the paper', 'Održivi turizam na Balkanu');
+    await typeInto('Abstract', 'Prva druga treća četvrta peta');
+    await typeInto('Name of author 1', 'Živana Đorđević');
+    await typeInto('Email of author 1', 'zivana@example.test');
+    const consent = page.getByLabel('I accept the terms of publication');
+    await consent.focus();
+    await page.keyboard.press('Space');
+    await expect(consent, 'the control: the box is ticked before the scripts arrive').toBeChecked();
+
+    release();
+    await expect(form).toHaveAttribute('data-hydrated', 'true', { timeout: 30_000 });
+
+    await expect(page.getByLabel('Title of the paper'), 'the text field').toHaveValue('Održivi turizam na Balkanu');
+    await expect(page.getByLabel('Abstract'), 'the long text').toHaveValue('Prva druga treća četvrta peta');
+    await expect(page.getByLabel('Name of author 1'), 'the name').toHaveValue('Živana Đorđević');
+    await expect(page.getByLabel('Email of author 1'), 'the e-mail address').toHaveValue('zivana@example.test');
+    await expect(consent, 'the ticked box').toBeChecked();
+    // The page knows what the controls hold: the words are counted ...
+    await expect(page.getByText('5 of 300 words')).toBeVisible();
+    // ... the two long texts are kept as the draft of this tab ...
+    await expect
+      .poll(() => page.evaluate((key) => JSON.parse(window.sessionStorage.getItem(key) ?? '{}') as unknown, `confera:draft:${SLUG}`))
+      .toEqual({ title: 'Održivi turizam na Balkanu', abstract: 'Prva druga treća četvrta peta' });
+    // ... and the form is sent with what was entered, without touching a field again.
+    await page.getByRole('button', { name: 'Send abstract' }).click();
+    await expect(page.locator('.ud-alert--error')).toHaveCount(0);
+    await expect(page.locator('.ud-alert--success')).toContainText('Thank you');
+    expect(problems.messages).toEqual([]);
+  });
+
+  test('a draft of an earlier visit fills the fields that were left alone, and never replaces what was typed before the form was attached', async ({ page }) => {
+    // The earlier visit: both long texts were written and kept in the tab.
+    await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
+    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.getByLabel('Title of the paper').fill('Stari naslov');
+    await page.getByLabel('Abstract').fill('Stari apstrakt od pet reči');
+    await expect
+      .poll(() => page.evaluate((key) => window.sessionStorage.getItem(key), `confera:draft:${SLUG}`))
+      .toContain('Stari apstrakt');
+
+    // The address is opened again in the same tab, on a slow connection, and the author starts on the title at once.
+    // (Opened, not reloaded: on a reload some engines put the old text back into the fields themselves.)
+    const release = await holdScripts(page);
+    await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`, { waitUntil: 'commit' });
+    const form = page.locator('[data-confera-form]');
+    await form.waitFor();
+    await expect(form).toHaveAttribute('data-hydrated', 'false');
+    await page.getByLabel('Title of the paper').focus();
+    await page.keyboard.type('Novi naslov');
+
+    release();
+    await expect(form).toHaveAttribute('data-hydrated', 'true', { timeout: 30_000 });
+    await expect(page.getByLabel('Abstract'), 'the field that was left alone gets the draft').toHaveValue('Stari apstrakt od pet reči');
+    await expect(page.getByLabel('Title of the paper'), 'what was typed wins over the draft').toHaveValue('Novi naslov');
+    await expect(page.getByText('5 of 300 words')).toBeVisible();
+    // The draft that is kept from now on is what the author sees.
+    await expect
+      .poll(() => page.evaluate((key) => JSON.parse(window.sessionStorage.getItem(key) ?? '{}') as unknown, `confera:draft:${SLUG}`))
+      .toEqual({ title: 'Novi naslov', abstract: 'Stari apstrakt od pet reči' });
   });
 });
 
