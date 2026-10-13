@@ -1,0 +1,14 @@
+# Changelog
+
+All notable changes to `confera_fe`. Versions follow SemVer; `confera_be` carries the same version at each milestone (ADR-19). The design system has its own changelog in `design-system/CHANGELOG.md`.
+
+## 0.1.0 (unreleased): foundations, risk spikes and design system v2
+
+### Added
+- **Workspace and toolchain (M1-FE-01).** pnpm 11.28.2 workspace on Node 22 with one Next 16.4 application and the packages `ui`, `form-renderer`, `embed-loader` and `api-client`; TypeScript 6.0.3 strict; `pnpm check`. Supply-chain rules: frozen lockfile, exact versions, a 3-day minimum release age, build scripts by name, strict engines and peers, a vulnerability audit that fails on high, a secret scan. Lint rules with planted violations: no second UI kit, no colour literal, raw markup only in the one reviewed component, the environment only in the configuration module, no server actions. Framework settings: telemetry off, no version header, no public source map, image optimiser off; the production build is checked against the declared routes.
+- **Design system 2.0.0 (M1-FE-03, M1-FE-06).** `tokens.css`; the contrast tokens of ADR-22 (`on-brand`, `brand-orange-strong`, `danger-hover`, a darker `success-strong`), `brand-orange` unchanged; self-hosted Manrope and Inter; complete types; 12 icons; translatable labels and `LabelsProvider`; the accessibility fixes; 16px controls on touch devices; version, changelog and checksums. See `design-system/CHANGELOG.md`.
+- **The adapter (M1-FE-02).** `@confera/ui` wraps the design-system script, unchanged, so that it renders on the server and hydrates under React 19; `pnpm ds:build`, `pnpm ds:check`, `pnpm ds:visual`, `pnpm ds:snapshot`; the component gallery (test builds only).
+- **The embed (M1-FE-04).** The snippet of decision G2-17 (a), the frame page `/embed/[form]`, the hosted page `/f/[form]`, the frame's height reporter, and the spike form with a draft storage that survives a browser that refuses storage.
+- **API client (M1-FE-05).** The contract of `confera_be` vendored with a lock, types generated on TypeScript 6.0.3, `pnpm api:sync` and `pnpm api:check`; the admin home asks `GET /api/v1/meta` and stops on another major version.
+- **Security headers and host separation (M1-FE-07).** Headers by kind of page in one place; `frame-ancestors 'none'` as the default and the site list only on the frame page; a nonce per response and `no-store` on every page; the baseline policy report-only; admin and public routes each answered only on their own host name; `/api/v1` and `/public/v1` forwarded with the `Host` header kept; the application refuses to start on a bad configuration.
+- **Tests.** Unit tests (Vitest), browser tests on Chromium, Firefox and WebKit (Playwright) with a hostile harness site, and accessibility scans (axe, WCAG 2.1 A and AA).
