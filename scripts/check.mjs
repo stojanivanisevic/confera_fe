@@ -7,6 +7,7 @@ import { heading, root, runNode, runPnpm } from './lib.mjs';
 const script = (name, ...args) => () => runNode(join(root, 'scripts', name), args);
 
 const steps = [
+  ['Design system: release, tokens, adapter (pnpm ds:check)', script('ds-check.mjs')],
   ['Lint (pnpm lint)', script('run.mjs', 'lint')],
   ['Type check (pnpm typecheck)', script('run.mjs', 'typecheck')],
   ['Unit tests (pnpm test)', script('run.mjs', 'test')],

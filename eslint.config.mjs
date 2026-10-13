@@ -197,7 +197,7 @@ export default tseslint.config(
     rules: { 'no-console': 'off' },
   },
   {
-    files: ['e2e/**/*.ts', 'tests/**/*.ts', '*.config.ts', '**/*.test.{ts,tsx}'],
+    files: ['e2e/**/*.ts', 'tests/**/*.{ts,tsx}', '*.config.ts', '**/*.test.{ts,tsx}'],
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',

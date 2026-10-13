@@ -1,4 +1,4 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["e2e/**/*.ts", "tests/**/*.ts", "*.config.ts"]
+  "include": ["e2e/**/*.ts", "tests/**/*.ts", "tests/**/*.tsx", "*.config.ts", "packages/ui/src/css.d.ts"]
 }

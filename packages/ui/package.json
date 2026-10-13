@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "sideEffects": ["**/*.css"],
+  "sideEffects": [
+    "**/*.css",
+    "./src/styles.ts"
+  ],
   "exports": {
     ".": "./src/index.ts",
-    "./styles.css": "./src/styles.css",
-    "./manifest": "./src/generated/manifest.ts"
+    "./styles": "./src/styles.ts",
+    "./gallery": "./src/gallery/Gallery.tsx"
   },
   "peerDependencies": {
     "react": "19.3.0",

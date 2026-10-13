@@ -16,10 +16,11 @@ export default defineConfig({
       'apps/*/src/**/*.test.{ts,tsx}',
       'packages/*/src/**/*.test.{ts,tsx}',
       'scripts/**/*.test.mjs',
-      'tests/**/*.test.ts',
+      'tests/**/*.test.{ts,tsx}',
     ],
     environment: 'node',
     testTimeout: 60_000,
+    hookTimeout: 120_000,
     restoreMocks: true,
   },
 });

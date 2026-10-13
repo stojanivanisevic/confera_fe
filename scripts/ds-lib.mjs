@@ -21,7 +21,7 @@ export const paths = {
 };
 
 export const sha256 = (data) => createHash('sha256').update(data).digest('hex');
-export const readText = (file) => readFileSync(file, 'utf8');
+export const readText = (file, encoding = 'utf8') => readFileSync(file, encoding);
 
 // ---- tokens -------------------------------------------------------------------
 
