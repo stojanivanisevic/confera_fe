@@ -119,6 +119,9 @@ importers:
 
   packages/form-renderer:
     dependencies:
+      '@confera/embed-loader':
+        specifier: workspace:*
+        version: link:../embed-loader
       '@confera/ui':
         specifier: workspace:*
         version: link:../ui

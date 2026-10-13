@@ -7,10 +7,14 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@confera/embed-loader": "workspace:*",
     "@confera/ui": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.3.0",
     "react-dom": "19.3.0"
-  }
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
 }
