@@ -13,6 +13,7 @@ import {
   refuseIfGuardTripped,
   removeIsolatedChromiumProfile,
 } from './support/os-isolation';
+import { assertRealApiReady } from './support/real-api';
 
 // The kinds of field that make Chromium's password manager and autofill look at a page.
 const CANARY_PAGE = `<!doctype html><meta charset="utf-8"><title>canary</title>
@@ -27,6 +28,8 @@ const CANARY_WAIT_MS = 5_000;
 
 export default async function globalSetup(): Promise<void> {
   refuseIfGuardTripped();
+  // The cross-repo smoke test: a real API that was named must be there before a browser is started.
+  await assertRealApiReady();
   if (process.platform !== 'win32') return;
 
   const baseline = recordBadPasswordBaseline();

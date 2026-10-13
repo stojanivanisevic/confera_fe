@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-import { DEV_PORT, DEV_PUBLIC_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN, WEB_PORT, webEnv } from './e2e/env';
+import { ADMIN_ORIGIN, DEV_PORT, DEV_PUBLIC_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN, REAL_API_ORIGIN, WEB_PORT, webEnv } from './e2e/env';
 
 // Browser tests (ADR-24): three engines, each started with third-party
 // cookies blocked, because the embedded form must not depend on them.
@@ -9,6 +9,13 @@ import { DEV_PORT, DEV_PUBLIC_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN, WEB_PORT, w
 //   WebKit    blocks third-party cookies by default; nothing to set
 // e2e/embed.spec.ts contains a control that proves the blocking is in effect.
 const reuse = !process.env.CI;
+
+// The cross-repo smoke test (M1-QA-02; README, "Against the real API"). With CONFERA_E2E_API_ORIGIN
+// set, the web application forwards to a real confera_be, and one more project runs: e2e/real-api.spec.ts,
+// which asks what only the real API can answer. Without the variable that file belongs to no project.
+const REAL_API_SPEC = '**/real-api.spec.ts';
+// A web application that is already running was started with another API address: it is never taken over.
+const reuseWeb = reuse && REAL_API_ORIGIN === null;
 
 export default defineConfig({
   // The Windows account guard (e2e/support/os-isolation.ts): one canary launch before any test, one last look after.
@@ -33,7 +40,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: '**/hydration-dev.spec.ts',
+      testIgnore: ['**/hydration-dev.spec.ts', REAL_API_SPEC],
       use: {
         ...devices['Desktop Chrome'],
         // The full Chromium build in its new headless mode (README, "Browser tests").
@@ -45,7 +52,7 @@ export default defineConfig({
     },
     {
       name: 'firefox',
-      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts'], // the start-up guard and the Host-header requests involve no browser: once is enough
+      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC], // the start-up guard and the Host-header requests involve no browser: once is enough
       use: {
         ...devices['Desktop Firefox'],
         viewport: { width: 1440, height: 900 },
@@ -54,7 +61,7 @@ export default defineConfig({
     },
     {
       name: 'webkit',
-      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts'], // the start-up guard and the Host-header requests involve no browser: once is enough
+      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC], // the start-up guard and the Host-header requests involve no browser: once is enough
       use: { ...devices['Desktop Safari'], viewport: { width: 1440, height: 900 } },
     },
     {
@@ -63,6 +70,16 @@ export default defineConfig({
       testMatch: '**/hydration-dev.spec.ts',
       use: { ...devices['Desktop Chrome'], channel: 'chromium', baseURL: DEV_PUBLIC_ORIGIN, viewport: { width: 1440, height: 900 } },
     },
+    ...(REAL_API_ORIGIN === null
+      ? []
+      : [
+          {
+            // The smoke test against a real confera_be: HTTP requests, and one page in Chromium.
+            name: 'real-api',
+            testMatch: REAL_API_SPEC,
+            use: { ...devices['Desktop Chrome'], channel: 'chromium', baseURL: ADMIN_ORIGIN, viewport: { width: 1440, height: 900 }, launchOptions: { args: ['--test-third-party-cookie-phaseout'] } },
+          },
+        ]),
   ],
   webServer: [
     {
@@ -70,7 +87,7 @@ export default defineConfig({
       command: 'node e2e/servers/web.mjs start',
       url: `${PUBLIC_ORIGIN}/dev/gallery`,
       env: webEnv(WEB_PORT),
-      reuseExistingServer: reuse,
+      reuseExistingServer: reuseWeb,
       timeout: 300_000,
       stdout: 'pipe',
     },
@@ -79,7 +96,7 @@ export default defineConfig({
       command: 'node e2e/servers/web.mjs dev',
       url: `${DEV_PUBLIC_ORIGIN}/dev/gallery`,
       env: webEnv(DEV_PORT),
-      reuseExistingServer: reuse,
+      reuseExistingServer: reuseWeb,
       timeout: 300_000,
       stdout: 'pipe',
     },
