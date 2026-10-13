@@ -51,6 +51,8 @@ function useStoredDraft(key: string): string | null {
     () => null,
   );
 }
+/** False in the server markup, true once the browser has attached the form: until then typing is not seen. */
+const useHydrated = () => useSyncExternalStore(subscribeToNothing, () => true, () => false);
 const usePersistentStorage = () => useSyncExternalStore(subscribeToNothing, () => draftStorage().persistent, () => true);
 
 export interface SpikeFormProps {
@@ -74,6 +76,7 @@ function SpikeFormFields({ storageKey, initial }: { storageKey: string; initial:
   const [checked, setChecked] = useState(false);
   const [sent, setSent] = useState(false);
   const persistent = usePersistentStorage();
+  const hydrated = useHydrated();
   const t = SPIKE_FORM_TEXTS[language];
 
   const save = (draft: Draft) => draftStorage().set(storageKey, JSON.stringify(draft));
@@ -191,7 +194,7 @@ function SpikeFormFields({ storageKey, initial }: { storageKey: string; initial:
 
   return (
     <LabelsProvider labels={language === 'sr' ? LABELS_SR : {}}>
-      <div className={styles.form} data-confera-form={storageKey.slice('confera:draft:'.length)} lang={language}>
+      <div className={styles.form} data-confera-form={storageKey.slice('confera:draft:'.length)} data-hydrated={hydrated ? 'true' : 'false'} lang={language}>
         <h1 className={styles.heading}>{t.heading}</h1>
         <SegmentedTabs
           label={t.language}

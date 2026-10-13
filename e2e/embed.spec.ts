@@ -29,6 +29,8 @@ async function formFrame(page: Page): Promise<Frame> {
   const frame = await element?.contentFrame();
   if (!frame) throw new Error('The frame of the form has no document');
   await frame.getByRole('heading', { level: 1, name: 'Abstract submission' }).waitFor();
+  // The form answers to typing and clicks only once the browser has attached it.
+  await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor();
   return frame;
 }
 

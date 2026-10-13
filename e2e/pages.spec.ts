@@ -64,6 +64,7 @@ for (const width of [1440, 375]) {
     test('the hosted form: empty, with errors, in Serbian, and after sending', async ({ page }) => {
       const problems = watchPage(page);
       await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
+      await page.locator('[data-confera-form][data-hydrated="true"]').waitFor(); // typing before the form is attached would not be seen
       await expect(page.getByRole('heading', { level: 1, name: 'Abstract submission' })).toBeVisible();
       expect(await scan(page), 'empty form').toEqual([]);
 
@@ -93,10 +94,12 @@ for (const width of [1440, 375]) {
 
     test('the draft stays in the tab: what was typed is there after a reload', async ({ page }) => {
       await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
+      await page.locator('[data-confera-form][data-hydrated="true"]').waitFor(); // typing before the form is attached would not be seen
       await page.getByLabel('Title of the paper').fill('Šta đaci čitaju');
       await page.getByLabel('Abstract').fill('Prva druga treća');
       await expect(page.getByText('3 of 300 words')).toBeVisible();
       await page.reload();
+      await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
       await expect(page.getByLabel('Title of the paper')).toHaveValue('Šta đaci čitaju');
       await expect(page.getByLabel('Abstract')).toHaveValue('Prva druga treća');
     });

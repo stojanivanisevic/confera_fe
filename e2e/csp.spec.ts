@@ -41,6 +41,7 @@ const PAGES: Array<[string, string, (page: Page) => Promise<void>]> = [
     'the hosted form, filled in and sent',
     `${PUBLIC_ORIGIN}/f/spike-abstract`,
     async (page) => {
+      await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
       await page.getByRole('radio', { name: 'Srpski' }).click();
       await page.getByLabel('Naslov rada').fill('Održivi turizam');
       await page.getByRole('button', { name: 'Dodaj autora' }).click();
@@ -79,6 +80,7 @@ test('no policy violation: the form inside the frame of a conference site', asyn
   await page.goto(`${HARNESS_ORIGIN}/hostile.html?paste=${Buffer.from(snippet, 'utf8').toString('base64url')}`);
   await page.locator(`#${frameId('spike-abstract')}`).scrollIntoViewIfNeeded();
   const frame = page.frameLocator(`#${frameId('spike-abstract')}`);
+  await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor();
   await frame.getByRole('button', { name: 'Add author' }).click();
   await frame.getByRole('button', { name: 'Send abstract' }).click();
   await frame.locator('.ud-alert--error').waitFor();
