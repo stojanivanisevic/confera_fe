@@ -76,7 +76,7 @@ So http://localhost:3000/f/spike-abstract and http://127.0.0.1:3000/sign-in answ
 | `corepack pnpm test:supply-chain` | plants a fake secret, a vulnerable package and an unlisted build script in a copy under `.artifacts/` and expects each to be caught; the last step of `check` |
 | `corepack pnpm dev` | the development server, with the gallery and the spike form |
 | `corepack pnpm e2e:install` | downloads the three browser engines, once |
-| `corepack pnpm e2e` | browser tests on Chromium, Firefox and WebKit (section 6) |
+| `corepack pnpm e2e` | browser tests on Chromium, Firefox and WebKit (section 6); with `CONFERA_E2E_API_ORIGIN` set, against a real `confera_be` (section 6, "Against the real API") |
 | `corepack pnpm ds:check` | the design system and its adapter are intact (section 7) |
 | `corepack pnpm ds:visual` | pictures of every component in v1 and v2, for review |
 | `corepack pnpm api:sync` / `api:check` | the API contract (section 8) |
@@ -126,6 +126,40 @@ Things a newcomer trips over:
 - **Antivirus that inspects web traffic.** Some products add a script and a stylesheet to every page loaded over plain HTTP, and re-sign HTTPS downloads. `e2e/support/fixtures.ts` answers such injected requests with nothing, in the kind that was asked for, in every context (also one a spec makes itself with `browser.newContext()`), and keeps them apart from the application's requests; `e2e/fixtures.spec.ts` holds that; a test proves from the server's own bytes that the application does not send them. If `e2e:install` fails with `SELF_SIGNED_CERT_IN_CHAIN`, the product is re-signing the download host; point Node at your organisation's root certificate with `NODE_EXTRA_CA_CERTS`. Never turn certificate checks off.
 - **A run that was interrupted** can leave a server on a port. Find it with `Get-NetTCPConnection -LocalPort 3000` and stop that process.
 - `E2E_SKIP_BUILD=1` reuses the last test build; use it only while writing a test.
+
+### Against the real API (the cross-repo smoke test)
+
+The same browser tests run in front of a real `confera_be` instead of the stub. The API is started by the documented commands of that repository and by nothing else (its README, section 9). In `..\confera_be`, with its `.env` a copy of `.env.example`:
+
+```
+corepack pnpm stack:up
+corepack pnpm db:provision
+corepack pnpm db:migrate
+corepack pnpm seed:e2e
+corepack pnpm build
+corepack pnpm start          (its own terminal; the log ends with "api.started")
+```
+
+That API listens on `127.0.0.1:3001` and knows `localhost:3000` and `127.0.0.1:3000` as its two host names, which are the two origins of the browser tests. Then, in this repository:
+
+```
+corepack pnpm api:check --sibling
+```
+
+- PowerShell: `$env:CONFERA_E2E_API_ORIGIN = 'http://127.0.0.1:3001'; corepack pnpm e2e`
+- Git Bash, macOS, Linux: `CONFERA_E2E_API_ORIGIN=http://127.0.0.1:3001 corepack pnpm e2e`
+
+What the variable changes:
+
+- **The web application under test forwards to the real API.** Every spec runs as before; the admin home shows what the real API answers, in all three engines.
+- **One more project runs, `real-api`** (`e2e/real-api.spec.ts`), with what only the real API can answer: its database is ready, its trace id and its security headers arrive through the forward, an error arrives as its problem document, the version it gives is the version of the vendored contract, every `GET` route of the vendored contract exists, it reads the surface from the `Host` header, and no other site is given access. Without the variable this file belongs to no project, so a normal run skips nothing.
+- **The short form**, about two minutes: add `--project=real-api`. It runs only that file (HTTP requests and one page in Chromium).
+- **Before a browser starts**, the run asks `http://127.0.0.1:3001/health/ready`. If the API is not there or its database does not answer, the run stops with one message that names the six commands above.
+- **Only this machine is taken**: `http://127.0.0.1:<port>` or `http://localhost:<port>`, nothing else. The browser tests send odd and hostile requests and must never be pointed at a server.
+- **A web application that is already running on port 3000 or 3100 is not taken over** in such a run (it was started with another API address): the run stops and says that the port is in use. Stop that process first.
+- The stub still runs on port 3101 in such a run: one test uses that address as a third-party page, and the tests that ask the stub directly still ask the stub.
+
+In 0.1.0 the API has one admin route (`GET /api/v1/meta`) and no public route, and no route reads what `seed:e2e` wrote yet (sign-in arrives with 0.2.0); the seed has tests of its own in `confera_be` (`test/e2e/seed.spec.ts`). Stop the API with Ctrl+C and the stack with `corepack pnpm stack:down` when you are done.
 
 ## 7. Design system
 
