@@ -45,7 +45,7 @@ const tasks = {
     return runBin('@playwright/test', 'playwright', ['test', ...extra]);
   },
   'e2e-install'() {
-    return runBin('@playwright/test', 'playwright', ['install', 'chromium', 'firefox', 'webkit', ...extra]);
+    return runBin('@playwright/test', 'playwright', ['install', '--no-shell', 'chromium', 'firefox', 'webkit', ...extra]);
   },
   'ds-visual'() {
     return runBin('@playwright/test', 'playwright', ['test', '--config', 'playwright.ds-visual.config.ts', ...extra]);
