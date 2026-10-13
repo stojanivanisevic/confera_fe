@@ -1,0 +1,22 @@
+<!-- @dsCard group="Foundations" height=260 subtitle="Built-in texts translated for a subtree (here: Serbian)" -->
+<!doctype html>
+<html lang="sr">
+<head><meta charset="utf-8"><title>LabelsProvider</title>
+<style>
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .stack { display:flex; flex-direction:column; align-items:flex-start; gap:16px; max-width:560px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  var sr = { pagination:'Stranice', pageRange:'{from}\u2013{to} od {total}', rowsPerPage:'Redova po strani', previousPage:'Prethodna strana', nextPage:'Sledeća strana',
+    dropFiles:'Prevucite fajlove ovde ili kliknite da ih izaberete', removeItem:'Ukloni {name}', dismiss:'Zatvori poruku', chooseFile:'Izaberite fajl' };
+  ReactDOM.createRoot(document.getElementById('root')).render(h(U.LabelsProvider, {labels:sr}, h('div', {className:'stack'},
+    h(U.Pagination, {page:2, pageSize:10, total:48, pageSizeOptions:[10,25]}),
+    h(U.FileButton, {label:'Fotografija', hint:'Najviše 20 MB'}),
+    h(U.Alert, {tone:'info', title:'Prijava je sačuvana', onClose:function(){}}, 'Poruka o potvrdi je poslata.'))));
+</script>
+</body>
+</html>

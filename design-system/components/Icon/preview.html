@@ -1,4 +1,4 @@
-<!-- @dsCard group="Foundations" height=72 subtitle="Lucide icons in use" -->
+<!-- @dsCard group="Foundations" height=200 subtitle="Lucide icons in use" -->
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>Icon</title>
@@ -11,7 +11,7 @@
 <div id="root"></div>
 <script>
   var U = window.Udekom, h = React.createElement;
-  var names = ['mail','alert-circle','check-circle-2','check','x','chevron-down','arrow-left','arrow-right','arrow-up-right','upload','info'];
+  var names = ['mail','alert-circle','check-circle-2','check','x','chevron-down','arrow-left','arrow-right','arrow-up-right','upload','info','search','eye','eye-off','calendar','chevron-up','chevron-left','chevron-right','chevrons-up-down','plus','trash','more','file','alert-triangle','menu','users','home','settings','inbox','send','refresh','filter','minus','download','copy','external-link','edit','globe','log-out','user','lock','clock','file-text','credit-card','link'];
   ReactDOM.createRoot(document.getElementById('root')).render(h('div', {className:'row'}, names.map(function(n){ return h(U.Icon, {key:n, name:n, size:24, title:n}); })));
 </script>
 </body>

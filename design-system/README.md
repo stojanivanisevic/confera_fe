@@ -72,12 +72,21 @@ Rules for the extended set:
 - **Status colours.** Status colours come in sets of three: text (`*-strong` or `warning`), surface and border. Orange stays the brand and the "selected" colour. Warnings use amber (`warning`), never the brand orange.
 - **Behaviour.** Dialogs, drawers and menus close on Escape and return focus. Tables sort with `aria-sort`. Autocomplete and Tabs follow the ARIA keyboard patterns.
 - **Text.** Labels and messages follow the Voice section: past-tense confirmations ("Email sent"), errors that say how to fix the problem, and named objects in confirmations ("Delete ITEMA office server?").
+- **Built-in texts (version 2).** The few texts a component writes by itself ("Close", "Rows per page", "Remove …") are English by default and can be translated: wrap a page or a form in `LabelsProvider`, or give one component its `labels`. `Udekom.defaultLabels` is the full list.
+- **Labels and messages are wired for you (version 2).** A field ties its label and its message to the control without an `id`; groups, the dropzone and the repeater tie their message to the group. Do not repeat this in the page.
+- **Touch (version 2).** Where the main pointer is a finger, the controls you type or choose in are 16px, so iOS does not zoom the page on focus.
 
 Confera uses these for its embeddable submission and membership forms and for its admin screens. React components are on `window.Udekom`. The class names (`ud-*`) and tokens work without React too.
 
+## Version and release
+
+This is **version 2.0.0** (`CHANGELOG.md` lists every change from version 1). The version is in `tokens.json`, in `components/bundle.js` (`@ds-version`, `Udekom.version`) and in the changelog. `CHECKSUMS.sha256` holds the sha256 of every file of the release. The system is changed only as a release: in the `confera_fe` repository, `pnpm ds:release` records the checksums and `pnpm ds:check` refuses any later change that is not a new release.
+
+To use it as a plain script, load `fonts/fonts.css`, `tokens.css` and `components/bundle.css`, then React and `components/bundle.js`. Nothing is requested from another site.
+
 ## Iconography
 
-Line icons from **Lucide** (the Figma names match: mail, alert-circle, check-circle-2, x, check), 2px stroke, drawn in the current text colour, 16px in controls and 18px in toolbars. The Icon component also carries the Lucide icons the admin needs: search, eye, calendar, chevrons, plus, trash, more, file, alert-triangle, menu, users, home, settings, inbox, send, refresh, filter. The footer's social icons (Viber, WhatsApp) and the phone, email and web icons come from other sets in the file and are not part of this system yet.
+Line icons from **Lucide** (the Figma names match: mail, alert-circle, check-circle-2, x, check), 2px stroke, drawn in the current text colour, 16px in controls and 18px in toolbars. The Icon component also carries the Lucide icons the admin needs: search, eye, calendar, chevrons, plus, trash, more, file, alert-triangle, menu, users, home, settings, inbox, send, refresh, filter, and since version 2 download, copy, external-link, edit, globe, log-out, user, lock, clock, file-text, credit-card, link. The type `IconName` lists all 45. The footer's social icons (Viber, WhatsApp) and the phone, email and web icons come from other sets in the file and are not part of this system yet.
 
 ## Logos
 

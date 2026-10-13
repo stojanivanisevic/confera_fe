@@ -14,7 +14,16 @@
 <div id="root"></div>
 <script>
   var U = window.Udekom, h = React.createElement;
-  ReactDOM.createRoot(document.getElementById('root')).render(h(function Demo(){ var s = React.useState('ind'); return h(U.SegmentedTabs, {label:'Applicant type', value:s[0], onChange:s[1], options:[{value:'ind',label:'Individuals'},{value:'co',label:'Companies/Enterprises'}]}); }));
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function Demo(){
+    var s = React.useState('ind'), l = React.useState('en');
+    return h('div', {className:'stack'},
+      // With content: tabs with a panel.
+      h(U.SegmentedTabs, {label:'Applicant type', value:s[0], onChange:s[1], options:[
+        {value:'ind', label:'Individuals', content:h('p', {style:{margin:0}}, 'Membership for one person.')},
+        {value:'co', label:'Companies/Enterprises', content:h('p', {style:{margin:0}}, 'Membership for an institution.')}]}),
+      // Without content: a choice between values (a radio group), e.g. the language of a form.
+      h(U.SegmentedTabs, {label:'Language', value:l[0], onChange:l[1], options:[{value:'en',label:'English'},{value:'sr',label:'Srpski'}]}));
+  }));
 </script>
 </body>
 </html>
