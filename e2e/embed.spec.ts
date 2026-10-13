@@ -9,7 +9,7 @@ import type { Frame, Page } from '@playwright/test';
 
 import { buildEmbedSnippet, frameId, HEIGHT_MESSAGE } from '../packages/embed-loader/src/index';
 import { API_STUB_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN, UNLISTED_ORIGIN } from './env';
-import { expect, test } from './support/fixtures';
+import { expect, LOCAL_SECURITY_SOFTWARE_HOSTS, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
 const SLUG = 'spike-abstract';
@@ -163,8 +163,20 @@ for (const width of [1440, 375]) {
 
 test.describe('the embed: what the site and the frame can and cannot do to each other', () => {
   test('the site is unchanged by the snippet', async ({ page, browser }) => {
+    // Security software on the machine may add a stylesheet of its own to every page it lets through
+    // (support/fixtures.ts answers it with an empty one). It is not the site's and not the snippet's, so
+    // it is left out by its host; every other stylesheet is compared one by one, not merely counted.
     const inspect = async (target: Page) =>
-      target.evaluate(() => {
+      target.evaluate((securitySoftwareHosts) => {
+        const added = (href: string | null) => {
+          if (!href) return false;
+          try {
+            const host = new URL(href).hostname;
+            return securitySoftwareHosts.some((pattern) => new RegExp(pattern, 'i').test(host));
+          } catch {
+            return false;
+          }
+        };
         const pick = (el: Element) => {
           const s = getComputedStyle(el);
           return [s.fontSize, s.fontFamily, s.color, s.backgroundColor, s.letterSpacing, s.boxSizing, s.display, s.position, s.borderTopWidth].join('|');
@@ -173,10 +185,12 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
           styles: ['html', 'body', '#host-header', '#host-title', '#host-text', '#host-input', '#host-after'].map((s) => `${s}: ${pick(document.querySelector(s)!)}`),
           // Without the frame indexes, and without what the test tool itself puts on the window.
           globals: Object.getOwnPropertyNames(window).filter((name) => !/^\d+$/.test(name) && !/^__(?:playwright|pw)/.test(name)).sort(),
-          sheets: document.styleSheets.length,
+          sheets: [...document.styleSheets]
+            .filter((sheet) => !added(sheet.href))
+            .map((sheet) => sheet.href ?? `<style> of ${(sheet.ownerNode as Element | null)?.textContent?.length ?? 0} characters in <${(sheet.ownerNode as Element | null)?.parentElement?.tagName.toLowerCase() ?? '?'}>`),
           title: document.title,
         };
-      });
+      }, LOCAL_SECURITY_SOFTWARE_HOSTS.map((pattern) => pattern.source));
     const header = { x: 0, y: 0, width: 1440, height: 220 };
 
     await openSite(page, HARNESS_ORIGIN, snippetFor(SLUG));
@@ -194,7 +208,8 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
 
     expect(withForm.styles).toEqual(without.styles);
     expect(withForm.globals).toEqual(without.globals); // the inline lines leave no global behind
-    expect(withForm.sheets).toBe(without.sheets);
+    expect(withForm.sheets.length).toBeGreaterThan(0); // the site's own stylesheet is seen
+    expect(withForm.sheets).toEqual(without.sheets); // the snippet brings no stylesheet into the site
     expect(withForm.title).toBe(without.title);
     expect(pictureWith.equals(pictureWithout), 'the top of the site looks different with the form in it').toBe(true);
   });
