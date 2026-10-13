@@ -5,6 +5,9 @@ import { defineConfig, devices } from '@playwright/test';
 // plain script it is, in both versions, and writes the pictures and their
 // difference to .artifacts/ds-visual/ for the reviewers.
 export default defineConfig({
+  // The Windows account guard (e2e/support/os-isolation.ts), as in playwright.config.ts.
+  globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-teardown.ts',
   testDir: './e2e/ds-visual',
   testMatch: '**/*.visual.ts',
   outputDir: './test-results/ds-visual',

@@ -11,11 +11,13 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 
-import { neutraliseLocalSoftware } from '../support/fixtures';
+// `test` from the fixtures: it starts Chromium on the isolated profile and already
+// protects the `context` it hands out (local security software, virtual authenticator).
+import { expect, test } from '../support/fixtures';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const out = join(root, '.artifacts', 'ds-visual');
@@ -49,8 +51,7 @@ async function shoot(page: Page, version: 'v1' | 'v2', name: string): Promise<{ 
   return { png, problems: png ? problems : [] };
 }
 
-test('every preview renders as a plain script in v2 and in v1; pictures and differences are written for review', async ({ page, context }) => {
-  await neutraliseLocalSoftware(context);
+test('every preview renders as a plain script in v2 and in v1; pictures and differences are written for review', async ({ page }) => {
   for (const dir of ['v1', 'v2', 'diff']) mkdirSync(join(out, dir), { recursive: true });
   const report: Array<{ component: string; status: string; changedPixels: number; share: number; size: string }> = [];
   const failures: string[] = [];

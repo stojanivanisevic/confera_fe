@@ -11,6 +11,9 @@ import { DEV_PORT, DEV_PUBLIC_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN, WEB_PORT, w
 const reuse = !process.env.CI;
 
 export default defineConfig({
+  // The Windows account guard (e2e/support/os-isolation.ts): one canary launch before any test, one last look after.
+  globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-teardown.ts',
   testDir: './e2e',
   testMatch: '**/*.spec.ts',
   outputDir: './test-results',
@@ -34,6 +37,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         // The full Chromium build in its new headless mode (README, "Browser tests").
+        // It is started on an isolated profile by e2e/support/fixtures.ts, never by the runner itself.
         channel: 'chromium',
         viewport: { width: 1440, height: 900 },
         launchOptions: { args: ['--test-third-party-cookie-phaseout'] },
