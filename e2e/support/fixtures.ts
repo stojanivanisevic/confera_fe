@@ -25,14 +25,17 @@
 // Chromium build tries to log on to the developer's account when its profile
 // is empty (./os-isolation.ts tells the story). The `browser` fixture below
 // starts Chromium on an isolated profile of our own and checks, before and
-// after, that the account was left alone. A spec must take `test` from this
-// file, never from '@playwright/test' (tests/os-isolation.test.ts holds that).
-import { test as base, expect, type Browser, type BrowserContext } from '@playwright/test';
+// after, that the account was left alone; and it starts no browser at all once
+// the guard has tripped, also in a run that is already under way. A spec must
+// take `test` from this file, never from '@playwright/test'
+// (tests/os-isolation.test.ts holds that).
+import { test as base, expect, type Browser, type BrowserContext, type PlaywrightWorkerArgs, type PlaywrightWorkerOptions } from '@playwright/test';
 
 import {
   assertWindowsAccountUntouched,
   attachVirtualAuthenticator,
   createIsolatedChromiumProfile,
+  refuseIfGuardTripped,
   removeIsolatedChromiumProfile,
 } from './os-isolation';
 
@@ -116,40 +119,52 @@ function protectEveryContext(browser: Browser): Browser {
   return browser;
 }
 
-export const test = base.extend<{ injectedByLocalSoftware: string[]; virtualAuthenticator: void }>({
-  // Replaces the runner's own `browser`. Firefox and WebKit start as the runner starts them.
-  // Chromium starts on an isolated profile (launchPersistentContext is the only call that
-  // accepts a profile directory); the contexts of the tests are created in that browser as before.
-  browser: [
-    async ({ playwright, browserName, channel, headless, launchOptions }, use) => {
-      if (browserName !== 'chromium') {
-        const other = await playwright[browserName].launch();
-        await use(protectEveryContext(other));
-        await other.close({ reason: 'Test ended.' });
-        return;
-      }
-      assertWindowsAccountUntouched('before starting Chromium');
-      const profile = createIsolatedChromiumProfile();
-      const persistent = await playwright.chromium
-        .launchPersistentContext(profile, {
-          ...launchOptions,
-          ...(channel === undefined ? {} : { channel }),
-          ...(headless === undefined ? {} : { headless }),
-        })
-        .catch((error: unknown) => {
-          removeIsolatedChromiumProfile(profile);
-          throw error;
-        });
-      const chromium = persistent.browser();
-      if (chromium) await use(protectEveryContext(chromium));
-      // What follows runs when the worker is done with the browser, whatever its tests did.
-      await persistent.close();
+/** What the runner gives the `browser` fixture. */
+export type BrowserStart = Pick<PlaywrightWorkerArgs & PlaywrightWorkerOptions, 'playwright' | 'browserName' | 'channel' | 'headless' | 'launchOptions'>;
+
+/**
+ * The `browser` of a worker. Replaces the runner's own. Firefox and WebKit start as the runner
+ * starts them. Chromium starts on an isolated profile (launchPersistentContext is the only call
+ * that accepts a profile directory); the contexts of the tests are created in that browser as before.
+ *
+ * It is a function of its own so that tests/os-isolation-fixture.test.ts can hold, without a
+ * browser, what it does before it starts one.
+ */
+export async function startBrowser({ playwright, browserName, channel, headless, launchOptions }: BrowserStart, provide: (browser: Browser) => Promise<void>): Promise<void> {
+  // Global setup reads the "switched off" marker once, before the first worker. A run that is
+  // already under way has many more browsers to start (a new worker after every failed test):
+  // each of them looks again, so that nothing is started any more once the guard has tripped,
+  // also after the count has gone back to zero because the developer unlocked the screen.
+  refuseIfGuardTripped();
+  if (browserName !== 'chromium') {
+    const other = await playwright[browserName].launch();
+    await provide(protectEveryContext(other));
+    await other.close({ reason: 'Test ended.' });
+    return;
+  }
+  assertWindowsAccountUntouched('before starting Chromium');
+  const profile = createIsolatedChromiumProfile();
+  const persistent = await playwright.chromium
+    .launchPersistentContext(profile, {
+      ...launchOptions,
+      ...(channel === undefined ? {} : { channel }),
+      ...(headless === undefined ? {} : { headless }),
+    })
+    .catch((error: unknown) => {
       removeIsolatedChromiumProfile(profile);
-      assertWindowsAccountUntouched('after a Chromium worker finished');
-      if (!chromium) throw new Error('Chromium started on the isolated profile did not expose its browser.');
-    },
-    { scope: 'worker', timeout: 0 },
-  ],
+      throw error;
+    });
+  const chromium = persistent.browser();
+  if (chromium) await provide(protectEveryContext(chromium));
+  // What follows runs when the worker is done with the browser, whatever its tests did.
+  await persistent.close();
+  removeIsolatedChromiumProfile(profile);
+  assertWindowsAccountUntouched('after a Chromium worker finished');
+  if (!chromium) throw new Error('Chromium started on the isolated profile did not expose its browser.');
+}
+
+export const test = base.extend<{ injectedByLocalSoftware: string[]; virtualAuthenticator: void }>({
+  browser: [startBrowser, { scope: 'worker', timeout: 0 }],
   injectedByLocalSoftware: [
     async ({ context }, use) => {
       await use((await protect(context)).seen);
