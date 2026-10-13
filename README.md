@@ -32,7 +32,7 @@ Copy-Item .env.example .env        # PowerShell;  cp .env.example .env  elsewher
 corepack pnpm check
 ```
 
-`check` takes about two minutes and ends with `✓ pnpm check passed`. Now start the application:
+`check` takes four to six minutes and ends with `✓ pnpm check passed`. Now start the application:
 
 ```
 corepack pnpm dev
@@ -73,6 +73,7 @@ So http://localhost:3000/f/spike-abstract and http://127.0.0.1:3000/sign-in answ
 | `corepack pnpm build` / `start` | the production build, and serving it |
 | `corepack pnpm verify:build` | the production build has only the declared routes, no dev-only text, no public source map |
 | `corepack pnpm secrets` | secret scan (secretlint) |
+| `corepack pnpm test:supply-chain` | plants a fake secret, a vulnerable package and an unlisted build script in a copy under `.artifacts/` and expects each to be caught; the last step of `check` |
 | `corepack pnpm dev` | the development server, with the gallery and the spike form |
 | `corepack pnpm e2e:install` | downloads the three browser engines, once |
 | `corepack pnpm e2e` | browser tests on Chromium, Firefox and WebKit (section 6) |
@@ -108,6 +109,9 @@ corepack pnpm e2e
 The run takes about eight minutes and needs the ports **3000, 3100, 3101, 4000 and 4001** free (stop `pnpm dev` first). It builds a test build, starts it, starts the application once more in development mode, a harness "conference site" and an API stub, and stops them all at the end.
 
 - **Three engines**, each with third-party cookies blocked; one test proves the blocking is in effect.
+- **Tests that do not run in every engine**, each for a stated reason: the start-up guard (`config-guard`) and the Host-header requests (`qa-hosts`) involve no browser and run in the Chromium project only; the 16 px touch test needs pointer emulation, which only Chromium has; the keyboard walk of `qa-probes` runs in Chromium and Firefox, because WebKit moves Tab only between text fields unless a system setting is on.
+- **`e2e/qa-probes.spec.ts`** looks where the acceptance list does not: 320 px, 200 % and 400 % zoom, a conference site that keeps resizing or forges height messages, storage that throws, the form components by keyboard only, reduced motion.
+- **On a loaded machine** the WebKit accessibility scans can pass the 60 s limit of a test. Run the failed file again alone before believing it: `corepack pnpm e2e --project=webkit --workers=1 e2e/pages.spec.ts`.
 - **The harness** (`e2e/harness/hostile.html`) is a site with hostile CSS and a hostile script on `localhost:4000`; the public surface is `127.0.0.1:3000`, another site, so the form's frame is a real third-party frame.
 - **The API stub** (`e2e/servers/harness.mjs`) answers `GET /api/v1/meta` and reads the surface from the `Host` header as `confera_be` does.
 - Chromium runs as the full browser in its new headless mode (`channel: 'chromium'`), so the separate "headless shell" download is not needed.
@@ -169,7 +173,9 @@ The rules of ADR-01 are settings in `pnpm-workspace.yaml`, the same as in `confe
 corepack pnpm add --filter @confera/web <name>@<exact version>     # or -w for the root
 ```
 
-**Lint.** ESLint uses the React, hooks, accessibility and typescript-eslint plugins directly, and the style lint is our own small PostCSS script (`scripts/lint-styles.mjs`). `eslint-config-next` and Stylelint are not used: both bring in `braces` 3.0.3, which has a known vulnerability rated high and no patched version (GHSA-vfj7-8cjw-p6xm), and the audit refuses it. Return to them when that is fixed.
+`corepack pnpm test:supply-chain` (part of `check`) proves that these rules bite, on planted cases in a copy of the repository under `.artifacts/`; it plants nothing in your working tree and removes its copy. `tests/supply-chain-settings.test.ts` holds the settings themselves: a rule that is switched off or a version range fails the unit tests.
+
+**Lint.** ESLint uses the React, hooks, accessibility and typescript-eslint plugins directly, and the style lint is our own small PostCSS script (`scripts/lint-styles.mjs`). A lint selector matches one spelling; `tests/source-rules.test.ts` holds the same bans on the syntax tree, in any spelling (who reads the environment, where raw markup is mentioned, which modules are imported, inline styles, code from text). `eslint-config-next` and Stylelint are not used: both bring in `braces` 3.0.3, which has a known vulnerability rated high and no patched version (GHSA-vfj7-8cjw-p6xm), and the audit refuses it. Return to them when that is fixed.
 
 ESLint is 9.39.5, the newest that every lint plugin supports; npm marks the 9 line as no longer supported.
 
