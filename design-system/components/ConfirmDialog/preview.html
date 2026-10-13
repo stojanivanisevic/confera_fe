@@ -1,0 +1,21 @@
+<!-- @dsCard group="Feedback" height=260 subtitle="Confirm a risky action" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ConfirmDialog</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){var o=React.useState(true); return h('div',null, h(U.TextButton,{tone:'danger',icon:'trash',onClick:function(){o[1](true);}},'Delete server'), h(U.ConfirmDialog,{open:o[0],title:'Delete ITEMA office server?',destructive:true,confirmText:'Delete',onCancel:function(){o[1](false);},onConfirm:function(){o[1](false);}},'Emails that use it will switch to the fallback server. This cannot be undone.')); }));
+</script>
+</body>
+</html>

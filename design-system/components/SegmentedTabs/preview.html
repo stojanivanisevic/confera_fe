@@ -1,0 +1,20 @@
+<!-- @dsCard group="Navigation" height=90 subtitle="Individuals / Companies switch" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>SegmentedTabs</title>
+<style>
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; align-items:flex-start; gap:12px; max-width:420px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; max-width:720px; }
+  .page { display:flex; justify-content:center; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function Demo(){ var s = React.useState('ind'); return h(U.SegmentedTabs, {label:'Applicant type', value:s[0], onChange:s[1], options:[{value:'ind',label:'Individuals'},{value:'co',label:'Companies/Enterprises'}]}); }));
+</script>
+</body>
+</html>

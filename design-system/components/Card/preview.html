@@ -1,0 +1,21 @@
+<!-- @dsCard group="Data display" height=200 subtitle="Content container" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Card</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'grid'}, h(U.Card,{title:'EMAN 2027',subtitle:'Rome, 17–19 March 2027',actions:h(U.StatusBadge,{tone:'success'},'Open')}, h('p',{style:{margin:0,fontSize:'14px'}},'128 abstracts · 41 under review · 62 accepted')), h(U.Card,{title:'Payments'}, h(U.ProgressBar,{value:64,showLabel:true,label:'Paid'}))));
+</script>
+</body>
+</html>

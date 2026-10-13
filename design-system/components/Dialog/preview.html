@@ -1,0 +1,21 @@
+<!-- @dsCard group="Feedback" height=380 subtitle="Modal with actions" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Dialog</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){var o=React.useState(true); return h('div',null, h(U.Button,{variant:'dark',onClick:function(){o[1](true);}},'Edit server'), h(U.Dialog,{open:o[0],onClose:function(){o[1](false);},title:'Edit mail server',actions:h(React.Fragment,null,h(U.TextButton,{onClick:function(){o[1](false);}},'Cancel'),h(U.Button,{onClick:function(){o[1](false);}},'Save'))}, h(U.TextField,{id:'ds1',label:'Name',defaultValue:'ITEMA office'}), h('div',{className:'grid'},h(U.TextField,{id:'ds2',label:'Host',defaultValue:'smtp.example.com'}),h(U.NumberField,{id:'ds3',label:'Port',defaultValue:587})))); }));
+</script>
+</body>
+</html>

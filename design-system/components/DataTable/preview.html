@@ -1,0 +1,28 @@
+<!-- @dsCard group="Data display" height=400 subtitle="Sortable, selectable table" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>DataTable</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  var users = [
+  {id:1, name:'Nikolina Vrcelj', email:'office@udekom.org.rs', role:'Admin', verified:true, created:'2026-09-01'},
+  {id:2, name:'Marko Petrovic', email:'marko.petrovic@example.org', role:'Reviewer', verified:true, created:'2026-09-14'},
+  {id:3, name:'Ana Jovanovic', email:'ana.j@example.org', role:'Reviewer', verified:false, created:'2026-10-02'},
+  {id:4, name:'Ivana Kostic', email:'ivana.kostic@example.org', role:'Reviewer', verified:true, created:'2026-10-05'}];
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){ var sel=React.useState([]); return h(U.DataTable,{caption:'Users',selectable:true,selected:sel[0],onSelectionChange:sel[1],rows:users,defaultSort:{key:'name',direction:'asc'},
+    toolbar:h(U.FilterBar,null,h(U.SearchField,{placeholder:'Search users'})),
+    footer:h(U.Pagination,{page:1,pageSize:10,total:4}),
+    columns:[{key:'name',header:'Name',sortable:true,render:function(r){return h('span',{style:{display:'inline-flex',alignItems:'center',gap:'10px'}},h(U.Avatar,{name:r.name,size:'sm'}),r.name);}},{key:'email',header:'Email',sortable:true},{key:'role',header:'Role'},{key:'verified',header:'Status',render:function(r){return r.verified?h(U.StatusBadge,{tone:'success'},'Verified'):h(U.StatusBadge,{tone:'warning'},'Unverified');}},{key:'actions',header:'',align:'right',render:function(){return h(U.Menu,{items:[{label:'Edit',icon:'settings'},{label:'Resend invite',icon:'send'},{divider:true},{label:'Delete',icon:'trash',danger:true}]});}}]}); }));
+</script>
+</body>
+</html>

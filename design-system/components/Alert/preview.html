@@ -1,0 +1,21 @@
+<!-- @dsCard group="Feedback" height=250 subtitle="Inline messages" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Alert</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'stack'}, h(U.Alert,{tone:'info',title:'Submissions close on 22 October'},'Authors can still edit their abstracts until then.'), h(U.Alert,{tone:'success',title:'Server verified'}), h(U.Alert,{tone:'warning',title:'No fallback mail server'},'Emails fail if the main server is down.'), h(U.Alert,{tone:'error',title:'Payment not matched',onClose:function(){}},'The amount differs from the proforma by 30 EUR.')));
+</script>
+</body>
+</html>

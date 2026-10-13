@@ -1,0 +1,21 @@
+<!-- @dsCard group="Actions" height=70 subtitle="Round icon-only actions" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>IconButton</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'row'}, h(U.IconButton,{icon:'refresh',label:'Resend email'}), h(U.IconButton,{icon:'settings',label:'Settings'}), h(U.IconButton,{icon:'trash',label:'Delete'})));
+</script>
+</body>
+</html>

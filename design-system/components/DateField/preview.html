@@ -1,0 +1,21 @@
+<!-- @dsCard group="Forms" height=100 subtitle="Native date picker" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>DateField</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'grid'}, h(U.DateField,{id:'d1',label:'Abstract deadline',defaultValue:'2026-10-22'}), h(U.DateField,{id:'d2',label:'Year of birth',required:true})));
+</script>
+</body>
+</html>

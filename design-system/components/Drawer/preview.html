@@ -1,0 +1,21 @@
+<!-- @dsCard group="Feedback" height=420 subtitle="Side panel" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Drawer</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){var o=React.useState(true); return h('div',null, h(U.Button,{variant:'dark',onClick:function(){o[1](true);}},'Open submission'), h(U.Drawer,{open:o[0],onClose:function(){o[1](false);},title:'Submission #128',actions:h(React.Fragment,null,h(U.TextButton,{tone:'danger'},'Reject'),h(U.Button,null,'Accept'))}, h(U.StatusBadge,{tone:'info'},'Under review'), h(U.DescriptionList,{items:[{label:'Title',value:'AI-Powered Research: From Rough Idea to Paper Draft'},{label:'Author',value:'Marko Petrovic'},{label:'Conference',value:'EMAN 2027'}]}))); }));
+</script>
+</body>
+</html>

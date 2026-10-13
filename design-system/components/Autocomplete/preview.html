@@ -1,0 +1,21 @@
+<!-- @dsCard group="Forms" height=330 subtitle="Filter and pick, single or multiple" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Autocomplete</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'grid',style:{alignItems:'start'}}, h(U.Autocomplete,{id:'a1',label:'City',placeholder:'Start typing',options:['Beograd','Novi Sad','Nis','Kragujevac','Subotica','Zrenjanin','Pancevo','Cacak']}), h(U.Autocomplete,{id:'a2',label:'Areas of interest',multiple:true,defaultValue:['econ'],options:[{value:'econ',label:'Economics'},{value:'mgmt',label:'Management'},{value:'tour',label:'Tourism'},{value:'agri',label:'Agriculture'},{value:'it',label:'IT'}]})));
+</script>
+</body>
+</html>

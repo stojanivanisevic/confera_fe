@@ -1,0 +1,55 @@
+<!-- @dsCard height=320 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UdEkoM Balkans</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--background); color:var(--ink); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; height:320px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:320px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:320px; }
+  .orange { fill:var(--brand-orange); }
+  .halo { fill:none; stroke:var(--brand-orange-halo); stroke-width:16; }
+  .dark { fill:var(--background-dark); }
+  .blush { fill:var(--surface-2); }
+  .card { fill:var(--surface-1); }
+  .slab { rx:var(--radius-card); }
+  .orbit { fill:none; stroke:var(--brand-orange); stroke-width:3; }
+  .orbit-quiet { fill:none; stroke:var(--neutral-300); stroke-width:3; }
+  .words { position:absolute; left:32px; bottom:32px; max-width:440px; }
+  .name { margin:0; font-size:96px; line-height:.95; font-weight:700; letter-spacing:-.03em; color:var(--ink); }
+  .tag { margin:8px 0 0 4px; font-size:14px; line-height:20px; color:var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 320" width="480" height="320">
+<!--
+  blocks      background-dark slab 232×320 bleeding off the right edge (radius-card corners) · brand-orange disc r=96 bleeding off the top · surface-2 blush slab 136×120 · surface-1 card disc r=56 on the dark slab · about 45% of 960×320
+  arrangement one tall dark slab with satellites, as the site's dark event band sits under the round orange "Become a member" button
+  pattern     the site's literal motif: circular frames with an orange orbit arc and a dot on it (Home hero, Circle Button); two orbits, one orange, one neutral-300, three dots
+  scales      corners radius-card (24px); halo ring 16px = twice the button's 8px ring; gaps in 8px steps (gutter-s multiples)
+-->
+<rect class="dark slab" x="264" y="0" width="232" height="344" rx="24"/>
+<rect class="blush slab" x="24" y="176" width="136" height="120" rx="24"/>
+<circle class="orbit-quiet" cx="352" cy="200" r="88"/>
+<path class="orbit" d="M 264 200 A 88 88 0 0 1 352 112"/>
+<circle class="orange" cx="270" cy="168" r="8"/>
+<circle class="card" cx="352" cy="200" r="56"/>
+<circle class="halo" cx="168" cy="40" r="104"/>
+<circle class="orange" cx="168" cy="40" r="96"/>
+<path class="orbit" d="M 40 120 A 136 136 0 0 0 176 256" />
+<circle class="orange" cx="104" cy="228" r="8"/>
+<circle class="orange" cx="420" cy="296" r="8"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">UdEkoM<br>Balkans</h1>
+<p class="tag">Conferences, journal and membership, one visual language.</p>
+</div>
+</div>
+</body>
+</html>

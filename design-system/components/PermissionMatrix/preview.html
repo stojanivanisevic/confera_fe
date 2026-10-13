@@ -1,0 +1,21 @@
+<!-- @dsCard group="Patterns" height=300 subtitle="Roles by permissions" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PermissionMatrix</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){var v=React.useState({rev:['view:submissions','review:submissions'],sec:['view:submissions','view:mail-logs','resend:email']}); return h(U.PermissionMatrix,{value:v[0],onChange:v[1],roles:[{id:'admin',name:'Admin',locked:true},{id:'sec',name:'Secretary'},{id:'rev',name:'Reviewer'}],permissions:[{name:'view:submissions',label:'View submissions'},{name:'review:submissions',label:'Review submissions',description:'Only the ones assigned to them'},{name:'manage:mail-servers',label:'Manage email servers'},{name:'view:mail-logs',label:'View email log'},{name:'resend:email',label:'Resend emails'}]}); }));
+</script>
+</body>
+</html>

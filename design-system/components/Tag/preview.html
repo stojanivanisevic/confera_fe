@@ -1,0 +1,23 @@
+<!-- @dsCard group="Forms" height=64 subtitle="Chosen terms" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Tag</title>
+<style>
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; align-items:flex-start; gap:12px; max-width:420px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; max-width:720px; }
+  .page { display:flex; justify-content:center; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', {className:'row'},
+    h(U.Tag, {onRemove:function(){}}, 'Economics'),
+    h(U.Tag, {onRemove:function(){}}, 'Management'),
+    h(U.Tag, null, 'Tourism')));
+</script>
+</body>
+</html>

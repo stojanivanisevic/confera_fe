@@ -1,0 +1,21 @@
+<!-- @dsCard group="Data display" height=110 subtitle="Short hint on hover and focus" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Tooltip</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'row',style:{paddingTop:'40px'}}, h(U.Tooltip,{title:'Resend with the same server'}, h(U.IconButton,{icon:'refresh',label:'Resend'})), h(U.Tooltip,{title:'Data on the legal entity for the invoice',placement:'bottom'}, h('span',{tabIndex:0}, h(U.Icon,{name:'info',size:18})))));
+</script>
+</body>
+</html>

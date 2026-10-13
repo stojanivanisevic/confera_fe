@@ -1,0 +1,21 @@
+<!-- @dsCard group="Feedback" height=160 subtitle="Short confirmations" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ToastHost</title>
+<style>
+  html, body { min-height:100%; }
+  body { margin:0; padding:16px; background:var(--background); font-family:var(--font-sans); color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stack { display:flex; flex-direction:column; gap:16px; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; max-width:760px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var U = window.Udekom, h = React.createElement;
+  
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){ React.useEffect(function(){ U.toast({title:'Acceptance email sent',description:'To marko.petrovic@example.org',duration:0}); U.toast({title:'Server check failed',tone:'error',duration:0}); },[]); return h('div',null, h(U.Button,{variant:'dark',onClick:function(){U.toast('Saved');}},'Show a toast'), h(U.ToastHost,null)); }));
+</script>
+</body>
+</html>
