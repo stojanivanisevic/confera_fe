@@ -34,7 +34,16 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   use: {
     baseURL: PUBLIC_ORIGIN,
-    trace: 'retain-on-failure',
+    // What a failed test leaves in the report: every action with the page as it was then (DOM
+    // snapshots), the console, the network, and a picture of the moment it failed.
+    // No film strip. A trace with one is recorded for every test, failed or not, by capturing each
+    // frame the page paints. WebKit paints at device scale 2 and without a graphics card here, and the
+    // gallery never stops painting (a spinner, skeletons), so the cost grew with the time a test took,
+    // not with what it did: three WebKit workers at once slowed each other down until tests of a few
+    // seconds passed their limit. Measured on the gallery specs in WebKit, three workers: 317 s of
+    // test time with the film strip, 157 s without it (128 s with no trace at all).
+    trace: { mode: 'retain-on-failure', screenshots: false },
+    screenshot: 'only-on-failure',
     viewport: { width: 1440, height: 900 },
   },
   projects: [

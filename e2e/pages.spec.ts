@@ -47,34 +47,57 @@ for (const width of [1440, 375]) {
   test.describe(`accessibility of the pages, ${width}px`, () => {
     test.use({ viewport: { width, height: 900 } });
 
-    test('admin home, sign-in and "not found"', async ({ page }) => {
+    // One page, or one state of the form, per test. A scan is the expensive step, most of all in
+    // WebKit; a test that made three or four of them had no room left on a busy machine.
+    test('admin home', async ({ page }) => {
       await page.goto(`${ADMIN_ORIGIN}/`);
       await expect(page.getByText('Connected')).toBeVisible();
       expect(await scan(page), 'admin home').toEqual([]);
+    });
 
+    test('sign-in', async ({ page }) => {
       await page.goto(`${ADMIN_ORIGIN}/sign-in`);
       await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();
       expect(await scan(page), 'sign-in').toEqual([]);
+    });
 
+    test('"not found"', async ({ page }) => {
       await page.goto(`${PUBLIC_ORIGIN}/no-such-page`);
       await expect(page.getByText('This address does not exist')).toBeVisible();
       expect(await scan(page), 'not found').toEqual([]);
     });
 
-    test('the hosted form: empty, with errors, in Serbian, and after sending', async ({ page }) => {
+    const openForm = async (page: Page) => {
       const problems = watchPage(page);
       await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
       await page.locator('[data-confera-form][data-hydrated="true"]').waitFor(); // typing before the form is attached would not be seen
       await expect(page.getByRole('heading', { level: 1, name: 'Abstract submission' })).toBeVisible();
-      expect(await scan(page), 'empty form').toEqual([]);
-
+      return problems;
+    };
+    /** A second author, and a try to send the form as it is: the errors show. */
+    const sendEmpty = async (page: Page) => {
       await page.getByRole('button', { name: 'Add author' }).click();
       await page.getByRole('button', { name: 'Send abstract' }).click();
       await expect(page.locator('.ud-alert--error')).toBeVisible();
+    };
+    const fitsTheWidth = async (page: Page) => (width === 375 ? await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth) : true);
+
+    test('the hosted form: empty, and with errors', async ({ page }) => {
+      const problems = await openForm(page);
+      expect(await scan(page), 'empty form').toEqual([]);
+
+      await sendEmpty(page);
       // Each error is tied to its field.
       await expect(page.getByLabel('Title of the paper')).toHaveAttribute('aria-invalid', 'true');
       await expect(page.getByLabel('Title of the paper')).toHaveAccessibleDescription('Enter the title of the paper');
       expect(await scan(page), 'form with errors').toEqual([]);
+      expect(problems.messages).toEqual([]);
+      expect(await fitsTheWidth(page)).toBe(true);
+    });
+
+    test('the hosted form: in Serbian with its errors, and after sending', async ({ page }) => {
+      const problems = await openForm(page);
+      await sendEmpty(page);
 
       await page.getByRole('radio', { name: 'Srpski' }).click();
       await expect(page.getByRole('heading', { level: 1, name: 'Prijava apstrakta' })).toBeVisible();
@@ -89,7 +112,7 @@ for (const width of [1440, 375]) {
       await expect(page.locator('.ud-alert--success')).toContainText('Hvala');
       expect(await scan(page), 'thank-you').toEqual([]);
       expect(problems.messages).toEqual([]);
-      expect(width === 375 ? await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth) : true).toBe(true);
+      expect(await fitsTheWidth(page)).toBe(true);
     });
 
     test('the draft stays in the tab: what was typed is there after a reload', async ({ page }) => {

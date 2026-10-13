@@ -3,6 +3,8 @@
 // through Next's server rendering; the browser hydrates it. Nothing may be
 // logged, nothing may be requested from another origin, and the components
 // must be alive afterwards.
+import type { Page } from '@playwright/test';
+
 import { expect, test } from './support/fixtures';
 
 import { COMPONENT_NAMES } from '../packages/ui/src/generated/manifest';
@@ -39,10 +41,18 @@ test.describe('design-system gallery: server rendering and hydration', () => {
 
     const cards = page.locator('[data-confera-dev="gallery-card"]');
     await expect(cards).toHaveCount(COMPONENT_NAMES.length);
-    for (const name of COMPONENT_NAMES) {
-      const card = page.locator(`[data-component="${name}"]`);
-      await expect(card.locator('[class*="ud-"]').first(), `${name} rendered no design-system markup`).toBeAttached();
-    }
+    // One question to the page for all components. (Asked one component at a time it was 53 round
+    // trips, each with its own before-and-after record of a page of 1,500 elements.)
+    const withoutMarkup = () =>
+      page.evaluate(
+        (names) =>
+          names.filter((name) => {
+            const found = document.querySelectorAll(`[data-component="${name}"]`);
+            return found.length !== 1 || found[0]!.querySelector('[class*="ud-"]') === null;
+          }),
+        [...COMPONENT_NAMES],
+      );
+    await expect.poll(withoutMarkup, 'components that have no card of their own or rendered no design-system markup').toEqual([]);
     expect(COMPONENT_NAMES.length).toBe(53);
     expect(problems.messages).toEqual([]);
   });
@@ -87,74 +97,95 @@ test.describe('design-system gallery: server rendering and hydration', () => {
     }
   });
 
-  test('the hydrated components are alive', async ({ page }) => {
-    const problems = watchPage(page);
-    await page.goto('/dev/gallery');
-    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
-    const card = (name: string) => page.locator(`[data-component="${name}"]`);
+  // The hydrated components are alive. Three tests, each about one kind of behaviour, so that a
+  // failure says where to look and none of them does the work of nine components within one limit.
+  test.describe('the hydrated components are alive', () => {
+    const card = (page: Page, name: string) => page.locator(`[data-component="${name}"]`);
+    const openGallery = async (page: Page) => {
+      const problems = watchPage(page);
+      await page.goto('/dev/gallery');
+      await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+      return problems;
+    };
 
-    // Checkbox: controlled state changes.
-    const checkbox = card('Checkbox').getByRole('checkbox', { name: 'I am the corresponding author' });
-    await expect(checkbox).toBeChecked();
-    await card('Checkbox').getByText('I am the corresponding author').click();
-    await expect(checkbox).not.toBeChecked();
+    test('state and selection: a checkbox, tabs, a sortable table, segmented pills', async ({ page }) => {
+      const problems = await openGallery(page);
 
-    // Underline tabs: arrow keys move the selection and the panel follows.
-    const tabs = card('Tabs');
-    await tabs.getByRole('tab', { name: 'Data' }).focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(tabs.getByRole('tab', { name: /Files/ })).toHaveAttribute('aria-selected', 'true');
-    await expect(tabs.getByRole('tabpanel')).toHaveText('Two files.');
+      // Checkbox: controlled state changes.
+      const checkbox = card(page, 'Checkbox').getByRole('checkbox', { name: 'I am the corresponding author' });
+      await expect(checkbox).toBeChecked();
+      await card(page, 'Checkbox').getByText('I am the corresponding author').click();
+      await expect(checkbox).not.toBeChecked();
 
-    // Table: sorting reorders rows and announces it.
-    const table = card('DataTable');
-    await expect(table.locator('tbody tr').first()).toContainText('Đorđe');
-    await table.getByRole('button', { name: 'Author' }).click();
-    await expect(table.getByRole('columnheader', { name: 'Author' })).toHaveAttribute('aria-sort', 'descending');
-    await expect(table.locator('tbody tr').first()).toContainText('Živana');
+      // Underline tabs: arrow keys move the selection and the panel follows.
+      const tabs = card(page, 'Tabs');
+      await tabs.getByRole('tab', { name: 'Data' }).focus();
+      await page.keyboard.press('ArrowRight');
+      await expect(tabs.getByRole('tab', { name: /Files/ })).toHaveAttribute('aria-selected', 'true');
+      await expect(tabs.getByRole('tabpanel')).toHaveText('Two files.');
 
-    // Dialog: opens, takes focus, closes on Escape and gives focus back.
-    const opener = card('Dialog').getByRole('button', { name: 'Open the dialog' });
-    // Opened from the keyboard: one engine does not focus a button that is clicked with the mouse,
-    // and the focus must come back to where a keyboard user was.
-    await opener.focus();
-    await page.keyboard.press('Enter');
-    const dialog = page.getByRole('dialog', { name: 'Send the decision' });
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByLabel('Subject')).toBeFocused(); // the label is tied to the field without an id
-    await page.keyboard.press('Escape');
-    await expect(dialog).toBeHidden();
-    await expect(opener).toBeFocused();
+      // Table: sorting reorders rows and announces it.
+      const table = card(page, 'DataTable');
+      await expect(table.locator('tbody tr').first()).toContainText('Đorđe');
+      await table.getByRole('button', { name: 'Author' }).click();
+      await expect(table.getByRole('columnheader', { name: 'Author' })).toHaveAttribute('aria-sort', 'descending');
+      await expect(table.locator('tbody tr').first()).toContainText('Živana');
 
-    // Segmented pills without panels are a radio group that the arrow keys move.
-    const language = card('SegmentedTabs').getByRole('radiogroup', { name: 'Language' });
-    await language.getByRole('radio', { name: 'English' }).focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(language.getByRole('radio', { name: 'Srpski' })).toBeChecked();
-    await expect(language.getByRole('radio', { name: 'Srpski' })).toBeFocused();
-    // With panels they are tabs.
-    await card('SegmentedTabs').getByRole('tab', { name: 'Companies' }).click();
-    await expect(card('SegmentedTabs').getByRole('tabpanel', { name: 'Companies' })).toHaveText('Membership for an institution.');
+      // Segmented pills without panels are a radio group that the arrow keys move.
+      const language = card(page, 'SegmentedTabs').getByRole('radiogroup', { name: 'Language' });
+      await language.getByRole('radio', { name: 'English' }).focus();
+      await page.keyboard.press('ArrowRight');
+      await expect(language.getByRole('radio', { name: 'Srpski' })).toBeChecked();
+      await expect(language.getByRole('radio', { name: 'Srpski' })).toBeFocused();
+      // With panels they are tabs.
+      await card(page, 'SegmentedTabs').getByRole('tab', { name: 'Companies' }).click();
+      await expect(card(page, 'SegmentedTabs').getByRole('tabpanel', { name: 'Companies' })).toHaveText('Membership for an institution.');
 
-    // Built-in texts follow the labels: the Serbian subtree of the gallery.
-    await expect(card('LabelsProvider').getByRole('navigation', { name: 'Stranice' })).toContainText('11–20 od 48');
-    await expect(card('LabelsProvider').getByRole('button', { name: 'Zatvori poruku' })).toBeVisible();
+      expect(problems.messages).toEqual([]);
+    });
 
-    // Toast: the module-level function reaches the mounted host.
-    await card('ToastHost').getByRole('button', { name: 'Show a toast' }).click();
-    await expect(page.locator('.ud-toast')).toContainText('Email sent');
+    test('layers: a dialog takes the focus and gives it back, a toast appears, a menu closes on Escape', async ({ page }) => {
+      const problems = await openGallery(page);
 
-    // Menu: opens and closes on Escape.
-    await card('Menu').getByRole('button', { name: 'Row actions' }).click();
-    await expect(page.getByRole('menuitem', { name: 'Resend the email' })).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(page.getByRole('menu')).toBeHidden();
+      // Dialog: opens, takes focus, closes on Escape and gives focus back.
+      const opener = card(page, 'Dialog').getByRole('button', { name: 'Open the dialog' });
+      // Opened from the keyboard: one engine does not focus a button that is clicked with the mouse,
+      // and the focus must come back to where a keyboard user was.
+      await opener.focus();
+      await page.keyboard.press('Enter');
+      const dialog = page.getByRole('dialog', { name: 'Send the decision' });
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByLabel('Subject')).toBeFocused(); // the label is tied to the field without an id
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+      await expect(opener).toBeFocused();
 
-    // Repeater: adds a row.
-    const repeater = card('Repeater');
-    await repeater.getByRole('button', { name: 'Add author' }).click();
-    await expect(repeater.locator('.ud-repeater__row')).toHaveCount(3);
+      // Toast: the module-level function reaches the mounted host.
+      await card(page, 'ToastHost').getByRole('button', { name: 'Show a toast' }).click();
+      await expect(page.locator('.ud-toast')).toContainText('Email sent');
 
-    expect(problems.messages).toEqual([]);
+      // Menu: opens and closes on Escape (with the toast still showing, as a page has it).
+      await card(page, 'Menu').getByRole('button', { name: 'Row actions' }).click();
+      await expect(page.getByRole('menuitem', { name: 'Resend the email' })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('menu')).toBeHidden();
+
+      expect(problems.messages).toEqual([]);
+    });
+
+    test('built-in texts follow the labels, and a repeater adds a row', async ({ page }) => {
+      const problems = await openGallery(page);
+
+      // Built-in texts follow the labels: the Serbian subtree of the gallery.
+      await expect(card(page, 'LabelsProvider').getByRole('navigation', { name: 'Stranice' })).toContainText('11–20 od 48');
+      await expect(card(page, 'LabelsProvider').getByRole('button', { name: 'Zatvori poruku' })).toBeVisible();
+
+      // Repeater: adds a row.
+      const repeater = card(page, 'Repeater');
+      await repeater.getByRole('button', { name: 'Add author' }).click();
+      await expect(repeater.locator('.ud-repeater__row')).toHaveCount(3);
+
+      expect(problems.messages).toEqual([]);
+    });
   });
 });
