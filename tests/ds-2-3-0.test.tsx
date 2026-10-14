@@ -219,6 +219,7 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
       await mount(<U.ToastHost />);
       await act(async () => {
         U.toast({ title: 'Saved', duration: 60 });
+        await Promise.resolve();
       });
       expect(toasts()).toEqual(['Saved']);
       await settle(150);
@@ -229,6 +230,7 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
       await mount(<U.ToastHost />);
       await act(async () => {
         U.toast({ title: 'Saved', duration: 60 });
+        await Promise.resolve();
       });
       await fire(region(), new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body }));
       await settle(150);
@@ -247,6 +249,7 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
       );
       await act(async () => {
         U.toast({ title: 'Saved', duration: 60 });
+        await Promise.resolve();
       });
       await focus(container.querySelector('.ud-toast button')!);
       await settle(150);
@@ -260,6 +263,7 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
       await mount(<U.ToastHost />);
       await act(async () => {
         U.toast({ title: 'The server did not answer', tone: 'error', duration: 60 });
+        await Promise.resolve();
       });
       await settle(150);
       expect(toasts()).toEqual(['The server did not answer']);
@@ -275,6 +279,7 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
       );
       await act(async () => {
         U.toast({ title: 'Saved', duration: 0 });
+        await Promise.resolve();
       });
       const from = byText('Elsewhere') as HTMLButtonElement;
       await focus(from);
@@ -631,7 +636,7 @@ describe('PermissionMatrix and FileDropzone (item 9: M1-ISS-22, M1-ISS-26)', () 
 });
 
 describe('Tooltip inside the view (item 10: M1-ISS-44)', () => {
-  const rect = (r: Partial<DOMRect>) => () => ({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}), ...r }) as DOMRect;
+  const rect = (r: Partial<DOMRect>) => () => ({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}), ...r });
   const view = (width: number, height: number) => {
     Object.defineProperty(document.documentElement, 'clientWidth', { value: width, configurable: true });
     Object.defineProperty(document.documentElement, 'clientHeight', { value: height, configurable: true });
@@ -701,8 +706,8 @@ describe('Autocomplete keeps its value on focus (item 11: M1-ISS-24)', () => {
     await mount(<U.Autocomplete label="Country" options={COUNTRIES} defaultValue="Serbia" />);
     await focus(input());
     await act(async () => {
-      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
-      set.call(input(), 'mon');
+      // The prototype's setter with the input as its receiver, as React's own tracking expects.
+      Reflect.set(HTMLInputElement.prototype, 'value', 'mon', input());
       input().dispatchEvent(new Event('input', { bubbles: true }));
       await Promise.resolve();
     });
