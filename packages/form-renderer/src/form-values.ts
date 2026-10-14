@@ -19,10 +19,17 @@
  */
 import { useCallback, useSyncExternalStore } from 'react';
 
-/** The values of the named controls of a form. A checkbox that is not ticked is ''. */
+/**
+ * The values of the named controls of a form. A checkbox that is not ticked is ''.
+ * The object has no prototype: a field may be named `__proto__`, `constructor` or `toString`
+ * (names come from form definitions) and is kept like any other.
+ */
 export type FormValues = Readonly<Record<string, string>>;
 
-const NOTHING: FormValues = Object.freeze({});
+/** An empty object without a prototype, so that no name of a field meets a property every object has. */
+const emptyValues = (): Record<string, string> => Object.create(null) as Record<string, string>;
+
+const NOTHING: FormValues = Object.freeze(emptyValues());
 
 type Control = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
@@ -36,7 +43,7 @@ function controlsOf(form: HTMLFormElement): Control[] {
 
 /** What the named controls of a form hold right now. */
 export function readControls(form: HTMLFormElement): FormValues {
-  const values: Record<string, string> = {};
+  const values = emptyValues();
   for (const control of controlsOf(form)) {
     if (control instanceof HTMLInputElement && control.type === 'checkbox') {
       values[control.name] = control.checked ? control.value || 'on' : '';
