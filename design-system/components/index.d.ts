@@ -30,6 +30,7 @@ export interface UdekomLabels {
   dismiss: string; close: string;
   cancel: string; confirm: string; working: string;
   breadcrumb: string; moreActions: string; mainNavigation: string; openNavigation: string;
+  /** The name of AppShell's sidebar, and of its drawer on a narrow screen (2.3.0). */ navigation: string; closeNavigation: string;
   /** {index} */ removeRow: string; addRow: string;
   permission: string; /** {role} {permission} */ rolePermission: string;
   clearFilters: string;

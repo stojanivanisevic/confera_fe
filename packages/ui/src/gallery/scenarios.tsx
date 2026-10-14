@@ -450,6 +450,7 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
       <Row>
         <U.Button variant="dark" onClick={() => setOpen(true)}>Open the drawer</U.Button>
         <U.Drawer open={open} onClose={() => setOpen(false)} title="Submission ITEMA-2026-0042" actions={<U.Button onClick={() => setOpen(false)}>Done</U.Button>}>
+          <a className="ud-link" href="#submission-0042">Open the whole submission</a>
           <U.DescriptionList items={[{ label: 'Author', value: 'Marta Kovač' }, { label: 'Status', value: 'In review' }]} />
         </U.Drawer>
       </Row>

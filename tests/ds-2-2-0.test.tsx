@@ -112,7 +112,8 @@ describe('AppShell below 900 px', () => {
     expect(document.activeElement).toBe(links[0]);
     links[1]!.focus();
     await key(links[1]!, 'Tab');
-    expect(document.activeElement).toBe(links[0]);
+    // Tab from the last part goes round to the first: since 2.3.0 that is the drawer's own close button (R-03).
+    expect(document.activeElement).toBe(side().querySelector('.ud-shell__close'));
     await key(document.activeElement!, 'Escape');
     expect(side().classList.contains('is-open')).toBe(false);
     expect(document.activeElement).toBe(menuButton());

@@ -568,12 +568,14 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
 .ud-shell__main { min-width: 0; display: flex; flex-direction: column; }
 .ud-shell__top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--gutter-m); min-height: var(--topbar-height); padding: 0 var(--gutter-2xl); box-sizing: border-box; background: var(--background); border-bottom: 1px solid var(--neutral-300); }
 .ud-shell__topbar { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--gutter-m); }
-.ud-shell__menu { display: none; }
+.ud-shell__menu, .ud-shell__close { display: none; }
 .ud-shell__content { padding: var(--gutter-2xl); display: flex; flex-direction: column; gap: var(--gutter-2xl); min-width: 0; }
 .ud-shell__scrim { display: none; }
 @media (max-width: 900px) {
   .ud-shell { grid-template-columns: 1fr; }
   .ud-shell__menu { display: inline-flex; }
+  /* The open drawer has a visible close button (2.3.0); a finger need not find the scrim. */
+  .ud-shell__close { display: inline-flex; margin-left: auto; }
   /* Closed, the drawer is hidden, not only moved away: its links are out of the tab order (2.2.0). */
   .ud-shell__side { position: fixed; left: 0; top: 0; bottom: 0; z-index: 55; width: var(--sidebar-width); transform: translateX(-100%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; }
   .ud-shell__side.is-open { transform: none; visibility: visible; transition: transform .2s ease; }

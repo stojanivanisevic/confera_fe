@@ -347,6 +347,220 @@ describe('DataTable rows that open something are reached by keyboard (item 5: M1
   });
 });
 
+describe('AppShell, the modal layer and Menu (item 6: R-01, R-03, R-06, R-07)', () => {
+  const key = (target: EventTarget, name: string, init: KeyboardEventInit = {}) =>
+    act(async () => {
+      target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init }));
+      await Promise.resolve();
+    });
+
+  describe('Menu', () => {
+    function Page() {
+      return (
+        <div>
+          <U.Menu label="Row actions" items={[{ label: 'Open' }, { label: 'Delete' }]} />
+          <button type="button">After the menu</button>
+        </div>
+      );
+    }
+    const trigger = () => container.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')!;
+
+    it('Tab closes the open menu and goes on to the next control (R-01)', async () => {
+      await mount(<Page />);
+      await click(trigger());
+      expect(document.activeElement?.getAttribute('role')).toBe('menuitem');
+      await key(document.activeElement!, 'Tab');
+      expect(container.querySelector('[role="menu"]')).toBeNull();
+      expect(document.activeElement?.textContent).toBe('After the menu');
+    });
+
+    it('Shift+Tab closes it and goes back to its button', async () => {
+      await mount(<Page />);
+      await click(trigger());
+      await key(document.activeElement!, 'Tab', { shiftKey: true });
+      expect(container.querySelector('[role="menu"]')).toBeNull();
+      expect(document.activeElement).toBe(trigger());
+    });
+
+    it('inside a dialog, Escape closes the menu and not the dialog', async () => {
+      let closed = 0;
+      await mount(
+        <U.Dialog open title="Edit the server" onClose={() => (closed += 1)}>
+          <U.Menu label="Row actions" items={[{ label: 'Open' }]} />
+        </U.Dialog>,
+      );
+      await click(trigger());
+      await key(document.activeElement!, 'Escape');
+      expect(container.querySelector('[role="menu"]')).toBeNull();
+      expect(closed).toBe(0);
+      expect(document.activeElement).toBe(trigger());
+    });
+  });
+
+  describe('the modal layer of Dialog and Drawer', () => {
+    function Page() {
+      const [open, setOpen] = useState(false);
+      return (
+        <div>
+          <button type="button" onClick={() => setOpen(true)}>Open the drawer</button>
+          <p id="behind">The page behind</p>
+          <U.Drawer open={open} onClose={() => setOpen(false)} title="Submission" actions={<U.Button onClick={() => setOpen(false)}>Done</U.Button>}>
+            <a href="#first">The first link</a>
+            <a href="#second">The second link</a>
+          </U.Drawer>
+        </div>
+      );
+    }
+    const opener = () => byText('Open the drawer') as HTMLButtonElement;
+    const panel = () => container.querySelector<HTMLElement>('.ud-drawer')!;
+
+    it('makes the page behind inert while it is open, and gives it back', async () => {
+      await mount(<Page />);
+      await focus(opener());
+      await click(opener());
+      expect(document.getElementById('behind')!.hasAttribute('inert')).toBe(true);
+      expect(opener().hasAttribute('inert')).toBe(true);
+      expect(container.querySelector('.ud-overlay')!.hasAttribute('inert')).toBe(false);
+      expect(document.body.style.overflow).toBe('hidden');
+      await key(document.activeElement!, 'Escape');
+      expect(container.querySelector('.ud-drawer')).toBeNull();
+      expect(document.getElementById('behind')!.hasAttribute('inert')).toBe(false);
+      expect(opener().hasAttribute('inert')).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+      expect(document.activeElement).toBe(opener());
+    });
+
+    it('when an engine leaves links out of the Tab order and the focus falls out, it goes to the next part (R-07)', async () => {
+      await mount(<Page />);
+      await click(opener());
+      const first = byText('The first link') as HTMLAnchorElement;
+      expect(document.activeElement).toBe(first);
+      // What WebKit does: Tab from a link finds no other part it takes, and the focus leaves the layer.
+      await key(first, 'Tab');
+      await act(async () => {
+        first.blur();
+        await Promise.resolve();
+      });
+      await settle(10);
+      expect(document.activeElement?.textContent).toBe('The second link');
+    });
+
+    it('goes round at the edges, both ways', async () => {
+      await mount(<Page />);
+      await click(opener());
+      const done = [...panel().querySelectorAll('button')].find((b) => b.textContent === 'Done')!;
+      await focus(done);
+      await key(done, 'Tab');
+      expect(document.activeElement).toBe(panel().querySelector('[data-close]'));
+      await key(document.activeElement!, 'Tab', { shiftKey: true });
+      expect(document.activeElement).toBe(done);
+    });
+
+    it('a focus that lands outside by another way is brought back', async () => {
+      await mount(<Page />);
+      await click(opener());
+      const second = byText('The second link') as HTMLAnchorElement;
+      await focus(second);
+      await focus(opener()); // inert in a browser; here something outside takes the focus anyway
+      expect(document.activeElement).toBe(second);
+    });
+
+    it('a confirm dialog opened in a drawer: Escape closes the confirm dialog only', async () => {
+      let drawerClosed = 0;
+      function Nested() {
+        const [confirm, setConfirm] = useState(true);
+        return (
+          <div>
+            <p id="outside">The page</p>
+            <U.Drawer open onClose={() => (drawerClosed += 1)} title="Server">
+              <U.ConfirmDialog open={confirm} title="Delete it?" onConfirm={() => setConfirm(false)} onCancel={() => setConfirm(false)}>
+                It cannot be undone.
+              </U.ConfirmDialog>
+            </U.Drawer>
+          </div>
+        );
+      }
+      await mount(<Nested />);
+      expect(container.querySelector('[role="alertdialog"]')).not.toBeNull();
+      await key(document.activeElement!, 'Escape');
+      expect(container.querySelector('[role="alertdialog"]')).toBeNull();
+      expect(drawerClosed).toBe(0);
+      expect(container.querySelector('.ud-drawer')).not.toBeNull();
+      // The drawer is still open: the page behind it stays inert, and does not scroll.
+      expect(document.getElementById('outside')!.hasAttribute('inert')).toBe(true);
+      expect(document.body.style.overflow).toBe('hidden');
+    });
+  });
+
+  describe('AppShell below 900 px', () => {
+    // jsdom has no matchMedia: a stand-in that the test turns from narrow to wide.
+    let narrow = true;
+    const listeners = new Set<() => void>();
+    const view = document.defaultView as unknown as { matchMedia?: (q: string) => unknown };
+    beforeEach(() => {
+      narrow = true;
+      listeners.clear();
+      view.matchMedia = (query: string) => ({
+        media: query,
+        get matches() {
+          return narrow;
+        },
+        addEventListener: (_type: string, fn: () => void) => listeners.add(fn),
+        removeEventListener: (_type: string, fn: () => void) => listeners.delete(fn),
+      });
+    });
+    afterEach(() => {
+      delete view.matchMedia;
+    });
+    function Shell() {
+      return (
+        <U.AppShell product="Confera" sidebar={<U.SidebarNav items={[{ label: 'Conferences', value: 'c', href: '#c' }, { label: 'Users', value: 'u', href: '#u' }]} />}>
+          <button type="button">Save changes</button>
+        </U.AppShell>
+      );
+    }
+    const menuButton = () => container.querySelector<HTMLButtonElement>('.ud-shell__menu')!;
+    const side = () => container.querySelector<HTMLElement>('.ud-shell__side')!;
+    const main = () => container.querySelector<HTMLElement>('.ud-shell__main')!;
+
+    it('open, it is a named modal dialog with a close button, and the page behind is inert (R-03)', async () => {
+      await mount(<Shell />);
+      expect(side().getAttribute('role')).toBeNull();
+      await focus(menuButton());
+      await click(menuButton());
+      expect(side().getAttribute('role')).toBe('dialog');
+      expect(side().getAttribute('aria-modal')).toBe('true');
+      expect(side().getAttribute('aria-label')).toBe('Navigation');
+      expect(main().hasAttribute('inert')).toBe(true);
+      expect(container.querySelector('.ud-shell__scrim')!.hasAttribute('inert')).toBe(false);
+      const close = side().querySelector<HTMLButtonElement>('.ud-shell__close')!;
+      expect(close.getAttribute('aria-label')).toBe('Close navigation');
+      await click(close);
+      expect(side().classList.contains('is-open')).toBe(false);
+      expect(main().hasAttribute('inert')).toBe(false);
+      expect(document.activeElement).toBe(menuButton());
+    });
+
+    it('when the window grows past 900 px while it is open, it closes and gives the page back (R-06)', async () => {
+      await mount(<Shell />);
+      await click(menuButton());
+      expect(document.body.style.overflow).toBe('hidden');
+      narrow = false;
+      await act(async () => {
+        listeners.forEach((fn) => fn());
+        await Promise.resolve();
+      });
+      expect(side().classList.contains('is-open')).toBe(false);
+      expect(side().getAttribute('role')).toBeNull();
+      expect(document.body.style.overflow).toBe('');
+      expect(main().hasAttribute('inert')).toBe(false);
+      const save = byText('Save changes') as HTMLButtonElement;
+      await focus(save);
+      expect(document.activeElement).toBe(save);
+    });
+  });
+});
+
 describe('Card takes a heading level (item 4: M1-ISS-23)', () => {
   it.each([
     [undefined, 'H3'],

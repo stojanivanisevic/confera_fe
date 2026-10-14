@@ -34,6 +34,15 @@ Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI
 - **A row that opens something is reached by Tab** (WCAG 2.1.1). With `onRowClick`, the cell of `openColumn` (the first column by default) is a button that opens the row, named by the cell's text; Enter and Space open it, and the blue outline shows it. A click anywhere else in the row still opens it. The cell must hold no other control. Before, such rows could be opened with a mouse only ("Known and not changed" since 2.0.0).
 - The button looks like the cell's text (underlined on hover) and is a target of 24 x 24 px at least, 44 on a touch screen, without making the row higher. The sort buttons of the header have the same target.
 
+### AppShell, the modal layer and Menu (R-01, R-03, R-06, R-07)
+
+- **The modal layer of Dialog, Drawer and the AppShell drawer keeps the focus in every engine** (R-07, WCAG 2.4.3). 2.2.0 watched the first and the last part of the layer only; WebKit leaves links out of the Tab order, so the second Tab in the AppShell drawer landed on the page behind the scrim. Now, while a layer is open, **the rest of the page is inert** (it cannot take the focus or a click, and assistive technology does not read it); Tab and Shift+Tab go round the parts of the layer; when the focus falls out of the layer (an engine found no further part it takes), it goes to the next part in document order; a focus that lands outside by any other way is brought back. A layer opened in another (a ConfirmDialog in a Drawer) is on top: only it answers Tab and Escape, and the page stays inert and does not scroll until the last layer has closed.
+- **The open AppShell drawer is a dialog** (R-03): `role="dialog"`, `aria-modal`, named "Navigation" (new label `navigation`), with a visible close button (new label `closeNavigation`, "Close navigation"), so a finger need not find the scrim. Above 900px the sidebar is named "Navigation" too and the close button is not shown.
+- **The AppShell drawer closes when the view grows past 900px while it is open** (R-06): a phone turned or a browser widened gives the page back (it scrolls again, Tab reaches the content). Before, the page stayed locked and Tab went round the sidebar until Escape.
+- **Tab closes an open Menu** (R-01): Tab goes on to the control after the menu, Shift+Tab back to its button, as the ARIA menu-button pattern has it. Before, Tab moved on and left the menu open.
+- **Escape in a Menu or an Autocomplete list inside a dialog** closes the menu or the list only, not the dialog.
+- Serbian for the two new labels in Confera's list: "Navigacija", "Zatvori navigaciju".
+
 ### Card takes a heading level (M1-ISS-23)
 
 - **`headingLevel`** (2 to 6, default 3, as before) sets the level of the card's title, so the outline of a page does not jump from the PageHeader's `h1` to `h3` (WCAG 1.3.1). The title looks the same at every level. Confera's admin home now gives its card `headingLevel={2}`.
