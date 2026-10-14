@@ -80,7 +80,7 @@ Confera uses these for its embeddable submission and membership forms and for it
 
 ## Version and release
 
-This is **version 2.0.1** (`CHANGELOG.md` lists every change from version 1). The version is in `tokens.json`, in `components/bundle.js` (`@ds-version`, `Udekom.version`) and in the changelog. `CHECKSUMS.sha256` holds the sha256 of every file of the release. The system is changed only as a release: in the `confera_fe` repository, `pnpm ds:release` records the checksums and `pnpm ds:check` refuses any later change that is not a new release.
+This is **version 2.1.0** (`CHANGELOG.md` lists every change from version 1). The version is in `tokens.json`, in `components/bundle.js` (`@ds-version`, `Udekom.version`) and in the changelog. `CHECKSUMS.sha256` holds the sha256 of every file of the release. The system is changed only as a release: in the `confera_fe` repository, `pnpm ds:release` records the checksums and `pnpm ds:check` refuses any later change that is not a new release.
 
 To use it as a plain script, load `fonts/fonts.css`, `tokens.css` and `components/bundle.css`, then React and `components/bundle.js`. Nothing is requested from another site.
 

@@ -1,5 +1,5 @@
 /* @ds-bundle: {"format":4,"namespace":"Udekom","components":[{"name":"Button"},{"name":"CircleButton"},{"name":"ArrowButton"},{"name":"NavLink"},{"name":"SegmentedTabs"},{"name":"TextField"},{"name":"Select"},{"name":"Textarea"},{"name":"Checkbox"},{"name":"Radio"},{"name":"Tag"},{"name":"FileButton"},{"name":"FormCard"},{"name":"Icon"},{"name":"TextButton"},{"name":"IconButton"},{"name":"NumberField"},{"name":"DateField"},{"name":"PasswordField"},{"name":"SearchField"},{"name":"Switch"},{"name":"RadioGroup"},{"name":"CheckboxGroup"},{"name":"ScaleField"},{"name":"Autocomplete"},{"name":"FileDropzone"},{"name":"DataTable"},{"name":"Pagination"},{"name":"StatusBadge"},{"name":"Avatar"},{"name":"Card"},{"name":"DescriptionList"},{"name":"EmptyState"},{"name":"Skeleton"},{"name":"Spinner"},{"name":"Tooltip"},{"name":"ProgressBar"},{"name":"Alert"},{"name":"ToastHost"},{"name":"Dialog"},{"name":"ConfirmDialog"},{"name":"Drawer"},{"name":"Tabs"},{"name":"Breadcrumbs"},{"name":"Stepper"},{"name":"Menu"},{"name":"SidebarNav"},{"name":"AppShell"},{"name":"PageHeader"},{"name":"Repeater"},{"name":"PermissionMatrix"},{"name":"FilterBar"},{"name":"LabelsProvider"}]} */
-/* @ds-version: 2.0.1 */
+/* @ds-version: 2.1.0 */
 (function () {
   var React = window.React;
   var h = React.createElement;
@@ -24,7 +24,7 @@
     previous: "Previous", next: "Next",
     remove: "Remove", removeItem: "Remove {name}",
     chooseFile: "Please Select File",
-    showPassword: "Show password", hidePassword: "Hide password",
+    showPasswordText: "Show password", hidePasswordText: "Hide password",
     search: "Search", clearSearch: "Clear search",
     noMatches: "No matches",
     dropFiles: "Drop files here or click to choose",
@@ -41,13 +41,25 @@
     permission: "Permission", rolePermission: "{role}: {permission}",
     clearFilters: "Clear filters"
   };
+  /* Renamed in 2.1.0 (the name of a label does not end with the word for a secret). A list of
+     labels that still gives a text under the name of 2.0 is understood. */
+  var RENAMED_LABELS = { showPasswordText: "showPassword", hidePasswordText: "hidePassword" };
+  /* The text a list of labels gives for a key, under its name or under the name it had before. */
+  function labelFrom(labels, key) {
+    if (!labels) return null;
+    if (labels[key] != null) return labels[key];
+    var before = RENAMED_LABELS[key];
+    return before && labels[before] != null ? labels[before] : null;
+  }
   var LabelsContext = React.createContext(null);
   /* Returns t(key, values): the component's own `labels`, then the provider's, then the default. */
   function useLabels(props) {
     var fromProvider = React.useContext(LabelsContext);
     var own = props && props.labels;
     return function (key, values) {
-      var text = own && own[key] != null ? own[key] : fromProvider && fromProvider[key] != null ? fromProvider[key] : DEFAULT_LABELS[key];
+      var text = labelFrom(own, key);
+      if (text == null) text = labelFrom(fromProvider, key);
+      if (text == null) text = DEFAULT_LABELS[key];
       text = String(text);
       if (values) { for (var k in values) { if (Object.prototype.hasOwnProperty.call(values, k)) text = text.split("{" + k + "}").join(String(values[k])); } }
       return text;
@@ -349,7 +361,7 @@
         id: id, className: "ud-field__control", required: props.required,
         "aria-invalid": props.status === "error" ? true : undefined, "aria-describedby": msgId
       }));
-    }, h("button", { type: "button", className: "ud-field__action", onClick: function () { shown[1](!shown[0]); }, "aria-label": t(shown[0] ? "hidePassword" : "showPassword"), "aria-pressed": shown[0] },
+    }, h("button", { type: "button", className: "ud-field__action", onClick: function () { shown[1](!shown[0]); }, "aria-label": t(shown[0] ? "hidePasswordText" : "showPasswordText"), "aria-pressed": shown[0] },
       h(Icon, { name: shown[0] ? "eye-off" : "eye", size: 16 })));
   }
 
@@ -963,7 +975,7 @@
     Alert: Alert, ToastHost: ToastHost, toast: toast, Dialog: Dialog, ConfirmDialog: ConfirmDialog, Drawer: Drawer,
     Tabs: Tabs, Breadcrumbs: Breadcrumbs, Stepper: Stepper, Menu: Menu, SidebarNav: SidebarNav, AppShell: AppShell, PageHeader: PageHeader,
     Repeater: Repeater, PermissionMatrix: PermissionMatrix, FilterBar: FilterBar,
-    LabelsProvider: LabelsProvider, defaultLabels: DEFAULT_LABELS, version: "2.0.1"
+    LabelsProvider: LabelsProvider, defaultLabels: DEFAULT_LABELS, version: "2.1.0"
   };
 
   window.Udekom = {

@@ -2,6 +2,14 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.1.0 (2026-10-14)
+
+Two labels have a new name; nothing looks or behaves differently. No token and no stylesheet changed.
+
+- **`showPassword` is now `showPasswordText`, and `hidePassword` is `hidePasswordText`** (the names of the "show" and "hide" button of `PasswordField` in `Udekom.defaultLabels` and `UdekomLabels`). The English texts are the same. Why: Confera's repositories have one rule that a literal text is never bound to a name whose last word is `password`, `secret`, `token` and the like, because that is the only thing by which a secret without a format can be recognised; a label is named so that it cannot be taken for one.
+- **The names of 2.0 are still read.** A `labels` list, on a component or on `LabelsProvider`, that gives a text under `showPassword` or `hidePassword` works as before; the new name wins when both are given. The types of the `labels` prop accept the two old names and mark them as deprecated; `UdekomLabels` itself lists the new ones only.
+- `components/bundle.js` carries `@ds-version: 2.1.0` and `Udekom.version` is `"2.1.0"`. `tokens.json` stays at version 2.
+
 ## 2.0.1 (2026-10-13)
 
 One accessibility fix in the script; no token, stylesheet or type changed.

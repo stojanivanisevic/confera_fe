@@ -75,7 +75,7 @@ describe('every built-in text can be translated', () => {
   );
   // Built-in texts that need an interaction to appear (a toast, an open listbox, a shown password)
   // are covered by the bundle scan above: they are read from the same labels.
-  const NOT_IN_STATIC_MARKUP: Array<keyof U.UdekomLabels> = ['hidePassword', 'noMatches', 'search', 'confirm'];
+  const NOT_IN_STATIC_MARKUP: Array<keyof U.UdekomLabels> = ['hidePasswordText', 'noMatches', 'search', 'confirm'];
 
   const english = text(everything);
   const serbian = text(<U.LabelsProvider labels={LABELS_SR}>{everything}</U.LabelsProvider>);
@@ -132,5 +132,30 @@ describe('every built-in text can be translated', () => {
     );
     expect(html).toContain('Učitavanje');
     expect(html).toContain('aria-label="Zatvori"');
+  });
+});
+
+describe('the two labels that were renamed in design system 2.1.0', () => {
+  // A password field that hides its text shows the "show" button.
+  const field = (labels?: U.PasswordFieldProps['labels']) => <U.PasswordField label="Lozinka" labels={labels} />;
+
+  it('have their new names in the defaults, with the texts they had', () => {
+    expect(EN.showPasswordText).toBe('Show password');
+    expect(EN.hidePasswordText).toBe('Hide password');
+    expect(keys).not.toContain('showPassword');
+    expect(keys).not.toContain('hidePassword');
+    expect(text(field())).toContain('aria-label="Show password"');
+  });
+
+  it('a list that still uses a name of 2.0 is understood, on a component and on a provider', () => {
+    expect(text(field({ showPassword: 'invented-on-the-component' }))).toContain('aria-label="invented-on-the-component"');
+    expect(text(<U.LabelsProvider labels={{ showPassword: 'invented-on-the-provider' }}>{field()}</U.LabelsProvider>)).toContain('aria-label="invented-on-the-provider"');
+    // Both names are in the list of renamed labels: the "hide" text is read the same way once the field is shown.
+    expect(bundle).toContain('var RENAMED_LABELS = { showPasswordText: "showPassword", hidePasswordText: "hidePassword" };');
+  });
+
+  it('the new name wins in a list that gives both, and the component still wins over the provider', () => {
+    expect(text(field({ showPassword: 'invented-old-name', showPasswordText: 'Prikaži lozinku' }))).toContain('aria-label="Prikaži lozinku"');
+    expect(text(<U.LabelsProvider labels={LABELS_SR}>{field({ showPassword: 'invented-on-the-component' })}</U.LabelsProvider>)).toContain('aria-label="invented-on-the-component"');
   });
 });

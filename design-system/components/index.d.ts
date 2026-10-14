@@ -18,7 +18,7 @@ export interface UdekomLabels {
   previous: string; next: string;
   remove: string; /** {name} */ removeItem: string;
   chooseFile: string;
-  showPassword: string; hidePassword: string;
+  showPasswordText: string; hidePasswordText: string;
   search: string; clearSearch: string;
   noMatches: string;
   dropFiles: string;
@@ -34,9 +34,14 @@ export interface UdekomLabels {
   permission: string; /** {role} {permission} */ rolePermission: string;
   clearFilters: string;
 }
+/** The names two labels had in version 2.0. A list of labels that still uses them is understood. */
+interface RenamedLabels {
+  /** @deprecated Use `showPasswordText`. */ showPassword?: string;
+  /** @deprecated Use `hidePasswordText`. */ hidePassword?: string;
+}
 /** Components that write a text of their own take this. */
-interface WithLabels { labels?: Partial<UdekomLabels>; }
-export interface LabelsProviderProps { labels: Partial<UdekomLabels>; children?: React.ReactNode; }
+interface WithLabels { labels?: Partial<UdekomLabels> & RenamedLabels; }
+export interface LabelsProviderProps { labels: Partial<UdekomLabels> & RenamedLabels; children?: React.ReactNode; }
 export declare const defaultLabels: Readonly<UdekomLabels>;
 /** Version of the design system, for example "2.0.0". */
 export declare const version: string;
