@@ -192,4 +192,52 @@ test.describe('design-system gallery: server rendering and hydration', () => {
       expect(problems.messages).toEqual([]);
     });
   });
+
+  // Design system 2.2.0 in a browser, on a phone's width: the keyboard of Menu, the drawer of
+  // AppShell, the Tooltip, and a page that does not scroll sideways (the Stepper fits).
+  test.describe('design system 2.2.0 by keyboard, at 375 px', () => {
+    test.use({ viewport: { width: 375, height: 812 } });
+
+    test('Menu, AppShell, Tooltip; and nothing scrolls sideways', async ({ page }) => {
+      const problems = watchPage(page);
+      await page.goto('/dev/gallery');
+      await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+      const card = (name: string) => page.locator(`[data-component="${name}"]`);
+
+      // The Stepper fits: the page is no wider than the window (it was 17 px wider).
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+
+      // Menu: Escape gives the focus back to its button.
+      const trigger = card('Menu').getByRole('button', { name: 'Row actions' });
+      await trigger.focus();
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('menuitem').first()).toBeFocused();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('menu')).toBeHidden();
+      await expect(trigger).toBeFocused();
+
+      // AppShell below 900 px: the closed drawer is out of the tab order; open, it takes the focus,
+      // and Escape gives it back to the menu button.
+      const shell = card('AppShell');
+      const side = shell.locator('.ud-shell__side');
+      expect(await side.evaluate((el) => getComputedStyle(el).visibility)).toBe('hidden');
+      const menuButton = shell.getByRole('button', { name: 'Open navigation' });
+      await menuButton.focus();
+      await page.keyboard.press('Enter');
+      await expect.poll(() => side.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+      await page.keyboard.press('Escape');
+      await expect(menuButton).toBeFocused();
+      await expect.poll(() => side.evaluate((el) => getComputedStyle(el).visibility)).toBe('hidden');
+
+      // Tooltip: shown on focus, hidden by Escape.
+      const help = card('Tooltip').getByRole('button', { name: 'Copy snippet' });
+      const bubble = card('Tooltip').getByRole('tooltip').first();
+      await help.focus();
+      await expect.poll(() => bubble.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+      await page.keyboard.press('Escape');
+      await expect.poll(() => bubble.evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
+
+      expect(problems.messages).toEqual([]);
+    });
+  });
 });

@@ -55,6 +55,7 @@
 /* Where the focus lands after Send: the error summary, the thank-you (UX-M1-01, 02). */
 .landing {
   border-radius: var(--radius-sm);
+  scroll-margin-top: 16px;
 }
 
 .landing:focus {

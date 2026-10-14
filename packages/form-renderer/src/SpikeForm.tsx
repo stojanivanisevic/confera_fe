@@ -18,9 +18,11 @@
 //    summary of the errors, whose items are links to their fields; a successful one moves
 //    it to the thank-you. Inside a frame the form also asks the page around to bring that
 //    part into view (`onShow`), which Safari does not do for a focus inside a frame;
-//  - the <form> has method="post": a Send pressed before the scripts arrive posts to the
-//    form's own POST path, which answers 204 (apps/web/src/proxy.ts). The browser stays on
-//    the page with what was typed, and nothing of the form is ever put in an address.
+//  - Send can be pressed once the scripts are there (until then the button is disabled, and so
+//    is Enter in a field: a browser's own submit would be a navigation, and Firefox stops
+//    loading the page's scripts when one starts). The <form> has method="post" all the same,
+//    with the form's own POST path as its action (204, apps/web/src/proxy.ts): whatever submits
+//    it, the browser stays on the page with what was typed, and nothing goes into an address.
 import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent } from 'react';
 
 import { Alert, Button, Checkbox, FormCard, LABELS_SR, LabelsProvider, Repeater, SegmentedTabs, TextButton, TextField, Textarea } from '@confera/ui';
@@ -54,6 +56,15 @@ function parseDraft(text: string | null): FormValues {
   } catch {
     return {};
   }
+}
+
+/**
+ * Brings a part of the form into view and gives it the focus. A focus alone does not scroll in
+ * every engine (WebKit leaves a part above the window where it is), so the scroll is asked first.
+ */
+function land(element: HTMLElement): void {
+  element.scrollIntoView({ block: 'nearest' });
+  element.focus({ preventScroll: true });
 }
 
 const subscribeToNothing = () => () => undefined;
@@ -108,16 +119,16 @@ export function SpikeForm({ slug, onShow }: SpikeFormProps) {
     store.refresh();
   }, [store, authors.length, sent]);
 
-  // Every failed Send: the focus goes to the summary, which is then read out again, and comes into view.
+  // Every failed Send: the summary comes into view and takes the focus, so it is also read out again.
   useEffect(() => {
     if (failedSends === 0 || !summaryRef.current) return;
-    summaryRef.current.focus();
+    land(summaryRef.current);
     onShow?.(summaryRef.current);
   }, [failedSends, onShow]);
-  // A successful Send: the focus goes to the thank-you.
+  // A successful Send: the same for the thank-you.
   useEffect(() => {
     if (!sent || !thanksRef.current) return;
-    thanksRef.current.focus();
+    land(thanksRef.current);
     onShow?.(thanksRef.current);
   }, [sent, onShow]);
 
@@ -278,7 +289,16 @@ export function SpikeForm({ slug, onShow }: SpikeFormProps) {
             submit();
           }}
         >
-          <FormCard title={t.intro} actions={sent ? null : <Button type="submit">{t.submit}</Button>}>
+          <FormCard
+            title={t.intro}
+            actions={
+              sent ? null : (
+                <Button type="submit" disabled={!hydrated}>
+                  {t.submit}
+                </Button>
+              )
+            }
+          >
             {body}
           </FormCard>
         </form>

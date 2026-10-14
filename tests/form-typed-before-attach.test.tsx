@@ -13,6 +13,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpikeForm } from '../packages/form-renderer/src/SpikeForm';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+// jsdom lays nothing out and has no scrollIntoView; the form asks for it before it moves the focus.
+Element.prototype.scrollIntoView = function scrollIntoView() {};
 
 const DRAFT_KEY = 'confera:draft:spike-abstract';
 const tree: ReactElement = (

@@ -12,6 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpikeForm } from '../packages/form-renderer/src/SpikeForm';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+// jsdom lays nothing out and has no scrollIntoView; the form asks for it before it moves the focus.
+Element.prototype.scrollIntoView = function scrollIntoView() {};
 
 let container: HTMLElement;
 let root: Root;
@@ -73,6 +75,11 @@ describe('the form posts, and never to an address', () => {
     const form = container.querySelector('form')!;
     expect(form.getAttribute('method')).toBe('post');
     expect(form.getAttribute('action')).toBe('/f/spike-abstract/send');
+  });
+
+  it('Send cannot be pressed before the scripts are there (server markup), and can once they are', () => {
+    expect(renderToString(<SpikeForm slug="spike-abstract" />)).toMatch(/<button type="submit" disabled=""/);
+    expect(container.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(false);
   });
 
   it('says where scripts never run that it needs them (in the server markup: a browser without scripts reads it)', () => {
