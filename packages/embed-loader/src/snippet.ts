@@ -9,8 +9,11 @@
  *  - the frame address is built from the configured origin and a slug that
  *    matches [a-z0-9-]; anything else builds no snippet;
  *  - no markup is written and no text is run as code;
- *  - a message is read only when it comes from this frame's window AND from
- *    Confera's origin; everything else is ignored;
+ *  - a message is read only when it comes from Confera's origin AND from the
+ *    window of a frame with this id that is in the page when it arrives;
+ *    everything else is ignored;
+ *  - the lines never talk to the frame and never wait for anything; they work
+ *    however late they run and whenever the frame arrives or is replaced;
  *  - the height must be a finite number and is kept inside fixed bounds.
  * Without the script (a site that strips scripts) the frame keeps its fixed
  * height and scrolls inside; the link to the hosted form is always there.
@@ -64,21 +67,31 @@ function frameStyle(height: number): string {
 /**
  * The inline lines. Plain ES5 so that it runs wherever it is pasted.
  * `id` and `origin` are checked values and are written as JSON strings.
+ *
+ * Conference sites move pasted code and frames about: speed plugins run inline scripts late,
+ * consent managers hold a frame back and put a new one in later. A snippet already pasted can
+ * only be repaired by pasting it again, so the lines assume nothing about when they run:
+ *  - the frame is looked up when a message arrives, as the frame with this id whose window
+ *    sent it, never kept from the moment the lines ran (the origin is checked first);
+ *  - a frame that already shows Confera's page when the lines run (its document is no longer
+ *    the parent's to read) has told its height before anyone listened. The lines make it one
+ *    pixel taller; the frame answers any change of its own size by telling its height again.
+ *    No message is sent into the frame and nothing waits.
  */
 export function listenerSource(frameId: string, origin: string): string {
   return (
     '(function(){' +
-    `var f=document.getElementById(${JSON.stringify(frameId)});` +
-    'if(!f||!window.addEventListener)return;' +
+    `var o=${JSON.stringify(origin)},i=${JSON.stringify(frameId)};` +
+    'function z(f,h){f.style.setProperty("height",h+"px","important")}' +
+    'var f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);' +
+    'if(s)z(f,s+1);' +
     'window.addEventListener("message",function(e){' +
-    `if(e.origin!==${JSON.stringify(origin)}||e.source!==f.contentWindow)return;` +
+    'if(e.origin!==o||!e.source)return;' +
+    'for(var a=document.querySelectorAll("iframe#"+i),k=0,g;k<a.length;k++)if(a[k].contentWindow===e.source)g=a[k];' +
     'var d=e.data;' +
-    `if(!d||d.type!==${JSON.stringify(HEIGHT_MESSAGE)}||typeof d.height!=="number"||!isFinite(d.height))return;` +
-    'var h=Math.round(d.height);' +
-    `if(h<${MIN_FRAME_HEIGHT})h=${MIN_FRAME_HEIGHT};` +
-    `if(h>${MAX_FRAME_HEIGHT})h=${MAX_FRAME_HEIGHT};` +
-    'f.style.setProperty("height",h+"px","important");' +
-    '},false);' +
+    `if(g&&d&&d.type===${JSON.stringify(HEIGHT_MESSAGE)}&&typeof d.height=="number"&&isFinite(d.height))` +
+    `z(g,Math.min(${MAX_FRAME_HEIGHT},Math.max(${MIN_FRAME_HEIGHT},Math.round(d.height))))` +
+    '})' +
     '})();'
   );
 }

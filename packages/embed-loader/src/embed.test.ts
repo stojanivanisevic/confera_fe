@@ -107,9 +107,22 @@ describe('the inline lines', () => {
     expect(source).not.toContain('postMessage');
   });
 
-  it('check the origin and the source window before anything else', () => {
-    expect(source).toContain('if(e.origin!=="https://forms.example.test"||e.source!==f.contentWindow)return;');
-    expect(source.indexOf('e.origin!==')).toBeLessThan(source.indexOf('e.data'));
+  it('check the origin first, then find the frame by the window that sent the message, before reading anything', () => {
+    expect(source).toContain('var o="https://forms.example.test",i="confera-form-x";');
+    expect(source).toContain('if(e.origin!==o||!e.source)return;');
+    expect(source).toContain('for(var a=document.querySelectorAll("iframe#"+i),k=0,g;k<a.length;k++)if(a[k].contentWindow===e.source)g=a[k];');
+    expect(source.indexOf('e.origin!==o')).toBeLessThan(source.indexOf('contentWindow===e.source'));
+    expect(source.indexOf('contentWindow===e.source')).toBeLessThan(source.indexOf('e.data'));
+  });
+
+  it('keep no frame from the moment they ran: the frame is looked up when a message arrives', () => {
+    const handler = source.slice(source.indexOf('addEventListener("message"'));
+    expect(handler).toContain('document.querySelectorAll("iframe#"+i)');
+    expect(handler).not.toMatch(/[^a-z]f[.,)]/);
+  });
+
+  it('make a frame that already shows its page one pixel taller, so that it tells its height again', () => {
+    expect(source).toContain('var f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);if(s)z(f,s+1);');
   });
 
   it('are short', () => {
@@ -131,10 +144,21 @@ describe("the frame's height reporter", () => {
     let height = 640.2;
     const root = { getBoundingClientRect: () => ({ height }) } as unknown as Element;
     const parent = { postMessage: vi.fn() };
-    const win = {} as { parent: unknown };
+    const listeners = new Map<string, () => void>();
+    const win = {
+      addEventListener: vi.fn((type: string, listener: () => void) => listeners.set(type, listener)),
+      removeEventListener: vi.fn((type: string) => listeners.delete(type)),
+    } as { parent?: unknown; addEventListener: unknown; removeEventListener: unknown };
     win.parent = framed ? parent : win;
     const stop = startHeightReporter({ root, parentOrigins, win: win as unknown as Window });
-    return { parent, stop, resize: (next: number) => ((height = next), FakeObserver.last?.callback()) };
+    return {
+      parent,
+      stop,
+      win,
+      resize: (next: number) => ((height = next), FakeObserver.last?.callback()),
+      /** The page around changes the size of the frame. */
+      frameResized: () => listeners.get('resize')?.(),
+    };
   };
 
   it('tells the listed origins the height of the content, and nothing else', () => {
@@ -165,9 +189,21 @@ describe("the frame's height reporter", () => {
     expect(setup(['https://itema.example.test'], false).parent.postMessage).not.toHaveBeenCalled();
   });
 
+  it('tells the height again, also unchanged, when the page around changes the size of the frame', () => {
+    // A site that ran the snippet late: its lines make the frame one pixel taller to hear the height.
+    const { parent, frameResized } = setup(['https://itema.example.test']);
+    expect(parent.postMessage).toHaveBeenCalledTimes(1);
+    frameResized();
+    expect(parent.postMessage).toHaveBeenCalledTimes(2);
+    expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 641 }, 'https://itema.example.test');
+  });
+
   it('stops when asked', () => {
-    const { stop } = setup(['https://itema.example.test']);
+    const { stop, win, parent, frameResized } = setup(['https://itema.example.test']);
     stop();
     expect(FakeObserver.last?.disconnect).toHaveBeenCalled();
+    expect(win.removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
+    frameResized();
+    expect(parent.postMessage).toHaveBeenCalledTimes(1);
   });
 });
