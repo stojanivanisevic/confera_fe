@@ -19,7 +19,7 @@ pnpm is **11.28.2**, pinned in `package.json`. Every command is `corepack pnpm â
 
 ## 2. First start
 
-Clone both repositories side by side, into one folder: the browser tests, `api:sync`, `api:check --sibling` and the comparison of the secret scanner look for `confera_be` next to this repository (`..\confera_be`). Until the first release there is no `main` branch: clone `develop`.
+Clone both repositories side by side, into one folder: the browser tests, `api:sync`, `api:check --sibling` and the comparison of the secret scanner look for `confera_be` next to this repository (`..\confera_be`). In both repositories `main` holds the latest release and `develop` the work in progress. To work on Confera, clone `develop` of both, as below; to look at the latest release, clone `main` of both (`-b main`).
 
 ```
 mkdir Confera; cd Confera
@@ -291,4 +291,4 @@ ESLint is 9.39.5, the newest that every lint plugin supports; npm marks the 9 li
 
 ## 12. Git
 
-Work on `m1/fe-foundation` for milestone 0.1.0. Commit messages follow Conventional Commits. `main` is created by the lead at the release.
+`main` holds the latest release and `develop` the work in progress. Work on a branch from `develop`; a release is prepared on `release/<version>` and the lead puts it on `main` with its tag. Commit messages follow Conventional Commits.
