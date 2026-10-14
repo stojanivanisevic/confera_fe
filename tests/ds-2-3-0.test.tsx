@@ -308,6 +308,23 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
   });
 });
 
+describe('Card takes a heading level (item 4: M1-ISS-23)', () => {
+  it.each([
+    [undefined, 'H3'],
+    [2, 'H2'],
+    [4, 'H4'],
+    [6, 'H6'],
+    [1, 'H3'], // a card is never the page's h1
+    [7, 'H3'],
+  ] as const)('headingLevel %s gives an %s', async (level, tag) => {
+    await mount(<U.Card title="API" headingLevel={level as 2 | 3 | 4 | 5 | 6 | undefined} />);
+    const title = container.querySelector('.ud-card__title')!;
+    expect(title.tagName).toBe(tag);
+    expect(title.textContent).toBe('API');
+    expect(container.querySelector('section')!.hasAttribute('headingLevel')).toBe(false);
+  });
+});
+
 describe('previews hold invented people only (M1-ISS-42, NFR-PRIV-05)', () => {
   const previews = readdirSync(join(ds, 'components'), { withFileTypes: true })
     .filter((d) => d.isDirectory())

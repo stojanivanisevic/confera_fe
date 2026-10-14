@@ -548,11 +548,14 @@
       props.src ? null : h("span", { className: "ud-sr" }, props.name));
   }
 
+  /* The title is a heading of the level the page needs (headingLevel, 2 to 6; 3 by default), so the
+     outline of a page does not jump: under a PageHeader (h1) a card is h2 (2.3.0). */
   function Card(props) {
-    var rest = omit(props, ["className", "title", "subtitle", "actions", "children", "padding"]);
+    var rest = omit(props, ["className", "title", "subtitle", "actions", "children", "padding", "headingLevel"]);
+    var level = props.headingLevel >= 2 && props.headingLevel <= 6 ? Math.floor(props.headingLevel) : 3;
     return h("section", Object.assign({}, rest, { className: cx("ud-card", props.padding === "none" ? "ud-card--flush" : null, props.className) }),
       props.title || props.actions ? h("header", { className: "ud-card__head" },
-        h("div", null, props.title ? h("h3", { className: "ud-card__title" }, props.title) : null, props.subtitle ? h("p", { className: "ud-card__subtitle" }, props.subtitle) : null),
+        h("div", null, props.title ? h("h" + level, { className: "ud-card__title" }, props.title) : null, props.subtitle ? h("p", { className: "ud-card__subtitle" }, props.subtitle) : null),
         props.actions ? h("div", { className: "ud-card__actions" }, props.actions) : null) : null,
       props.children);
   }

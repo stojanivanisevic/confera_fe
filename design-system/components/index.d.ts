@@ -148,7 +148,11 @@ export interface DataTableProps<T = any> extends WithLabels {
 export interface PaginationProps extends WithLabels { className?: string; page: number; pageSize: number; total: number; onPageChange?: (page: number) => void; pageSizeOptions?: number[]; onPageSizeChange?: (size: number) => void; }
 export interface StatusBadgeProps { tone?: Tone; dot?: boolean; children: React.ReactNode; }
 export interface AvatarProps { name?: string; src?: string; size?: "sm" | "md" | "lg"; }
-export interface CardProps extends React.HTMLAttributes<HTMLElement> { title?: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode; padding?: "default" | "none"; }
+export interface CardProps extends React.HTMLAttributes<HTMLElement> {
+  title?: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode; padding?: "default" | "none";
+  /** The level of the title's heading, so the page's outline does not jump: 2 under a PageHeader. Default 3 (2.3.0). */
+  headingLevel?: 2 | 3 | 4 | 5 | 6;
+}
 export interface DescriptionListProps { items: Array<{ label: React.ReactNode; value?: React.ReactNode }>; columns?: 1 | 2; }
 export interface EmptyStateProps { title: React.ReactNode; description?: React.ReactNode; icon?: IconName; action?: React.ReactNode; }
 export interface SkeletonProps { lines?: number; variant?: "text" | "circle"; width?: string | number; height?: string | number; size?: number; }

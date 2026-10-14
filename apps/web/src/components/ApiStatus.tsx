@@ -39,7 +39,7 @@ export function ApiStatus() {
   }
 
   return (
-    <Card title="API" subtitle="The service this application talks to">
+    <Card title="API" subtitle="The service this application talks to" headingLevel={2}>
       {state.phase === 'loading' ? <Spinner label="Asking the API" /> : null}
       {state.phase === 'unreachable' ? (
         <Alert tone="warning" title="The API does not answer">
