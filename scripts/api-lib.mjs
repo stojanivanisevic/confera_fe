@@ -14,7 +14,8 @@ import { join, resolve } from 'node:path';
 import { resolveBin, root } from './lib.mjs';
 
 export const clientDir = join(root, 'packages', 'api-client');
-export const defaultBackendDir = resolve(root, '..', 'confera_be');
+/** The checkout of confera_be: the one named by CONFERA_BE_DIR, else the one next to this repository. */
+export const defaultBackendDir = resolve(process.env.CONFERA_BE_DIR ?? join(root, '..', 'confera_be'));
 
 /** The documents of the contract and the type file generated from each. */
 export const DOCUMENTS = [
