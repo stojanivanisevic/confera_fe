@@ -6,10 +6,11 @@ const fromRoot = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 // Unit tests (ADR-24). Browser behaviour is tested with Playwright (`pnpm e2e`).
 export default defineConfig({
   resolve: {
-    alias: {
-      '@/': fromRoot('./apps/web/src/'),
-      '#dev-fixtures': fromRoot('./apps/web/src/server/dev-fixtures.dev.ts'),
-    },
+    // `@/…` is the application's own path alias (apps/web/tsconfig.json).
+    alias: [
+      { find: /^@\//, replacement: fromRoot('./apps/web/src/') },
+      { find: '#dev-fixtures', replacement: fromRoot('./apps/web/src/server/dev-fixtures.dev.ts') },
+    ],
   },
   test: {
     include: [

@@ -18,7 +18,7 @@
 import type { RouteKind } from './route-kinds';
 
 /** Kinds that answer with a page. API kinds are forwarded and keep the API's own headers. */
-export type PageKind = Exclude<RouteKind, 'admin-api' | 'public-api' | 'asset'> | 'error';
+export type PageKind = Exclude<RouteKind, 'admin-api' | 'public-api' | 'asset' | 'form-send'> | 'error';
 
 export interface HeaderInput {
   readonly kind: PageKind;

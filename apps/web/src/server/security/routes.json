@@ -1,5 +1,5 @@
 {
-  "$comment": "Every route of the web application declares its kind and its surface here (ADR-28, ADR-02). A page that is not listed fails `pnpm verify:build` and the header tests. The routes of a test build (--dev-pages) are declared with the dev fixtures, so that not even their names are in a production build.",
+  "$comment": "Every route of the web application declares its kind and its surface here (ADR-28, ADR-02). A page that is not listed fails `pnpm verify:build` and the header tests. The routes of a test build (--dev-pages) are declared with the dev fixtures, so that not even their names are in a production build. `answeredByTheProxy` are paths the proxy answers itself, without a page: the form's POST path for a Send pressed before its scripts arrived (UX-M1-03).",
   "routes": [
     { "route": "/", "kind": "admin", "surface": "admin" },
     { "route": "/sign-in", "kind": "auth", "surface": "admin" },
@@ -8,6 +8,9 @@
     { "route": "/s/[token]", "kind": "secure-link", "surface": "public", "planned": "0.5.0" },
     { "route": "/pay/[token]", "kind": "secure-link", "surface": "public", "planned": "0.7.0" },
     { "route": "/icon.png", "kind": "asset", "surface": "any" }
+  ],
+  "answeredByTheProxy": [
+    { "route": "/f/[form]/send", "kind": "form-send", "surface": "public" }
   ],
   "forwarded": [
     { "prefix": "/api/v1/", "kind": "admin-api", "surface": "admin" },

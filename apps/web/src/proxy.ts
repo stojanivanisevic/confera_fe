@@ -5,14 +5,20 @@
  *    and everything else is "not found";
  *  - the security headers of every page, by kind (ADR-28, ./server/security/headers);
  *  - the forwarding of /api/v1 and /public/v1 to the API (the web application
- *    only renders and forwards, ADR-20).
+ *    only renders and forwards, ADR-20);
+ *  - the methods (SEC-M1-01): a page answers GET and HEAD only, and a request
+ *    that names a server action (`Next-Action`) is refused on every page. Both get
+ *    405 here, before the framework sees them; the API prefixes keep every method;
+ *  - the one path a form is posted to without its scripts, /f/<form>/send
+ *    (UX-M1-03): it answers 204, so the browser stays on the page with what was
+ *    typed, and nothing of the form is ever put in an address.
  * It is a convenience and a second line, never authorisation: the API decides.
  */
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { getConfig, isDevelopmentRuntime } from '@/config/env';
 import { forwardToApi } from '@/server/forward';
-import { resolveFrameSites } from '@/server/security/frame-sites';
+import { formExists, resolveFrameSites } from '@/server/security/frame-sites';
 import { buildSecurityHeaders, createNonce, type PageKind } from '@/server/security/headers';
 import { classifyRoute, surfaceOfHost } from '@/server/security/route-kinds';
 
@@ -39,6 +45,35 @@ function page(request: NextRequest, kind: PageKind, frameSites: readonly string[
   return response;
 }
 
+/** Methods a page answers. Everything else, and every request naming a server action, gets 405. */
+const PAGE_METHODS = ['GET', 'HEAD'];
+
+function pageMethodRefused(request: NextRequest): boolean {
+  return !PAGE_METHODS.includes(request.method) || request.headers.has('next-action');
+}
+
+/** 405 with the header set of the page's kind: no body for a framework to render, nothing stored. */
+function methodNotAllowed(kind: PageKind, allow: string): NextResponse {
+  const headers = buildSecurityHeaders({ kind, nonce: createNonce(), frameSites: null, development: isDevelopmentRuntime() });
+  const response = new NextResponse('Method Not Allowed\n', { status: 405, headers: { 'Content-Type': 'text/plain; charset=utf-8', Allow: allow } });
+  for (const [name, value] of Object.entries(headers.response)) response.headers.set(name, value);
+  return response;
+}
+
+/**
+ * Where a form is posted when Send is pressed before its scripts have arrived (a slow phone, a
+ * proxy that blocks scripts). The form has method="post", so nothing of it goes into the address;
+ * this answers 204 No Content, so the browser stays on the page, with everything that was typed.
+ * The body is not read and nothing is kept. Once the scripts are there, the form sends itself.
+ */
+function formSend(request: NextRequest, form: string): NextResponse {
+  if (request.method !== 'POST' || request.headers.has('next-action')) return methodNotAllowed('hosted-form', 'POST');
+  return new NextResponse(null, {
+    status: formExists(form) ? 204 : 404,
+    headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' },
+  });
+}
+
 function apiNotFound(): NextResponse {
   return new NextResponse(JSON.stringify({ type: 'about:blank', title: 'Not Found', status: 404, code: 'not_found' }), {
     status: 404,
@@ -61,7 +96,8 @@ export async function proxy(request: NextRequest): Promise<Response> {
   const allowed = match !== null && surface !== null && (match.surface === 'any' || match.surface === surface);
   if (!allowed) {
     // Asking for an API path on the wrong host gets the API's kind of answer, a page path gets the page.
-    return isApi || /^\/(?:api|public)\//.test(pathname) ? apiNotFound() : page(request, 'error', null, true);
+    if (isApi || /^\/(?:api|public)\//.test(pathname)) return apiNotFound();
+    return pageMethodRefused(request) ? methodNotAllowed('error', 'GET, HEAD') : page(request, 'error', null, true);
   }
 
   if (isApi) {
@@ -76,11 +112,16 @@ export async function proxy(request: NextRequest): Promise<Response> {
     });
   }
 
+  if (match.kind === 'form-send') return formSend(request, match.params.form ?? '');
+
   if (match.kind === 'asset') {
+    if (pageMethodRefused(request)) return methodNotAllowed('error', 'GET, HEAD');
     const response = NextResponse.next();
     response.headers.set('X-Content-Type-Options', 'nosniff');
     return response;
   }
+
+  if (pageMethodRefused(request)) return methodNotAllowed(match.kind, 'GET, HEAD');
 
   // Only the frame page can ever carry a site list, and only for a form that has a valid one.
   const frameSites = match.kind === 'frame' ? resolveFrameSites(match.params.form ?? '') : null;

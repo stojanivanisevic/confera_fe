@@ -8,7 +8,7 @@ import { devFixtures } from '#dev-fixtures';
 
 import declared from './routes.json';
 
-export type RouteKind = 'admin' | 'auth' | 'hosted-form' | 'frame' | 'secure-link' | 'dev' | 'asset' | 'admin-api' | 'public-api';
+export type RouteKind = 'admin' | 'auth' | 'hosted-form' | 'frame' | 'secure-link' | 'dev' | 'asset' | 'form-send' | 'admin-api' | 'public-api';
 /** Which host name may answer: the admin's, the public one, or both. */
 export type Surface = 'admin' | 'public' | 'any';
 
@@ -28,7 +28,7 @@ interface DeclaredRoute {
   planned?: string;
 }
 
-const KINDS: readonly RouteKind[] = ['admin', 'auth', 'hosted-form', 'frame', 'secure-link', 'dev', 'asset', 'admin-api', 'public-api'];
+const KINDS: readonly RouteKind[] = ['admin', 'auth', 'hosted-form', 'frame', 'secure-link', 'dev', 'asset', 'form-send', 'admin-api', 'public-api'];
 const SURFACES: readonly Surface[] = ['admin', 'public', 'any'];
 
 function checked<T extends string>(value: string, allowed: readonly T[], what: string): T {
@@ -59,7 +59,12 @@ const compiled = (entry: DeclaredRoute, devOnly: boolean) => ({
   devOnly,
 });
 // The routes of a test build come with the dev fixtures; a production build has none.
-const ROUTES = [...(declared.routes as DeclaredRoute[]).map((entry) => compiled(entry, false)), ...devFixtures.routes.map((entry) => compiled(entry, true))];
+// The routes the proxy answers itself (no page is built for them) come after the pages.
+const ROUTES = [
+  ...(declared.routes as DeclaredRoute[]).map((entry) => compiled(entry, false)),
+  ...(declared.answeredByTheProxy as DeclaredRoute[]).map((entry) => compiled(entry, false)),
+  ...devFixtures.routes.map((entry) => compiled(entry, true)),
+];
 
 const FORWARDED = declared.forwarded.map((entry) => ({
   prefix: entry.prefix,

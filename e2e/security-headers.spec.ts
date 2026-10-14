@@ -286,3 +286,60 @@ test.describe('ST-12: responses outside the declared pages keep the rule', () =>
     }
   });
 });
+
+// SEC-M1-01: a page answers GET and HEAD only, and nothing that names a server action reaches the
+// framework (where CVE-2025-55182 sat). The API prefixes keep every method. The form's own POST
+// path answers a Send pressed before the scripts arrived with 204 (UX-M1-03).
+test.describe('SEC-M1-01: the methods of a page', () => {
+  const pages: Array<[string, string]> = [
+    [ADMIN_ORIGIN, '/'],
+    [ADMIN_ORIGIN, '/sign-in'],
+    [PUBLIC_ORIGIN, '/f/spike-abstract'],
+    [PUBLIC_ORIGIN, '/embed/spike-abstract'],
+    [PUBLIC_ORIGIN, '/f/x'],
+    [PUBLIC_ORIGIN, '/embed/x'],
+    [PUBLIC_ORIGIN, '/no-such-page'],
+  ];
+
+  test('POST with a server action, any other method, and a server action with GET: 405 before the framework, with the header set', async ({ request }) => {
+    for (const [origin, path] of pages) {
+      for (const [method, headers] of [
+        ['POST', { 'Next-Action': '7f3a2c9e0b' }],
+        ['POST', {}],
+        ['PUT', {}],
+        ['DELETE', {}],
+        ['GET', { 'Next-Action': '7f3a2c9e0b' }],
+      ] as const) {
+        const response = await request.fetch(`${origin}${path}`, { method, headers, data: method === 'GET' ? undefined : 'a=1', maxRedirects: 0 });
+        const what = `${method} ${origin}${path} ${JSON.stringify(headers)}`;
+        expect(response.status(), what).toBe(405);
+        expect(response.headers()['allow'], what).toBe('GET, HEAD');
+        expect(response.headers()['content-security-policy'], what).toMatch(/^frame-ancestors 'none'; script-src-attr 'nonce-/);
+        expect(response.headers()['x-content-type-options'], what).toBe('nosniff');
+        expect(await response.text(), what).not.toContain('<html');
+      }
+      expect((await request.get(`${origin}${path}`)).status(), `GET ${path}`).not.toBe(405);
+      expect((await request.head(`${origin}${path}`)).status(), `HEAD ${path}`).not.toBe(405);
+    }
+  });
+
+  test("the form's POST path: POST answers 204 with no body; every other method 405", async ({ request }) => {
+    const send = `${PUBLIC_ORIGIN}/f/spike-abstract/send`;
+    const posted = await request.post(send, { form: { title: 'x' }, maxRedirects: 0 });
+    expect(posted.status()).toBe(204);
+    expect(await posted.text()).toBe('');
+    expect(posted.headers()['cache-control']).toBe('no-store');
+    for (const method of ['GET', 'PUT', 'DELETE']) {
+      const response = await request.fetch(send, { method, maxRedirects: 0 });
+      expect(response.status(), method).toBe(405);
+      expect(response.headers()['allow'], method).toBe('POST');
+    }
+    expect((await request.post(send, { headers: { 'Next-Action': '7f3a2c9e0b' }, data: 'a=1' })).status()).toBe(405);
+  });
+
+  test('the API prefixes keep every method: a POST to /api/v1 is forwarded, not refused', async ({ request }) => {
+    const response = await request.post(`${ADMIN_ORIGIN}/api/v1/meta`, { data: {} });
+    expect(response.status()).not.toBe(405);
+    expect(response.headers()['content-type'] ?? '').not.toContain('text/plain');
+  });
+});
