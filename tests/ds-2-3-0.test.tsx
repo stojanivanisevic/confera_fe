@@ -308,6 +308,45 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
   });
 });
 
+describe('DataTable rows that open something are reached by keyboard (item 5: M1-ISS-10)', () => {
+  const rows = [
+    { id: 1, name: 'Marta Kovač', email: 'marta@example.test' },
+    { id: 2, name: 'Živana Čolić', email: 'zivana@example.test' },
+  ];
+  const columns = [
+    { key: 'name', header: 'Author' },
+    { key: 'email', header: 'Email' },
+  ];
+
+  it('the first cell of each row is a button named by its text, and it opens the row once', async () => {
+    const opened: string[] = [];
+    await mount(<U.DataTable columns={columns} rows={rows} onRowClick={(row: { name: string }) => opened.push(row.name)} />);
+    const buttons = [...container.querySelectorAll<HTMLButtonElement>('tbody button.ud-table__open')];
+    expect(buttons.map((b) => b.textContent)).toEqual(['Marta Kovač', 'Živana Čolić']);
+    expect(buttons.every((b) => b.type === 'button' && b.tabIndex === 0)).toBe(true);
+    await click(buttons[1]!);
+    expect(opened).toEqual(['Živana Čolić']);
+    // A click elsewhere in the row still opens it.
+    await click(container.querySelectorAll('tbody tr')[0]!.querySelectorAll('td')[1]!);
+    expect(opened).toEqual(['Živana Čolić', 'Marta Kovač']);
+  });
+
+  it('openColumn names another column', async () => {
+    await mount(<U.DataTable columns={columns} rows={rows} openColumn="email" onRowClick={() => undefined} />);
+    expect([...container.querySelectorAll('tbody button.ud-table__open')].map((b) => b.textContent)).toEqual(['marta@example.test', 'zivana@example.test']);
+  });
+
+  it('a table whose rows open nothing has no such button', async () => {
+    await mount(<U.DataTable columns={columns} rows={rows} />);
+    expect(container.querySelector('button.ud-table__open')).toBeNull();
+  });
+
+  it('the button has the blue focus outline and a target of 24 px at least', () => {
+    expect(rule('.ud-table__open:focus-visible')?.get('outline')).toBe('2px solid var(--focus)');
+    expect(rule('.ud-table__open::after')?.get('height')).toBe('max(100%, var(--target-min))');
+  });
+});
+
 describe('Card takes a heading level (item 4: M1-ISS-23)', () => {
   it.each([
     [undefined, 'H3'],

@@ -290,26 +290,31 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
   DataTable: function DataTableScenario() {
     const [selected, setSelected] = useState<Array<string | number>>([2]);
     const [query, setQuery] = useState('');
+    const [opened, setOpened] = useState('');
     const rows = PEOPLE.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase()));
     return (
-      <U.DataTable<Person>
-        caption="Submissions"
-        rows={rows}
-        toolbar={<U.SearchField label="Search authors" placeholder="Search authors" value={query} onChange={(e) => setQuery(e.target.value)} onClear={() => setQuery('')} />}
-        filtered={query.trim() !== ''}
-        onClearFilters={() => setQuery('')}
-        selectable
-        selected={selected}
-        onSelectionChange={setSelected}
-        defaultSort={{ key: 'name', direction: 'asc' }}
-        columns={[
-          { key: 'name', header: 'Author', sortable: true },
-          { key: 'email', header: 'Email' },
-          { key: 'institution', header: 'Institution', sortable: true },
-          { key: 'status', header: 'Status', render: (row) => <U.StatusBadge tone={TONE[row.status]}>{row.status}</U.StatusBadge> },
-        ]}
-        footer={<U.Pagination page={1} pageSize={10} total={3} />}
-      />
+      <>
+        <U.DataTable<Person>
+          caption="Submissions"
+          rows={rows}
+          toolbar={<U.SearchField label="Search authors" placeholder="Search authors" value={query} onChange={(e) => setQuery(e.target.value)} onClear={() => setQuery('')} />}
+          filtered={query.trim() !== ''}
+          onClearFilters={() => setQuery('')}
+          onRowClick={(row) => setOpened(row.name)}
+          selectable
+          selected={selected}
+          onSelectionChange={setSelected}
+          defaultSort={{ key: 'name', direction: 'asc' }}
+          columns={[
+            { key: 'name', header: 'Author', sortable: true },
+            { key: 'email', header: 'Email' },
+            { key: 'institution', header: 'Institution', sortable: true },
+            { key: 'status', header: 'Status', render: (row) => <U.StatusBadge tone={TONE[row.status]}>{row.status}</U.StatusBadge> },
+          ]}
+          footer={<U.Pagination page={1} pageSize={10} total={3} />}
+        />
+        <p className={styles.text} role="status">{opened ? `Opened the submission of ${opened}` : ''}</p>
+      </>
     );
   },
 

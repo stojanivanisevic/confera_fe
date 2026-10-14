@@ -654,11 +654,19 @@
     } else if (!view.length) {
       body = h("tr", null, h("td", { colSpan: span }, props.empty || h(EmptyState, { title: t("nothingHere"), action: props.emptyAction || null })));
     } else {
+      /* A row that opens something is reachable by keyboard (2.3.0): the cell of the column `openColumn`
+         (the first by default) is a button that opens the row, so Tab reaches it and Enter or Space
+         opens it. A click anywhere else in the row still opens it too. */
+      var openKey = props.onRowClick ? props.openColumn || (columns[0] && columns[0].key) : null;
       body = view.map(function (r) {
         var id = r[rowKey], on = sel[0].indexOf(id) >= 0;
         return h("tr", { key: id, className: cx(on ? "is-selected" : null, props.onRowClick ? "is-clickable" : null), onClick: props.onRowClick ? function () { props.onRowClick(r); } : undefined },
           props.selectable ? h("td", { className: "ud-table__check", onClick: function (e) { e.stopPropagation(); } }, h(Checkbox, { "aria-label": t("selectRow"), checked: on, onChange: function () { toggle(id); } })) : null,
-          columns.map(function (c) { return h("td", { key: c.key, style: { textAlign: c.align } }, c.render ? c.render(r) : r[c.key]); }));
+          columns.map(function (c) {
+            var content = c.render ? c.render(r) : r[c.key];
+            if (c.key === openKey) content = h("button", { type: "button", className: "ud-table__open", onClick: function (e) { e.stopPropagation(); props.onRowClick(r); } }, content);
+            return h("td", { key: c.key, style: { textAlign: c.align } }, content);
+          }));
       });
     }
     /* Loading is announced: the table is busy, and a status line (always there, so that a screen

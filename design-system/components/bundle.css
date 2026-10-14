@@ -417,8 +417,12 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-table tbody tr.is-clickable { cursor: pointer; }
 .ud-table__check { width: var(--target-touch); }
 .ud-table__sort { position: relative; display: inline-flex; align-items: center; gap: var(--gutter-xs); padding: 0; border: 0; background: transparent; cursor: pointer; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; }
-/* A target of 24 x 24 px at least (WCAG 2.5.8), without making the header row higher (2.3.0). */
-.ud-table__sort::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--target-min)); height: max(100%, var(--target-min)); transform: translate(-50%, -50%); }
+/* The button of a row that opens something (2.3.0): it looks like the cell's text. */
+.ud-table__open { position: relative; display: inline-flex; align-items: center; gap: var(--gutter-s); padding: 0; border: 0; border-radius: var(--radius-xs); background: transparent; cursor: pointer; font: inherit; letter-spacing: inherit; color: inherit; text-align: left; }
+.ud-table__open:hover { text-decoration: underline; }
+.ud-table__open:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* A target of 24 x 24 px at least (WCAG 2.5.8), without making a row higher (2.3.0). */
+.ud-table__sort::after, .ud-table__open::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--target-min)); height: max(100%, var(--target-min)); transform: translate(-50%, -50%); }
 .ud-table__sort.is-active { color: var(--ink); }
 .ud-table__sort:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
 .ud-table__footer { padding: var(--gutter-m) var(--gutter-xl); border-top: 1px solid var(--neutral-300); }
@@ -641,8 +645,8 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
   /* A link in a line of text: padding makes the target higher without moving the line. */
   .ud-link, .ud-alert__body a { padding-block: max(0px, calc((var(--target-touch) - 1lh) / 2)); }
   /* A link of a trail or of the site's navigation, and a sort button: the target is an invisible layer over it. */
-  .ud-nav-link, .ud-breadcrumbs a, .ud-table__sort { position: relative; }
-  .ud-nav-link::after, .ud-breadcrumbs a::after, .ud-table__sort::after {
+  .ud-nav-link, .ud-breadcrumbs a { position: relative; }
+  .ud-nav-link::after, .ud-breadcrumbs a::after, .ud-table__sort::after, .ud-table__open::after {
     content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--target-touch)); height: max(100%, var(--target-touch)); transform: translate(-50%, -50%);
   }
 }

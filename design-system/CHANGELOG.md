@@ -29,6 +29,11 @@ Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI
 - **DataTable tells "no data yet" from "no results"**: with `filtered` (a search or a filter is set) and no rows it says "No results for these filters" with a button that calls `onClearFilters`; otherwise "Nothing here yet" (or `empty`) with `emptyAction`. **It announces loading**: `loading` marks the table `aria-busy` and fills a status line ("Loading") that is always there, so a screen reader hears it change.
 - New label `noResults` ("No results for these filters"; in Confera's Serbian list "Nema rezultata za ove filtere"). New props: DataTable `filtered`, `onClearFilters`, `emptyAction`; Dialog `aria-describedby`.
 
+### DataTable rows by keyboard (M1-ISS-10)
+
+- **A row that opens something is reached by Tab** (WCAG 2.1.1). With `onRowClick`, the cell of `openColumn` (the first column by default) is a button that opens the row, named by the cell's text; Enter and Space open it, and the blue outline shows it. A click anywhere else in the row still opens it. The cell must hold no other control. Before, such rows could be opened with a mouse only ("Known and not changed" since 2.0.0).
+- The button looks like the cell's text (underlined on hover) and is a target of 24 x 24 px at least, 44 on a touch screen, without making the row higher. The sort buttons of the header have the same target.
+
 ### Card takes a heading level (M1-ISS-23)
 
 - **`headingLevel`** (2 to 6, default 3, as before) sets the level of the card's title, so the outline of a page does not jump from the PageHeader's `h1` to `h3` (WCAG 1.3.1). The title looks the same at every level. Confera's admin home now gives its card `headingLevel={2}`.
