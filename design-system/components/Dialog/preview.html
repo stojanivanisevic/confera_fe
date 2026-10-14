@@ -15,7 +15,7 @@
 <script>
   var U = window.Udekom, h = React.createElement;
   
-  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){var o=React.useState(true); return h('div',null, h(U.Button,{variant:'dark',onClick:function(){o[1](true);}},'Edit server'), h(U.Dialog,{open:o[0],onClose:function(){o[1](false);},title:'Edit mail server',actions:h(React.Fragment,null,h(U.TextButton,{onClick:function(){o[1](false);}},'Cancel'),h(U.Button,{onClick:function(){o[1](false);}},'Save'))}, h(U.TextField,{id:'ds1',label:'Name',defaultValue:'ITEMA office'}), h('div',{className:'grid'},h(U.TextField,{id:'ds2',label:'Host',defaultValue:'smtp.example.com'}),h(U.NumberField,{id:'ds3',label:'Port',defaultValue:587})))); }));
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){var o=React.useState(true); return h('div',null, h(U.Button,{variant:'dark',onClick:function(){o[1](true);}},'Edit server'), h(U.Dialog,{open:o[0],onClose:function(){o[1](false);},title:'Edit mail server',actions:h(React.Fragment,null,h(U.TextButton,{onClick:function(){o[1](false);}},'Cancel'),h(U.Button,{onClick:function(){o[1](false);}},'Save'))}, h(U.TextField,{id:'ds1',label:'Name',defaultValue:'ITEMA office'}), h('div',{className:'grid'},h(U.TextField,{id:'ds2',label:'Host',defaultValue:'smtp.example.test'}),h(U.NumberField,{id:'ds3',label:'Port',defaultValue:587})))); }));
 </script>
 </body>
 </html>

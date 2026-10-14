@@ -106,7 +106,8 @@ describe('texts of the form', () => {
 describe('rules of the form (./rules), the client copy of what the API checks', () => {
   it.each([
     ['marta@example.test', true],
-    ['marta.kovac@uni-ns.ac.rs', true],
+    // A dotted name, a hyphen in a label and several labels; an invented university (NFR-PRIV-05).
+    ['marta.kovac@ef.uni-primer.example.test', true],
     [' marta@example.test ', true],
     ['marta@example', false],
     ['marta', false],

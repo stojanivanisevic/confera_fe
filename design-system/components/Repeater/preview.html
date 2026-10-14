@@ -15,7 +15,7 @@
 <script>
   var U = window.Udekom, h = React.createElement;
   
-  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){var s=React.useState([{name:'Marko Petrovic',email:'marko.petrovic@example.org'},{name:'',email:''}]); return h('div',{style:{maxWidth:'680px'}}, h(U.Repeater,{label:'Co-authors',items:s[0],onChange:s[1],max:3,min:1,addLabel:'Add co-author',message:'Up to three; each extra co-author costs 30 EUR.',renderRow:function(it,i,upd){return h(React.Fragment,null,h(U.TextField,{id:'r-n'+i,label:'Name and surname',value:it.name,onChange:function(e){upd({name:e.target.value});}}),h(U.TextField,{id:'r-e'+i,label:'Email',value:it.email,onChange:function(e){upd({email:e.target.value});}}));}})); }));
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function D(){var s=React.useState([{name:'Marta Kovač',email:'marta@example.test'},{name:'',email:''}]); return h('div',{style:{maxWidth:'680px'}}, h(U.Repeater,{label:'Co-authors',items:s[0],onChange:s[1],max:3,min:1,addLabel:'Add co-author',message:'Up to three; each extra co-author costs 30 EUR.',renderRow:function(it,i,upd){return h(React.Fragment,null,h(U.TextField,{id:'r-n'+i,label:'Name and surname',value:it.name,onChange:function(e){upd({name:e.target.value});}}),h(U.TextField,{id:'r-e'+i,label:'Email',value:it.email,onChange:function(e){upd({email:e.target.value});}}));}})); }));
 </script>
 </body>
 </html>

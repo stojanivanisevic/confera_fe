@@ -20,6 +20,11 @@ Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI
 - Spacing: 6 → 4 (badge dot gap, tooltip padding, counter padding) or 8 (text button, dropzone and file list gaps, progress gap, scale ends, page header and step text); 7 → 8 (checkbox and radio gap, sidebar counter); 9 and 10 → 8 or 12 (list, menu and sidebar items, choice lists, switch, underline tabs, file rows, badges, description list rows, step and sidebar gaps); 14 → 12 (alert, toast, repeater row) or 16 (scale button); 28 → 24 (dropzone).
 - Sizes: the narrow-screen drawer of AppShell is `sidebar-width` (248, was 264); the selection column of DataTable is `target-touch` wide (44, was 40).
 
+### Previews without real names and addresses (M1-ISS-42)
+
+- The previews brought in with version 1 showed the client's real name and the association's office address (DataTable, Avatar, AppShell) and addresses on real or other domains (Repeater, ToastHost, TextField, FormCard, Dialog). They now show the invented people of Confera's tests (Marta Kovač, Đorđe Šćepanović, Živana Čolić, Lazar Primerić) on `example.test`, and an invented "Univerzitet Primer" instead of real universities (DescriptionList, TextField).
+- The AppShell preview shows the logo of the release (`assets/Logos/udekom-mark-on-dark.png`) instead of an address (`/_blob/…`) that existed only where version 1 was authored ("Known and not changed" since 2.0.0).
+
 ## 2.2.0 (2026-10-14)
 
 The keyboard, the selected states and the small targets, after the UI and UX reviews of Confera 0.1.0 (UI-M1-01 to 07, 09, 10, 15, 16, 20). No token changed; the brand is the same.
