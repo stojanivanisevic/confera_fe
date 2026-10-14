@@ -92,7 +92,15 @@ export interface SelectProps extends FieldBase, React.SelectHTMLAttributes<HTMLS
   placeholder?: string;
 }
 export interface TextareaProps extends FieldBase, React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
-export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> { label?: React.ReactNode; }
+export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: React.ReactNode;
+  /** Marks the box with " *" and sets `required` (2.2.0). */
+  required?: boolean;
+  /** "error" draws the box in the danger colour and sets aria-invalid (2.2.0). */
+  status?: FieldStatus;
+  /** Shown under the box and tied to it by aria-describedby (2.2.0). */
+  message?: React.ReactNode;
+}
 export interface RadioProps extends React.InputHTMLAttributes<HTMLInputElement> { label?: React.ReactNode; }
 export interface TagProps extends WithLabels { children: React.ReactNode; onRemove?: () => void; className?: string; }
 export interface FileButtonProps extends React.InputHTMLAttributes<HTMLInputElement>, WithLabels {

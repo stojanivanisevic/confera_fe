@@ -2,6 +2,22 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.2.0 (2026-10-14)
+
+The keyboard, the selected states and the small targets, after the UI and UX reviews of Confera 0.1.0 (UI-M1-01 to 07, 09, 10, 15, 16, 20). No token changed; the brand is the same.
+
+- **Menu and Autocomplete show where the keyboard is** (WCAG 2.4.7, 1.4.11). A focused menu item has the system's blue outline (`2px solid --focus`, inside the item); the active option of a list an inner blue ring. Both were a grey of 1.10:1.
+- **Menu gives the focus back.** Escape and a choice return the focus to the button that opened the menu (WCAG 2.4.3); a click elsewhere leaves it where it went. The README said so before it was true.
+- **AppShell below 900 px.** The closed drawer is hidden, not only moved off the screen, so its links are out of the tab order. The open drawer behaves as Drawer does: the focus goes into it, Tab stays inside, Escape and the scrim close it, and the focus goes back to the menu button.
+- **Tooltip** (WCAG 1.4.13): Escape hides it until the pointer or the focus leaves it, and the pointer can move onto the bubble without it going away.
+- **Selected states are not told by colour alone** (WCAG 1.4.11). The chosen pill of SegmentedTabs and the chosen value of ScaleField keep their orange fill and get an inner 2 px `brand-orange-strong` ring (4.71:1 on the page, 5.38:1 on white). The fill alone was 2.45:1.
+- **Success fields** draw their border and icon in `success-strong` (5.4:1 on white); `success` was 2.69 to 3.08:1.
+- **Checkbox can be required and can say what is wrong.** `required` adds the same " *" as a field and sets `required`; `status="error"` draws the box in `danger` and sets `aria-invalid`; `message` is shown under it and tied by `aria-describedby` (WCAG 3.3.1, 3.3.2). The message is a sibling of the label, so the box is never re-created when a message comes or goes.
+- **Targets of 24 x 24 px** (WCAG 2.5.8): the remove button of a Tag and the clear button of SearchField (the glyphs keep their size; the Tag keeps its height). Both, and before them the five controls of UI-M1-15 that had the browser's own ring, now show the system's blue outline.
+- **Stepper fits 375 px.** Below 720 px only the current step keeps its width, and its connector no longer runs through its label. The vertical Stepper keeps its connectors at every width (the rule for the horizontal one hid them from 720 px).
+- **Corrections to earlier notes.** The header of `components/bundle.css` said every size comes from `tokens.css`: colours and radii do, and the sizes that have a token; the others are written in px (a type and spacing scale in `tokens.css` is planned for 0.2.0). In 2.0.0 the dropzone's border moved from `neutral-500`, not from `control-border` or `neutral-300`.
+- `components/bundle.js` carries `@ds-version: 2.2.0` and `Udekom.version` is `"2.2.0"`. `tokens.json` stays at version 2.
+
 ## 2.1.0 (2026-10-14)
 
 Two labels have a new name; nothing looks or behaves differently. No token and no stylesheet changed.

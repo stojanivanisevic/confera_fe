@@ -70,7 +70,8 @@ Rules for the extended set:
 - **Surfaces.** The admin uses the same warm `background`. Content sits on white `surface-1` cards with `radius-card`, and the sidebar on `background-dark`. Tables live inside a card.
 - **Shadows.** The only shadows are on things that float above the page (`shadow-overlay`): dialogs, drawers, menus, listboxes and toasts. Everything else stays flat, as on the site.
 - **Status colours.** Status colours come in sets of three: text (`*-strong` or `warning`), surface and border. Orange stays the brand and the "selected" colour. Warnings use amber (`warning`), never the brand orange.
-- **Behaviour.** Dialogs, drawers and menus close on Escape and return focus. Tables sort with `aria-sort`. Autocomplete and Tabs follow the ARIA keyboard patterns.
+- **Behaviour.** Dialogs, drawers, menus and the narrow-screen drawer of AppShell close on Escape and return the focus to where it came from (menus and AppShell since 2.2.0). A tooltip hides on Escape and stays while the pointer is on it. Every focusable part shows the blue `focus` outline or ring, menu items and list options included (2.2.0). Tables sort with `aria-sort`. Autocomplete and Tabs follow the ARIA keyboard patterns.
+- **Selected states (2.2.0).** A chosen pill or scale value has an inner `brand-orange-strong` ring as well as the orange fill, so it is not told by colour alone.
 - **Text.** Labels and messages follow the Voice section: past-tense confirmations ("Email sent"), errors that say how to fix the problem, and named objects in confirmations ("Delete ITEMA office server?").
 - **Built-in texts (version 2).** The few texts a component writes by itself ("Close", "Rows per page", "Remove …") are English by default and can be translated: wrap a page or a form in `LabelsProvider`, or give one component its `labels`. `Udekom.defaultLabels` is the full list.
 - **Labels and messages are wired for you (version 2).** A field ties its label and its message to the control without an `id`; groups, the dropzone and the repeater tie their message to the group. Do not repeat this in the page.
@@ -80,7 +81,7 @@ Confera uses these for its embeddable submission and membership forms and for it
 
 ## Version and release
 
-This is **version 2.1.0** (`CHANGELOG.md` lists every change from version 1). The version is in `tokens.json`, in `components/bundle.js` (`@ds-version`, `Udekom.version`) and in the changelog. `CHECKSUMS.sha256` holds the sha256 of every file of the release. The system is changed only as a release: in the `confera_fe` repository, `pnpm ds:release` records the checksums and `pnpm ds:check` refuses any later change that is not a new release.
+This is **version 2.2.0** (`CHANGELOG.md` lists every change from version 1). The version is in `tokens.json`, in `components/bundle.js` (`@ds-version`, `Udekom.version`) and in the changelog. `CHECKSUMS.sha256` holds the sha256 of every file of the release. The system is changed only as a release: in the `confera_fe` repository, `pnpm ds:release` records the checksums and `pnpm ds:check` refuses any later change that is not a new release.
 
 To use it as a plain script, load `fonts/fonts.css`, `tokens.css` and `components/bundle.css`, then React and `components/bundle.js`. Nothing is requested from another site.
 

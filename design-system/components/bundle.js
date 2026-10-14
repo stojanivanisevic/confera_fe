@@ -1,5 +1,5 @@
 /* @ds-bundle: {"format":4,"namespace":"Udekom","components":[{"name":"Button"},{"name":"CircleButton"},{"name":"ArrowButton"},{"name":"NavLink"},{"name":"SegmentedTabs"},{"name":"TextField"},{"name":"Select"},{"name":"Textarea"},{"name":"Checkbox"},{"name":"Radio"},{"name":"Tag"},{"name":"FileButton"},{"name":"FormCard"},{"name":"Icon"},{"name":"TextButton"},{"name":"IconButton"},{"name":"NumberField"},{"name":"DateField"},{"name":"PasswordField"},{"name":"SearchField"},{"name":"Switch"},{"name":"RadioGroup"},{"name":"CheckboxGroup"},{"name":"ScaleField"},{"name":"Autocomplete"},{"name":"FileDropzone"},{"name":"DataTable"},{"name":"Pagination"},{"name":"StatusBadge"},{"name":"Avatar"},{"name":"Card"},{"name":"DescriptionList"},{"name":"EmptyState"},{"name":"Skeleton"},{"name":"Spinner"},{"name":"Tooltip"},{"name":"ProgressBar"},{"name":"Alert"},{"name":"ToastHost"},{"name":"Dialog"},{"name":"ConfirmDialog"},{"name":"Drawer"},{"name":"Tabs"},{"name":"Breadcrumbs"},{"name":"Stepper"},{"name":"Menu"},{"name":"SidebarNav"},{"name":"AppShell"},{"name":"PageHeader"},{"name":"Repeater"},{"name":"PermissionMatrix"},{"name":"FilterBar"},{"name":"LabelsProvider"}]} */
-/* @ds-version: 2.1.0 */
+/* @ds-version: 2.2.0 */
 (function () {
   var React = window.React;
   var h = React.createElement;
@@ -234,12 +234,21 @@
     });
   }
 
+  /* A checkbox can be required (the same "*" as a field), and show a status and a message tied to it by
+     aria-describedby (2.2.0). The message follows the label as its sibling, so the input is never
+     re-created when a message comes or goes. */
   function Checkbox(props) {
-    var inputProps = omit(props, ["className", "label", "children"]);
-    return h("label", { className: cx("ud-check", props.disabled ? "is-disabled" : null, props.className) },
-      h("input", Object.assign({ type: "checkbox" }, inputProps, { className: "ud-check__input" })),
-      h("span", { className: "ud-check__box", "aria-hidden": true }, h(Icon, { name: "check", size: 12, strokeWidth: 3 })),
-      h("span", { className: "ud-check__label" }, props.label || props.children));
+    var inputProps = omit(props, ["className", "label", "children", "status", "message", "required"]);
+    var autoId = useId();
+    var msgId = props.message ? (props.id || autoId) + "-msg" : undefined;
+    var error = props.status === "error";
+    return h(React.Fragment, null,
+      h("label", { className: cx("ud-check", error ? "ud-check--error" : null, props.disabled ? "is-disabled" : null, props.className) },
+        h("input", Object.assign({ type: "checkbox" }, inputProps, { className: "ud-check__input", required: props.required,
+          "aria-invalid": error ? true : props["aria-invalid"], "aria-describedby": cx(props["aria-describedby"], msgId) || undefined })),
+        h("span", { className: "ud-check__box", "aria-hidden": true }, h(Icon, { name: "check", size: 12, strokeWidth: 3 })),
+        h("span", { className: "ud-check__label" }, props.label || props.children, props.required ? h("span", { "aria-hidden": true }, " *") : null)),
+      props.message ? h("p", { className: cx("ud-field__message", error ? "is-error" : null), id: msgId }, props.message) : null);
   }
 
   function Radio(props) {
@@ -573,10 +582,20 @@
     return h("span", { className: cx("ud-spinner", props.size === "sm" ? "ud-spinner--sm" : null, props.className), role: "status" }, h("span", { className: "ud-sr" }, props.label || t("loading")));
   }
 
+  /* Shown on hover and focus, kept while the pointer is on the bubble, hidden by Escape until the
+     pointer or the focus leaves (WCAG 1.4.13, 2.2.0). */
   function Tooltip(props) {
     var id = useId();
+    var dismissed = useState(false);
     var child = React.Children.only(props.children);
-    return h("span", { className: cx("ud-tooltip", props.placement === "bottom" ? "ud-tooltip--bottom" : null) },
+    useEffect(function () {
+      if (dismissed[0]) return;
+      function key(e) { if (e.key === "Escape") dismissed[1](true); }
+      document.addEventListener("keydown", key);
+      return function () { document.removeEventListener("keydown", key); };
+    }, [dismissed[0]]);
+    function reset() { if (dismissed[0]) dismissed[1](false); }
+    return h("span", { className: cx("ud-tooltip", props.placement === "bottom" ? "ud-tooltip--bottom" : null, dismissed[0] ? "is-dismissed" : null), onMouseLeave: reset, onBlur: reset },
       React.cloneElement(child, { "aria-describedby": id }),
       h("span", { className: "ud-tooltip__bubble", role: "tooltip", id: id }, props.title));
   }
@@ -812,10 +831,15 @@
     var wrap = useRef(null);
     var id = useId();
     var t = useLabels(props);
+    /* Escape and a choice give the focus back to the trigger (2.2.0); a click elsewhere leaves it where it went. */
+    function backToTrigger() {
+      var trigger = wrap.current && wrap.current.querySelector("[aria-haspopup=menu]");
+      if (trigger) trigger.focus();
+    }
     useEffect(function () {
       if (!open[0]) return;
       function off(e) { if (wrap.current && !wrap.current.contains(e.target)) open[1](false); }
-      function key(e) { if (e.key === "Escape") open[1](false); }
+      function key(e) { if (e.key === "Escape") { open[1](false); backToTrigger(); } }
       document.addEventListener("mousedown", off); document.addEventListener("keydown", key);
       var first = wrap.current && wrap.current.querySelector("[role=menuitem]"); first && first.focus();
       return function () { document.removeEventListener("mousedown", off); document.removeEventListener("keydown", key); };
@@ -835,7 +859,7 @@
         (props.items || []).map(function (it, i) {
           if (it.divider) return h("hr", { key: i, className: "ud-menu__divider" });
           return h("button", { key: i, type: "button", role: "menuitem", disabled: it.disabled, className: cx("ud-menu__item", it.danger ? "is-danger" : null),
-            onClick: function () { open[1](false); if (it.onSelect) it.onSelect(); } }, it.icon ? h(Icon, { name: it.icon, size: 16 }) : null, it.label);
+            onClick: function () { open[1](false); backToTrigger(); if (it.onSelect) it.onSelect(); } }, it.icon ? h(Icon, { name: it.icon, size: 16 }) : null, it.label);
         })) : null);
   }
 
@@ -855,11 +879,15 @@
   }
 
   /* Admin layout: dark sidebar with logo and nav, top bar, content. On narrow screens the sidebar becomes a drawer. */
+  /* On narrow screens the open drawer behaves as the Drawer does: the focus goes into it, Tab stays
+     inside, Escape and the scrim close it, and the focus goes back to the menu button (2.2.0). */
   function AppShell(props) {
     var open = useState(false);
     var t = useLabels(props);
+    var side = useRef(null);
+    useModalBehaviour(open[0], function () { open[1](false); }, side);
     return h("div", { className: cx("ud-shell", props.className) },
-      h("aside", { className: cx("ud-shell__side", open[0] ? "is-open" : null) },
+      h("aside", { ref: side, className: cx("ud-shell__side", open[0] ? "is-open" : null) },
         h("div", { className: "ud-shell__brand" }, props.logo || null, props.product ? h("span", { className: "ud-shell__product" }, props.product) : null),
         props.sidebar),
       open[0] ? h("div", { className: "ud-shell__scrim", onClick: function () { open[1](false); } }) : null,
@@ -975,7 +1003,7 @@
     Alert: Alert, ToastHost: ToastHost, toast: toast, Dialog: Dialog, ConfirmDialog: ConfirmDialog, Drawer: Drawer,
     Tabs: Tabs, Breadcrumbs: Breadcrumbs, Stepper: Stepper, Menu: Menu, SidebarNav: SidebarNav, AppShell: AppShell, PageHeader: PageHeader,
     Repeater: Repeater, PermissionMatrix: PermissionMatrix, FilterBar: FilterBar,
-    LabelsProvider: LabelsProvider, defaultLabels: DEFAULT_LABELS, version: "2.1.0"
+    LabelsProvider: LabelsProvider, defaultLabels: DEFAULT_LABELS, version: "2.2.0"
   };
 
   window.Udekom = {
