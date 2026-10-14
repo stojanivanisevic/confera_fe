@@ -13,5 +13,9 @@ export const devFixtures: DevFixtures = {
     // A form with an empty site list: it may be framed nowhere.
     'spike-unlisted': { sites: [] },
   },
-  routes: [{ route: '/dev/gallery', kind: 'dev', surface: 'any' }],
+  routes: [
+    { route: '/dev/gallery', kind: 'dev', surface: 'any' },
+    // A page that fails while it is rendered: what the framework's error page carries (ADR-28).
+    { route: '/dev/render-error', kind: 'dev', surface: 'any' },
+  ],
 };

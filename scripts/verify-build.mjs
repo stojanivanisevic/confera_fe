@@ -15,7 +15,7 @@ import { webDir } from './lib.mjs';
 export const FRAMEWORK_ROUTES = ['/_not-found', '/_global-error'];
 
 /** Text that exists only in dev pages and spike fixtures. None of it may be in a production build. */
-export const DEV_ONLY_MARKERS = ['dev/gallery', 'spike-abstract', 'spike-unlisted', 'dev-fixtures.dev', 'data-confera-dev'];
+export const DEV_ONLY_MARKERS = ['dev/gallery', 'dev/render-error', 'spike-abstract', 'spike-unlisted', 'dev-fixtures.dev', 'data-confera-dev'];
 
 /** Pure part: compares the routes of a build with the declared routes. Returns a list of problems. */
 export function checkRoutes(buildRoutes, declared) {

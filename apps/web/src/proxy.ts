@@ -50,8 +50,8 @@ export async function proxy(request: NextRequest): Promise<Response> {
   const config = getConfig();
   const { pathname, search } = request.nextUrl;
 
-  // The framework's own development endpoints (error overlay, hot reload). They do not exist in a build.
-  if (isDevelopmentRuntime() && pathname.startsWith('/__nextjs')) return NextResponse.next();
+  // The framework's own development endpoints (error overlay, hot reload under /_next/). They do not exist in a build.
+  if (isDevelopmentRuntime() && (pathname.startsWith('/__nextjs') || pathname.startsWith('/_next/'))) return NextResponse.next();
 
   const surface = surfaceOfHost(request.headers.get('host'), config);
   const match = classifyRoute(pathname, config.devPages);
@@ -88,6 +88,9 @@ export async function proxy(request: NextRequest): Promise<Response> {
 }
 
 export const config = {
-  // Everything except the framework's own files under /_next (static files are the only cacheable responses).
-  matcher: ['/((?!_next/).*)'],
+  // Everything except the framework's own files, /_next/static/ (the only cacheable responses; they get
+  // `nosniff` from next.config.ts). Any other path under /_next/ names nothing of this application
+  // (no image optimiser, no data routes) and is answered here like any unknown path: the "not found"
+  // page with the header set of its kind. Left to the framework it was that page without any of them.
+  matcher: ['/((?!_next/static/).*)'],
 };

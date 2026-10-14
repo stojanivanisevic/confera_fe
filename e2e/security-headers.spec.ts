@@ -212,3 +212,77 @@ test.describe('ST-66 (routing part): the host separation is enforced in the appl
     expect(await unknown.text()).toContain('Page not found');
   });
 });
+
+// What the proxy does not render itself: the framework's own paths, files at the root, the "not
+// found" and error pages. Every HTML response carries the header set of its kind (ADR-28, ST-12);
+// the framework's files are never sniffed as another type. Plain HTTP, both host names.
+test.describe('ST-12: responses outside the declared pages keep the rule', () => {
+  const HOSTS = [`localhost:${WEB_PORT}`, `127.0.0.1:${WEB_PORT}`];
+  type Headers = Record<string, string | string[] | undefined>;
+
+  /** The header set of a page that is no declared route: the "not found" page or the error page. */
+  function expectPageHeaderSet(what: string, headers: Headers): void {
+    expect(String(headers['content-type']), what).toContain('text/html');
+    expect(String(headers['content-security-policy']), `${what}: the enforced policy`).toMatch(/^frame-ancestors 'none'; script-src-attr 'nonce-[A-Za-z0-9+/=]+'$/);
+    expect(String(headers['content-security-policy-report-only']), `${what}: the baseline`).toContain("object-src 'none'");
+    expect(headers['x-content-type-options'], `${what}: nosniff`).toBe('nosniff');
+    expect(headers['x-frame-options'], what).toBe('DENY');
+    expect(String(headers['cache-control']), what).toContain('no-store');
+    expect(headers['referrer-policy'], what).toBe('no-referrer');
+  }
+
+  test('a path under /_next/ that names no file, a file at the root that does not exist, an unknown page: the "not found" page with its header set', async () => {
+    const paths = [
+      '/_next/nothing',
+      '/_next/a/b',
+      '/_next/..%2Fsign-in',
+      '/_next/image?url=%2Ficon.png&w=64&q=75', // no image optimiser in this application
+      '/_next/data/build/page.json', // no data routes either
+      '/_next/webpack-hmr', // the development server's channel, absent from a build
+      '/_next',
+      '/%5Fnext/nothing',
+      '/favicon.ico',
+      '/robots.txt',
+      '/sitemap.xml',
+      '/no-such-page',
+    ];
+    for (const host of HOSTS) {
+      for (const path of paths) {
+        const response = await getWithHost(path, host);
+        expect(response.status, `${path} under ${host}`).toBe(404);
+        expectPageHeaderSet(`${path} under ${host}`, response.headers);
+      }
+    }
+  });
+
+  test('a page that fails while it is rendered: the error page carries the header set of its kind, and not the error', async () => {
+    for (const host of HOSTS) {
+      const response = await getWithHost('/dev/render-error', host);
+      expect(response.status, host).toBe(500);
+      expectPageHeaderSet(`the error page under ${host}`, response.headers);
+      expect(response.body).not.toContain('fails on purpose');
+    }
+  });
+
+  test("the framework's own files are never sniffed as another type and keep their cache; one that does not exist is no page", async ({ request }) => {
+    const html = await (await request.get(`${PUBLIC_ORIGIN}/f/spike-abstract`)).text();
+    const files = [...new Set([...html.matchAll(/"(\/_next\/static\/[^"?]+\.(?:js|css))"/g)].map((m) => m[1]!))];
+    expect(files.some((file) => file.endsWith('.js')) && files.some((file) => file.endsWith('.css'))).toBe(true);
+    const css = files.find((file) => file.endsWith('.css'))!;
+    const font = /url\((\/_next\/static\/media\/[^)]+\.woff2)\)/.exec(await (await request.get(`${PUBLIC_ORIGIN}${css}`)).text())?.[1];
+    for (const file of [...files, ...(font ? [font] : [])]) {
+      for (const host of HOSTS) {
+        const response = await getWithHost(file, host);
+        expect(response.status, `${file} under ${host}`).toBe(200);
+        expect(response.headers['x-content-type-options'], `${file} under ${host}`).toBe('nosniff');
+        expect(String(response.headers['cache-control']), file).toContain('immutable');
+      }
+    }
+    for (const host of HOSTS) {
+      const missing = await getWithHost('/_next/static/chunks/nothing.js', host);
+      expect(missing.status).toBe(404);
+      expect(String(missing.headers['content-type'])).not.toContain('text/html');
+      expect(missing.headers['x-content-type-options']).toBe('nosniff');
+    }
+  });
+});

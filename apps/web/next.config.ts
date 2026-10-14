@@ -51,6 +51,11 @@ const nextConfig: NextConfig = {
 
   // Type checking and lint are separate steps of `pnpm check`.
   typescript: { ignoreBuildErrors: false },
+
+  // The framework's own files (/_next/static/: scripts, stylesheets, fonts) do not pass the proxy
+  // (src/proxy.ts) and keep their long cache. They are never read as another type than they are sent.
+  // Every other response gets its headers from the proxy, by kind (ADR-28).
+  headers: () => Promise.resolve([{ source: '/_next/static/:path*', headers: [{ key: 'X-Content-Type-Options', value: 'nosniff' }] }]),
 };
 
 export default nextConfig;
