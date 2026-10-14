@@ -187,6 +187,30 @@ function plantedSecrets() {
     { what: 'a session secret that only contains the placeholder words, not at its start', file: 'apps/web/planted-not-a-placeholder.env', text: `SESSION_SECRET=${random(6, ALNUM)}-invented-${random(6, ALNUM)}-local-only-${random(6, ALNUM)}\n` },
     { what: 'a client secret after a question mark on the same line (not a branch of a choice)', file: 'apps/web/src/planted/after-question.ts', text: `export const paypal = isLive() ? { clientSecret: '${random(80, ALNUM)}' } : null;\n` },
     { what: 'a value under the name credentials that is not a mode of fetch', file: 'apps/web/src/planted/credentials.ts', text: `export const service = { credentials: '${random(40, ALNUM)}' };\n` },
+    // Third round. The rule is written down now (README, section 11, "The rule for a secret-like name"): a literal
+    // value bound to a secret-like name, in the syntaxes it lists, and no allowed value but nothing, a reference
+    // and a placeholder. Each of these is inside that rule, and the scan does not report it today. The same
+    // cases are in confera_be (the scanner is the same three files).
+    { what: 'contract: export with the quotes around the pair (export "NAME=value")', file: 'apps/web/planted-export.sh', text: `#!/bin/sh\nexport "SESSION_SECRET=${random(48, ALNUM)}"\nexec node server.js\n` },
+    { what: 'contract: name: value in a YAML file that has one more extension (.yml.example)', file: 'apps/web/planted-compose.yml.example', text: `services:\n  web:\n    environment:\n      SESSION_SECRET: ${random(48, ALNUM)}\n` },
+    { what: 'contract: "name": value in a JSON file that has one more extension (.json.example)', file: 'apps/web/planted-settings.json.example', text: `{\n  "smtp": {\n    "host": "mail.example.test",\n    "password": "${random(24, ALNUM)}"\n  }\n}\n` },
+    { what: 'contract: a list of literal texts as the value, in JSON ("token": ["value"])', file: 'apps/web/planted-list.json', text: `{ "token": ["${random(24, ALNUM)}"] }\n` },
+    { what: 'contract: a list of literal texts as the value, in YAML (credentials: - value)', file: 'apps/web/planted-list.yml', text: `registry:\n  credentials:\n    - deploy\n    - ${random(24, ALNUM)}\n` },
+    { what: 'contract: a list of literal texts as the value, in TypeScript (const credentials = [...])', file: 'apps/web/src/planted/list-secret.ts', text: `export const credentials = ['deploy', '${random(24, ALNUM)}'];\n` },
+    { what: 'contract: a literal fallback (??) inside the hole of a template text', file: 'apps/web/src/planted/template-fallback.ts', text: `export const header = \`Bearer \${process.env.API_TOKEN ?? '${random(40, ALNUM)}'}\`;\n` },
+    {
+      what: 'contract: NAME=value in a text file written in UTF-16 (what PowerShell 5 writes with >)',
+      file: 'apps/web/planted-utf16.env',
+      text: Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(`STAGE=prod\r\nSESSION_SECRET=${random(48, ALNUM)}\r\n`, 'utf16le')]),
+    },
+    { what: 'contract: name: value in a YAML mapping in braces that goes over several lines', file: 'apps/web/planted-flow.yml', text: `smtp: {\n  host: mail.example.test, password: ${random(24, ALNUM)}\n}\n` },
+    { what: 'contract: an assignment that adds to the name (+=)', file: 'apps/web/src/planted/compound.ts', text: `export let smtpPassword = '';\nsmtpPassword += '${random(24, ALNUM)}';\n` },
+  ];
+  // Third round, the other direction: ordinary files. No literal value is bound to a name in them, only
+  // references, so the rule excludes them. The scan reports them today.
+  const ordinary = [
+    { what: 'contract: a positional parameter of a shell script is a reference (PASSWORD="$1")', file: 'scripts/planted-arguments.sh', text: ['#!/bin/sh', 'PASSWORD="$1"', 'TOKEN=$2', 'export API_KEY="$@"', ''].join('\n') },
+    { what: 'contract: a value made of references only holds no literal (TOKEN="$PREFIX$SUFFIX")', file: 'scripts/planted-joined.sh', text: ['#!/bin/sh', 'TOKEN="$PREFIX$SUFFIX"', 'PASSWORD=$FIRST$SECOND', ''].join('\n') },
   ];
   const control = {
     file: 'tests/planted/no-secret.test.ts',
@@ -195,10 +219,10 @@ function plantedSecrets() {
 
   const scanWithPlants = () => {
     try {
-      for (const { file, text } of [...secrets, control]) plant(copy, file, text);
+      for (const { file, text } of [...secrets, ...ordinary, control]) plant(copy, file, text);
       return node(copy, [join('scripts', 'run.mjs'), 'secrets']);
     } finally {
-      for (const { file } of [...secrets, control]) rmSync(join(copy, file), { force: true });
+      for (const { file } of [...secrets, ...ordinary, control]) rmSync(join(copy, file), { force: true });
       for (const directory of ['apps/web/src/planted', 'tests/planted', '.github']) rmSync(join(copy, directory), { recursive: true, force: true });
     }
   };
@@ -216,6 +240,11 @@ function plantedSecrets() {
   testCase('control: a file without a secret is not reported', (miss) => {
     if (named(control.file)) miss(`the secret scan reported ${control.file}, which holds no secret`);
   });
+  for (const { what, file } of ordinary) {
+    testCase(`control, not reported: ${what}`, (miss) => {
+      if (named(file)) miss(`the secret scan reported ${file}, which holds references and no literal value`);
+    });
+  }
   testCase('control: without the plants the same scan passes', (miss) => {
     const clean = node(copy, [join('scripts', 'run.mjs'), 'secrets']);
     if (clean.status !== 0) miss(`the secret scan fails on the copy itself:\n${clean.output.slice(-600)}`);
