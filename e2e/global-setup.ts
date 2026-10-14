@@ -58,4 +58,5 @@ export default async function globalSetup(): Promise<void> {
     removeIsolatedChromiumProfile(profile);
   }
   assertWindowsAccountUntouched('after the canary launch of Chromium, before any test');
+  console.log(`Account guard: the canary Chromium ran on an isolated profile; the bad-password count of the Windows account did not rise (${String(baseline)} before).`);
 }

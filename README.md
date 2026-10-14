@@ -19,8 +19,12 @@ pnpm is **11.28.2**, pinned in `package.json`. Every command is `corepack pnpm â
 
 ## 2. First start
 
+Clone both repositories side by side, into one folder: the browser tests, `api:sync`, `api:check --sibling` and the comparison of the secret scanner look for `confera_be` next to this repository (`..\confera_be`). Until the first release there is no `main` branch: clone `develop`.
+
 ```
-git clone https://github.com/stojanivanisevic/confera_fe.git
+mkdir Confera; cd Confera
+git clone -b develop https://github.com/stojanivanisevic/confera_be.git
+git clone -b develop https://github.com/stojanivanisevic/confera_fe.git
 cd confera_fe
 corepack pnpm install
 ```
@@ -119,7 +123,7 @@ The run takes eight to fifteen minutes, depending on what else the machine is do
 - Chromium runs as the full browser in its new headless mode (`channel: 'chromium'`), so the separate "headless shell" download is not needed.
 - **Chromium never starts on the profile the test runner would make for it.** On a Windows machine that is not in a domain, the full Chromium build tries an interactive logon with an empty password to learn whether the account has one, once per empty profile. Each try is a failed logon (Security event 4625, logon type 2, process `chrome.exe`), and a run starts enough browsers to lock the account (event 4740). So:
   - `e2e/support/fixtures.ts` starts Chromium on an isolated profile of our own whose `Local State` already holds that answer, with the password manager, sign-in before filling and autofill switched off, and gives every page a virtual WebAuthn authenticator. Take `test` from that file in every spec; `tests/os-isolation.test.ts` fails if a spec takes it from `@playwright/test` or launches a browser itself.
-  - `e2e/global-setup.ts` starts one Chromium before any test and reads the account's bad-password count before and after (read-only, no administrator rights). The same check runs around every Chromium worker and at the end.
+  - `e2e/global-setup.ts` starts one Chromium before any test and reads the account's bad-password count before and after (read-only, no administrator rights), and prints one line when the count did not rise. The same check runs around every Chromium worker and at the end.
   - If the count ever rises, the run stops and the browser tests stay switched off on the machine: the error names a marker file in the temporary folder. The marker is read before a run starts and again by every worker before it starts a browser, of any engine, so a run that is already under way starts no further browser either (`tests/os-isolation-fixture.test.ts`). Find the cause, then delete the file. The worst case is one bad password, not a lockout.
   - **What the guard cannot see.** It compares readings of one number, and Windows sets that number back to zero at every successful logon; unlocking the screen is one. A bad password that is followed by an unlock before the next reading leaves nothing in the count, so inside one run a rise can go unnoticed. What bounds this is the canary: one Chromium, started exactly as the tests start it, on a page with the fields that wake the password manager, with a reading directly before and directly after, and before any test runs. The readings around every worker and at the end are a second look, not a proof. Do not unlock the machine while the canary runs (the first seconds of a run); for certainty afterwards, the Security log shows a failed logon as event 4625 with process `chrome.exe` (reading it needs administrator rights).
   - **Playwright's own windows are refused.** UI mode (`--ui`), the inspector (`--debug`, `PWDEBUG`, `page.pause()`), the trace viewer (`playwright show-trace`, which Playwright itself suggests after a failed test) and the recorder (`codegen`, `open`) are each a Chromium that Playwright starts by itself on a new, empty profile, outside the fixture. `pnpm e2e` and `pnpm ds:visual` stop on those switches, and `tests/os-isolation-paths.test.ts` keeps every other way of starting a browser out of the repository. **Never run `playwright show-trace`, `codegen` or `open` on such a machine.** To look at a failed test, open `playwright-report/index.html` in your own browser: the trace of every failed test is inside the report.
@@ -182,7 +186,9 @@ In 0.1.0 the API has one admin route (`GET /api/v1/meta`) and no public route, a
 corepack pnpm api:sync              # from ..\confera_be; or: --from <directory>
 ```
 
-The contract must be committed in `confera_be`. Commit the three things together. `corepack pnpm api:check` (part of `check`) fails when a copy does not match the lock or a type file is stale; `corepack pnpm api:check --sibling` also fails when the checkout of `confera_be` next to this repository has another contract.
+The contract must be committed in `confera_be`. Commit the three things together. `corepack pnpm api:check` (part of `check`) fails when a copy does not match the lock or a type file is stale; `corepack pnpm api:check --sibling` also fails when the checkout of `confera_be` next to this repository has another contract, and says which checkout and commit it compared with.
+
+**Line endings.** Git may say, in the checkout of `confera_be`, "in the working copy of 'openapi/openapi.json', CRLF will be replaced by LF the next time Git touches it". The file on disk then has Windows line endings (a tool on Windows wrote it) while both repositories keep LF (`.gitattributes`). Nothing differs for the contract: `api:sync` and `api:check` read the text with LF line endings, so the checksums are the same. `git add --renormalize openapi` in `confera_be` makes the warning go.
 
 `openapi-typescript` 7.13.0 declares TypeScript 5 as its peer. It was run under TypeScript 6.0.3 and 5.9.3 on the same document with identical output, so it runs on 6.0.3; the exception is written down in `pnpm-workspace.yaml`, and `api:check` regenerates the types on every check.
 

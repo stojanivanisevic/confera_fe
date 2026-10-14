@@ -148,5 +148,10 @@ export function checkContract(options = {}) {
       problems.push(`no checkout of confera_be with openapi/${file} was found at ${backendDir}: the strict check needs it`);
     }
   }
-  return { problems, notices, lock };
+  // Which checkout of confera_be was compared with, if one was (`api:check` says so).
+  const compared =
+    backendDir && DOCUMENTS.every(({ file }) => existsSync(join(backendDir, 'openapi', file)))
+      ? { dir: backendDir, commit: git(backendDir, 'rev-parse', 'HEAD'), branch: git(backendDir, 'rev-parse', '--abbrev-ref', 'HEAD') }
+      : null;
+  return { problems, notices, lock, compared };
 }
