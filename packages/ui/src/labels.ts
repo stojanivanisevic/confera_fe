@@ -25,6 +25,7 @@ export const LABELS_SR: UdekomLabels = {
   selectAllRows: 'Izaberi sve redove',
   selectRow: 'Izaberi red',
   nothingHere: 'Još nema ničega',
+  noResults: 'Nema rezultata za ove filtere',
   pagination: 'Stranice',
   pageRange: '{from}–{to} od {total}',
   rowsPerPage: 'Redova po strani',

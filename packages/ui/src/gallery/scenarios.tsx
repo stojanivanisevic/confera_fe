@@ -289,10 +289,15 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
 
   DataTable: function DataTableScenario() {
     const [selected, setSelected] = useState<Array<string | number>>([2]);
+    const [query, setQuery] = useState('');
+    const rows = PEOPLE.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase()));
     return (
       <U.DataTable<Person>
         caption="Submissions"
-        rows={PEOPLE}
+        rows={rows}
+        toolbar={<U.SearchField label="Search authors" placeholder="Search authors" value={query} onChange={(e) => setQuery(e.target.value)} onClear={() => setQuery('')} />}
+        filtered={query.trim() !== ''}
+        onClearFilters={() => setQuery('')}
         selectable
         selected={selected}
         onSelectionChange={setSelected}
@@ -405,6 +410,8 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
     <Row>
       <U.ToastHost />
       <U.Button variant="dark" onClick={() => U.toast({ title: 'Email sent', description: 'To marta@example.test', tone: 'success', duration: 0 })}>Show a toast</U.Button>
+      <U.Button variant="dark" onClick={() => U.toast({ title: 'Draft saved', tone: 'info', duration: 1500 })}>Show a short toast</U.Button>
+      <U.Button variant="dark" onClick={() => U.toast({ title: 'The server did not answer', tone: 'error', duration: 1500 })}>Show an error toast</U.Button>
     </Row>
   ),
 

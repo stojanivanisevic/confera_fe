@@ -8,11 +8,60 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import postcss from 'postcss';
-import { describe, expect, it } from 'vitest';
+import { act, useState, type ReactElement } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { DS_VERSION } from '../packages/ui/src/generated/manifest';
+import * as U from '../packages/ui/src/generated/udekom.client';
+
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const ds = join(process.cwd(), 'design-system');
+
+let container: HTMLElement;
+let reactRoot: Root;
+beforeEach(() => {
+  container = document.createElement('div');
+  document.body.append(container);
+  reactRoot = createRoot(container);
+});
+afterEach(async () => {
+  await act(async () => {
+    reactRoot.unmount();
+    await Promise.resolve();
+  });
+  container.remove();
+});
+const mount = async (element: ReactElement) => {
+  await act(async () => {
+    reactRoot.render(element);
+    await Promise.resolve();
+  });
+};
+const settle = (ms = 0) =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  });
+const click = async (element: Element) => {
+  await act(async () => {
+    (element as HTMLElement).click();
+    await Promise.resolve();
+  });
+};
+const fire = async (element: Element, event: Event) => {
+  await act(async () => {
+    element.dispatchEvent(event);
+    await Promise.resolve();
+  });
+};
+const focus = async (element: Element) => {
+  await act(async () => {
+    (element as HTMLElement).focus();
+    await Promise.resolve();
+  });
+};
+const byText = (text: string) => [...container.querySelectorAll('*')].find((el) => el.textContent === text && el.children.length === 0) ?? null;
 const css = readFileSync(join(ds, 'components', 'bundle.css'), 'utf8');
 
 /** Every rule of the stylesheet: its selectors, its declarations, and the @media it sits in ('' outside). */
@@ -94,6 +143,168 @@ describe('targets for a finger (item 2: M1-ISS-20)', () => {
 
   it('with a mouse a sort button is a target of 24 px at least (WCAG 2.5.8)', () => {
     expect(rule('.ud-table__sort::after')?.get('height')).toBe('max(100%, var(--target-min))');
+  });
+});
+
+describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
+  it('ConfirmDialog is named by its title and described by its text', async () => {
+    await mount(
+      <U.ConfirmDialog open title="Delete ITEMA office server?" destructive onConfirm={() => undefined} onCancel={() => undefined}>
+        Emails that use it will switch to the fallback server.
+      </U.ConfirmDialog>,
+    );
+    const dialog = container.querySelector('[role="alertdialog"]')!;
+    expect(document.getElementById(dialog.getAttribute('aria-labelledby')!)!.textContent).toBe('Delete ITEMA office server?');
+    expect(document.getElementById(dialog.getAttribute('aria-describedby')!)!.textContent).toBe('Emails that use it will switch to the fallback server.');
+  });
+
+  describe('Alert: a dismissed alert hands the focus on', () => {
+    function Page({ keep = false, last = false }: { keep?: boolean; last?: boolean }) {
+      const [shown, setShown] = useState(true);
+      return (
+        <div>
+          <button type="button">Before</button>
+          {shown ? <U.Alert tone="error" title="The file was not uploaded" onClose={() => setShown(keep)}>Too large.</U.Alert> : null}
+          {last ? null : <button type="button">After</button>}
+        </div>
+      );
+    }
+    const dismiss = () => container.querySelector<HTMLButtonElement>('.ud-alert .ud-icon-btn')!;
+
+    it('to the next control, not to the page', async () => {
+      await mount(<Page />);
+      await focus(dismiss());
+      await click(dismiss());
+      await settle(10);
+      expect(container.querySelector('.ud-alert')).toBeNull();
+      expect(document.activeElement?.textContent).toBe('After');
+    });
+
+    it('to the control before it when it was the last one', async () => {
+      await mount(<Page last />);
+      await focus(dismiss());
+      await click(dismiss());
+      await settle(10);
+      expect(document.activeElement?.textContent).toBe('Before');
+    });
+
+    it('and leaves the focus alone when the owner keeps the alert', async () => {
+      await mount(<Page keep />);
+      await focus(dismiss());
+      await click(dismiss());
+      await settle(10);
+      expect(document.activeElement).toBe(dismiss());
+    });
+  });
+
+  describe('Toast: its time stops while the pointer or the focus is on it, and an error stays', () => {
+    const toasts = () => [...container.querySelectorAll('.ud-toast')].map((t) => t.querySelector('.ud-toast__title')!.textContent);
+    const region = () => container.querySelector('.ud-toasts')!;
+
+    it('goes by itself after its time', async () => {
+      await mount(<U.ToastHost />);
+      await act(async () => {
+        U.toast({ title: 'Saved', duration: 60 });
+      });
+      expect(toasts()).toEqual(['Saved']);
+      await settle(150);
+      expect(toasts()).toEqual([]);
+    });
+
+    it('stays while the pointer is on it and goes once it has left', async () => {
+      await mount(<U.ToastHost />);
+      await act(async () => {
+        U.toast({ title: 'Saved', duration: 60 });
+      });
+      await fire(region(), new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body }));
+      await settle(150);
+      expect(toasts()).toEqual(['Saved']);
+      await fire(region(), new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
+      await settle(150);
+      expect(toasts()).toEqual([]);
+    });
+
+    it('stays while the focus is in it', async () => {
+      await mount(
+        <div>
+          <button type="button">Elsewhere</button>
+          <U.ToastHost />
+        </div>,
+      );
+      await act(async () => {
+        U.toast({ title: 'Saved', duration: 60 });
+      });
+      await focus(container.querySelector('.ud-toast button')!);
+      await settle(150);
+      expect(toasts()).toEqual(['Saved']);
+      await focus(byText('Elsewhere')!);
+      await settle(150);
+      expect(toasts()).toEqual([]);
+    });
+
+    it('an error toast does not go by itself, and is announced at once', async () => {
+      await mount(<U.ToastHost />);
+      await act(async () => {
+        U.toast({ title: 'The server did not answer', tone: 'error', duration: 60 });
+      });
+      await settle(150);
+      expect(toasts()).toEqual(['The server did not answer']);
+      expect(container.querySelector('.ud-toast')!.getAttribute('role')).toBe('alert');
+    });
+
+    it('a dismissed toast gives the focus back to where it came from', async () => {
+      await mount(
+        <div>
+          <button type="button">Elsewhere</button>
+          <U.ToastHost />
+        </div>,
+      );
+      await act(async () => {
+        U.toast({ title: 'Saved', duration: 0 });
+      });
+      const from = byText('Elsewhere') as HTMLButtonElement;
+      await focus(from);
+      const close = container.querySelector<HTMLButtonElement>('.ud-toast button')!;
+      await act(async () => {
+        close.dispatchEvent(new FocusEvent('focusin', { bubbles: true, relatedTarget: from }));
+        close.focus();
+        await Promise.resolve();
+      });
+      await click(close);
+      await settle(10);
+      expect(toasts()).toEqual([]);
+      expect(document.activeElement).toBe(from);
+    });
+  });
+
+  describe('DataTable: no data yet, no results, and loading', () => {
+    const columns = [{ key: 'name', header: 'Name' }];
+
+    it('without rows and without filters: "Nothing here yet", with the action of the page', async () => {
+      await mount(<U.DataTable columns={columns} rows={[]} emptyAction={<U.Button>Invite a user</U.Button>} />);
+      expect(container.querySelector('.ud-empty__title')!.textContent).toBe('Nothing here yet');
+      expect(container.querySelector('.ud-empty .ud-btn')!.textContent).toBe('Invite a user');
+    });
+
+    it('without rows for the filters: "No results for these filters", and a button that clears them', async () => {
+      let cleared = 0;
+      await mount(<U.DataTable columns={columns} rows={[]} filtered onClearFilters={() => (cleared += 1)} emptyAction={<U.Button>Invite a user</U.Button>} />);
+      expect(container.querySelector('.ud-empty__title')!.textContent).toBe('No results for these filters');
+      expect(container.querySelector('.ud-empty .ud-btn')).toBeNull();
+      await click(container.querySelector('.ud-empty .ud-text-btn')!);
+      expect(cleared).toBe(1);
+    });
+
+    it('loading: the table is busy and a status line says so; the line is there before, so it is heard', async () => {
+      await mount(<U.DataTable columns={columns} rows={[{ id: 1, name: 'Marta Kovač' }]} />);
+      const status = container.querySelector('[role="status"]')!;
+      expect(status.textContent).toBe('');
+      expect(container.querySelector('table')!.hasAttribute('aria-busy')).toBe(false);
+      await mount(<U.DataTable columns={columns} rows={[]} loading />);
+      expect(container.querySelector('[role="status"]')).toBe(status);
+      expect(status.textContent).toBe('Loading');
+      expect(container.querySelector('table')!.getAttribute('aria-busy')).toBe('true');
+    });
   });
 });
 

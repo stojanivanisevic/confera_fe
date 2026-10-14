@@ -59,6 +59,7 @@ describe('every built-in text can be translated', () => {
       <U.Spinner />
       <U.DataTable columns={[{ key: 'a', header: 'A' }]} rows={[]} selectable />
       <U.DataTable columns={[{ key: 'a', header: 'A' }]} rows={[{ id: 1, a: 'x' }]} selectable />
+      <U.DataTable columns={[{ key: 'a', header: 'A' }]} rows={[]} filtered onClearFilters={() => undefined} />
       <U.Pagination page={2} pageSize={10} total={48} pageSizeOptions={[10, 25]} />
       <U.Alert onClose={() => undefined}>Tekst</U.Alert>
       <U.Dialog open title="Naslov" onClose={() => undefined} />

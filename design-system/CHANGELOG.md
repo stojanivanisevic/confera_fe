@@ -20,6 +20,15 @@ Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI
 - **With a mouse** the sort buttons of DataTable are targets of 24 x 24 px at least (WCAG 2.5.8), by the same invisible layer; the header row keeps its height.
 - Measured in a test with a touch screen in Chromium, Firefox and WebKit, on the gallery and on the hosted form (`e2e/ds-2-3-0.spec.ts`).
 
+### ConfirmDialog, Alert, Toast and DataTable (M1-ISS-26)
+
+- **ConfirmDialog is described as well as named** (WCAG 1.3.1, 4.1.2): its text is tied to the alert dialog by `aria-describedby`, so a screen reader reads the consequence with the question. Dialog takes `aria-describedby` for the same purpose.
+- **A dismissed Alert hands the focus on** (WCAG 2.4.3): when the owner removes the alert after its dismiss button was pressed, the focus goes to the next control after it, or to the one before it when the alert was last, instead of falling to the page. An owner that keeps the alert, or puts the focus somewhere itself, is left alone.
+- **Links inside an Alert** take the text-link style (above).
+- **Toast does not go while it is being read** (WCAG 2.2.1): its time stops while the pointer is on the toasts or the focus is in them, and runs on when both have left. **An error toast stays** until it is dismissed and is announced at once (`role="alert"`); the README says not to use a toast for errors, which belong in an Alert or at the field. A dismissed toast gives the focus back to where it was before it came to the toasts. Before, every toast went after its time, also under the pointer, and the focus fell to the page.
+- **DataTable tells "no data yet" from "no results"**: with `filtered` (a search or a filter is set) and no rows it says "No results for these filters" with a button that calls `onClearFilters`; otherwise "Nothing here yet" (or `empty`) with `emptyAction`. **It announces loading**: `loading` marks the table `aria-busy` and fills a status line ("Loading") that is always there, so a screen reader hears it change.
+- New label `noResults` ("No results for these filters"; in Confera's Serbian list "Nema rezultata za ove filtere"). New props: DataTable `filtered`, `onClearFilters`, `emptyAction`; Dialog `aria-describedby`.
+
 ### Type, spacing and size tokens (M1-ISS-19)
 
 - **Type styles are tokens.** `pnpm ds:tokens` writes two custom properties for each type style of `tokens.json`: `--text-<style>` (the `font` shorthand: weight, size, line height, family) and `--text-<style>-tracking` (the letter spacing, which the shorthand cannot carry). A rule uses both: `font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking);`. 17 styles: the 15 of the Figma file and two Confera additions for the 12px text in Manrope, `body-xs` (12 / 1.35 / 400) and `caption-xs` (12 / 1.2 / 600), both tracked -0.01em.

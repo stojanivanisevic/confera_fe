@@ -25,7 +25,7 @@ export interface UdekomLabels {
   /** {name} */ uploading: string;
   loading: string;
   selectAllRows: string; selectRow: string;
-  nothingHere: string;
+  nothingHere: string; noResults: string;
   pagination: string; /** {from} {to} {total} */ pageRange: string; rowsPerPage: string; previousPage: string; nextPage: string;
   dismiss: string; close: string;
   cancel: string; confirm: string; working: string;
@@ -137,7 +137,13 @@ export interface DataTableProps<T = any> extends WithLabels {
   columns: DataTableColumn<T>[]; rows: T[]; rowKey?: string; caption?: string;
   sort?: { key: string; direction: "asc" | "desc" } | null; defaultSort?: { key: string; direction: "asc" | "desc" }; onSortChange?: (s: { key: string; direction: "asc" | "desc" } | null) => void; manualSort?: boolean;
   selectable?: boolean; selected?: Array<string | number>; onSelectionChange?: (ids: Array<string | number>) => void;
-  loading?: boolean; empty?: React.ReactNode; toolbar?: React.ReactNode; footer?: React.ReactNode; onRowClick?: (row: T) => void;
+  /** While true the table shows skeleton rows, is aria-busy and announces "Loading" (2.3.0). */
+  loading?: boolean;
+  /** Shown when there are no rows and no filter is set: "Nothing here yet", with `emptyAction` under it. */
+  empty?: React.ReactNode; emptyAction?: React.ReactNode;
+  /** Filters or a search are set: no rows means "No results for these filters", with a button that calls `onClearFilters` (2.3.0). */
+  filtered?: boolean; onClearFilters?: () => void;
+  toolbar?: React.ReactNode; footer?: React.ReactNode; onRowClick?: (row: T) => void;
 }
 export interface PaginationProps extends WithLabels { className?: string; page: number; pageSize: number; total: number; onPageChange?: (page: number) => void; pageSizeOptions?: number[]; onPageSizeChange?: (size: number) => void; }
 export interface StatusBadgeProps { tone?: Tone; dot?: boolean; children: React.ReactNode; }
@@ -151,11 +157,17 @@ export interface TooltipProps { title: React.ReactNode; placement?: "top" | "bot
 export interface ProgressBarProps { value: number; label?: string; showLabel?: boolean; size?: "sm" | "md"; }
 
 export interface AlertProps extends WithLabels { className?: string; tone?: "info" | "success" | "warning" | "error"; title?: React.ReactNode; children?: React.ReactNode; action?: React.ReactNode; onClose?: () => void; }
-export interface ToastOptions { title: string; description?: string; tone?: "info" | "success" | "warning" | "error"; /** ms; 0 keeps it until dismissed. Default 4000. */ duration?: number; }
+export interface ToastOptions {
+  title: string; description?: string;
+  /** An error toast stays until it is dismissed (2.3.0); an error belongs in an Alert in the page. */
+  tone?: "info" | "success" | "warning" | "error";
+  /** ms; 0 keeps it until dismissed. Default 4000. The time stops while the pointer or the focus is on the toasts (2.3.0). */
+  duration?: number;
+}
 /** Render once; then call toast(). */
 export interface ToastHostProps extends WithLabels { position?: "bottom" | "top"; }
 export declare function toast(opts: ToastOptions | string): number;
-export interface DialogProps extends WithLabels { className?: string; open: boolean; onClose?: () => void; title: React.ReactNode; actions?: React.ReactNode; size?: "sm" | "md" | "lg"; dismissible?: boolean; role?: "dialog" | "alertdialog"; children?: React.ReactNode; }
+export interface DialogProps extends WithLabels { className?: string; open: boolean; onClose?: () => void; title: React.ReactNode; actions?: React.ReactNode; size?: "sm" | "md" | "lg"; dismissible?: boolean; role?: "dialog" | "alertdialog"; /** The id of the text that describes the dialog (2.3.0; ConfirmDialog sets it to its text). */ "aria-describedby"?: string; children?: React.ReactNode; }
 export interface ConfirmDialogProps extends WithLabels { open: boolean; title: React.ReactNode; children?: React.ReactNode; confirmText?: string; cancelText?: string; destructive?: boolean; busy?: boolean; onConfirm: () => void; onCancel: () => void; }
 export interface DrawerProps extends WithLabels { className?: string; open: boolean; onClose: () => void; title: React.ReactNode; actions?: React.ReactNode; side?: "right" | "left"; width?: string; children?: React.ReactNode; }
 
