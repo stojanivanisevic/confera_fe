@@ -73,7 +73,7 @@ So http://localhost:3000/f/spike-abstract and http://127.0.0.1:3000/sign-in answ
 | `corepack pnpm build` / `start` | the production build, and serving it |
 | `corepack pnpm verify:build` | the production build has only the declared routes, no dev-only text, no public source map |
 | `corepack pnpm secrets` | secret scan: credentials by format (secretlint), and literal values bound to names like a secret (section 11) |
-| `corepack pnpm secrets:sync` | takes the scanner of the second part from `confera_be`, unchanged, and records it in a lock |
+| `corepack pnpm secrets:sync` | takes the scanner of the second part, with its manifest, from `confera_be`, unchanged, and records its version in a lock |
 | `corepack pnpm test:supply-chain` | plants a fake secret, a vulnerable package and an unlisted build script in a copy under `.artifacts/` and expects each to be caught; the last step of `check` |
 | `corepack pnpm dev` | the development server, with the gallery and the spike form |
 | `corepack pnpm e2e:install` | downloads the three browser engines, once |
@@ -223,33 +223,46 @@ corepack pnpm add --filter @confera/web <name>@<exact version>     # or -w for t
 
 **The rule for a secret-like name.** In every file that git tracks, no literal value is bound to a secret-like name.
 
-- **A secret-like name** is decided by its last word, in any casing (`smtpPassword`, `SMTP_PASSWORD`, `smtp-password`); a number at the end does not count (`API_KEY_2`):
-  - the last word is, or ends with: password, passwd, pwd, secret, token (`PGPASSWORD`, `DBPASSWD`, `MYSQL_PWD`, `csrfToken`, `clientSecret`);
-  - the last word is credential or credentials;
+- **A secret-like name** is decided by its last word, in any casing (`smtpPassword`, `SMTP_PASSWORD`, `smtp-password`):
+  - the last word is, or ends with: password, passwd, pwd, passphrase, secret, token (`PGPASSWORD`, `DBPASSWD`, `MYSQL_PWD`, `keyPassphrase`, `csrfToken`, `clientSecret`);
+  - the last word is pass, credential or credentials (`DB_PASS`, `smtpPass`; `bypass` and `compass` are not the word pass);
   - the last word is `key` and the word before it is one of: api, private, data, access, secret, signing, encryption, master, client, session (`AWS_SECRET_ACCESS_KEY`, `DATA_KEY`, `signingKey`).
 
-  A name whose last word is another one is not secret-like: `passwordPolicy`, `tokenType`, `secretName`, `PASSWORD_MIN_LENGTH`, `SESSION_SECRET_FILE`, a label, a message; nor are `primaryKey`, `sortKey`, `cacheKey`, `publicKey`, `idempotencyKey`.
+  Qualifier words after the secret word, and a number at the end, do not count: sandbox, live, prod, production, staging, test, dev, local, previous, prev, old, new, current, next, primary, secondary, backup, rotated (`PAYPAL_CLIENT_SECRET_SANDBOX`, `DATA_KEY_PREVIOUS`, `SMTP_PASSWORD_2`). A name whose last word is another one is not secret-like: `passwordPolicy`, `tokenType`, `secretName`, `PASSWORD_MIN_LENGTH`, `SESSION_SECRET_FILE`, a label, a message; nor are `primaryKey`, `sortKey`, `cacheKey`, `publicKey`, `idempotencyKey`, nor a plural (`secrets:` of compose lists names, not values).
 
-- **One fixed exception:** the option `credentials` of the Fetch API takes a mode, not a credential. Under exactly that name, exactly `'include'`, `'same-origin'` and `'omit'` are not a finding; any other literal is.
 - **Allowed values, and nothing else:**
   - nothing: an empty value, and also `null`, `~`, `true` and `false`, which are no value or a flag (`persist-credentials: false`);
-  - a reference to something else as the whole value: `${VAR}`, `$VAR`, `$(command)`, `${{ secrets.X }}`; in JavaScript anything that is not a literal (`process.env.X`, a call, another variable);
+  - a reference to something else as the whole value: `${VAR}`, `$VAR`, `$1`, `$@`, references one after the other (`"$PREFIX$SUFFIX"`), `$(command)`, `${{ secrets.X }}`; in JavaScript anything that is not a literal (`process.env.X`, a call, another variable); in PowerShell a command or a call (`$p = Read-Host`);
   - a placeholder: a literal that **starts with** `invented-` or `local-only-`.
+
+  A list of values under a secret-like name is read value by value.
+
 - **There is no guess by length or by randomness.** `'too_short'` under a secret-like name is a finding, and so are `changeme` and `1`. A test that needs a password that is too short uses `'invented-x'`.
+- **The written exceptions, and no others:**
+  - the option `credentials` of the Fetch API takes a mode: under exactly that name, exactly `'include'`, `'same-origin'` and `'omit'` are not a finding;
+  - versions under names of packages: the maps `dependencies`, `devDependencies`, `optionalDependencies`, `peerDependencies`, `overrides`, `resolutions`, `catalog` and `catalogs` of a package manifest or a pnpm workspace file (and `pnpm.overrides`);
+  - GitHub Actions: under `permissions`, the levels `read`, `write` and `none` (`id-token: write`).
 - **Where a name gets a value:**
-  - `NAME=value` at the start of a line, with or without `export`, quotes, a leading list dash, `ENV` or `ARG` (environment files, shell, compose, Dockerfile, this README);
-  - `name: value` in YAML and `"name": value` in JSON, in any letter case;
-  - in JavaScript and TypeScript an assignment, a declaration (typed or not), a field of a class, an object property, a default parameter, an attribute of a JSX element, and a literal used as a fallback for such a name (`??`, `||`, a branch of a ternary).
+  - `NAME=value` at the start of a line, with or without `export`, quotes, a leading list dash, `ENV`, `ARG` or `RUN` (environment files, shell, compose, Dockerfile, this README), and `-e NAME=value` or `--env NAME=value` anywhere in a line;
+  - `name: value` in YAML and `"name": value` in JSON, in any letter case, also in a file with one more extension (`compose.yml.example`);
+  - in JavaScript and TypeScript an assignment (also `+=`), a declaration (typed or not), a field of a class, an object property, a default parameter, an attribute of a JSX element, and a literal used as a fallback for such a name (`??`, `||`, a branch of a ternary), also inside the `${...}` of a template.
+
+  A file is read as UTF-8, or as UTF-16 when a byte-order mark says so.
+
 - **What is not read:** comments; lockfiles; and what this repository generates or vendors: the API contract of `confera_be` in `packages/api-client/openapi/` (vendored by `api:sync`), the types generated from it in `packages/api-client/src/generated/`, and the design-system script wrapped for the application in `packages/ui/src/generated/` (generated by `ds:build`; its source in `design-system/` is read). The list of what is left out is `scripts/secret-scan.config.mjs`; a hand-written file with a finding is changed, never added to that list.
 
 The rule reaches names that only sound like a secret, and those are renamed: a label is `showPasswordText`, not `showPassword`; a lint rule is `unknown-custom-property`, not `unknown-token`; a header of a test request is `'x-csrf-token': 'invented-csrf'`. The web application itself must never be given a secret (section 9).
 
-**Where the scanner comes from.** It is one file without dependencies, `scripts/secret-assignments/secret-assignments.mjs`, with its two corpora beside it: shapes that must be reported (`…reported.mjs`) and ordinary lines that must not be (`…ordinary.mjs`). The three are written in `confera_be`, hold nothing about a repository, and are copied here unchanged; they are never edited here. `scripts/secret-scan.lock.json` records the commit of `confera_be` they come from and the sha256 of each. The unit tests run both corpora (`tests/secret-assignments.test.ts`) and hold the copies to the lock, and to the checkout of `confera_be` next to this repository when it has the scanner (`tests/secret-assignments-lock.test.ts`).
+**Where the scanner comes from.** It is one file without dependencies, `scripts/secret-assignments/secret-assignments.mjs`, with its two corpora beside it: shapes that must be reported (`…reported.mjs`) and ordinary lines that must not be (`…ordinary.mjs`), and `secret-assignments.manifest.json`: the version of the scanner and the SHA-256 of each of the three files (over the text with LF line endings). The four are written in `confera_be`, hold nothing about a repository, and are copied here unchanged; they are never edited here.
+
+- `--self-test` runs the two corpora and compares the three files with the manifest, so a copy that was changed, or is of another version, fails. The unit tests run it (`tests/secret-assignments.test.ts`).
+- `scripts/secret-scan.lock.json` records the version that was taken and the SHA-256 of the manifest; `tests/secret-assignments-lock.test.ts` holds the copies to it. When `confera_be` is checked out next to this repository (or where `CONFERA_BE_DIR` points) and has the scanner, the same test compares its manifest with this one and fails on any difference: the two repositories cannot drift apart unseen.
 
 ```
-corepack pnpm secrets:sync                                           takes the three files from ..\confera_be (or: --from <directory>) and writes the lock
+corepack pnpm secrets:sync                                           takes the four files from ..\confera_be (or: --from <directory>), checks them, writes the lock
 node scripts/secret-assignments/secret-assignments.mjs               scans the current directory
-node scripts/secret-assignments/secret-assignments.mjs --self-test   runs the two corpora
+node scripts/secret-assignments/secret-assignments.mjs --self-test   runs the two corpora, checks the manifest
+node scripts/secret-assignments/secret-assignments.mjs --version     the version of the scanner
 ```
 
 `corepack pnpm test:supply-chain` (part of `check`) proves that these rules bite, on planted cases in a copy of the repository under `.artifacts/`; it plants nothing in your working tree and removes its copy. `tests/supply-chain-settings.test.ts` holds the settings themselves: a rule that is switched off or a version range fails the unit tests.

@@ -2,14 +2,16 @@
 //   pnpm secrets:sync                      from ../confera_be
 //   pnpm secrets:sync --from <directory>   from another checkout (or set CONFERA_BE_DIR)
 //
-// The scanner and its two corpora (scripts/secret-assignments/) are written in confera_be
-// and are the same three files in both repositories: one rule, set by the lead. They are
-// copied here unchanged, byte for byte, and never edited here. The lock beside this script
-// says which commit of confera_be they are and what their checksums are;
-// tests/secret-assignments-lock.test.ts holds the copies to it, and to the checkout of
-// confera_be next to this repository when there is one.
+// The scanner, its two corpora and their manifest (scripts/secret-assignments/) are written
+// in confera_be and are the same four files in both repositories: one rule, set by the lead.
+// They are copied here unchanged and never edited here. The manifest records the version of
+// the scanner and the SHA-256 of each of the three files; the scanner's own `--self-test`
+// fails when a file or the version does not match it. The lock beside this script records
+// which version was taken and the SHA-256 of the manifest (LF line endings);
+// tests/secret-assignments-lock.test.ts holds the copies to it, and compares the manifest
+// with the one of the checkout of confera_be next to this repository when there is one.
 //
-// The files must be committed there: the lock names the commit.
+// The files must be committed there.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -18,7 +20,8 @@ import { join, resolve } from 'node:path';
 import { fail, root } from './lib.mjs';
 
 const DIRECTORY = 'scripts/secret-assignments';
-const FILES = ['secret-assignments.mjs', 'secret-assignments.ordinary.mjs', 'secret-assignments.reported.mjs'];
+const MANIFEST = 'secret-assignments.manifest.json';
+const FILES = ['secret-assignments.mjs', 'secret-assignments.reported.mjs', 'secret-assignments.ordinary.mjs', MANIFEST];
 const LOCK = join(root, 'scripts', 'secret-scan.lock.json');
 
 const args = process.argv.slice(2);
@@ -31,34 +34,33 @@ const git = (...gitArgs) => {
 };
 
 for (const file of FILES) {
-  if (!existsSync(join(from, DIRECTORY, file))) fail(`${join(from, DIRECTORY, file)} does not exist. Is confera_be checked out there, on a branch that has the scanner?`);
+  if (!existsSync(join(from, DIRECTORY, file))) fail(`${join(from, DIRECTORY, file)} does not exist. Is confera_be checked out there, on a branch that has the scanner and its manifest?`);
 }
 const commit = git('rev-parse', 'HEAD');
-if (!commit) fail(`${from} is not a git checkout: the lock needs the commit the scanner comes from`);
+if (!commit) fail(`${from} is not a git checkout`);
 const uncommitted = git('status', '--porcelain', '--', DIRECTORY) ?? '';
-if (uncommitted !== '') fail(`The scanner in ${join(from, DIRECTORY)} has uncommitted changes:\n${uncommitted}\nCommit them in confera_be first: the lock names a commit.`);
+if (uncommitted !== '') fail(`The scanner in ${join(from, DIRECTORY)} has uncommitted changes:\n${uncommitted}\nCommit them in confera_be first.`);
 
 mkdirSync(join(root, DIRECTORY), { recursive: true });
-const files = {};
-for (const file of FILES) {
-  const bytes = readFileSync(join(from, DIRECTORY, file));
-  writeFileSync(join(root, DIRECTORY, file), bytes);
-  files[file] = createHash('sha256').update(bytes).digest('hex');
-}
+for (const file of FILES) writeFileSync(join(root, DIRECTORY, file), readFileSync(join(from, DIRECTORY, file)));
+
+// The copies are the files their manifest records, of its version.
+const selfTest = spawnSync(process.execPath, [join(root, DIRECTORY, 'secret-assignments.mjs'), '--self-test'], { encoding: 'utf8' });
+if (selfTest.status !== 0) fail(`The scanner taken from ${from} does not pass its own self-test:\n${selfTest.stdout}${selfTest.stderr}`);
+
+const manifestText = readFileSync(join(root, DIRECTORY, MANIFEST), 'utf8').replace(/\r\n/g, '\n');
+const manifest = JSON.parse(manifestText);
 const lock = {
   $comment:
-    'Written by `pnpm secrets:sync`. Do not edit. The files of scripts/secret-assignments/ are copied unchanged from confera_be; this says from which commit, and the sha256 of their bytes.',
-  source: {
-    repository: 'confera_be',
-    directory: DIRECTORY,
-    commit,
-    branch: git('rev-parse', '--abbrev-ref', 'HEAD'),
-  },
-  files,
+    'Written by `pnpm secrets:sync`. Do not edit. scripts/secret-assignments/ is the scanner of confera_be with its corpora and their manifest, copied unchanged; this records the version taken and the SHA-256 of the manifest (LF line endings), which records the SHA-256 of each file.',
+  scanner: manifest.scanner,
+  version: manifest.version,
+  manifest: createHash('sha256').update(manifestText, 'utf8').digest('hex'),
+  source: { repository: 'confera_be', directory: DIRECTORY, branch: git('rev-parse', '--abbrev-ref', 'HEAD'), commit },
 };
 writeFileSync(LOCK, `${JSON.stringify(lock, null, 2)}\n`);
 
-console.log(`Scan for secret-like names taken from ${from}`);
-console.log(`  commit ${commit}, branch ${lock.source.branch}`);
-for (const file of FILES) console.log(`  ${file}  sha256 ${files[file].slice(0, 16)}…`);
+console.log(`Scan for secret-like names, version ${lock.version}, taken from ${from} (branch ${lock.source.branch})`);
+console.log(`  ${selfTest.stdout.trim().split('\n').join('\n  ')}`);
+console.log(`  manifest sha256 ${lock.manifest.slice(0, 16)}…`);
 console.log('Commit scripts/secret-assignments/ and scripts/secret-scan.lock.json together, then run `corepack pnpm secrets`.');
