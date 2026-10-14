@@ -67,6 +67,36 @@ describe('one focus ring everywhere, and a text link (item 1: M1-ISS-21, R-02)',
   });
 });
 
+describe('targets for a finger (item 2: M1-ISS-20)', () => {
+  const COARSE = '(pointer: coarse)';
+  it.each([
+    ['.ud-icon-btn', 'width'], ['.ud-icon-btn', 'height'], ['.ud-arrow-btn--sm', 'width'],
+    ['.ud-btn', 'height'], ['.ud-text-btn', 'height'], ['.ud-tab', 'height'], ['.ud-search', 'height'], ['.ud-file__btn', 'height'],
+    ['.ud-pagination__size select', 'height'], ['.ud-page-btn', 'min-width'], ['.ud-page-btn', 'height'],
+    ['.ud-field__box', 'min-height'], ['.ud-field__action', 'min-width'], ['.ud-field__action', 'min-height'],
+    ['.ud-search__clear', 'min-width'], ['.ud-search__clear', 'min-height'], ['.ud-tag__remove', 'min-width'], ['.ud-tag__remove', 'min-height'],
+    ['.ud-check', 'min-height'], ['.ud-radio', 'min-height'], ['.ud-switch', 'min-height'], ['.ud-tabs-u__tab', 'min-height'],
+    ['.ud-menu__item', 'min-height'], ['.ud-sidenav__link', 'min-height'], ['button.ud-stepper__btn', 'min-height'],
+    ['.ud-table__check .ud-check', 'min-width'], ['.ud-matrix__cell .ud-check', 'min-width'], ['.ud-listbox__option', 'min-height'],
+  ])('on a touch screen %s has %s target-touch (44px)', (selector, prop) => {
+    const where = RULES.filter((r) => r.selectors.includes(selector) && r.media.replace(/\s+/g, '') === COARSE.replace(/\s+/g, '') && r.decls.has(prop));
+    expect(where.at(-1)?.decls.get(prop), `${selector} ${prop}`).toBe('var(--target-touch)');
+  });
+
+  it('links and sort buttons get an invisible target of 44 px over them, so the line and the header do not move', () => {
+    const layer = rule('.ud-nav-link::after', COARSE)!;
+    expect(rule('.ud-breadcrumbs a::after', COARSE)).toBe(layer);
+    expect(rule('.ud-table__sort::after', COARSE)).toBe(layer);
+    expect(layer.get('width')).toBe('max(100%, var(--target-touch))');
+    expect(layer.get('height')).toBe('max(100%, var(--target-touch))');
+    expect(rule('.ud-link', COARSE)?.get('padding-block')).toBe('max(0px, calc((var(--target-touch) - 1lh) / 2))');
+  });
+
+  it('with a mouse a sort button is a target of 24 px at least (WCAG 2.5.8)', () => {
+    expect(rule('.ud-table__sort::after')?.get('height')).toBe('max(100%, var(--target-min))');
+  });
+});
+
 describe('previews hold invented people only (M1-ISS-42, NFR-PRIV-05)', () => {
   const previews = readdirSync(join(ds, 'components'), { withFileTypes: true })
     .filter((d) => d.isDirectory())

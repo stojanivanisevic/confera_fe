@@ -416,7 +416,9 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-table tbody tr.is-selected td { background: var(--surface-2); }
 .ud-table tbody tr.is-clickable { cursor: pointer; }
 .ud-table__check { width: var(--target-touch); }
-.ud-table__sort { display: inline-flex; align-items: center; gap: var(--gutter-xs); padding: 0; border: 0; background: transparent; cursor: pointer; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; }
+.ud-table__sort { position: relative; display: inline-flex; align-items: center; gap: var(--gutter-xs); padding: 0; border: 0; background: transparent; cursor: pointer; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; }
+/* A target of 24 x 24 px at least (WCAG 2.5.8), without making the header row higher (2.3.0). */
+.ud-table__sort::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--target-min)); height: max(100%, var(--target-min)); transform: translate(-50%, -50%); }
 .ud-table__sort.is-active { color: var(--ink); }
 .ud-table__sort:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
 .ud-table__footer { padding: var(--gutter-m) var(--gutter-xl); border-top: 1px solid var(--neutral-300); }
@@ -613,4 +615,34 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
 @media (pointer: coarse) {
   .ud-field__control, .ud-search__control, .ud-pagination__size select { font: var(--text-body-md); letter-spacing: var(--text-body-md-tracking); }
   .ud-field__control { font-weight: 600; }
+}
+
+/* ---------- Targets for a finger (2.3.0, M1-ISS-20) ----------
+   Where the main pointer is a finger, every control is a target of 44 x 44 px at least
+   (target-touch). Buttons, fields and rows grow; glyphs keep their size. Where a part must not
+   move (a link in a line of text or in a trail, a sort button, a tag's remove button), its target
+   grows around it: padding on an inline link, an invisible ::after over the part. */
+@media (pointer: coarse) {
+  .ud-btn, .ud-tab, .ud-search, .ud-file__btn, .ud-text-btn, .ud-pagination__size select { height: var(--target-touch); }
+  .ud-arrow-btn--sm, .ud-icon-btn { width: var(--target-touch); height: var(--target-touch); }
+  .ud-page-btn { min-width: var(--target-touch); height: var(--target-touch); }
+  .ud-field__box { min-height: var(--target-touch); }
+  .ud-field__control { height: calc(var(--target-touch) - 2px); }
+  .ud-field__action { justify-content: center; align-items: center; min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-s)) -1px 0; }
+  .ud-search__clear { min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-m)) -1px 0; }
+  /* A tag is as high as a small control; its remove button reaches 6px above and below it, into the gap between rows. */
+  .ud-tag { min-height: var(--control-sm); box-sizing: border-box; }
+  .ud-tag__remove { min-width: var(--target-touch); min-height: var(--target-touch); margin: calc((var(--control-sm) - var(--target-touch)) / 2) calc(-1 * var(--gutter-xs)) calc((var(--control-sm) - var(--target-touch)) / 2) 0; }
+  /* Choice rows: the label is the target (the box keeps its 17.5px); a box without a text is as wide as it is high. */
+  .ud-check, .ud-radio, .ud-switch, .ud-tabs-u__tab, .ud-menu__item, .ud-sidenav__link, button.ud-stepper__btn { min-height: var(--target-touch); }
+  .ud-switch { align-items: center; }
+  .ud-table__check .ud-check, .ud-matrix__cell .ud-check { min-width: var(--target-touch); justify-content: center; }
+  .ud-listbox__option, .ud-listbox__empty { display: flex; align-items: center; min-height: var(--target-touch); box-sizing: border-box; }
+  /* A link in a line of text: padding makes the target higher without moving the line. */
+  .ud-link, .ud-alert__body a { padding-block: max(0px, calc((var(--target-touch) - 1lh) / 2)); }
+  /* A link of a trail or of the site's navigation, and a sort button: the target is an invisible layer over it. */
+  .ud-nav-link, .ud-breadcrumbs a, .ud-table__sort { position: relative; }
+  .ud-nav-link::after, .ud-breadcrumbs a::after, .ud-table__sort::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--target-touch)); height: max(100%, var(--target-touch)); transform: translate(-50%, -50%);
+  }
 }
