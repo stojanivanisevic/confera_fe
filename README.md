@@ -83,7 +83,7 @@ So http://localhost:3000/f/spike-abstract and http://127.0.0.1:3000/sign-in answ
 | `corepack pnpm e2e:install` | downloads the three browser engines, once |
 | `corepack pnpm e2e` | browser tests on Chromium, Firefox and WebKit (section 6); with `CONFERA_E2E_API_ORIGIN` set, against a real `confera_be` (section 6, "Against the real API") |
 | `corepack pnpm ds:check` | the design system and its adapter are intact (section 7) |
-| `corepack pnpm ds:visual` | pictures of every component in v1 and v2, for review |
+| `corepack pnpm ds:visual` | pictures of every component in an earlier release and in the working tree, and their difference, for review (section 7) |
 | `corepack pnpm api:sync` / `api:check` | the API contract (section 8) |
 
 ## 5. Layout
@@ -169,13 +169,13 @@ In 0.1.0 the API has one admin route (`GET /api/v1/meta`) and no public route, a
 
 ## 7. Design system
 
-`design-system/` is the UdEkoM Balkans design system, **version 2.2.0**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
+`design-system/` is the UdEkoM Balkans design system, **version 2.3.0**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
 
-- The UI comes only from it: no other UI kit, no Tailwind, no colour literal outside `design-system/tokens.css`. The lint enforces this, and `lint-fixtures/` holds a planted violation for every rule.
+- The UI comes only from it: no other UI kit, no Tailwind, no colour literal outside `design-system/tokens.css`. Since design system 2.3.0 type, spacing and sizes are tokens too: a stylesheet writes `font: var(--text-body-sm)`, `var(--gutter-l)`, `var(--target-touch)`, never a px size or a font family (1 and 2 px borders and the breakpoints stay px). The lint enforces this (`colour-literal`, `size-literal`, `font-literal` and the rest), and `lint-fixtures/` holds a planted violation for every rule.
 - Application code imports `@confera/ui`, never the folder. `packages/ui/src/generated/` is the design-system script wrapped, unchanged, in a client module so that it renders on the server and hydrates. `corepack pnpm ds:build` regenerates it.
 - **The folder is changed only as a release.** After a change: update `CHANGELOG.md`, then `corepack pnpm ds:release` (regenerates `tokens.css` and the fonts, records `CHECKSUMS.sha256`) and `corepack pnpm ds:build`. Until then `ds:check` fails and names the file.
 - `corepack pnpm ds:check` also fails on an address of another origin or a raw-markup write in the script, on a custom property without a token, on a fixed English text in a component, and when manifest, exports and types disagree.
-- `corepack pnpm ds:visual` (needs the browsers) renders every preview of v1 and v2 as a plain script and writes `.artifacts/ds-visual/index.html`.
+- `corepack pnpm ds:visual` (needs the browsers) renders every preview of an earlier release and of the working tree as a plain script, and writes both, their difference and the share of changed pixels to `.artifacts/ds-visual/index.html`. The earlier release is the commit or tag in `DS_VISUAL_BASE` (`$env:DS_VISUAL_BASE = 'v0.1.0'` in PowerShell gives design system 2.2.0), by default the first commit (version 1).
 - `corepack pnpm ds:snapshot` writes the release as a reproducible zip to `.artifacts/udekom-design-system-v<version>.zip` and prints its checksum.
 
 ## 8. API contract

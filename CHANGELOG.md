@@ -4,6 +4,19 @@ All notable changes to `confera_fe`. Versions follow SemVer; `confera_be` carrie
 
 ## Unreleased
 
+### Changed
+- **Design system 2.3.0**, before the admin screens of 0.2.0 use it (the UI reviewer's re-check of 2.2.0; M1-ISS-10, 19 to 26, 42, 44, 45). See `design-system/CHANGELOG.md`.
+  - One focus ring everywhere (the blue outline also on the rows-per-page select, the Breadcrumbs links, the Stepper button and the sidebar links) and a text-link style, `ud-link`, which the error summary of the form now uses.
+  - Targets of 44 x 44 px for every control where the pointer is a finger; 24 x 24 px for small controls with a mouse.
+  - ConfirmDialog described by its text; a dismissed Alert hands the focus on; a toast does not go while the pointer or the focus is on it, and an error toast stays; DataTable tells "no data yet" from "no results for these filters" and announces loading; rows that open something are reached by Tab.
+  - Card takes a heading level: the admin home's card is an `h2` under the page's `h1`.
+  - The modal layer of Dialog, Drawer and the AppShell drawer keeps the focus in every engine and makes the page behind inert; the AppShell drawer is a named dialog with a close button and closes when the view grows past 900px; Tab closes an open menu.
+  - Type, spacing and size tokens (two custom properties per type style, a spacing scale on a 4px grid, component sizes), and two rules of the style lint, `size-literal` and `font-literal`, which hold for the design system and for the application's stylesheets.
+  - DateField with one calendar icon; PermissionMatrix without a stray border; FileDropzone with its remove button in place and a state for a refused file; Tooltip kept inside the view; Autocomplete keeps its value on focus; Switch tracks that differ by 5.38:1.
+  - Previews without real names and addresses; the corrections to the 2.2.0 notes.
+- **`pnpm ds:visual` compares the working tree with any earlier release** (`DS_VISUAL_BASE`, for example `v0.1.0` for design system 2.2.0); by default still version 1.
+- The form's e-mail rule is tested on an invented university domain instead of a real one (M1-ISS-42).
+
 ## 0.1.0 (2026-10-14): foundations, risk spikes and design system v2
 
 ### Added

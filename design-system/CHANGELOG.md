@@ -15,7 +15,7 @@ Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI
 
 ### Targets for a finger (M1-ISS-20)
 
-- **Where the main pointer is a finger** (`@media (pointer: coarse)`, the rule that already made inputs 16px), every control is a target of 44 x 44 px at least (`target-touch`): pill buttons, SegmentedTabs pills, fields, the search, the file button and the small arrow button are 44px high; IconButton (the Menu trigger, the close buttons of Dialog, Drawer, Alert and toast, the menu button of AppShell, the remove button of a Repeater row) and the page buttons are 44 x 44; TextButton (FilterBar's reset, ConfirmDialog's cancel, Repeater's add) and the rows-per-page select are 44px high; the show/hide button of PasswordField and the clear button of SearchField are 44 x 44 at the end of their field; Checkbox, Radio and Switch rows, underline tabs, menu items, list options, sidebar links and the step buttons of Stepper are 44px high; the checkboxes of DataTable and PermissionMatrix, which have no text, are 44 x 44. Glyphs keep their size.
+- **Where the main pointer is a finger** (`@media (pointer: coarse)`, the rule that already made inputs 16px), every control is a target of 44 x 44 px at least (`target-touch`): pill buttons, SegmentedTabs pills, fields, the search and the small arrow button are 44px high (the file button is already: 36px and its 4px ring); IconButton (the Menu trigger, the close buttons of Dialog, Drawer, Alert and toast, the menu button of AppShell, the remove button of a Repeater row) and the page buttons are 44 x 44; TextButton (FilterBar's reset, ConfirmDialog's cancel, Repeater's add) and the rows-per-page select are 44px high; the show/hide button of PasswordField and the clear button of SearchField are 44 x 44 at the end of their field; Checkbox, Radio and Switch rows, underline tabs, menu items, list options, sidebar links and the step buttons of Stepper are 44px high; the checkboxes of DataTable and PermissionMatrix, which have no text, are 44 x 44. Glyphs keep their size.
 - **Where a part must not move**, its target grows around it: a text link (`ud-link`, links in an Alert) gets padding above and below that does not move its line; the links of NavLink and Breadcrumbs and the sort buttons of DataTable get an invisible layer of 44 x 44 over them. A Tag is 32px high on a touch screen, and its remove button (44 x 44) reaches 6px above and below it, into the gap between rows.
 - **With a mouse** the sort buttons of DataTable are targets of 24 x 24 px at least (WCAG 2.5.8), by the same invisible layer; the header row keeps its height.
 - Measured in a test with a touch screen in Chromium, Firefox and WebKit, on the gallery and on the hosted form (`e2e/ds-2-3-0.spec.ts`).
@@ -47,6 +47,44 @@ Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI
 
 - **`headingLevel`** (2 to 6, default 3, as before) sets the level of the card's title, so the outline of a page does not jump from the PageHeader's `h1` to `h3` (WCAG 1.3.1). The title looks the same at every level. Confera's admin home now gives its card `headingLevel={2}`.
 
+### DateField with one calendar icon (M1-ISS-22)
+
+- **DateField draws no icon of its own any more.** The one calendar icon is the browser's own picker button, at the end of the field in Chromium and Firefox, which opens the picker by pointer and by keyboard; Safari opens its picker from the field. 2.2.0 drew the system's icon at the start as well, so Chromium showed two. An `icon` that is passed is still drawn. The browser's button keeps its 60% strength, about the grey of the other icons of a field.
+
+### PermissionMatrix and FileDropzone (M1-ISS-22, M1-ISS-26)
+
+- **The last row of a table has no line under it, also under a row header**: the last row of PermissionMatrix kept a border under its first column, which cut the card's rounded corner.
+- **A file row keeps its remove button at the right of the file's line**: the progress bar of an upload takes a line of its own under the row (`order`), so the button no longer wraps under it, at the left.
+- **A refused file** (M1-ISS-26, "no state for a refused file"): `FileItem.error` ("Larger than 20 MB: choose a smaller file") draws the row's border and icon in `danger` and says why under the name, in `danger-strong`; the remove button is described by the reason.
+
+### Tooltip inside the view (M1-ISS-44, R-05)
+
+- **The bubble is kept inside the view** (WCAG 1.4.10): before it shows it is measured; near an edge it moves sideways to 8px from the edge, and without room on its side of the trigger it goes to the other side. At 375px the bubble of a trigger near the left edge started at x = -61 and was cut off.
+- **IconButton's README** no longer calls its `title` "the tooltip" (R-05): a browser shows a title to a mouse only; where the name must be seen, wrap the button in a Tooltip.
+
+### Autocomplete keeps its value (M1-ISS-24)
+
+- **On focus the chosen value stays in the field**, selected so that typing replaces it, and the list shows every option with the chosen one active until the person types. 2.2.0 emptied the field on focus ("Serbia" turned into the placeholder). Escape and leaving the field show the chosen value again.
+- **The chevron of a multiple Autocomplete stays at the right of its box** however the tags wrap (it wrapped under the tags, at the left), and a press anywhere in the box beside the input puts the focus in it.
+- Every field and the search work the same way: a press on the box beside the control (its padding, an icon) puts the focus in the control, so the whole box is the target.
+
+### Switch tracks that differ (M1-ISS-25)
+
+- **Off is a white track** with a 1px `neutral-700` border and a `neutral-700` thumb (4.05:1); **on is the `brand-orange-strong` track** with a white thumb (5.38:1), as before. The two tracks differ by 5.38:1; in 2.2.0 they differed by 1.33:1 (a solid `neutral-700` track off), so the state was read from the thumb's place alone and "off" looked heavier than "on". The owner may want to look (Switch in the comparison).
+
+### Corrections to earlier notes (M1-ISS-45, FIN-01)
+
+What earlier notes said and was not true, as the UI reviewer's re-check of 2.2.0 found it:
+- **2.2.0, "Targets of 24 x 24 px": "Both, and before them the five controls of UI-M1-15 that had the browser's own ring, now show the system's blue outline."** Two of the five did (the remove button of Tag, the clear button of SearchField). The rows-per-page select of Pagination, the Breadcrumbs links and the step button of Stepper still showed the browser's ring; 2.3.0 fixes them.
+- **2.2.0's list of what it fixed named UI-M1-10 and UI-M1-16 as if they were done.** UI-M1-10 was done for two controls (24px targets); nothing grew for a finger until 2.3.0. UI-M1-16 was done for one of four faults (the vertical Stepper's connectors); the FileDropzone row, the PermissionMatrix border and DateField's second icon are fixed in 2.3.0.
+- **README, Behaviour (2.2.0): "Every focusable part shows the blue `focus` outline or ring, menu items and list options included."** Not the three controls above, not the sidebar links (orange), and not links inside an Alert (the browser's colour and ring). True since 2.3.0, and a browser test walks every focusable part to hold it.
+- **README, Behaviour: "… the narrow-screen drawer of AppShell close on Escape and return the focus."** True, but the drawer did not close when the view grew past 900px (R-06), and in WebKit Tab left it (R-07). Both are fixed in 2.3.0.
+- **README, Shape and layout: "The only shadow token is the field `focus-ring`."** Since 2.0.0 there are also `shadow-overlay` and `shadow-thumb` (Confera additions).
+- **`components/Checkbox/README.md`: "checked is `brand-orange` with a white check; keyboard focus shows a 3px orange ring with a 2px white gap."** Since 2.0.0 the check is `on-brand` (near-black) on the orange fill, with a `brand-orange-strong` border, and the focus is the blue `focus-ring`.
+- **The header of `components/bundle.css` (2.2.0) pointed at a README section "Known and not changed"** that the README does not have (it is in this changelog, under 2.0.0). Since 2.3.0 the header says what is written in px and why.
+- **`components/IconButton/README.md`: "`label` … becomes the accessible name and the tooltip."** It becomes the native `title`, which a browser shows to a mouse only (R-05).
+- **2.0.0, "Known and not changed": DataTable rows that react to a click are not reachable by keyboard; the AppShell preview shows its logo by an address that exists only where the design system was authored.** Both are fixed in 2.3.0. The Serbian collation of DataTable's sorting is still as it was.
+
 ### Type, spacing and size tokens (M1-ISS-19)
 
 - **Type styles are tokens.** `pnpm ds:tokens` writes two custom properties for each type style of `tokens.json`: `--text-<style>` (the `font` shorthand: weight, size, line height, family) and `--text-<style>-tracking` (the letter spacing, which the shorthand cannot carry). A rule uses both: `font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking);`. 17 styles: the 15 of the Figma file and two Confera additions for the 12px text in Manrope, `body-xs` (12 / 1.35 / 400) and `caption-xs` (12 / 1.2 / 600), both tracked -0.01em.
@@ -65,6 +103,13 @@ Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI
 
 - The previews brought in with version 1 showed the client's real name and the association's office address (DataTable, Avatar, AppShell) and addresses on real or other domains (Repeater, ToastHost, TextField, FormCard, Dialog). They now show the invented people of Confera's tests (Marta Kovač, Đorđe Šćepanović, Živana Čolić, Lazar Primerić) on `example.test`, and an invented "Univerzitet Primer" instead of real universities (DescriptionList, TextField).
 - The AppShell preview shows the logo of the release (`assets/Logos/udekom-mark-on-dark.png`) instead of an address (`/_blob/…`) that existed only where version 1 was authored ("Known and not changed" since 2.0.0).
+- The Alert preview has a link in its text; the FileDropzone scenario of Confera's gallery a refused file; its DataTable a search and rows that open.
+
+### Tests, tools and version
+
+- `tests/ds-2-3-0.test.tsx` holds every item in the DOM and in the stylesheet; `tests/ds-tokens.test.ts` the tokens, the scale and that no token of 2.2.0 changed; `tests/lint-fixtures.test.ts` the two lint rules. `e2e/ds-2-3-0.spec.ts` holds in Chromium, Firefox and WebKit what an engine draws and does: the focus of every part, the targets on a touch screen, the toast, the alert, the table, the AppShell drawer and the modal layer, the menu, the tooltip at 375px, the layout of the items above; and it keeps pictures of the changed parts on a phone in each engine (`.artifacts/ds-2-3-0/`).
+- `pnpm ds:visual` compares the working tree with any earlier release: `DS_VISUAL_BASE=v0.1.0` gives 2.2.0 → 2.3.0 (by default it is still version 1).
+- `components/bundle.js` carries `@ds-version: 2.3.0` and `Udekom.version` is `"2.3.0"`. `tokens.json` stays at version 2. The manifest is unchanged (53 components): the text link is a class, not a component.
 
 ## 2.2.0 (2026-10-14)
 
