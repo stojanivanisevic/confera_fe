@@ -90,4 +90,21 @@ test.describe('ST-66: odd Host headers', () => {
     for (const path of PUBLIC_PATHS) expect(await claim(path, ADMIN_HOST, PUBLIC_HOST), `${path} under the admin host, claiming the public host`).toBe(404);
     expect(await claim('/sign-in', 'evil.example', ADMIN_HOST)).toBe(404);
   });
+
+  // Found in the verification of the edge-case round (skipProxyUrlNormalize): under /_next/ the proxy
+  // does not run (its matcher leaves the framework's own files out), and a path there that names no
+  // file is answered with the application's "not found" page, without any of the security headers.
+  // It happens with the URL normalisation of the proxy on or off: it is not the new setting.
+  test('a path under /_next/ that names no file is never answered with a page that lacks the security headers', async () => {
+    for (const host of [ADMIN_HOST, PUBLIC_HOST]) {
+      for (const path of ['/_next/nothing', '/_next/foo/bar', '/_next/..%2Fsign-in', '/_next/image?url=%2Ficon.png&w=64&q=75']) {
+        const response = await get(path, host);
+        expect(response.status, `${path} under ${host}`).toBe(404);
+        if (String(response.headers['content-type']).includes('text/html')) {
+          expect(response.headers['content-security-policy'], `${path} under ${host}: content security policy`).toMatch(/frame-ancestors 'none'/);
+          expect(response.headers['x-content-type-options'], `${path} under ${host}: nosniff`).toBe('nosniff');
+        }
+      }
+    }
+  });
 });
