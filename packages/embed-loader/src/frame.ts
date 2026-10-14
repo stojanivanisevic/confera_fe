@@ -7,7 +7,8 @@
  *    frame page can only be framed by a listed site (`frame-ancestors`).
  *  - The message holds a type and a height. No form data, no reference.
  *  - It is sent when the height of the content changes, and again when the
- *    page around changes the size of the frame (the snippet's late start).
+ *    page around changes the size of the frame before it has ever followed a
+ *    height the frame told (the snippet's lines started late).
  *  - The frame reads no message from its parent at all.
  */
 import { heightMessage } from './protocol';
@@ -28,21 +29,27 @@ export function startHeightReporter(options: HeightReporterOptions): () => void 
   if (parent === win || options.parentOrigins.length === 0) return () => undefined;
 
   let last = -1;
+  // Whether the frame has been as tall as it said: then the page around listens (or needs nothing).
+  let heard = false;
   /** `again`: tell the height also when it did not change. */
   const report = (again = false) => {
     const message = heightMessage(Math.ceil(options.root.getBoundingClientRect().height));
     if (!message || (message.height === last && !again)) return;
     last = message.height;
+    if (win.innerHeight === last) heard = true;
     for (const origin of options.parentOrigins) parent.postMessage(message, origin);
   };
 
   const observer = new ResizeObserver(() => report());
   observer.observe(options.root);
-  // The page around changed the size of the frame. Its inline lines may have started listening
-  // only now (a site that runs them late makes the frame one pixel taller when they run), so the
-  // height is told again. When the page only applied the height the frame told it, this is one
-  // repetition, which changes nothing there and so causes no further change of size.
-  const onResize = () => report(true);
+  // The page around changed the size of the frame. Until the page has once made the frame as tall
+  // as the frame said, its inline lines may not have been listening: a site that runs them late
+  // makes the frame one pixel taller when they start, and the height is told again. Once the page
+  // has followed, a size it sets is its own business: the frame does not argue with it.
+  const onResize = () => {
+    if (win.innerHeight === last) heard = true;
+    else if (!heard) report(true);
+  };
   win.addEventListener('resize', onResize);
   report();
   return () => {

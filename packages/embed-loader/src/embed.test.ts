@@ -145,10 +145,12 @@ describe("the frame's height reporter", () => {
     const root = { getBoundingClientRect: () => ({ height }) } as unknown as Element;
     const parent = { postMessage: vi.fn() };
     const listeners = new Map<string, () => void>();
+    // The frame's own viewport: the fixed height of the snippet until the page around sets another.
     const win = {
+      innerHeight: 900,
       addEventListener: vi.fn((type: string, listener: () => void) => listeners.set(type, listener)),
       removeEventListener: vi.fn((type: string) => listeners.delete(type)),
-    } as { parent?: unknown; addEventListener: unknown; removeEventListener: unknown };
+    } as { parent?: unknown; innerHeight: number; addEventListener: unknown; removeEventListener: unknown };
     win.parent = framed ? parent : win;
     const stop = startHeightReporter({ root, parentOrigins, win: win as unknown as Window });
     return {
@@ -156,8 +158,11 @@ describe("the frame's height reporter", () => {
       stop,
       win,
       resize: (next: number) => ((height = next), FakeObserver.last?.callback()),
-      /** The page around changes the size of the frame. */
-      frameResized: () => listeners.get('resize')?.(),
+      /** The page around makes the frame this tall. */
+      frameResized: (viewport: number) => {
+        win.innerHeight = viewport;
+        listeners.get('resize')?.();
+      },
     };
   };
 
@@ -189,13 +194,33 @@ describe("the frame's height reporter", () => {
     expect(setup(['https://itema.example.test'], false).parent.postMessage).not.toHaveBeenCalled();
   });
 
-  it('tells the height again, also unchanged, when the page around changes the size of the frame', () => {
-    // A site that ran the snippet late: its lines make the frame one pixel taller to hear the height.
+  it('tells the height again, also unchanged, when the page around changes the size of the frame before it ever followed', () => {
+    // A site that ran the snippet late: the frame told 641 to nobody, and the lines, starting now,
+    // make it one pixel taller than the fixed height to hear it.
     const { parent, frameResized } = setup(['https://itema.example.test']);
     expect(parent.postMessage).toHaveBeenCalledTimes(1);
-    frameResized();
+    frameResized(901);
     expect(parent.postMessage).toHaveBeenCalledTimes(2);
     expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 641 }, 'https://itema.example.test');
+  });
+
+  it('once the page has followed, a size it sets is not argued with', () => {
+    const { parent, frameResized, resize } = setup(['https://itema.example.test']);
+    frameResized(641); // the page made the frame as tall as it said
+    frameResized(640); // and then something of the site sets another size: the frame does not fight it
+    frameResized(5000);
+    expect(parent.postMessage).toHaveBeenCalledTimes(1);
+    // A change of its own content is still told.
+    resize(700);
+    expect(parent.postMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it('a frame that is already as tall as it says needs nothing more', () => {
+    const { parent, frameResized, resize } = setup(['https://itema.example.test']);
+    resize(900); // the content is as tall as the fixed height
+    expect(parent.postMessage).toHaveBeenCalledTimes(2);
+    frameResized(901);
+    expect(parent.postMessage).toHaveBeenCalledTimes(2);
   });
 
   it('stops when asked', () => {
@@ -203,7 +228,7 @@ describe("the frame's height reporter", () => {
     stop();
     expect(FakeObserver.last?.disconnect).toHaveBeenCalled();
     expect(win.removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
-    frameResized();
+    frameResized(901);
     expect(parent.postMessage).toHaveBeenCalledTimes(1);
   });
 });

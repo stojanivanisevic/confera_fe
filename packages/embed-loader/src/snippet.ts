@@ -75,7 +75,8 @@ function frameStyle(height: number): string {
  *    sent it, never kept from the moment the lines ran (the origin is checked first);
  *  - a frame that already shows Confera's page when the lines run (its document is no longer
  *    the parent's to read) has told its height before anyone listened. The lines make it one
- *    pixel taller; the frame answers any change of its own size by telling its height again.
+ *    pixel taller; a frame the page has never yet made as tall as it said answers that by
+ *    telling its height again.
  *    No message is sent into the frame and nothing waits.
  */
 export function listenerSource(frameId: string, origin: string): string {
