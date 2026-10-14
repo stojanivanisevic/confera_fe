@@ -11,6 +11,10 @@ import { COMPONENT_NAMES } from '../packages/ui/src/generated/manifest';
 import { PUBLIC_ORIGIN } from './env';
 import { originsOf, watchPage } from './support/page-problems';
 
+// Every browser test of this file loads the whole gallery, the heaviest page there is. They run one
+// after the other, in one worker, so that the other workers have room for something lighter.
+test.describe.configure({ mode: 'default' });
+
 test.describe('design-system gallery: server rendering and hydration', () => {
   test('the server sends every component as markup, before any script runs', async ({ request }) => {
     const response = await request.get(`${PUBLIC_ORIGIN}/dev/gallery`);

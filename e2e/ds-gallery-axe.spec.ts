@@ -11,8 +11,10 @@ import { watchPage } from './support/page-problems';
 
 const WCAG_21_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
-// A scan of the whole gallery (53 components) takes a while, more so when three engines run at once.
-test.describe.configure({ timeout: 240_000 });
+// A scan of the whole gallery (53 components, 1,500 elements) is the heaviest thing these tests do.
+// The tests of this file run one after the other, in one worker: three such scans at once slowed
+// each other down, and every other test that was running, by more than they gained.
+test.describe.configure({ mode: 'default', timeout: 240_000 });
 
 async function scan(page: Page, include?: string) {
   let builder = new AxeBuilder({ page }).withTags(WCAG_21_AA);
