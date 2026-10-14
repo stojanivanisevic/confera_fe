@@ -586,16 +586,20 @@
      pointer or the focus leaves (WCAG 1.4.13, 2.2.0). */
   function Tooltip(props) {
     var id = useId();
-    var dismissed = useState(false);
+    var hovered = useState(false), focused = useState(false), dismissed = useState(false);
+    var shown = hovered[0] || focused[0];
     var child = React.Children.only(props.children);
     useEffect(function () {
-      if (dismissed[0]) return;
+      if (!shown || dismissed[0]) return;
       function key(e) { if (e.key === "Escape") dismissed[1](true); }
       document.addEventListener("keydown", key);
       return function () { document.removeEventListener("keydown", key); };
-    }, [dismissed[0]]);
-    function reset() { if (dismissed[0]) dismissed[1](false); }
-    return h("span", { className: cx("ud-tooltip", props.placement === "bottom" ? "ud-tooltip--bottom" : null, dismissed[0] ? "is-dismissed" : null), onMouseLeave: reset, onBlur: reset },
+    }, [shown, dismissed[0]]);
+    /* Escape holds until neither the pointer nor the focus is on it any more. */
+    useEffect(function () { if (!shown && dismissed[0]) dismissed[1](false); }, [shown, dismissed[0]]);
+    return h("span", { className: cx("ud-tooltip", props.placement === "bottom" ? "ud-tooltip--bottom" : null, dismissed[0] ? "is-dismissed" : null),
+      onMouseEnter: function () { hovered[1](true); }, onMouseLeave: function () { hovered[1](false); },
+      onFocus: function () { focused[1](true); }, onBlur: function () { focused[1](false); } },
       React.cloneElement(child, { "aria-describedby": id }),
       h("span", { className: "ud-tooltip__bubble", role: "tooltip", id: id }, props.title));
   }

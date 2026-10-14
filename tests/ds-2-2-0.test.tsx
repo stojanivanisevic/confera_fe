@@ -133,11 +133,18 @@ describe('Tooltip', () => {
       </U.Tooltip>,
     );
     const wrapper = container.querySelector<HTMLElement>('.ud-tooltip')!;
-    container.querySelector('button')!.focus();
+    const button = container.querySelector('button')!;
+    // Escape while it is not shown changes nothing: another part of the page may use the key.
+    await key(document, 'Escape');
+    expect(wrapper.classList.contains('is-dismissed')).toBe(false);
+    await act(async () => {
+      button.focus();
+      await Promise.resolve();
+    });
     await key(document, 'Escape');
     expect(wrapper.classList.contains('is-dismissed')).toBe(true);
     await act(async () => {
-      wrapper.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
+      button.blur();
       await Promise.resolve();
     });
     expect(wrapper.classList.contains('is-dismissed')).toBe(false);
