@@ -193,9 +193,10 @@ The application reads its settings only in `apps/web/src/config/env.ts` and refu
 | Variable | Meaning |
 |---|---|
 | `STAGE` | `local`, `dev`, `test` or `prod`. No default. The first three start only with loopback or `.test` origins |
-| `CONFERA_ADMIN_ORIGIN`, `CONFERA_PUBLIC_ORIGIN` | the two surfaces; two different host names; https on `prod` |
+| `CONFERA_ADMIN_ORIGIN`, `CONFERA_PUBLIC_ORIGIN` | the two surfaces; two different host names (a port or a scheme does not make another host: a cookie does not tell ports apart); https on `prod` |
 | `CONFERA_API_ORIGIN` | where `/api/v1` and `/public/v1` are forwarded |
 | `PORT` | port of `dev` and `start` (3000) |
+| `LISTEN_HOST` | the address `dev` and `start` listen on: `127.0.0.1` by default outside `prod` (this machine only), `0.0.0.0` on `prod` (inside its container). On `local`, `dev` and `test` anything but a loopback address (`127.0.0.1`, `::1`, `localhost`) stops the start, and `-H`/`--hostname` is refused: the same rule as in `confera_be` |
 
 The web application has no secret and must never be given one. `scripts/next.mjs` is the only way Next is started: it turns the framework's telemetry off and loads `.env`.
 
@@ -206,6 +207,12 @@ A **test build** (`corepack pnpm build:test`, used by `dev` and `e2e`) also cont
 ## 10. The embed
 
 `buildEmbedSnippet` in `@confera/embed-loader` produces what an admin pastes into a conference site: a frame, a link to the hosted form, and a few inline lines that only set the frame's height. No code is loaded from Confera into the site; to change the snippet it is pasted again. Where a site strips scripts, the frame keeps its fixed height. `e2e/embed.spec.ts` is the proof on the hostile page.
+
+Because a pasted snippet can only be repaired by pasting it again, the inline lines assume nothing about when they run or when the frame arrives (`e2e/embed.edge.spec.ts`): a speed plugin may run them late, a consent manager may hold the frame back and put a new one in later. So they never keep the frame they found: when a message arrives they check its origin first and then look for the frame with this id whose window sent it. And a frame that already shows Confera's page when they run (its document can no longer be read by the site) has told its height before anyone listened: the lines make it one pixel taller, and the frame answers every change of its own size by telling its height again. They send nothing into the frame, wait for nothing (no timer), and stay under 600 characters. For a form `itema-2026-abstract` on `https://forms.example.test`:
+
+```html
+<script>(function(){var o="https://forms.example.test",i="confera-form-itema-2026-abstract";function z(f,h){f.style.setProperty("height",h+"px","important")}var f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);if(s)z(f,s+1);window.addEventListener("message",function(e){if(e.origin!==o||!e.source)return;for(var a=document.querySelectorAll("iframe#"+i),k=0,g;k<a.length;k++)if(a[k].contentWindow===e.source)g=a[k];var d=e.data;if(g&&d&&d.type==="confera:height"&&typeof d.height=="number"&&isFinite(d.height))z(g,Math.min(20000,Math.max(200,Math.round(d.height))))})})();</script>
+```
 
 **The fields of a form are plain controls.** The server sends the whole form as markup, and the scripts that attach it can take seconds on a phone; an author who starts typing in that time must not lose the text. So a field never takes its text from component state (no `value=`, no `checked=`): it is a control with a `name`, the browser holds what is typed, and the page reads the controls through a store (`createFormValueStore`, `useFormValues` and `useFormRef` in `@confera/form-renderer`). While the form is being attached the store answers with the initial values, so the markup matches; right after, with what is really in the controls. A draft kept in the tab is written only into controls the author has not touched. The form renderer of 0.3.0 builds on the same store; `tests/form-typed-before-attach.test.tsx` holds the behaviour on the spike form.
 
