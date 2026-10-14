@@ -120,7 +120,7 @@ describe('targets for a finger (item 2: M1-ISS-20)', () => {
   const COARSE = '(pointer: coarse)';
   it.each([
     ['.ud-icon-btn', 'width'], ['.ud-icon-btn', 'height'], ['.ud-arrow-btn--sm', 'width'],
-    ['.ud-btn', 'height'], ['.ud-text-btn', 'height'], ['.ud-tab', 'height'], ['.ud-search', 'height'], ['.ud-file__btn', 'height'],
+    ['.ud-btn', 'height'], ['.ud-text-btn', 'height'], ['.ud-tab', 'height'], ['.ud-search', 'height'],
     ['.ud-pagination__size select', 'height'], ['.ud-page-btn', 'min-width'], ['.ud-page-btn', 'height'],
     ['.ud-field__box', 'min-height'], ['.ud-field__action', 'min-width'], ['.ud-field__action', 'min-height'],
     ['.ud-search__clear', 'min-width'], ['.ud-search__clear', 'min-height'], ['.ud-tag__remove', 'min-width'], ['.ud-tag__remove', 'min-height'],
@@ -138,7 +138,21 @@ describe('targets for a finger (item 2: M1-ISS-20)', () => {
     expect(rule('.ud-table__sort::after', COARSE)).toBe(layer);
     expect(layer.get('width')).toBe('max(100%, var(--target-touch))');
     expect(layer.get('height')).toBe('max(100%, var(--target-touch))');
-    expect(rule('.ud-link', COARSE)?.get('padding-block')).toBe('max(0px, calc((var(--target-touch) - 1lh) / 2))');
+    expect(rule('.ud-link', COARSE)?.get('padding-block')).toBe('max(0px, calc((var(--target-touch) - 1em) / 2))');
+  });
+
+  it('the file button is 44px high already: 36px and its 4px ring above and below', () => {
+    expect(rule('.ud-file__btn')?.get('height')).toBe('var(--file-button-height)');
+    expect(rule('.ud-file__btn')?.get('border')).toBe('4px solid var(--ink-halo)');
+    expect(readFileSync(join(ds, 'tokens.css'), 'utf8')).toContain('--file-button-height: 36px;');
+  });
+
+  it('a part that grows to 44px counts its padding in (box-sizing), so it is not 44 and its padding', () => {
+    for (const r of RULES.filter((x) => x.media.replace(/\s+/g, '') === '(pointer:coarse)' && [...x.decls.values()].some((v) => v.includes('--target-touch')))) {
+      // Not parts without padding or border (the control of a field), invisible layers, the box of a field (min-height), inline links.
+      if (r.selectors.some((s) => s.endsWith('::after')) || r.selectors.includes('.ud-field__box') || r.selectors.includes('.ud-field__control') || r.selectors.includes('.ud-link')) continue;
+      expect(r.decls.get('box-sizing') ?? RULES.find((x) => x.media === '' && r.selectors.every((s) => x.selectors.includes(s)))?.decls.get('box-sizing'), r.selectors.join(', ')).toBe('border-box');
+    }
   });
 
   it('with a mouse a sort button is a target of 24 px at least (WCAG 2.5.8)', () => {
@@ -435,9 +449,10 @@ describe('AppShell, the modal layer and Menu (item 6: R-01, R-03, R-06, R-07)', 
       await click(opener());
       const first = byText('The first link') as HTMLAnchorElement;
       expect(document.activeElement).toBe(first);
-      // What WebKit does: Tab from a link finds no other part it takes, and the focus leaves the layer.
-      await key(first, 'Tab');
+      // What WebKit does: Tab from a link finds no other part it takes, and the focus leaves the layer
+      // in the same tick, before the layer looks (its look is a timeout of 0).
       await act(async () => {
+        first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
         first.blur();
         await Promise.resolve();
       });
@@ -575,6 +590,151 @@ describe('Card takes a heading level (item 4: M1-ISS-23)', () => {
     expect(title.tagName).toBe(tag);
     expect(title.textContent).toBe('API');
     expect(container.querySelector('section')!.hasAttribute('headingLevel')).toBe(false);
+  });
+});
+
+describe('DateField with one calendar icon (item 8: M1-ISS-22)', () => {
+  it('draws no icon of its own: the browser’s picker button is the one icon', async () => {
+    await mount(<U.DateField label="Abstract deadline" defaultValue="2026-12-01" />);
+    expect(container.querySelector('.ud-field__icon')).toBeNull();
+    expect(container.querySelector('input')!.type).toBe('date');
+  });
+
+  it('an icon that is passed is still drawn', async () => {
+    await mount(<U.DateField label="Abstract deadline" icon="clock" />);
+    expect(container.querySelectorAll('.ud-field__icon')).toHaveLength(1);
+  });
+});
+
+describe('PermissionMatrix and FileDropzone (item 9: M1-ISS-22, M1-ISS-26)', () => {
+  it('the last row of a table has no line under it, also under its row header', () => {
+    expect(rule('.ud-table tbody tr:last-child th')?.get('border-bottom')).toBe('0');
+  });
+
+  it('the progress of a file takes its own line after the remove button, which stays at the right', () => {
+    expect(rule('.ud-filelist__item .ud-progress')?.get('order')).toBe('1');
+    expect(rule('.ud-filelist__item > .ud-icon-btn')?.get('margin-left')).toBe('auto');
+  });
+
+  it('a refused file says why, in the error colour, and its remove button is described by the reason', async () => {
+    await mount(
+      <U.FileDropzone label="Paper files" files={[{ name: 'talk.mp4', size: 48_100_000, error: 'Larger than 20 MB' }, { name: 'abstract.docx', size: 1000 }]} onRemove={() => undefined} />,
+    );
+    const [refused, fine] = [...container.querySelectorAll('.ud-filelist__item')];
+    expect(refused!.className).toContain('is-error');
+    expect(fine!.className).not.toContain('is-error');
+    expect(refused!.querySelector('.ud-filelist__error')!.textContent).toBe('Larger than 20 MB');
+    const remove = refused!.querySelector('button')!;
+    expect(document.getElementById(remove.getAttribute('aria-describedby')!)!.textContent).toBe('Larger than 20 MB');
+    expect(fine!.querySelector('button')!.hasAttribute('aria-describedby')).toBe(false);
+  });
+});
+
+describe('Tooltip inside the view (item 10: M1-ISS-44)', () => {
+  const rect = (r: Partial<DOMRect>) => () => ({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}), ...r }) as DOMRect;
+  const view = (width: number, height: number) => {
+    Object.defineProperty(document.documentElement, 'clientWidth', { value: width, configurable: true });
+    Object.defineProperty(document.documentElement, 'clientHeight', { value: height, configurable: true });
+  };
+  afterEach(() => {
+    Reflect.deleteProperty(document.documentElement, 'clientWidth');
+    Reflect.deleteProperty(document.documentElement, 'clientHeight');
+  });
+  const show = async (trigger: Partial<DOMRect>, bubble: Partial<DOMRect>, placement?: 'top' | 'bottom') => {
+    await mount(
+      <U.Tooltip title="Copies the snippet for the conference site" placement={placement}>
+        <button type="button">Copy snippet</button>
+      </U.Tooltip>,
+    );
+    container.querySelector<HTMLElement>('.ud-tooltip')!.getBoundingClientRect = rect(trigger);
+    container.querySelector<HTMLElement>('.ud-tooltip__bubble')!.getBoundingClientRect = rect(bubble);
+    await fire(container.querySelector('.ud-tooltip')!, new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body }));
+    return { wrapper: container.querySelector<HTMLElement>('.ud-tooltip')!, bubble: container.querySelector<HTMLElement>('.ud-tooltip__bubble')! };
+  };
+
+  it('near the left edge of a phone it moves right, 8px from the edge', async () => {
+    view(375, 812);
+    const { bubble } = await show({ left: 16, right: 116, width: 100, top: 400, bottom: 432, height: 32 }, { width: 240, height: 40 });
+    // Centred, it would start at 16 + 50 - 120 = -54.
+    expect(bubble.style.marginLeft).toBe('62px');
+  });
+
+  it('near the right edge it moves left', async () => {
+    view(375, 812);
+    const { bubble } = await show({ left: 330, right: 362, width: 32, top: 400, bottom: 432, height: 32 }, { width: 200, height: 40 });
+    // Centred, it would end at 346 + 100 = 446; the view ends at 375 - 8.
+    expect(bubble.style.marginLeft).toBe('-79px');
+  });
+
+  it('where it fits, it stays centred', async () => {
+    view(1440, 900);
+    const { bubble } = await show({ left: 600, right: 700, width: 100, top: 400, bottom: 432, height: 32 }, { width: 200, height: 40 });
+    expect(bubble.style.marginLeft).toBe('');
+  });
+
+  it('without room above it goes below, and without room below it goes above', async () => {
+    view(375, 812);
+    const top = await show({ left: 150, right: 250, width: 100, top: 10, bottom: 42, height: 32 }, { width: 200, height: 40 });
+    expect(top.wrapper.className).toContain('ud-tooltip--bottom');
+    const bottom = await show({ left: 150, right: 250, width: 100, top: 770, bottom: 802, height: 32 }, { width: 200, height: 40 }, 'bottom');
+    expect(bottom.wrapper.className).not.toContain('ud-tooltip--bottom');
+  });
+});
+
+describe('Autocomplete keeps its value on focus (item 11: M1-ISS-24)', () => {
+  const COUNTRIES = ['Serbia', 'Montenegro', 'Croatia', 'Slovenia', 'North Macedonia'];
+  const input = () => container.querySelector<HTMLInputElement>('input[role="combobox"]')!;
+  const options = () => [...container.querySelectorAll('[role="option"]')].map((o) => o.textContent);
+
+  it('the chosen value stays in the field, selected, and the list shows every option with it active', async () => {
+    await mount(<U.Autocomplete label="Country" options={COUNTRIES} defaultValue="Serbia" />);
+    expect(input().value).toBe('Serbia');
+    await focus(input());
+    expect(input().value).toBe('Serbia');
+    expect(input().selectionStart).toBe(0);
+    expect(input().selectionEnd).toBe('Serbia'.length);
+    expect(options()).toEqual(COUNTRIES);
+    expect(document.getElementById(input().getAttribute('aria-activedescendant')!)!.textContent).toBe('Serbia');
+  });
+
+  it('typing filters; Escape and leaving show the chosen value again', async () => {
+    await mount(<U.Autocomplete label="Country" options={COUNTRIES} defaultValue="Serbia" />);
+    await focus(input());
+    await act(async () => {
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+      set.call(input(), 'mon');
+      input().dispatchEvent(new Event('input', { bubbles: true }));
+      await Promise.resolve();
+    });
+    expect(options()).toEqual(['Montenegro']);
+    await act(async () => {
+      input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await Promise.resolve();
+    });
+    expect(input().value).toBe('Serbia');
+  });
+
+  it('the chevron of a multiple Autocomplete is pinned to the right of its box', () => {
+    const chevron = rule('.ud-field--multi .ud-field__chevron')!;
+    expect(chevron.get('position')).toBe('absolute');
+    expect(chevron.get('right')).toBe('var(--gutter-s)');
+  });
+
+  it('a press on the box beside the control puts the focus in it', async () => {
+    await mount(<U.Autocomplete label="Keywords" multiple options={['Economics', 'Finance']} defaultValue={['Economics']} />);
+    const box = container.querySelector('.ud-field__box')!;
+    await fire(box, new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(input());
+  });
+});
+
+describe('Switch tracks that differ (item 12: M1-ISS-25)', () => {
+  it('off: a white track with a neutral-700 border and thumb; on: the brand-orange-strong track with a white thumb', () => {
+    expect(rule('.ud-switch__track')?.get('background')).toBe('var(--surface-1)');
+    expect(rule('.ud-switch__track')?.get('border')).toBe('1px solid var(--neutral-700)');
+    expect(rule('.ud-switch__thumb')?.get('background')).toBe('var(--neutral-700)');
+    expect(rule('.ud-switch__input:checked + .ud-switch__track')?.get('background')).toBe('var(--brand-orange-strong)');
+    expect(rule('.ud-switch__input:checked + .ud-switch__track .ud-switch__thumb')?.get('background')).toBe('var(--surface-1)');
   });
 });
 

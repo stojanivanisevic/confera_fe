@@ -129,7 +129,7 @@ export interface RadioGroupProps extends GroupBase { value?: string; defaultValu
 export interface CheckboxGroupProps extends GroupBase { value?: string[]; defaultValue?: string[]; onChange?: (value: string[]) => void; }
 export interface ScaleFieldProps extends Omit<GroupBase, "options"> { options?: Option[]; value?: string; defaultValue?: string; onChange?: (value: string) => void; minLabel?: string; maxLabel?: string; }
 export interface AutocompleteProps extends FieldBase, WithLabels { id?: string; className?: string; options: Option[]; multiple?: boolean; value?: string | string[]; defaultValue?: string | string[]; onChange?: (value: string | string[]) => void; placeholder?: string; disabled?: boolean; limit?: number; noOptionsText?: string; }
-export interface FileItem { name: string; size?: number; /** 0–100 while uploading. */ progress?: number; }
+export interface FileItem { name: string; size?: number; /** 0–100 while uploading. */ progress?: number; /** Why the file was refused ("Larger than 20 MB"); shown under it, in the error colour (2.3.0). */ error?: string; }
 export interface FileDropzoneProps extends WithLabels { className?: string; label?: string; title?: string; hint?: string; /** Tied to the drop area as its description. */ message?: string; status?: FieldStatus; required?: boolean; multiple?: boolean; accept?: string; files?: FileItem[]; onFiles?: (files: File[]) => void; onRemove?: (index: number) => void; }
 
 export interface DataTableColumn<T = any> { key: string; header: React.ReactNode; sortable?: boolean; align?: "left" | "center" | "right"; width?: string | number; render?: (row: T) => React.ReactNode; }

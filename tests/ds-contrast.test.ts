@@ -115,6 +115,13 @@ describe('ADR-22: every listed pair meets its ratio', () => {
   it('small orange text is not possible on the blush ground, as the decision says', () => {
     expect(contrast('brand-orange-strong', 'surface-2')).toBeLessThan(TEXT);
   });
+
+  it('the two tracks of a switch differ by 3:1 and more, and each thumb stands out from its track (2.3.0, M1-ISS-25)', () => {
+    // Off: white track, neutral-700 border and thumb. On: brand-orange-strong track, white thumb. Was 1.33:1 between the tracks.
+    expect(contrast('brand-orange-strong', 'surface-1')).toBeGreaterThanOrEqual(UI);
+    expect(contrast('neutral-700', 'surface-1')).toBeGreaterThanOrEqual(UI);
+    expect(contrast('surface-1', 'brand-orange-strong')).toBeGreaterThanOrEqual(UI);
+  });
 });
 
 describe('the pairs that already passed still pass', () => {
@@ -236,8 +243,12 @@ describe('the pairs version 1 failed on are gone from the stylesheet', () => {
     ['.ud-search', 'border', '--neutral-700'],
     ['.ud-scale__btn', 'border', '--neutral-700'],
     ['.ud-dropzone', 'border', '--neutral-700'],
-    ['.ud-switch__track', 'background', '--neutral-700'],
+    // 2.3.0 (M1-ISS-25): the "off" track is white with a neutral-700 border and thumb; it was a solid neutral-700 track.
+    ['.ud-switch__track', 'border', '--neutral-700'],
+    ['.ud-switch__track', 'background', '--surface-1'],
+    ['.ud-switch__thumb', 'background', '--neutral-700'],
     ['.ud-switch__input:checked + .ud-switch__track', 'background', '--brand-orange-strong'],
+    ['.ud-switch__input:checked + .ud-switch__track .ud-switch__thumb', 'background', '--surface-1'],
     ['.ud-field__message', 'color', '--text-secondary'],
     ['.ud-field__control::placeholder', 'color', '--text-secondary'],
     ['.ud-btn--danger:hover:not(:disabled)', 'background-color', '--danger-hover'],

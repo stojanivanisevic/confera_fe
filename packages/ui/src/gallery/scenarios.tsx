@@ -272,6 +272,7 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
     const [files, setFiles] = useState<U.FileItem[]>([
       { name: 'kovac-abstract.docx', size: 482_113 },
       { name: 'kovac-figures.pdf', size: 2_340_112, progress: 60 },
+      { name: 'kovac-talk.mp4', size: 48_100_000, error: 'Larger than 20 MB: choose a smaller file' },
     ]);
     return (
       <U.FileDropzone
@@ -415,7 +416,7 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
     <Row>
       <U.ToastHost />
       <U.Button variant="dark" onClick={() => U.toast({ title: 'Email sent', description: 'To marta@example.test', tone: 'success', duration: 0 })}>Show a toast</U.Button>
-      <U.Button variant="dark" onClick={() => U.toast({ title: 'Draft saved', tone: 'info', duration: 1500 })}>Show a short toast</U.Button>
+      <U.Button variant="dark" onClick={() => U.toast({ title: 'Draft saved', tone: 'info', duration: 4000 })}>Show a short toast</U.Button>
       <U.Button variant="dark" onClick={() => U.toast({ title: 'The server did not answer', tone: 'error', duration: 1500 })}>Show an error toast</U.Button>
     </Row>
   ),
@@ -509,7 +510,7 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
         sidebar={<U.SidebarNav label="Main" value="submissions" sections={NAV} />}
         topbar={<U.Breadcrumbs items={[{ label: 'ITEMA 2026', href: '#itema' }, { label: 'Submissions' }]} />}
       >
-        <U.PageHeader title="Submissions" description="Everything authors sent for this conference." />
+        <U.PageHeader title="Submissions" description="Everything authors sent for this conference." actions={<U.Button variant="dark">Export</U.Button>} />
       </U.AppShell>
     </div>
   ),

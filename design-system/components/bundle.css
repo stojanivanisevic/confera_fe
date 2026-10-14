@@ -248,7 +248,12 @@ select.ud-field__control { appearance: none; -webkit-appearance: none; cursor: p
 .ud-field__action:hover { color: var(--ink); }
 .ud-field__action:focus-visible { outline: 2px solid var(--focus); }
 .ud-field--multi .ud-field__box { flex-wrap: wrap; padding-top: var(--gutter-xs); padding-bottom: var(--gutter-xs); }
+/* The chevron of a multiple Autocomplete stays at the right of its box, out of the row of tags that wraps
+   (2.3.0, M1-ISS-24; it wrapped under the tags, at the left). The box keeps room for it: 16px and its gaps. */
+.ud-field--multi .ud-field__box { padding-right: calc(var(--gutter-s) + var(--gutter-l) + var(--gutter-s)); }
+.ud-field--multi .ud-field__chevron { position: absolute; right: var(--gutter-s); top: 50%; transform: translateY(-50%); }
 .ud-field--multi .ud-field__control { min-width: var(--control-min-width); height: calc(var(--control-sm) - 2px); }
+/* The browser's picker button is DateField's one calendar icon (2.3.0); dimmed to about the grey of the other icons. */
 input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacity: .6; cursor: pointer; }
 
 /* Search */
@@ -268,10 +273,15 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 /* Switch */
 .ud-switch { position: relative; display: inline-flex; align-items: flex-start; gap: var(--gutter-m); cursor: pointer; font-family: var(--font-sans); }
 .ud-switch__input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.ud-switch__track { position: relative; flex: none; width: var(--switch-width); height: var(--switch-height); margin-top: 1px; border-radius: var(--radius-pill); background: var(--neutral-700); transition: background-color .15s ease; }
-.ud-switch__thumb { position: absolute; top: 2px; left: 2px; width: var(--switch-thumb); height: var(--switch-thumb); border-radius: 50%; background: var(--surface-1); box-shadow: var(--shadow-thumb); transition: transform .15s ease; }
-.ud-switch__input:checked + .ud-switch__track { background: var(--brand-orange-strong); }
-.ud-switch__input:checked + .ud-switch__track .ud-switch__thumb { transform: translateX(calc(var(--switch-width) - var(--switch-height))); }
+/* Off: a white track with a neutral-700 border and thumb (4.05:1); on: the brand-orange-strong track with a
+   white thumb (5.38:1). The two tracks differ by 5.38:1, so the state is not read from the thumb alone (2.3.0). */
+.ud-switch__track {
+  position: relative; flex: none; box-sizing: border-box; width: var(--switch-width); height: var(--switch-height); margin-top: 1px;
+  border: 1px solid var(--neutral-700); border-radius: var(--radius-pill); background: var(--surface-1); transition: background-color .15s ease, border-color .15s ease;
+}
+.ud-switch__thumb { position: absolute; top: 1px; left: 1px; width: var(--switch-thumb); height: var(--switch-thumb); border-radius: 50%; background: var(--neutral-700); transition: transform .15s ease, background-color .15s ease; }
+.ud-switch__input:checked + .ud-switch__track { background: var(--brand-orange-strong); border-color: var(--brand-orange-strong); }
+.ud-switch__input:checked + .ud-switch__track .ud-switch__thumb { background: var(--surface-1); box-shadow: var(--shadow-thumb); transform: translateX(calc(var(--switch-width) - var(--switch-height))); }
 .ud-switch__input:focus-visible + .ud-switch__track { box-shadow: var(--focus-ring); }
 .ud-switch__text { display: flex; flex-direction: column; gap: 2px; }
 .ud-switch__label { font: var(--text-caption); letter-spacing: var(--text-caption-tracking); color: var(--neutral-900); }
@@ -332,7 +342,13 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 }
 .ud-filelist__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ud-filelist__size { color: var(--text-secondary); font: var(--text-body-xs); letter-spacing: var(--text-body-xs-tracking); font-variant-numeric: tabular-nums; }
-.ud-filelist__item .ud-progress { flex-basis: 100%; }
+/* The progress of an upload and the reason a file was refused take a line of their own under the row;
+   the remove button stays at the right of the file's line (2.3.0: it wrapped under the bar, at the left). */
+.ud-filelist__item .ud-progress { flex-basis: 100%; order: 1; }
+.ud-filelist__item > .ud-icon-btn { margin-left: auto; }
+.ud-filelist__item.is-error { border-color: var(--danger); }
+.ud-filelist__item.is-error > .ud-icon { color: var(--danger); }
+.ud-filelist__error { flex-basis: 100%; order: 2; font: var(--text-field-message); letter-spacing: var(--text-field-message-tracking); color: var(--danger-strong); }
 
 /* Badges */
 .ud-badge {
@@ -411,7 +427,8 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-table th { padding: var(--gutter-m) var(--gutter-l); text-align: left; white-space: nowrap; background: var(--background-2); border-bottom: 1px solid var(--neutral-300);
   font: var(--text-caption-xs); font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-secondary); }
 .ud-table td { padding: var(--gutter-m) var(--gutter-l); border-bottom: 1px solid var(--neutral-300); vertical-align: middle; line-height: 1.4; }
-.ud-table tbody tr:last-child td { border-bottom: 0; }
+/* The last row has no line under it, also under a row header (PermissionMatrix; it cut the card's corner, 2.3.0). */
+.ud-table tbody tr:last-child td, .ud-table tbody tr:last-child th { border-bottom: 0; }
 .ud-table tbody tr:hover td { background: var(--background); }
 .ud-table tbody tr.is-selected td { background: var(--surface-2); }
 .ud-table tbody tr.is-clickable { cursor: pointer; }
@@ -629,23 +646,25 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
    move (a link in a line of text or in a trail, a sort button, a tag's remove button), its target
    grows around it: padding on an inline link, an invisible ::after over the part. */
 @media (pointer: coarse) {
-  .ud-btn, .ud-tab, .ud-search, .ud-file__btn, .ud-text-btn, .ud-pagination__size select { height: var(--target-touch); }
-  .ud-arrow-btn--sm, .ud-icon-btn { width: var(--target-touch); height: var(--target-touch); }
-  .ud-page-btn { min-width: var(--target-touch); height: var(--target-touch); }
+  /* The file button is 44px high already: 36px and its 4px ring above and below. */
+  .ud-btn, .ud-tab, .ud-search, .ud-text-btn, .ud-pagination__size select { box-sizing: border-box; height: var(--target-touch); }
+  .ud-arrow-btn--sm, .ud-icon-btn { box-sizing: border-box; width: var(--target-touch); height: var(--target-touch); }
+  .ud-page-btn { box-sizing: border-box; min-width: var(--target-touch); height: var(--target-touch); }
   .ud-field__box { min-height: var(--target-touch); }
   .ud-field__control { height: calc(var(--target-touch) - 2px); }
-  .ud-field__action { justify-content: center; align-items: center; min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-s)) -1px 0; }
-  .ud-search__clear { min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-m)) -1px 0; }
+  .ud-field__action { box-sizing: border-box; justify-content: center; align-items: center; min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-s)) -1px 0; }
+  .ud-search__clear { box-sizing: border-box; min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-m)) -1px 0; }
   /* A tag is as high as a small control; its remove button reaches 6px above and below it, into the gap between rows. */
   .ud-tag { min-height: var(--control-sm); box-sizing: border-box; }
-  .ud-tag__remove { min-width: var(--target-touch); min-height: var(--target-touch); margin: calc((var(--control-sm) - var(--target-touch)) / 2) calc(-1 * var(--gutter-xs)) calc((var(--control-sm) - var(--target-touch)) / 2) 0; }
+  .ud-tag__remove { box-sizing: border-box; min-width: var(--target-touch); min-height: var(--target-touch); margin: calc((var(--control-sm) - var(--target-touch)) / 2) calc(-1 * var(--gutter-xs)) calc((var(--control-sm) - var(--target-touch)) / 2) 0; }
   /* Choice rows: the label is the target (the box keeps its 17.5px); a box without a text is as wide as it is high. */
-  .ud-check, .ud-radio, .ud-switch, .ud-tabs-u__tab, .ud-menu__item, .ud-sidenav__link, button.ud-stepper__btn { min-height: var(--target-touch); }
+  .ud-check, .ud-radio, .ud-switch, .ud-tabs-u__tab, .ud-menu__item, .ud-sidenav__link, button.ud-stepper__btn { box-sizing: border-box; min-height: var(--target-touch); }
+  button.ud-stepper__btn { box-sizing: border-box; min-width: var(--target-touch); }
   .ud-switch { align-items: center; }
-  .ud-table__check .ud-check, .ud-matrix__cell .ud-check { min-width: var(--target-touch); justify-content: center; }
+  .ud-table__check .ud-check, .ud-matrix__cell .ud-check { box-sizing: border-box; min-width: var(--target-touch); justify-content: center; }
   .ud-listbox__option, .ud-listbox__empty { display: flex; align-items: center; min-height: var(--target-touch); box-sizing: border-box; }
   /* A link in a line of text: padding makes the target higher without moving the line. */
-  .ud-link, .ud-alert__body a { padding-block: max(0px, calc((var(--target-touch) - 1lh) / 2)); }
+  .ud-link, .ud-alert__body a { padding-block: max(0px, calc((var(--target-touch) - 1em) / 2)); }
   /* A link of a trail or of the site's navigation, and a sort button: the target is an invisible layer over it. */
   .ud-nav-link, .ud-breadcrumbs a { position: relative; }
   .ud-nav-link::after, .ud-breadcrumbs a::after, .ud-table__sort::after, .ud-table__open::after {
