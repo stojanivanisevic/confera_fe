@@ -37,8 +37,13 @@ async function formFrame(page: Page): Promise<Frame> {
 const STYLED = ['html', 'body', 'h1', '.ud-tab.is-selected', '.ud-tab:not(.is-selected)', '.ud-form-card', '.ud-form-card__title', '.ud-field__label', '.ud-field__box', '.ud-field__control', '.ud-field__message', '.ud-check__box', '.ud-check__label', '.ud-repeater__row', '.ud-text-btn--add', '.ud-btn--primary'];
 const PROPERTIES = ['display', 'boxSizing', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color', 'backgroundColor', 'borderTopColor', 'borderTopWidth', 'borderTopStyle', 'borderTopLeftRadius', 'paddingTop', 'paddingLeft', 'opacity', 'visibility'] as const;
 
-/** The computed style of the design-system parts of a form, as a browser resolved it. */
-function stylesOf(target: Page | Frame): Promise<Record<string, Record<string, string>>> {
+/**
+ * The computed style of the design-system parts of a form, as a browser resolved it, once the form
+ * is attached and every transition has ended (Send turns from disabled to enabled when it is attached).
+ */
+async function stylesOf(target: Page | Frame): Promise<Record<string, Record<string, string>>> {
+  await target.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+  await target.evaluate(() => Promise.all(document.getAnimations().filter((animation) => animation.effect?.getTiming().iterations !== Infinity).map((animation) => animation.finished)));
   return target.evaluate(
     ({ selectors, properties }) => {
       const out: Record<string, Record<string, string>> = {};
