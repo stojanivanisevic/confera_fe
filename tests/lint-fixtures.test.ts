@@ -37,7 +37,7 @@ const STYLE_PLANTED: Record<string, string> = {
   'hex-colour.css': 'colour-literal',
   'named-colour.css': 'colour-literal',
   'colour-function.css': 'colour-literal',
-  'unknown-token.css': 'unknown-token',
+  'unknown-custom-property.css': 'unknown-custom-property',
   'tailwind.css': 'no-tailwind',
   'external-font.css': 'external-url',
   'external-import.css': 'no-import',

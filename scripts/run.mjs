@@ -4,7 +4,8 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { refusedBrowserWindow } from './browser-windows.mjs';
 import { fail, heading, root, runBin, runNode } from './lib.mjs';
-import { formatFindings, scanDirectory } from './secret-assignments.mjs';
+import { formatFindings, scanDirectory } from './secret-assignments/secret-assignments.mjs';
+import { SECRET_SCAN_EXCLUDE } from './secret-scan.config.mjs';
 
 const [task, ...extra] = process.argv.slice(2);
 
@@ -49,13 +50,15 @@ const tasks = {
   },
   // No secret in the files of the repository (ADR-01). Two scans, one verdict, as in confera_be:
   // secretlint knows the format of many credentials; the second scan catches a secret that has
-  // no format and is given away only by the name it is assigned to (scripts/secret-assignments.mjs).
+  // no format and is given away by its name only. Its rule is in the README and at the top of
+  // scripts/secret-assignments/secret-assignments.mjs: the scanner of confera_be, copied unchanged
+  // (`pnpm secrets:sync`). What this repository leaves out is in scripts/secret-scan.config.mjs.
   secrets() {
     const formats = runBin('secretlint', 'secretlint', ['**/*', '--secretlintignore', '.secretlintignore', ...extra]);
-    const assignments = scanDirectory(root);
+    const assignments = scanDirectory(root, { exclude: SECRET_SCAN_EXCLUDE });
     if (assignments.length > 0) {
       console.error(formatFindings(root, assignments));
-      console.error(`\n✗ ${assignments.length} literal value(s) assigned to a name like a secret`);
+      console.error(`\n✗ ${assignments.length} literal value(s) bound to a name like a secret.`);
     }
     return formats !== 0 || assignments.length > 0 ? 1 : 0;
   },

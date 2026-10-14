@@ -2,7 +2,7 @@
 //
 // A small PostCSS-based linter with exactly the rules this project needs:
 //   colour-literal   no hex colour, named colour or colour function: colours are tokens
-//   unknown-token    every var(--x) is a design-system token or defined in the same file
+//   unknown-custom-property   every var(--x) is a design-system token or defined in the same file
 //   external-url     no address of another origin in a stylesheet (fonts, images)
 //   no-import        no @import: stylesheets are imported from code, never from elsewhere
 //   no-tailwind      no Tailwind at-rules
@@ -52,7 +52,7 @@ const NAMED_COLOURS = new Set(
 
 const MESSAGES = {
   'colour-literal': 'No colour literal: use a design-system token, var(--token) (NFR-UI-01).',
-  'unknown-token': 'This custom property is not a design-system token and is not defined in this file (ADR-21).',
+  'unknown-custom-property': 'This custom property is not a design-system token and is not defined in this file (ADR-21).',
   'external-url': 'No address of another origin in a stylesheet (ADR-21, ADR-28).',
   'no-import': 'No @import: stylesheets are imported from code, never from another origin (ADR-21).',
   'no-tailwind': 'No Tailwind: styling is CSS Modules on design-system tokens (NFR-UI-01).',
@@ -97,7 +97,7 @@ export function lintCss(css, options = {}) {
         }
         if (name === 'var') {
           const ref = part.nodes[0]?.value;
-          if (ref && ref.startsWith('--') && !tokens.has(ref) && !local.has(ref)) report('unknown-token', node, ref);
+          if (ref && ref.startsWith('--') && !tokens.has(ref) && !local.has(ref)) report('unknown-custom-property', node, ref);
         }
       } else if (part.type === 'word') {
         if (HEX.test(part.value)) report('colour-literal', node, part.value);

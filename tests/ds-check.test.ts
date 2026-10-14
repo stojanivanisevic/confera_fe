@@ -101,7 +101,7 @@ describe('pnpm ds:check', () => {
 
   it('fails on a custom property without a token', () => {
     const problems = planted('token', edit(STYLES, 'color: var(--on-brand); }', 'color: var(--on-brand-typo); }'));
-    expect(problems.join('\n')).toMatch(/unknown-token: --on-brand-typo/);
+    expect(problems.join('\n')).toMatch(/unknown-custom-property: --on-brand-typo/);
   });
 
   it('fails when the manifest names a component the bundle does not export', () => {

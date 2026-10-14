@@ -72,7 +72,8 @@ So http://localhost:3000/f/spike-abstract and http://127.0.0.1:3000/sign-in answ
 | `corepack pnpm test` | unit tests (Vitest) |
 | `corepack pnpm build` / `start` | the production build, and serving it |
 | `corepack pnpm verify:build` | the production build has only the declared routes, no dev-only text, no public source map |
-| `corepack pnpm secrets` | secret scan: credentials by format (secretlint) and values assigned to names like a secret |
+| `corepack pnpm secrets` | secret scan: credentials by format (secretlint), and literal values bound to names like a secret (section 11) |
+| `corepack pnpm secrets:sync` | takes the scanner of the second part from `confera_be`, unchanged, and records it in a lock |
 | `corepack pnpm test:supply-chain` | plants a fake secret, a vulnerable package and an unlisted build script in a copy under `.artifacts/` and expects each to be caught; the last step of `check` |
 | `corepack pnpm dev` | the development server, with the gallery and the spike form |
 | `corepack pnpm e2e:install` | downloads the three browser engines, once |
@@ -164,7 +165,7 @@ In 0.1.0 the API has one admin route (`GET /api/v1/meta`) and no public route, a
 
 ## 7. Design system
 
-`design-system/` is the UdEkoM Balkans design system, **version 2.0.1**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
+`design-system/` is the UdEkoM Balkans design system, **version 2.1.0**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
 
 - The UI comes only from it: no other UI kit, no Tailwind, no colour literal outside `design-system/tokens.css`. The lint enforces this, and `lint-fixtures/` holds a planted violation for every rule.
 - Application code imports `@confera/ui`, never the folder. `packages/ui/src/generated/` is the design-system script wrapped, unchanged, in a client module so that it renders on the server and hydrates. `corepack pnpm ds:build` regenerates it.
@@ -218,9 +219,38 @@ corepack pnpm add --filter @confera/web <name>@<exact version>     # or -w for t
 
 **Secret scan** (`corepack pnpm secrets`), in two parts with one verdict, as in `confera_be`:
 - secretlint finds credentials by their **format**: tokens of known services, private keys, an address with a user and a password.
-- `scripts/secret-assignments.mjs` finds a secret that has no format by the **name** it is assigned to: a literal value of 8 characters or more assigned to a name with `PASSWORD`, `SECRET`, `TOKEN`, `CREDENTIAL` or `KEY` in it. In an environment or configuration file that is `NAME=value` or `NAME: value`; in source code and JSON a quoted value (`clientSecret: '...'`). It names the file, the line and the variable, never the value.
+- `scripts/secret-assignments/` finds a secret that has no format by the **name** it is bound to. Its rule is the next paragraph, and it is the rule you write code by. It is the same rule, in the same words, in `confera_be`.
 
-A placeholder starts with `invented-` or `local-only-`; an empty value and a reference such as `${VAR}` are fine too. Anything else fails, `changeme` included. In a test, build such a text from parts. A name that ends in `FILE`, `PATH`, `URL`, `NAME` or `HEADER` says where a secret is and is not reported; nor is one branch of a choice (`a ? "hidePassword" : "showPassword"`) or the `credentials` option of `fetch`. The web application itself must never be given a secret (section 9).
+**The rule for a secret-like name.** In every file that git tracks, no literal value is bound to a secret-like name.
+
+- **A secret-like name** is decided by its last word, in any casing (`smtpPassword`, `SMTP_PASSWORD`, `smtp-password`); a number at the end does not count (`API_KEY_2`):
+  - the last word is, or ends with: password, passwd, pwd, secret, token (`PGPASSWORD`, `DBPASSWD`, `MYSQL_PWD`, `csrfToken`, `clientSecret`);
+  - the last word is credential or credentials;
+  - the last word is `key` and the word before it is one of: api, private, data, access, secret, signing, encryption, master, client, session (`AWS_SECRET_ACCESS_KEY`, `DATA_KEY`, `signingKey`).
+
+  A name whose last word is another one is not secret-like: `passwordPolicy`, `tokenType`, `secretName`, `PASSWORD_MIN_LENGTH`, `SESSION_SECRET_FILE`, a label, a message; nor are `primaryKey`, `sortKey`, `cacheKey`, `publicKey`, `idempotencyKey`.
+
+- **One fixed exception:** the option `credentials` of the Fetch API takes a mode, not a credential. Under exactly that name, exactly `'include'`, `'same-origin'` and `'omit'` are not a finding; any other literal is.
+- **Allowed values, and nothing else:**
+  - nothing: an empty value, and also `null`, `~`, `true` and `false`, which are no value or a flag (`persist-credentials: false`);
+  - a reference to something else as the whole value: `${VAR}`, `$VAR`, `$(command)`, `${{ secrets.X }}`; in JavaScript anything that is not a literal (`process.env.X`, a call, another variable);
+  - a placeholder: a literal that **starts with** `invented-` or `local-only-`.
+- **There is no guess by length or by randomness.** `'too_short'` under a secret-like name is a finding, and so are `changeme` and `1`. A test that needs a password that is too short uses `'invented-x'`.
+- **Where a name gets a value:**
+  - `NAME=value` at the start of a line, with or without `export`, quotes, a leading list dash, `ENV` or `ARG` (environment files, shell, compose, Dockerfile, this README);
+  - `name: value` in YAML and `"name": value` in JSON, in any letter case;
+  - in JavaScript and TypeScript an assignment, a declaration (typed or not), a field of a class, an object property, a default parameter, an attribute of a JSX element, and a literal used as a fallback for such a name (`??`, `||`, a branch of a ternary).
+- **What is not read:** comments; lockfiles; and what this repository generates or vendors: the API contract of `confera_be` in `packages/api-client/openapi/` (vendored by `api:sync`), the types generated from it in `packages/api-client/src/generated/`, and the design-system script wrapped for the application in `packages/ui/src/generated/` (generated by `ds:build`; its source in `design-system/` is read). The list of what is left out is `scripts/secret-scan.config.mjs`; a hand-written file with a finding is changed, never added to that list.
+
+The rule reaches names that only sound like a secret, and those are renamed: a label is `showPasswordText`, not `showPassword`; a lint rule is `unknown-custom-property`, not `unknown-token`; a header of a test request is `'x-csrf-token': 'invented-csrf'`. The web application itself must never be given a secret (section 9).
+
+**Where the scanner comes from.** It is one file without dependencies, `scripts/secret-assignments/secret-assignments.mjs`, with its two corpora beside it: shapes that must be reported (`…reported.mjs`) and ordinary lines that must not be (`…ordinary.mjs`). The three are written in `confera_be`, hold nothing about a repository, and are copied here unchanged; they are never edited here. `scripts/secret-scan.lock.json` records the commit of `confera_be` they come from and the sha256 of each. The unit tests run both corpora (`tests/secret-assignments.test.ts`) and hold the copies to the lock, and to the checkout of `confera_be` next to this repository when it has the scanner (`tests/secret-assignments-lock.test.ts`).
+
+```
+corepack pnpm secrets:sync                                           takes the three files from ..\confera_be (or: --from <directory>) and writes the lock
+node scripts/secret-assignments/secret-assignments.mjs               scans the current directory
+node scripts/secret-assignments/secret-assignments.mjs --self-test   runs the two corpora
+```
 
 `corepack pnpm test:supply-chain` (part of `check`) proves that these rules bite, on planted cases in a copy of the repository under `.artifacts/`; it plants nothing in your working tree and removes its copy. `tests/supply-chain-settings.test.ts` holds the settings themselves: a rule that is switched off or a version range fails the unit tests.
 

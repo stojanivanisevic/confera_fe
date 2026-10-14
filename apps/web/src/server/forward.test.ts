@@ -69,9 +69,9 @@ describe('forwarding to the API', () => {
 
   it('passes method, path, query, body and ordinary headers on', async () => {
     const body = new Blob(['{"title":"Šta đaci čitaju"}']).stream();
-    await forward({ pathAndQuery: '/api/v1/things?page=2&q=%C5%A1', method: 'POST', body, headers: new Headers({ host: 'localhost:3000', 'content-type': 'application/json', 'x-csrf-token': 'abc', cookie: 'session=1' }) });
+    await forward({ pathAndQuery: '/api/v1/things?page=2&q=%C5%A1', method: 'POST', body, headers: new Headers({ host: 'localhost:3000', 'content-type': 'application/json', 'x-csrf-token': 'invented-csrf', cookie: 'session=1' }) });
     expect(last()).toMatchObject({ method: 'POST', url: '/api/v1/things?page=2&q=%C5%A1', body: '{"title":"Šta đaci čitaju"}' });
-    expect(last().headers).toMatchObject({ 'content-type': 'application/json', 'x-csrf-token': 'abc', cookie: 'session=1' });
+    expect(last().headers).toMatchObject({ 'content-type': 'application/json', 'x-csrf-token': 'invented-csrf', cookie: 'session=1' });
   });
 
   it('the admin surface gets the cookies of the API; connection headers are not passed back', async () => {
