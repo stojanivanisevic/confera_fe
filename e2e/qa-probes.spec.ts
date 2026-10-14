@@ -78,7 +78,9 @@ async function accept(target: Page | Frame): Promise<void> {
 
 async function fillAndSend(target: Page | Frame): Promise<void> {
   await target.getByLabel('Title of the paper').fill('Održivi turizam na Balkanu');
-  await target.getByLabel('Name of author 1').fill('Živana Đorđević');
+  await target.getByLabel('First and last name of author 1').fill('Živana Đorđević');
+  // Required since the UX review of 0.1.0: the e-mail of the first author, in a valid form.
+  await target.getByLabel('Email of author 1').fill('zivana.dordevic@example.test');
   await accept(target);
   await target.getByRole('button', { name: 'Send abstract' }).click();
   await expect(target.locator('.ud-alert--success')).toContainText('Thank you');
@@ -389,7 +391,8 @@ test.describe('storage that throws', () => {
     await expect(page.getByText('4 of 300 words')).toBeVisible();
     await page.getByRole('button', { name: 'Add author' }).click();
     await page.getByRole('button', { name: 'Remove author 2' }).click();
-    await page.getByLabel('Name of author 1').fill('Živana Đorđević');
+    await page.getByLabel('First and last name of author 1').fill('Živana Đorđević');
+    await page.getByLabel('Email of author 1').fill('zivana.dordevic@example.test');
     await accept(page);
     await page.getByRole('button', { name: 'Send abstract' }).click();
     await expect(page.locator('.ud-alert--success')).toContainText('Thank you');
@@ -591,11 +594,11 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
     }
     const people = ['Ana Anić', 'Božo Božić', 'Ćira Ćirić', 'Đorđe Đorđević'];
     for (const [index, name] of people.entries()) {
-      await repeater.getByLabel(`Name of author ${index + 1}`).fill(name);
+      await repeater.getByLabel(`First and last name of author ${index + 1}`).fill(name);
       await repeater.getByLabel(`Email of author ${index + 1}`).fill(`author${index + 1}@example.test`);
     }
 
-    const names = () => repeater.getByLabel(/^Name of author \d+/).evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+    const names = () => repeater.getByLabel(/^First and last name of author \d+/).evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
     const emails = () => repeater.getByLabel(/^Email of author \d+/).evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
     const focus = () =>
       repeater.evaluate((root) => {
@@ -603,7 +606,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
         return {
           inTheRepeater: el !== null && el !== document.body && root.contains(el),
           // The label of the field, without the mark of a required field.
-          field: el instanceof HTMLInputElement ? (/(?:Name|Email) of author \d+/.exec(el.labels?.[0]?.textContent ?? '')?.[0] ?? '') : (el?.tagName ?? 'nothing'),
+          field: el instanceof HTMLInputElement ? (/(?:First and last name|Email) of author \d+/.exec(el.labels?.[0]?.textContent ?? '')?.[0] ?? '') : (el?.tagName ?? 'nothing'),
           value: el instanceof HTMLInputElement ? el.value : null,
         };
       });
@@ -617,20 +620,20 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
     await expect(repeater.locator('.ud-repeater__row')).toHaveCount(3);
     expect(await names()).toEqual(['Ana Anić', 'Ćira Ćirić', 'Đorđe Đorđević']);
     expect(await emails()).toEqual(['author1@example.test', 'author3@example.test', 'author4@example.test']);
-    await expect.poll(focus).toEqual({ inTheRepeater: true, field: 'Name of author 2', value: 'Ćira Ćirić' });
+    await expect.poll(focus).toEqual({ inTheRepeater: true, field: 'First and last name of author 2', value: 'Ćira Ćirić' });
 
     // The first row: the row that is first now.
     await removeWith(1, 'Space');
     await expect(repeater.locator('.ud-repeater__row')).toHaveCount(2);
     expect(await names()).toEqual(['Ćira Ćirić', 'Đorđe Đorđević']);
-    await expect.poll(focus).toEqual({ inTheRepeater: true, field: 'Name of author 1', value: 'Ćira Ćirić' });
+    await expect.poll(focus).toEqual({ inTheRepeater: true, field: 'First and last name of author 1', value: 'Ćira Ćirić' });
 
     // The last row: the row before it. One row is left, which cannot be removed (the form asks for one author).
     await removeWith(2, 'Enter');
     await expect(repeater.locator('.ud-repeater__row')).toHaveCount(1);
     expect(await names()).toEqual(['Ćira Ćirić']);
     expect(await emails()).toEqual(['author3@example.test']);
-    await expect.poll(focus).toEqual({ inTheRepeater: true, field: 'Name of author 1', value: 'Ćira Ćirić' });
+    await expect.poll(focus).toEqual({ inTheRepeater: true, field: 'First and last name of author 1', value: 'Ćira Ćirić' });
     await expect(repeater.getByRole('button', { name: /^Remove author/ })).toHaveCount(0);
 
     // The focus is a real one: the next key goes into that field, and Tab goes on from there.
@@ -650,7 +653,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
       await page.keyboard.press('Enter');
       await expect(repeater.locator('.ud-repeater__row')).toHaveCount(row);
     }
-    for (const [index, name] of ['Ana Anić', 'Božo Božić', 'Ćira Ćirić'].entries()) await repeater.getByLabel(`Name of author ${index + 1}`).fill(name);
+    for (const [index, name] of ['Ana Anić', 'Božo Božić', 'Ćira Ćirić'].entries()) await repeater.getByLabel(`First and last name of author ${index + 1}`).fill(name);
 
     await repeater.getByRole('button', { name: 'Remove author 2' }).focus();
     await page.keyboard.press('Enter');
@@ -722,7 +725,7 @@ test.describe('a slow connection: the form is on the screen before its scripts a
     };
     await typeInto('Title of the paper', 'Održivi turizam na Balkanu');
     await typeInto('Abstract', 'Prva druga treća četvrta peta');
-    await typeInto('Name of author 1', 'Živana Đorđević');
+    await typeInto('First and last name of author 1', 'Živana Đorđević');
     await typeInto('Email of author 1', 'zivana@example.test');
     const consent = page.getByLabel('I accept the terms of publication');
     await consent.focus();
@@ -734,7 +737,7 @@ test.describe('a slow connection: the form is on the screen before its scripts a
 
     await expect(page.getByLabel('Title of the paper'), 'the text field').toHaveValue('Održivi turizam na Balkanu');
     await expect(page.getByLabel('Abstract'), 'the long text').toHaveValue('Prva druga treća četvrta peta');
-    await expect(page.getByLabel('Name of author 1'), 'the name').toHaveValue('Živana Đorđević');
+    await expect(page.getByLabel('First and last name of author 1'), 'the name').toHaveValue('Živana Đorđević');
     await expect(page.getByLabel('Email of author 1'), 'the e-mail address').toHaveValue('zivana@example.test');
     await expect(consent, 'the ticked box').toBeChecked();
     // The page knows what the controls hold: the words are counted ...
@@ -779,6 +782,136 @@ test.describe('a slow connection: the form is on the screen before its scripts a
     await expect
       .poll(() => page.evaluate((key) => JSON.parse(window.sessionStorage.getItem(key) ?? '{}') as unknown, `confera:draft:${SLUG}`))
       .toEqual({ title: 'Novi naslov', abstract: 'Stari apstrakt od pet reči' });
+  });
+});
+
+// The last fix round of 0.1.0 (UX-M1-01 to 03, design system 2.2.0), probed beyond the developer's own tests.
+test.describe('nothing typed reaches an address, and the moment after Send', () => {
+  const CANARY = 'qacanary7f3e91';
+  /** Every address a page or one of its frames asks for or goes to, and every Referer sent. */
+  function watchAddresses(page: Page): string[] {
+    const seen: string[] = [];
+    page.on('request', (request) => {
+      seen.push(request.url());
+      const referer = request.headers()['referer'];
+      if (referer) seen.push(`referer ${referer}`);
+    });
+    page.on('framenavigated', (frame) => seen.push(`navigated ${frame.url()}`));
+    return seen;
+  }
+  const typed = (seen: string[]) => seen.filter((entry) => decodeURIComponent(entry.replace(/\+/g, ' ')).toLowerCase().includes(CANARY));
+
+  async function fillWithCanaries(target: Page | Frame): Promise<void> {
+    await target.getByLabel('Title of the paper').fill(`${CANARY} title`);
+    await target.getByLabel('Abstract').fill(`${CANARY} abstract`);
+    await target.getByLabel('First and last name of author 1').fill(`${CANARY} name`);
+    await target.getByLabel('Email of author 1').fill(`${CANARY}@example.test`);
+  }
+
+  test('the hosted form: Enter before it is attached, a failed Send and a good one put nothing typed into an address or a Referer', async ({ page }) => {
+    const seen = watchAddresses(page);
+    let release: () => void = () => undefined;
+    const scriptsMayLoad = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\/_next\/static\/.*\.js(?:\?.*)?$/, async (route) => {
+      await scriptsMayLoad;
+      await route.continue();
+    });
+    await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`, { waitUntil: 'commit' });
+    const form = page.locator('[data-confera-form]');
+    await expect(form).toHaveAttribute('data-hydrated', 'false');
+    await expect(page.getByRole('button', { name: 'Send abstract' }), 'Send waits for the scripts').toBeDisabled();
+    // Enter in a field before the scripts arrive: the browser's own way to send a form.
+    await page.getByLabel('Title of the paper').focus();
+    await page.keyboard.type(`${CANARY} early`);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(500);
+    release();
+    await expect(form).toHaveAttribute('data-hydrated', 'true', { timeout: 30_000 });
+    await expect(page.getByLabel('Title of the paper'), 'the text is still there').toHaveValue(`${CANARY} early`);
+
+    // A Send that fails: the consent is missing. The focus goes to the summary, and its item leads to the box.
+    await fillWithCanaries(page);
+    await page.getByRole('button', { name: 'Send abstract' }).click();
+    const summary = page.locator('.ud-alert--error');
+    await expect(summary).toBeVisible();
+    await expect(page.locator('[data-confera-errors]'), 'the summary takes the focus').toBeFocused();
+    await summary.getByRole('link').first().click();
+    await expect(page.getByLabel('I accept the terms of publication')).toBeFocused();
+
+    // A Send that succeeds: the focus goes to the thank-you.
+    await accept(page);
+    await page.getByRole('button', { name: 'Send abstract' }).click();
+    const thanks = page.locator('.ud-alert--success');
+    await expect(thanks).toContainText('Thank you');
+    await expect(page.locator('[data-confera-thanks]'), 'the thank-you takes the focus').toBeFocused();
+
+    expect(page.url()).toBe(`${PUBLIC_ORIGIN}/f/${SLUG}`);
+    expect(typed(seen), 'an address or a Referer with a typed value').toEqual([]);
+  });
+
+  test('in the frame of a conference site: a good Send puts nothing typed into an address or a Referer, and the site page keeps its address', async ({ page }) => {
+    const seen = watchAddresses(page);
+    await openSite(page);
+    const before = page.url();
+    const frame = await formFrame(page);
+    await fillWithCanaries(frame);
+    await accept(frame);
+    await frame.getByRole('button', { name: 'Send abstract' }).click();
+    await expect(frame.locator('.ud-alert--success')).toContainText('Thank you');
+    await expectHeightFollows(page, frame);
+    expect(page.url()).toBe(before);
+    expect(frame.url()).toBe(`${PUBLIC_ORIGIN}/embed/${SLUG}`);
+    expect(typed(seen), 'an address or a Referer with a typed value').toEqual([]);
+  });
+});
+
+test.describe('design system 2.2.0 by keyboard and pointer, beyond the gallery test', () => {
+  test('a menu item and a list option show where the keyboard is, a choice gives the focus back, and a tooltip stays under the pointer', async ({ page }) => {
+    const problems = watchPage(page);
+    await page.goto(`${PUBLIC_ORIGIN}/dev/gallery`);
+    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+    const card = (name: string) => page.locator(`[data-component="${name}"]`);
+    const showsFocus = (element: HTMLElement) => {
+      const style = getComputedStyle(element);
+      return (style.outlineStyle !== 'none' && Number.parseFloat(style.outlineWidth) > 0) || style.boxShadow !== 'none';
+    };
+
+    // Menu: the arrow keys move a visible focus; Enter on an item chooses it and gives the focus back.
+    const trigger = card('Menu').getByRole('button', { name: 'Row actions' });
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    const items = page.getByRole('menuitem');
+    await expect(items.first()).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(items.nth(1)).toBeFocused();
+    expect(await items.nth(1).evaluate(showsFocus), 'the focused menu item shows it').toBe(true);
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('menu')).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    // Autocomplete: the active option, named by aria-activedescendant, shows it.
+    const country = card('Autocomplete').getByRole('combobox', { name: 'Country' });
+    await country.focus();
+    await page.keyboard.press('Control+A');
+    await page.keyboard.type('s');
+    await expect(page.getByRole('listbox', { name: 'Country' })).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+    const active = await country.getAttribute('aria-activedescendant');
+    expect(active, 'the combobox names its active option').toBeTruthy();
+    expect(await page.locator(`[id="${active ?? ''}"]`).evaluate(showsFocus), 'the active option shows it').toBe(true);
+    await page.keyboard.press('Escape');
+
+    // Tooltip: shown on hover, and it stays while the pointer moves onto the bubble (WCAG 1.4.13).
+    const help = card('Tooltip').getByRole('button', { name: 'Copy snippet' });
+    const bubble = card('Tooltip').getByRole('tooltip').first();
+    await help.hover();
+    await expect.poll(() => bubble.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    const box = await bubble.boundingBox();
+    if (!box) throw new Error('the tooltip has no box');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 8 });
+    await page.waitForTimeout(400);
+    expect(await bubble.evaluate((el) => getComputedStyle(el).opacity), 'the bubble under the pointer stays').toBe('1');
+    expect(problems.messages).toEqual([]);
   });
 });
 
