@@ -283,6 +283,77 @@ test.describe('a conference site that forges height messages', () => {
   });
 });
 
+// E7, a second look after the fix (the listener finds the frame by the window that sent the message,
+// and a frame that has not been followed yet answers a resize with its height).
+test.describe('the same form twice on one page, and a site that sets the height itself', () => {
+  const messagesFromFrames = (page: Page) =>
+    page.evaluate(() => (window as unknown as { __received: Array<{ fromFrame: boolean }> }).__received.filter((m) => m.fromFrame).length);
+
+  test('two frames with the same id each follow their own content; a message of one never moves the other', async ({ page }) => {
+    // A site that pasted the snippet twice: two frames with one id, and two listeners.
+    await openSite(page, `${snippet}\n${snippet}`);
+    const frames = page.locator(FRAME);
+    await expect(frames).toHaveCount(2);
+    const documentOf = async (index: number): Promise<Frame> => {
+      await frames.nth(index).scrollIntoViewIfNeeded();
+      const frame = await (await frames.nth(index).elementHandle())?.contentFrame();
+      if (!frame) throw new Error(`frame ${String(index)} has no document`);
+      await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+      return frame;
+    };
+    const forms = [await documentOf(0), await documentOf(1)];
+    const heights = () => frames.evaluateAll((elements) => elements.map((element) => Math.round(element.getBoundingClientRect().height)));
+    const contentHeight = (frame: Frame) => frame.locator('[data-confera-embed-root]').evaluate((element) => Math.ceil(element.getBoundingClientRect().height));
+    const follows = (index: 0 | 1) =>
+      expect
+        .poll(async () => Math.abs((await heights())[index]! - (await contentHeight(forms[index]!))), { message: `frame ${String(index)} is as tall as its content` })
+        .toBeLessThanOrEqual(1);
+    await follows(0);
+    await follows(1);
+    const before = await heights();
+
+    // The second form grows by two authors: only the second frame grows.
+    for (let row = 0; row < 2; row += 1) await forms[1]!.getByRole('button', { name: 'Add author' }).click();
+    await follows(1);
+    const after = await heights();
+    expect(after[1]).toBeGreaterThan(before[1]!);
+    expect(after[0], 'the first frame moved with a message of the second').toBe(before[0]);
+
+    // And the first one still follows its own content.
+    await forms[0]!.getByRole('button', { name: 'Add author' }).click();
+    await follows(0);
+    expect((await heights())[1]).toBe(after[1]);
+  });
+
+  test('a site that sets the height of the frame itself: no endless answering, and the frame follows its content again when it changes', async ({ page }) => {
+    const problems = watchPage(page);
+    await openSite(page);
+    const frame = await formFrame(page);
+    await expectHeightFollows(page, frame);
+
+    // The site's own script sets a height of its own, five times in a row.
+    for (const height of [300, 1200, 300, 700, 450]) {
+      await page.locator(FRAME).evaluate((element, value) => {
+        (element as HTMLElement).style.height = `${String(value)}px`;
+      }, height);
+    }
+    // Then nothing changes: frame and listener must not keep answering each other.
+    await page.waitForTimeout(500);
+    const settled = await messagesFromFrames(page);
+    await page.waitForTimeout(1500);
+    expect(await messagesFromFrames(page), 'the frame keeps reporting although nothing changes').toBe(settled);
+
+    // When the form itself changes, the frame follows its content again, and the form still works.
+    await frame.getByRole('button', { name: 'Add author' }).click();
+    await expectHeightFollows(page, frame);
+    await frame.getByRole('button', { name: 'Remove author 2' }).click();
+    await expectHeightFollows(page, frame);
+    await fillAndSend(frame);
+    await expectHeightFollows(page, frame);
+    expect(problems.messages).toEqual([]);
+  });
+});
+
 test.describe('storage that throws', () => {
   test('the hosted form works when every access to storage throws, and says that no draft is kept', async ({ page }) => {
     await page.addInitScript(() => {
