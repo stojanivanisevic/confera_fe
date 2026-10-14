@@ -391,7 +391,9 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
     const [shown, setShown] = useState(true);
     return (
       <Stack>
-        <U.Alert tone="info" title="The form closes on 1 December">Authors see the deadline in the form.</U.Alert>
+        <U.Alert tone="info" title="The form closes on 1 December">
+          Authors see the deadline in the form. <a href="#deadline">Change the deadline</a>
+        </U.Alert>
         <U.Alert tone="success" title="Email sent">The confirmation went to marta@example.test.</U.Alert>
         <U.Alert tone="warning" title="The send limit is close" action={<U.TextButton>Review</U.TextButton>}>28 of 30 confirmation emails this hour.</U.Alert>
         {shown ? <U.Alert tone="error" title="The file was not uploaded" onClose={() => setShown(false)}>The file is larger than 20 MB.</U.Alert> : null}

@@ -15,7 +15,7 @@
 <script>
   var U = window.Udekom, h = React.createElement;
   
-  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'stack'}, h(U.Alert,{tone:'info',title:'Submissions close on 22 October'},'Authors can still edit their abstracts until then.'), h(U.Alert,{tone:'success',title:'Server verified'}), h(U.Alert,{tone:'warning',title:'No fallback mail server'},'Emails fail if the main server is down.'), h(U.Alert,{tone:'error',title:'Payment not matched',onClose:function(){}},'The amount differs from the proforma by 30 EUR.')));
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'stack'}, h(U.Alert,{tone:'info',title:'Submissions close on 22 October'},'Authors can still edit their abstracts until then. ',h('a',{href:'#'},'Open the form')), h(U.Alert,{tone:'success',title:'Server verified'}), h(U.Alert,{tone:'warning',title:'No fallback mail server'},'Emails fail if the main server is down.'), h(U.Alert,{tone:'error',title:'Payment not matched',onClose:function(){}},'The amount differs from the proforma by 30 EUR.')));
 </script>
 </body>
 </html>

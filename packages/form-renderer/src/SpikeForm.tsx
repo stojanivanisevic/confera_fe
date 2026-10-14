@@ -195,7 +195,7 @@ export function SpikeForm({ slug, onShow }: SpikeFormProps) {
             <ul className={styles.list}>
               {problems.map((problem) => (
                 <li key={problem.id}>
-                  <a href={`#${problem.id}`} onClick={goTo(problem.id)}>
+                  <a className="ud-link" href={`#${problem.id}`} onClick={goTo(problem.id)}>
                     {problem.message}
                   </a>
                 </li>

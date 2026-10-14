@@ -74,6 +74,18 @@
 .ud-nav-link.is-current { border-bottom-color: currentColor; }
 .ud-nav-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--radius-xs); }
 
+/* ---------- Text link (2.3.0) ----------
+   A link in running text: underlined, in ink, with the blue focus outline. `ud-link--brand` makes it
+   brand-orange-strong, on a light ground only (not on the blush surface-2). Alert gives the links
+   in it this style by itself; any other link takes the class `ud-link`. */
+.ud-link, .ud-alert__body a {
+  color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px;
+  border-radius: var(--radius-xs); cursor: pointer;
+}
+.ud-link:hover, .ud-alert__body a:hover { text-decoration-thickness: 2px; }
+.ud-link--brand { color: var(--brand-orange-strong); }
+.ud-link:focus-visible, .ud-alert__body a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
 /* ---------- SegmentedTabs (application form, measured) ---------- */
 .ud-tabs { display: inline-flex; flex-wrap: wrap; gap: var(--gutter-s); }
 .ud-tab {
@@ -412,6 +424,7 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-pagination__range { font-variant-numeric: tabular-nums; }
 .ud-pagination__size { display: inline-flex; align-items: center; gap: var(--gutter-s); }
 .ud-pagination__size select { height: var(--control-sm); padding: 0 var(--gutter-s); border: 1px solid var(--neutral-700); border-radius: var(--radius-sm); background: var(--surface-1); font: inherit; color: var(--ink); }
+.ud-pagination__size select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ud-pagination__pages { display: flex; align-items: center; gap: var(--gutter-xs); margin-left: auto; }
 .ud-page-btn {
   display: inline-flex; align-items: center; justify-content: center; min-width: var(--control-sm); height: var(--control-sm); padding: 0 var(--gutter-xs); border: 0; border-radius: var(--radius-pill);
@@ -489,6 +502,7 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-breadcrumbs li { display: inline-flex; align-items: center; gap: var(--gutter-xs); color: var(--text-secondary); }
 .ud-breadcrumbs a { color: var(--text-secondary); text-decoration: none; }
 .ud-breadcrumbs a:hover { color: var(--brand-orange-strong); text-decoration: underline; }
+.ud-breadcrumbs a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--radius-xs); }
 .ud-breadcrumbs [aria-current] { color: var(--ink); font-weight: 600; }
 
 /* Stepper: the connector runs from the dot's middle (half of its 32px, less half of the 2px line). */
@@ -497,7 +511,8 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-stepper__step:not(:last-child)::after { content: ""; position: absolute; top: calc(var(--control-sm) / 2 - 1px); left: calc(var(--control-sm) + var(--gutter-s)); right: var(--gutter-s); height: 2px; background: var(--neutral-300); }
 .ud-stepper__step.is-done:not(:last-child)::after { background: var(--brand-orange); }
 .ud-stepper__btn { display: flex; align-items: flex-start; gap: var(--gutter-m); padding: 0; border: 0; background: transparent; text-align: left; font: inherit; color: inherit; }
-button.ud-stepper__btn { cursor: pointer; }
+button.ud-stepper__btn { cursor: pointer; border-radius: var(--radius-sm); }
+button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ud-stepper__dot {
   position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; flex: none; width: var(--control-sm); height: var(--control-sm); border-radius: 50%;
   border: 2px solid var(--neutral-300); background: var(--surface-1); font: var(--text-caption-xs); font-weight: 700; color: var(--text-secondary); box-sizing: border-box;
@@ -565,7 +580,8 @@ button.ud-stepper__btn { cursor: pointer; }
 .ud-sidenav__link { display: flex; align-items: center; gap: var(--gutter-s); padding: var(--gutter-m); border-radius: var(--radius-field); color: var(--on-dark-muted); text-decoration: none; font: var(--text-body-sm); font-weight: 500; letter-spacing: var(--text-body-sm-tracking); }
 .ud-sidenav__link:hover { background: var(--on-dark-hover); color: var(--text-on-dark); }
 .ud-sidenav__link.is-current { background: var(--brand-orange); color: var(--on-brand); font-weight: 600; }
-.ud-sidenav__link:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
+/* One focus ring everywhere (2.3.0): the blue outline, 3.95:1 on the dark ground (it was orange). */
+.ud-sidenav__link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ud-sidenav__badge { margin-left: auto; min-width: var(--counter-min); padding: 1px var(--gutter-s); border-radius: var(--radius-pill); background: var(--on-dark-chip); font: var(--text-body-xs); letter-spacing: var(--text-body-xs-tracking); text-align: center; }
 .ud-sidenav__link.is-current .ud-sidenav__badge { background: var(--on-dark-chip); }
 

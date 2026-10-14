@@ -6,6 +6,13 @@ The design system is released as a whole: tokens, stylesheet, script, types, fon
 
 Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI reviewer's re-check of 2.2.0 (section 7 of the 0.1.0 UI review) and the issues M1-ISS-10, 19 to 26, 42, 44 and 45. No colour, radius, shadow or size token of 2.2.0 changed its value; `brand-orange` is still `#ef7b06`. The new tokens are listed below.
 
+### One focus ring everywhere, and a text link (M1-ISS-21, R-02)
+
+- **The blue outline on the three controls that still drew the browser's own ring** (WCAG 2.4.7): the rows-per-page select of Pagination, the links of Breadcrumbs (also in PageHeader and in AppShell's top bar) and the step button of Stepper now draw `2px solid --focus`, offset 2px, as every other control.
+- **Sidebar links take the blue outline too** (3.95:1 on `background-dark`). Their orange outline (6.47:1) was kept on purpose in 2.0.0; it was the one exception to "one focus ring", and the README did not name it.
+- **New: a text link, `ud-link`.** Underlined, in `ink`, the underline thicker on hover, with the blue focus outline; `ud-link--brand` for a link in `brand-orange-strong` on a light ground (not on the blush `surface-2`). Alert gives the links inside it this style by itself, so the links of an error summary no longer draw the browser's blue (#0000ee, a colour that is no token) and its ring.
+- A test walks every focusable part of the gallery in Chromium, Firefox and WebKit and fails on a focus that is not the blue outline or ring (`e2e/ds-2-3-0.spec.ts`); a unit test fails on a focus rule of the stylesheet that draws anything else.
+
 ### Type, spacing and size tokens (M1-ISS-19)
 
 - **Type styles are tokens.** `pnpm ds:tokens` writes two custom properties for each type style of `tokens.json`: `--text-<style>` (the `font` shorthand: weight, size, line height, family) and `--text-<style>-tracking` (the letter spacing, which the shorthand cannot carry). A rule uses both: `font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking);`. 17 styles: the 15 of the Figma file and two Confera additions for the 12px text in Manrope, `body-xs` (12 / 1.35 / 400) and `caption-xs` (12 / 1.2 / 600), both tracked -0.01em.
