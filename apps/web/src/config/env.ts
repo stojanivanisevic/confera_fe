@@ -92,9 +92,9 @@ export function parseConfig(env: Env): AppConfig {
   const adminOrigin = parseOrigin('CONFERA_ADMIN_ORIGIN', env.CONFERA_ADMIN_ORIGIN, problems);
   const apiOrigin = parseOrigin('CONFERA_API_ORIGIN', env.CONFERA_API_ORIGIN, problems);
 
-  if (publicOrigin && adminOrigin && publicOrigin.host === adminOrigin.host) {
+  if (publicOrigin && adminOrigin && publicOrigin.hostname.toLowerCase() === adminOrigin.hostname.toLowerCase()) {
     problems.push(
-      'CONFERA_PUBLIC_ORIGIN and CONFERA_ADMIN_ORIGIN must be two different host names (ADR-02): the admin session must never meet a public page',
+      'CONFERA_PUBLIC_ORIGIN must have another host name than CONFERA_ADMIN_ORIGIN (ADR-02: two surfaces, two different host names; a port or a scheme does not make another host for a cookie)',
     );
   }
 
