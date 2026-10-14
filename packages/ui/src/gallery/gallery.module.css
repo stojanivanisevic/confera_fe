@@ -1,12 +1,12 @@
 /* Layout of the gallery only. Components are styled by the design system;
-   every value here is a token (NFR-UI-01). */
+   every value here is a token (NFR-UI-01; the style lint holds it since design system 2.3.0). */
 
 .page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 24px 16px 96px;
-  max-width: 1200px;
+  gap: var(--gutter-2xl);
+  padding: var(--gutter-2xl) var(--gutter-l) var(--gutter-6xl);
+  max-width: var(--content-max);
   margin: 0 auto;
   font-family: var(--font-sans);
   color: var(--ink);
@@ -14,10 +14,8 @@
 
 .title {
   margin: 0;
-  font-size: 32px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font: var(--text-h2);
+  letter-spacing: var(--text-h2-tracking);
 }
 
 .lead {
@@ -28,18 +26,16 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--gutter-l);
   min-width: 0;
-  padding-top: 16px;
+  padding-top: var(--gutter-l);
   border-top: 1px solid var(--neutral-300);
 }
 
 .name {
   margin: 0;
-  font-size: 20px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font: var(--text-h5);
+  letter-spacing: var(--text-h5-tracking);
 }
 
 .stage {
@@ -50,54 +46,59 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
+  gap: var(--gutter-l);
 }
 
 .stack {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
-  max-width: 560px;
+  gap: var(--gutter-m);
+  max-width: var(--dialog-md);
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  max-width: 760px;
+  gap: var(--gutter-l);
+  max-width: var(--form-card-max);
 }
 
 .text {
   margin: 0;
-  font-size: 14px;
+  font: var(--text-body-sm);
+  letter-spacing: var(--text-body-sm-tracking);
+  line-height: 1.4;
   color: var(--ink);
 }
 
 .icons {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+  gap: var(--gutter-m);
 }
 
 .icon {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: var(--gutter-s);
+  font: var(--text-body-xs);
+  letter-spacing: var(--text-body-xs-tracking);
   color: var(--ink);
 }
 
+/* A strip of the admin sidebar, as wide as the sidebar. */
 .dark {
-  max-width: 280px;
-  padding: 16px 12px;
+  max-width: var(--sidebar-width);
+  padding: var(--gutter-l) var(--gutter-m);
   border-radius: var(--radius-field);
   background: var(--background-dark);
   color: var(--text-on-dark);
 }
 
+/* The admin shell in a box half as high as the window. */
 .shell {
-  height: 420px;
+  height: 50vh;
   overflow: auto;
   border-radius: var(--radius-field);
 }

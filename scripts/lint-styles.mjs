@@ -8,6 +8,14 @@
 //   no-tailwind      no Tailwind at-rules
 //   ds-override      outside design-system/: no restyling of ud-* classes and no redefined
 //                    token, so no override layer can grow next to the design system (ADR-22)
+//   size-literal     no px length above 2px in a font, line height, padding, margin, gap,
+//                    inset or width/height (and their min/max): sizes are tokens (M1-ISS-19).
+//                    1 and 2 px stay px: borders, outlines and the hairline math around them
+//   font-literal     no font family other than var(--font-*), in font-family or in the font
+//                    shorthand: type comes from the tokens (M1-ISS-19)
+// Not checked, on purpose: border, outline and shadow widths, transforms, grid track
+// minimums and flex bases (layout, not the size of a part), and the breakpoints in @media,
+// where a custom property cannot be used (tokens.json lists them).
 //
 // Why not Stylelint: see README, "Lint". The planted violations in
 // lint-fixtures/ prove each rule (tests/lint-fixtures.test.ts).
@@ -58,7 +66,63 @@ const MESSAGES = {
   'no-tailwind': 'No Tailwind: styling is CSS Modules on design-system tokens (NFR-UI-01).',
   'ds-override':
     'No override layer: application styles do not restyle ud-* classes or redefine a token. Change the design system in a release instead (ADR-21, ADR-22).',
+  'size-literal':
+    'No size literal: use a spacing, size or type token, var(--gutter-*), var(--…) or font: var(--text-*). Only 1 and 2 px stay px (M1-ISS-19).',
+  'font-literal': 'No font family literal: use var(--font-sans), var(--font-ui) or font: var(--text-*) (M1-ISS-19).',
 };
+
+// Properties whose lengths are sizes (M1-ISS-19). Borders, outlines, shadows, transforms, grid
+// templates and flex bases are not among them.
+const SIZE_PROPERTIES =
+  /^(font|font-size|line-height|letter-spacing|word-spacing|text-indent|padding(-.+)?|margin(-.+)?|scroll-margin(-.+)?|scroll-padding(-.+)?|gap|row-gap|column-gap|inset(-.+)?|top|right|bottom|left|(min-|max-)?(width|height|block-size|inline-size))$/;
+/** The largest px length that stays a literal: borders, outlines and the hairline math around them. */
+const HAIRLINE_PX = 2;
+const CSS_WIDE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
+// Words of the font shorthand that are not a family: styles, variants, weights, stretches, sizes, system fonts.
+const FONT_KEYWORDS = new Set(
+  `normal italic oblique small-caps bold bolder lighter ultra-condensed extra-condensed condensed semi-condensed semi-expanded
+  expanded extra-expanded ultra-expanded xx-small x-small small medium large x-large xx-large xxx-large larger smaller
+  caption icon menu message-box small-caption status-bar`.split(/\s+/),
+);
+
+/** The px lengths in a value that are not hairlines, e.g. ["12px"]. */
+function sizeLiterals(value) {
+  const found = [];
+  valueParser(value).walk((part) => {
+    if (part.type === 'function' && part.value.toLowerCase() === 'url') return false;
+    if (part.type !== 'word') return undefined;
+    const unit = valueParser.unit(part.value);
+    if (unit && unit.unit.toLowerCase() === 'px' && Math.abs(Number(unit.number)) > HAIRLINE_PX) found.push(part.value);
+    return undefined;
+  });
+  return found;
+}
+
+/** A family that is not a font token: a quoted name, or a word that is not a keyword or a length. */
+function fontFamilyLiterals(value, shorthand) {
+  const parsed = valueParser(value);
+  const top = parsed.nodes.filter((n) => n.type !== 'space' && n.type !== 'comment');
+  if (top.length === 1 && top[0].type === 'word' && CSS_WIDE.has(top[0].value.toLowerCase())) return [];
+  const found = [];
+  for (const part of top) {
+    if (part.type === 'function') {
+      const name = part.value.toLowerCase();
+      if (name === 'var') {
+        const ref = part.nodes[0]?.value ?? '';
+        // font-family takes a family token; the shorthand also takes a type style.
+        if (!/^--font-/.test(ref) && !(shorthand && /^--text-/.test(ref))) found.push(`var(${ref})`);
+      }
+      continue;
+    }
+    if (part.type === 'string') found.push(`"${part.value}"`);
+    else if (part.type === 'word') {
+      const word = part.value.toLowerCase();
+      if (shorthand && (FONT_KEYWORDS.has(word) || valueParser.unit(part.value) || /^\d/.test(word))) continue;
+      found.push(part.value);
+    }
+  }
+  return found;
+}
 
 /** The names of the custom properties that tokens.css defines. */
 export function readTokenNames(tokensCssPath = join(root, 'design-system', 'tokens.css')) {
@@ -112,8 +176,16 @@ export function lintCss(css, options = {}) {
       report('ds-override', node, node.selector);
     }
     if (node.type === 'decl') {
+      const prop = node.prop.toLowerCase();
       if (!options.designSystem && node.prop.startsWith('--') && tokens.has(node.prop)) report('ds-override', node, node.prop);
-      checkValue(node.value, node, node.prop.toLowerCase());
+      checkValue(node.value, node, prop);
+      // A custom property of one's own is checked too, or it would be the way around the rule.
+      if (SIZE_PROPERTIES.test(prop) || prop.startsWith('--')) for (const literal of sizeLiterals(node.value)) report('size-literal', node, `${node.prop}: ${literal}`);
+      // In @font-face, font-family is the name being declared, not a use of one.
+      const declaresAFace = node.parent?.type === 'atrule' && node.parent.name.toLowerCase() === 'font-face';
+      if ((prop === 'font-family' || prop === 'font') && !declaresAFace) {
+        for (const literal of fontFamilyLiterals(node.value, prop === 'font')) report('font-literal', node, `${node.prop}: ${literal}`);
+      }
     } else if (node.type === 'atrule') {
       const name = node.name.toLowerCase();
       if (name === 'import') {
@@ -170,5 +242,5 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     console.error(`\n✗ ${findings.length} style problem(s) in ${files} stylesheet(s)`);
     process.exit(1);
   }
-  console.log(`✓ ${files} stylesheet(s): no colour literal, unknown token, external address, @import, Tailwind or design-system override`);
+  console.log(`✓ ${files} stylesheet(s): no colour, size or font literal, unknown token, external address, @import, Tailwind or design-system override`);
 }

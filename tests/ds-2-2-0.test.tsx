@@ -205,9 +205,12 @@ describe('the stylesheet', () => {
   });
 
   it('the remove button of a tag and the clear button of a search are 24 x 24 px at least', () => {
+    // Since 2.3.0 the size is the token target-min; it is 24px.
+    const tokensCss = readFileSync(join(process.cwd(), 'design-system', 'tokens.css'), 'utf8');
+    expect(tokensCss).toContain('--target-min: 24px;');
     for (const selector of ['.ud-tag__remove', '.ud-search__clear']) {
-      expect(rule(selector), selector).toContain('min-width: 24px');
-      expect(rule(selector), selector).toContain('min-height: 24px');
+      expect(rule(selector), selector).toContain('min-width: var(--target-min)');
+      expect(rule(selector), selector).toContain('min-height: var(--target-min)');
     }
   });
 

@@ -1,18 +1,19 @@
-/* Page ground of the application. Every value is a design-system token
-   (NFR-UI-01); component styles come from @confera/ui. */
+/* Page ground of the application. Every colour, type style, spacing and size is a
+   design-system token (NFR-UI-01; the style lint holds it since design system 2.3.0);
+   component styles come from @confera/ui. */
 
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
+/* Running text is body-md (16px) with the looser line height of reading text. */
 body {
   margin: 0;
   min-height: 100vh;
   background: var(--background);
   color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 16px;
+  font: var(--text-body-md);
   line-height: 1.4;
 }
 
@@ -20,8 +21,8 @@ body {
 .confera-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 960px;
+  gap: var(--gutter-2xl);
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 32px 16px 64px;
+  padding: var(--gutter-3xl) var(--gutter-l) var(--gutter-6xl);
 }

@@ -31,6 +31,24 @@ export function readTokens(file = paths.tokensJson) {
 
 const cssValue = (value) => String(value).replace(/^\{([a-z0-9-]+)\}$/i, 'var(--$1)');
 
+/**
+ * The two custom properties of a type style (2.3.0): the `font` shorthand (weight, size, line
+ * height, family) and the letter spacing, which the shorthand cannot carry. A rule uses both:
+ *   font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking);
+ */
+export function typeStyleProperties(tokens) {
+  const out = [];
+  for (const group of tokens.type.groups ?? []) {
+    for (const style of group.styles) {
+      const family = style.family ?? group.family;
+      if (!(family in tokens.type.families)) throw new Error(`The type style ${style.name} names the family "${family}", which tokens.json does not define`);
+      out.push([`text-${style.name}`, `${style.fontWeight} ${style.fontSize}/${style.lineHeight} var(--font-${family})`]);
+      out.push([`text-${style.name}-tracking`, style.letterSpacing ?? 'normal']);
+    }
+  }
+  return out;
+}
+
 /** The stylesheet that defines every design token as a custom property. */
 export function tokensCss(tokens) {
   const lines = [
@@ -45,10 +63,14 @@ export function tokensCss(tokens) {
   };
   group('Colour', tokens.color.tokens.map((t) => [t.name, t.value]));
   group('Type', Object.entries(tokens.type.families).map(([name, value]) => [`font-${name}`, value]));
+  if (tokens.type.groups?.length) group('Type styles: font, and letter spacing', typeStyleProperties(tokens));
   group('Spacing', tokens.spacing.tokens.map((t) => [t.name, t.value]));
   group('Radius', tokens.radius.tokens.map((t) => [t.name, t.value]));
   group('Shadow', tokens.shadow.tokens.map((t) => [t.name, t.value]));
   group('Size', tokens.size.tokens.map((t) => [t.name, t.value]));
+  if (tokens.breakpoint?.tokens?.length) {
+    lines.push(`  /* Breakpoints, for @media only (a custom property cannot be used there): ${tokens.breakpoint.tokens.map((t) => `${t.name} ${t.value}`).join(', ')} */`);
+  }
   lines.push('}', '');
   return lines.join('\n');
 }

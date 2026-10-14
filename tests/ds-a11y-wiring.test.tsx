@@ -197,12 +197,19 @@ describe('no reference points at nothing, in any component', () => {
 
 describe('16px controls on touch devices', () => {
   const css = readFileSync(resolve(process.cwd(), 'design-system/components/bundle.css'), 'utf8');
+  // Since 2.3.0 a size is a type style: `font: var(--text-body-md)`. Its size is read from tokens.css.
+  const tokensCss = readFileSync(resolve(process.cwd(), 'design-system/tokens.css'), 'utf8');
+  const fontSizeOf = (value: string) => {
+    const style = /^var\((--text-[a-z0-9-]+)\)$/.exec(value.trim());
+    const font = style ? new RegExp(`${style[1]}: ([^;]+);`).exec(tokensCss)?.[1] ?? '' : value;
+    return Number.parseFloat(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] ?? 'NaN');
+  };
   const touch: string[] = [];
   postcss.parse(css).walkAtRules('media', (media) => {
     if (media.params.replace(/\s+/g, '') !== '(pointer:coarse)') return;
     media.walkRules((rule) => {
-      rule.walkDecls('font-size', (decl) => {
-        expect(Number.parseFloat(decl.value)).toBeGreaterThanOrEqual(16);
+      rule.walkDecls(/^font(-size)?$/, (decl) => {
+        expect(fontSizeOf(decl.value), `${rule.selector} { ${decl.prop}: ${decl.value} }`).toBeGreaterThanOrEqual(16);
         touch.push(...rule.selectors);
       });
     });

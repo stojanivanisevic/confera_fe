@@ -42,6 +42,8 @@ const STYLE_PLANTED: Record<string, string> = {
   'external-font.css': 'external-url',
   'external-import.css': 'no-import',
   'ds-override.css': 'ds-override',
+  'size-literal.css': 'size-literal',
+  'font-literal.css': 'font-literal',
 };
 const STYLE_FINE = ['ok-tokens.css'];
 
@@ -78,7 +80,7 @@ describe('lint: planted violations (M1-FE-01)', () => {
 });
 
 describe('style lint: planted violations (M1-FE-01)', () => {
-  const tokens = new Set(['--ink', '--surface-1']);
+  const tokens = new Set(['--ink', '--surface-1', '--text-body-sm', '--text-body-sm-tracking', '--gutter-s', '--gutter-m', '--button-height', '--font-ui']);
   const lint = (file: string): Array<{ rule: string }> =>
     lintCss(readFileSync(join(fixtures, file), 'utf8'), { filename: file, tokens });
 
@@ -104,6 +106,58 @@ describe('style lint: planted violations (M1-FE-01)', () => {
   });
 
   it('a word that is also a colour name is fine where a name is expected', () => {
-    expect(lintCss('.a { font-family: "Tan", linen; animation-name: red; }')).toEqual([]);
+    // A family literal is a finding of its own since 2.3.0 (font-literal); it is never a colour.
+    expect(lintCss('.a { font-family: "Tan", linen; animation-name: red; }').filter((f: { rule: string }) => f.rule !== 'font-literal')).toEqual([]);
+    expect(lintCss('.a { animation-name: red; grid-area: tan; }')).toEqual([]);
+  });
+});
+
+// M1-ISS-19 (design system 2.3.0): sizes and type come from the tokens.
+describe('style lint: size and font literals', () => {
+  const rules = (css: string): string[] => (lintCss(css, { tokens: new Set(['--gutter-s', '--text-body-sm', '--font-sans']) }) as Array<{ rule: string }>).map((f) => f.rule);
+
+  it.each([
+    ['font-size', '.a { font-size: 13px; }'],
+    ['the font shorthand', '.a { font: 600 14px/1.2 var(--font-sans); }'],
+    ['a line height', '.a { line-height: 18px; }'],
+    ['a padding', '.a { padding: 0 10px; }'],
+    ['a margin, also a negative one', '.a { margin: -6px 0 0; }'],
+    ['a gap', '.a { gap: 6px; }'],
+    ['an inset', '.a { top: 15px; }'],
+    ['a width, a height, their min and max', '.a { width: 36px; min-height: 88px; max-width: 700px; }'],
+    ['a length inside calc() or min()', '.a { width: min(380px, calc(100vw - 32px)); }'],
+    ['a scroll margin', '.a { scroll-margin-top: 16px; }'],
+    ['a custom property of its own', '.a { --gap: 12px; gap: var(--gap); }'],
+  ])('%s in px is a size literal', (_what, css) => {
+    expect(rules(css)).toContain('size-literal');
+  });
+
+  it.each([
+    ['1 and 2 px: borders, outlines and the hairline math around them', '.a { margin-bottom: -1px; top: 2px; height: calc(var(--gutter-s) - 2px); }'],
+    ['zero, percentages, em, ch and viewport units', '.a { margin: 0; width: 100%; max-width: 65ch; height: 100vh; font-size: 1.5em; }'],
+    ['unitless line heights', '.a { line-height: 1.45; }'],
+    ['borders, outlines, shadows, transforms, grid tracks, flex bases and radii are not sizes of the rule', '.a { border: 4px solid; outline-offset: -3px; box-shadow: 0 12px 32px; transform: translateX(16px); grid-template-columns: minmax(220px, 1fr); flex: 1 1 180px; border-radius: 3px; }'],
+    ['tokens, also in calc()', '.a { padding: var(--gutter-s); width: calc(100% - 2 * var(--gutter-s)); font: var(--text-body-sm); }'],
+  ])('%s are fine', (_what, css) => {
+    expect(rules(css)).not.toContain('size-literal');
+  });
+
+  it.each([
+    ['a named family', '.a { font-family: "Manrope", sans-serif; }'],
+    ['a generic family alone', '.a { font-family: system-ui; }'],
+    ['a family in the shorthand', '.a { font: 600 1em "Inter"; }'],
+    ['a family after a token', '.a { font-family: var(--font-sans), serif; }'],
+    ['a token that is not a family', '.a { font-family: var(--gutter-s); }'],
+  ])('%s is a font literal', (_what, css) => {
+    expect(rules(css)).toContain('font-literal');
+  });
+
+  it.each([
+    ['a family token', '.a { font-family: var(--font-sans); }'],
+    ['a type style in the shorthand', '.a { font: var(--text-body-sm); }'],
+    ['inherit', '.a { font: inherit; font-family: inherit; }'],
+    ['the name a @font-face declares', '@font-face { font-family: "Manrope"; src: url("./manrope.woff2"); }'],
+  ])('%s is fine', (_what, css) => {
+    expect(rules(css)).not.toContain('font-literal');
   });
 });

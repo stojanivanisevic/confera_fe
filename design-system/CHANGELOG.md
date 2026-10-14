@@ -2,6 +2,24 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.3.0 (2026-10-14)
+
+Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI reviewer's re-check of 2.2.0 (section 7 of the 0.1.0 UI review) and the issues M1-ISS-10, 19 to 26, 42, 44 and 45. No colour, radius, shadow or size token of 2.2.0 changed its value; `brand-orange` is still `#ef7b06`. The new tokens are listed below.
+
+### Type, spacing and size tokens (M1-ISS-19)
+
+- **Type styles are tokens.** `pnpm ds:tokens` writes two custom properties for each type style of `tokens.json`: `--text-<style>` (the `font` shorthand: weight, size, line height, family) and `--text-<style>-tracking` (the letter spacing, which the shorthand cannot carry). A rule uses both: `font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking);`. 17 styles: the 15 of the Figma file and two Confera additions for the 12px text in Manrope, `body-xs` (12 / 1.35 / 400) and `caption-xs` (12 / 1.2 / 600), both tracked -0.01em.
+- **Spacing**: the Figma gutters (`gutter-null` 0, `gutter-xxs` 2, `gutter-xs` 4, `gutter-s` 8) and, as Confera additions on a 4px grid, `gutter-m` 12, `gutter-l` 16, `gutter-xl` 20, `gutter-2xl` 24, `gutter-3xl` 32, `gutter-4xl` 40, `gutter-5xl` 48, `gutter-6xl` 64.
+- **Component sizes** in the `size` group, next to `button-height` and the checkbox and radio sizes: `button-padding-x` 30 (measured in Figma), `control-sm` 32, `control-lg` 56, `target-min` 24, `target-touch` 44, `badge-height` 24, `badge-dot` 6, `counter-min` 20, `avatar-sm` 28, `avatar` 36, `avatar-lg` 56, `circle-button` 192, `switch-width` 36, `switch-height` 20, `switch-thumb` 16, `spinner` 24, `spinner-sm` 16, `progress-height` 8, `progress-height-sm` 4, `file-button-height` 36, `textarea-min` 88, `control-min-width` 120, `filter-field-max` 320, `menu-min` 180, `listbox-max` 260, `tooltip-max` 240, `toast-width` 380, `topbar-height` 64, `sidebar-width` 248, `drawer-width` 480, `dialog-sm` 420, `dialog-md` 560, `dialog-lg` 820, `form-card-max` 700, `page-max` 960, `content-max` 1400.
+- **Breakpoints** (600, 720 and 900 px) are listed in `tokens.json` under `breakpoint`, for reference: a custom property cannot be used in `@media`, so they stay px, and `tokens.css` names them in a comment.
+- **The stylesheet uses them.** `components/bundle.css` writes no font size, line height, padding, margin, gap, inset, width or height in px any more, and no font family but `var(--font-*)`. Written in px on purpose: 1 and 2 px (borders, outlines and the hairline math around them), the widths of thicker borders and rings, shadows, transforms, grid track minimums and flex bases, and the breakpoints.
+- **The lint holds it**, in the design system and in the application (`scripts/lint-styles.mjs`, with a planted case each in `lint-fixtures/`): `size-literal` (a px length above 2px in `font`, `font-size`, `line-height`, `letter-spacing`, `padding*`, `margin*`, `scroll-margin*`, `gap`, `inset*`, `top`/`right`/`bottom`/`left`, `width`/`height` and their min and max, and in a custom property of one's own) and `font-literal` (a family that is not `var(--font-*)`, in `font-family` or in the `font` shorthand; the name an `@font-face` declares is not a use).
+
+**Folded to the scale** (each visible in the comparison of 2.2.0 and 2.3.0, `pnpm ds:visual`):
+- Type: 11 → 12 (sidebar section title, small avatar); 13 → 12 (switch description, step number, repeater number) or 14 (breadcrumbs, progress label, avatar); 15 → 16 (dialog text, page header description); 18 → 20 (product name in the shell, large avatar). Text that set only a size now has the line height of its style (1.2); running text in descriptions, alerts, tables, lists and dialogs keeps a line height of 1.4 (1.45 in a dialog).
+- Spacing: 6 → 4 (badge dot gap, tooltip padding, counter padding) or 8 (text button, dropzone and file list gaps, progress gap, scale ends, page header and step text); 7 → 8 (checkbox and radio gap, sidebar counter); 9 and 10 → 8 or 12 (list, menu and sidebar items, choice lists, switch, underline tabs, file rows, badges, description list rows, step and sidebar gaps); 14 → 12 (alert, toast, repeater row) or 16 (scale button); 28 → 24 (dropzone).
+- Sizes: the narrow-screen drawer of AppShell is `sidebar-width` (248, was 264); the selection column of DataTable is `target-touch` wide (44, was 40).
+
 ## 2.2.0 (2026-10-14)
 
 The keyboard, the selected states and the small targets, after the UI and UX reviews of Confera 0.1.0 (UI-M1-01 to 07, 09, 10, 15, 16, 20). No token changed; the brand is the same.

@@ -1,13 +1,13 @@
 /* Layout of the spike form. Components are styled by the design system;
-   every value here is a token (NFR-UI-01). */
+   every value here is a token (NFR-UI-01; the style lint holds it since design system 2.3.0). */
 
 .form {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 16px;
+  gap: var(--gutter-l);
   width: 100%;
-  max-width: 700px;
+  max-width: var(--form-card-max);
   margin: 0 auto;
   font-family: var(--font-sans);
   color: var(--ink);
@@ -19,10 +19,8 @@
 
 .heading {
   margin: 0;
-  font-size: 32px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font: var(--text-h2);
+  letter-spacing: var(--text-h2-tracking);
 }
 
 /* One full row of the form card's grid. */
@@ -33,19 +31,21 @@
 
 .list {
   margin: 0;
-  padding-left: 18px;
+  padding-left: var(--gutter-xl);
 }
 
 .note {
   grid-column: 1 / -1;
   margin: 0;
-  font-size: 13px;
+  font: var(--text-body-sm);
+  letter-spacing: var(--text-body-sm-tracking);
+  line-height: 1.4;
   color: var(--text-secondary);
 }
 
 /* The hosted page gives the form room; inside a frame the site around it does. */
 .hosted {
-  padding: 32px 16px 64px;
+  padding: var(--gutter-3xl) var(--gutter-l) var(--gutter-6xl);
 }
 
 .embedded {
@@ -55,7 +55,7 @@
 /* Where the focus lands after Send: the error summary, the thank-you (UX-M1-01, 02). */
 .landing {
   border-radius: var(--radius-sm);
-  scroll-margin-top: 16px;
+  scroll-margin-top: var(--gutter-l);
 }
 
 .landing:focus {

@@ -3,4 +3,16 @@
   background: var(--surface-1);
   border: 1px solid transparent;
   outline-color: currentColor;
+  font: var(--text-body-sm);
+  letter-spacing: var(--text-body-sm-tracking);
+  line-height: 1.4;
+  padding: var(--gutter-s) calc(var(--gutter-m) - 1px);
+  margin: 0 0 -1px;
+  max-width: 65ch;
+  min-height: calc(var(--button-height) - 2px);
+}
+
+.fine-too {
+  font-family: var(--font-ui);
+  font-size: 0.75em;
 }
