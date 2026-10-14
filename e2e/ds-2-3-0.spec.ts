@@ -163,7 +163,9 @@ test.describe('item 3: Toast, Alert and DataTable', () => {
     await card(page, 'ToastHost').getByRole('button', { name: 'Show a short toast' }).click();
     const short = page.locator('.ud-toast', { hasText: 'Draft saved' });
     await expect(short).toBeVisible();
-    await short.hover();
+    // The pointer goes to the toast by its place: a fixed element at the corner is not scrolled to (WebKit waited for that).
+    const box = (await short.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.waitForTimeout(5_000); // its time is 4 s
     await expect(short).toBeVisible();
     await page.mouse.move(1, 1);
