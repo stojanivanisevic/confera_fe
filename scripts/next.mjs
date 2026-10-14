@@ -3,6 +3,7 @@
 // It turns the framework's telemetry off, loads .env, and chooses between
 // the production build and the test build (gallery and spike fixtures).
 import { fail, loadRootEnv, resolveBin, runNode, webDir } from './lib.mjs';
+import { listenHost } from './listen-host.mjs';
 
 const [command, ...rest] = process.argv.slice(2);
 if (!['dev', 'build', 'start', 'typegen', 'telemetry', 'info'].includes(command)) {
@@ -27,6 +28,17 @@ const env = {
 
 if (['dev', 'start'].includes(command) && !args.includes('-p') && !args.includes('--port')) {
   args.push('-p', process.env.PORT || '3000');
+}
+
+// Where it listens: on loopback outside prod (./listen-host.mjs). Only through LISTEN_HOST,
+// so that no argument can open a developer machine to its network.
+if (['dev', 'start'].includes(command)) {
+  if (args.some((a) => a === '-H' || a === '--hostname' || a.startsWith('--hostname='))) {
+    fail('Set the address to listen on with LISTEN_HOST, not with -H or --hostname (ADR-24).');
+  }
+  const listen = listenHost(process.env);
+  if ('problem' in listen) fail(listen.problem);
+  args.push('--hostname', listen.host);
 }
 
 const next = resolveBin('next', 'next', webDir);

@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   allowedDevOrigins: devHosts, // development server only
   reactStrictMode: true,
+  // The proxy (src/proxy.ts) gets the URL of the request as the router has it. Otherwise the framework
+  // builds that URL with "localhost" while the router names itself by the address it listens on
+  // (LISTEN_HOST, scripts/next.mjs), and the rewrite to the "not found" page would look like a
+  // rewrite to another server (a 500). The proxy uses its path and query, and builds that rewrite on it.
+  skipProxyUrlNormalize: true,
 
   pageExtensions: devPages ? ['tsx', 'ts', 'dev.tsx', 'dev.ts'] : ['tsx', 'ts'],
 
