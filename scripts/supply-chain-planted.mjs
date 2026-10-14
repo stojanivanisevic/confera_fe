@@ -187,6 +187,10 @@ function plantedSecrets() {
     { what: 'a session secret that only contains the placeholder words, not at its start', file: 'apps/web/planted-not-a-placeholder.env', text: `SESSION_SECRET=${random(6, ALNUM)}-invented-${random(6, ALNUM)}-local-only-${random(6, ALNUM)}\n` },
     { what: 'a client secret after a question mark on the same line (not a branch of a choice)', file: 'apps/web/src/planted/after-question.ts', text: `export const paypal = isLive() ? { clientSecret: '${random(80, ALNUM)}' } : null;\n` },
     { what: 'a value under the name credentials that is not a mode of fetch', file: 'apps/web/src/planted/credentials.ts', text: `export const service = { credentials: '${random(40, ALNUM)}' };\n` },
+    // Caught today. Two edges of the reader of lines that neither corpus of the scanner holds: the list dash
+    // outside a YAML file, and written text after a reference.
+    { what: 'a session secret after a list dash in a text file that is not YAML (- NAME=value)', file: 'apps/web/planted-notes.md', text: `Set on the server:\n\n- STAGE=prod\n- SESSION_SECRET=${random(48, ALNUM)}\n` },
+    { what: 'a session secret that starts with a reference and goes on as written text ($PREFIX-value)', file: 'apps/web/planted-prefixed.env', text: `SESSION_SECRET=$PREFIX-${random(48, ALNUM)}\n` },
     // Third round. The rule is written down now (README, section 11, "The rule for a secret-like name"): a literal
     // value bound to a secret-like name, in the syntaxes it lists, and no allowed value but nothing, a reference
     // and a placeholder. Each of these is inside that rule, and the scan does not report it today. The same
