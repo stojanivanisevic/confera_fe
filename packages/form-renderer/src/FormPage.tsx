@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
-import { startHeightReporter } from '@confera/embed-loader';
+import { requestIntoView, startHeightReporter } from '@confera/embed-loader';
 
 import { SpikeForm } from './SpikeForm';
 import styles from './spike-form.module.css';
@@ -34,10 +34,12 @@ export function EmbeddedForm({ slug, parentOrigins }: EmbeddedFormProps) {
     if (!root.current) return undefined;
     return startHeightReporter({ root: root.current, parentOrigins: origins.split(' ').filter(Boolean) });
   }, [origins]);
+  // After Send: the page around is asked to bring the summary or the thank-you into view (UX-M1-01, 02).
+  const onShow = useCallback((element: HTMLElement) => requestIntoView({ element, parentOrigins: origins.split(' ').filter(Boolean) }), [origins]);
 
   return (
     <main ref={root} className={styles.embedded} data-confera-embed-root="">
-      <SpikeForm slug={slug} />
+      <SpikeForm slug={slug} onShow={onShow} />
     </main>
   );
 }

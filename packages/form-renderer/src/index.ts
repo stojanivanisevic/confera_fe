@@ -11,5 +11,6 @@ export { createFormValueStore, readControls, useFormRef, useFormValues } from '.
 export type { FormValues, FormValueStore } from './form-values';
 export { createDraftStorage, draftStorage } from './safe-storage';
 export type { DraftStorage } from './safe-storage';
-export { countWords, fill, FORM_LANGUAGES, SPIKE_FORM_TEXTS } from './texts';
+export { countOf, countWords, fill, FORM_LANGUAGES, SPIKE_FORM_TEXTS } from './texts';
+export { isEmailAddress, pluralOf, wordsOver } from './rules';
 export type { FormLanguage, SpikeFormTexts } from './texts';

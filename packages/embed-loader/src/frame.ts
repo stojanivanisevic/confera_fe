@@ -9,9 +9,11 @@
  *  - It is sent when the height of the content changes, and again when the
  *    page around changes the size of the frame before it has ever followed a
  *    height the frame told (the snippet's lines started late).
+ *  - After Send it may ask the page to bring a part of the form into view
+ *    (requestIntoView below): a type and a number, to the same origins.
  *  - The frame reads no message from its parent at all.
  */
-import { heightMessage } from './protocol';
+import { heightMessage, INTO_VIEW_MESSAGE, type IntoViewMessage } from './protocol';
 
 export interface HeightReporterOptions {
   /** The element whose height is the height of the form. */
@@ -56,4 +58,27 @@ export function startHeightReporter(options: HeightReporterOptions): () => void 
     observer.disconnect();
     win.removeEventListener('resize', onResize);
   };
+}
+
+export interface IntoViewOptions {
+  /** The part of the form to bring into view: the error summary, the thank-you. */
+  readonly element: Element;
+  /** The origins that may frame this form: the only ones the request goes to. */
+  readonly parentOrigins: readonly string[];
+  /** The frame's window; injected in tests. */
+  readonly win?: Window;
+}
+
+/**
+ * Asks the page around the frame to bring a part of the form into view (UX-M1-01, 02). Moving the
+ * focus there scrolls the page of the conference site along in Chromium and Firefox, but not in
+ * Safari. Like the height, the request goes to the listed parent origins only, never to "*", and
+ * holds a type and a number. Nothing is read back. The snippet acts on it once decision D1 allows.
+ */
+export function requestIntoView(options: IntoViewOptions): void {
+  const win = options.win ?? window;
+  const parent = win.parent;
+  if (parent === win || options.parentOrigins.length === 0) return;
+  const message: IntoViewMessage = { type: INTO_VIEW_MESSAGE, top: Math.max(0, Math.round(options.element.getBoundingClientRect().top + win.scrollY)) };
+  for (const origin of options.parentOrigins) parent.postMessage(message, origin);
 }

@@ -109,6 +109,7 @@ describe('typing before the form is attached', () => {
     typeInto(field('title'), 'Održivi turizam na Balkanu');
     typeInto(field<HTMLTextAreaElement>('abstract'), 'Prva druga treća četvrta');
     typeInto(field('authors.1.name'), 'Marta Kovač');
+    typeInto(field('authors.1.email'), 'marta@example.test');
     field('consent').checked = true;
 
     await attach();
@@ -138,7 +139,7 @@ describe('typing before the form is attached', () => {
       await Promise.resolve();
     });
     expect(container.querySelector('.ud-alert--error')!.textContent).toContain('Enter the title of the paper');
-    expect(container.querySelector('.ud-alert--error')!.textContent).not.toContain('Enter the name of the author');
+    expect(container.querySelector('.ud-alert--error')!.textContent).not.toContain('Enter the first and last name of author 1');
     expect(field('title').getAttribute('aria-invalid')).toBe('true');
     expect(field('authors.1.name').value).toBe('Marta Kovač');
   });

@@ -337,7 +337,8 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
     await frame.getByRole('radio', { name: 'Srpski' }).click();
     await expect(frame.getByRole('heading', { level: 1 })).toHaveText('Prijava apstrakta');
     await frame.getByLabel('Naslov rada').fill('Održivi turizam na Balkanu');
-    await frame.getByLabel('Ime autora 1').fill('Marta Kovač');
+    await frame.getByLabel('Ime i prezime autora 1').fill('Marta Kovač');
+    await frame.getByLabel('Imejl autora 1').fill('marta@example.test');
     await frame.getByLabel('Prihvatam uslove objavljivanja').check({ force: true });
     await frame.getByRole('button', { name: 'Pošalji apstrakt' }).click();
     await expect(frame.locator('.ud-alert--success')).toContainText('Hvala');
@@ -363,7 +364,8 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
 
     await expect(frame.getByText('This browser does not let the form keep a draft')).toBeVisible();
     await frame.getByLabel('Title of the paper').fill('Sustainable tourism in the Balkans');
-    await frame.getByLabel('Name of author 1').fill('Marta Kovač');
+    await frame.getByLabel('First and last name of author 1').fill('Marta Kovač');
+    await frame.getByLabel('Email of author 1').fill('marta@example.test');
     await frame.getByLabel('I accept the terms of publication').check({ force: true });
     await frame.getByRole('button', { name: 'Send abstract' }).click();
     await expect(frame.locator('.ud-alert--success')).toContainText('Thank you');
@@ -394,8 +396,8 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
     await frame.getByRole('button', { name: 'Add author' }).click();
     await page.waitForTimeout(300);
     expect((await frameHeights(page, frame)).element).toBe(900); // the fixed height of the snippet
-    await frame.getByLabel('Name of author 2').fill('Đorđe Šćepanović');
-    await expect(frame.getByLabel('Name of author 2')).toHaveValue('Đorđe Šćepanović');
+    await frame.getByLabel('First and last name of author 2').fill('Đorđe Šćepanović');
+    await expect(frame.getByLabel('First and last name of author 2')).toHaveValue('Đorđe Šćepanović');
     await expect(page.getByRole('link', { name: 'Open the form in a new page' })).toBeVisible();
   });
 });

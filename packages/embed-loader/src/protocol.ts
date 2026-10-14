@@ -33,3 +33,15 @@ export function heightMessage(height: number): HeightMessage | null {
   const clamped = clampHeight(height);
   return clamped === null ? null : { type: HEIGHT_MESSAGE, height: clamped };
 }
+
+/**
+ * The frame asks the page around it to bring a part of the form into view (after Send). The whole
+ * message: a type and how far down the frame that part starts, in CSS pixels. The snippet reads it
+ * only once the product owner has decided that its lines may scroll the frame (decision D1).
+ */
+export const INTO_VIEW_MESSAGE = 'confera:into-view';
+
+export interface IntoViewMessage {
+  readonly type: typeof INTO_VIEW_MESSAGE;
+  readonly top: number;
+}

@@ -3,8 +3,8 @@
 // tests/embed-listener.test.ts.
 import { describe, expect, it, vi } from 'vitest';
 
-import { startHeightReporter } from './frame';
-import { clampHeight, HEIGHT_MESSAGE, heightMessage, isFormSlug, MAX_FRAME_HEIGHT, MIN_FRAME_HEIGHT } from './protocol';
+import { requestIntoView, startHeightReporter } from './frame';
+import { clampHeight, HEIGHT_MESSAGE, heightMessage, INTO_VIEW_MESSAGE, isFormSlug, MAX_FRAME_HEIGHT, MIN_FRAME_HEIGHT } from './protocol';
 import { buildEmbedSnippet, EmbedSnippetError, listenerSource } from './snippet';
 
 const base = { publicOrigin: 'https://forms.example.test', slug: 'itema-2026-abstract', title: 'Abstract submission', linkText: 'Open the form' };
@@ -230,5 +230,29 @@ describe("the frame's height reporter", () => {
     expect(win.removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
     frameResized(901);
     expect(parent.postMessage).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the request to bring a part of the form into view (UX-M1-01, 02; read by the snippet after decision D1)', () => {
+  const setup = (parentOrigins: string[], framed = true) => {
+    const parent = { postMessage: vi.fn() };
+    const win = { scrollY: 120 } as { parent?: unknown; scrollY: number };
+    win.parent = framed ? parent : win;
+    const element = { getBoundingClientRect: () => ({ top: 340.6 }) } as unknown as Element;
+    requestIntoView({ element, parentOrigins, win: win as unknown as Window });
+    return parent;
+  };
+
+  it('tells the listed origins how far down the frame that part starts, and nothing else', () => {
+    const parent = setup(['https://itema.example.test', 'https://eman.example.test']);
+    expect(parent.postMessage.mock.calls).toEqual([
+      [{ type: INTO_VIEW_MESSAGE, top: 461 }, 'https://itema.example.test'],
+      [{ type: INTO_VIEW_MESSAGE, top: 461 }, 'https://eman.example.test'],
+    ]);
+  });
+
+  it('says nothing without a site list or a frame', () => {
+    expect(setup([]).postMessage).not.toHaveBeenCalled();
+    expect(setup(['https://itema.example.test'], false).postMessage).not.toHaveBeenCalled();
   });
 });

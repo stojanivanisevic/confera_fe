@@ -105,8 +105,9 @@ for (const width of [1440, 375]) {
       expect(await scan(page), 'form in Serbian').toEqual([]);
 
       await page.getByLabel('Naslov rada').fill('Održivi turizam na Balkanu');
-      await page.getByLabel('Ime autora 1').fill('Marta Kovač');
-      await page.getByLabel('Ime autora 2').fill('Đorđe Šćepanović');
+      await page.getByLabel('Ime i prezime autora 1').fill('Marta Kovač');
+      await page.getByLabel('Imejl autora 1').fill('marta@example.test');
+      await page.getByLabel('Ime i prezime autora 2').fill('Đorđe Šćepanović');
       await page.getByText('Prihvatam uslove objavljivanja').click();
       await page.getByRole('button', { name: 'Pošalji apstrakt' }).click();
       await expect(page.locator('.ud-alert--success')).toContainText('Hvala');

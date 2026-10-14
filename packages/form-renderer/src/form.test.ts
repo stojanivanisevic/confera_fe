@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDraftStorage } from './safe-storage';
-import { countWords, fill, SPIKE_FORM_TEXTS } from './texts';
+import { isEmailAddress, wordsOver } from './rules';
+import { countOf, countWords, fill, SPIKE_FORM_TEXTS } from './texts';
 
 function fakeStorage(overrides: Partial<Storage> = {}): Storage {
   const values = new Map<string, string>();
@@ -74,15 +75,54 @@ describe('texts of the form', () => {
   it('both languages have every text, and none is empty', () => {
     expect(Object.keys(SPIKE_FORM_TEXTS.sr).sort()).toEqual(Object.keys(SPIKE_FORM_TEXTS.en).sort());
     for (const language of ['en', 'sr'] as const) {
-      for (const [key, text] of Object.entries(SPIKE_FORM_TEXTS[language])) expect(text.trim(), `${language}.${key}`).not.toBe('');
+      for (const [key, text] of Object.entries(SPIKE_FORM_TEXTS[language])) {
+        // A noun is a text per plural form: each of them is a text.
+        for (const one of typeof text === 'string' ? [text] : Object.values<string>(text)) expect(one.trim(), `${language}.${key}`).not.toBe('');
+      }
     }
   });
 
   it('both languages have the same parts in braces', () => {
     const parts = (text: string) => [...text.matchAll(/\{[a-z]+\}/g)].map((m) => m[0]).sort();
     for (const key of Object.keys(SPIKE_FORM_TEXTS.en) as Array<keyof typeof SPIKE_FORM_TEXTS.en>) {
-      expect(parts(SPIKE_FORM_TEXTS.sr[key]), key).toEqual(parts(SPIKE_FORM_TEXTS.en[key]));
+      const en = SPIKE_FORM_TEXTS.en[key];
+      const sr = SPIKE_FORM_TEXTS.sr[key];
+      if (typeof en === 'string' && typeof sr === 'string') expect(parts(sr), key).toEqual(parts(en));
     }
+  });
+
+  it('a noun after a number takes the plural form of the language (Intl.PluralRules)', () => {
+    expect([1, 2, 5, 21, 85].map((n) => countOf(n, SPIKE_FORM_TEXTS.en.word, 'en'))).toEqual(['1 word', '2 words', '5 words', '21 words', '85 words']);
+    expect([1, 2, 5, 21, 22, 85].map((n) => countOf(n, SPIKE_FORM_TEXTS.sr.word, 'sr'))).toEqual(['1 reč', '2 reči', '5 reči', '21 reč', '22 reči', '85 reči']);
+  });
+
+  it('the message of a text over its limit, as the UX review proposes it', () => {
+    const over = (language: 'en' | 'sr') => fill(SPIKE_FORM_TEXTS[language].wordsOver, { count: 385, max: 300, over: countOf(85, SPIKE_FORM_TEXTS[language].word, language) });
+    expect(over('en')).toBe('385 of 300 words. Shorten the abstract by 85 words.');
+    expect(over('sr')).toBe('385 od 300 reči. Skratite apstrakt za 85 reči.');
+  });
+});
+
+describe('rules of the form (./rules), the client copy of what the API checks', () => {
+  it.each([
+    ['marta@example.test', true],
+    ['marta.kovac@uni-ns.ac.rs', true],
+    [' marta@example.test ', true],
+    ['marta@example', false],
+    ['marta', false],
+    ['marta@@example.test', false],
+    ['marta kovac@example.test', false],
+    ['@example.test', false],
+    ['marta@.test', false],
+    ['', false],
+  ])('%j is an email address: %s', (value, expected) => {
+    expect(isEmailAddress(value)).toBe(expected);
+  });
+
+  it('counts the words over a limit', () => {
+    expect(wordsOver('one two three', 2)).toBe(1);
+    expect(wordsOver('one two', 2)).toBe(0);
+    expect(wordsOver(Array.from({ length: 385 }, (_, i) => `w${i}`).join(' '), 300)).toBe(85);
   });
 
   it('fills the parts in braces and leaves unknown ones', () => {
