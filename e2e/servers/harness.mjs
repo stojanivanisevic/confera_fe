@@ -8,8 +8,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { answer } from './api-stub.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
-const root = resolve(here, '..', '..');
 const pages = resolve(here, '..', 'harness');
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json' };
@@ -57,12 +58,13 @@ site(4000, hostPolicy);
 site(4001, hostPolicy);
 
 // ---- API stub ---------------------------------------------------------------------
-// It follows the two rules of confera_be that matter to the web application:
+// It follows the rules of confera_be that matter to the web application:
 //  - the surface is read from the Host header, without the port: /api/v1 answers under
 //    "localhost" only and /public/v1 under "127.0.0.1" only; X-Forwarded-Host is ignored;
-//  - GET /api/v1/meta answers { name, version } as the vendored contract describes it.
-const contract = join(root, 'packages', 'api-client', 'openapi', 'openapi.json');
-const version = existsSync(contract) ? JSON.parse(readFileSync(contract, 'utf8')).info.version : '0.1.0';
+//  - the admin API of 0.2.0 part A as the vendored contract describes it (./api-stub.mjs):
+//    sign-in with the session cookie and the CSRF value, the password asked again, users,
+//    the organisation, the audit log, the links; `POST /__stub/reset` restores the fixture;
+//  - POST /public/v1/csp-reports takes the reports of the content security policy (204).
 const problem = (res, status, code) => res.writeHead(status, { 'content-type': 'application/problem+json', 'cache-control': 'no-store' }).end(JSON.stringify({ type: 'about:blank', status, code }));
 
 listen(
@@ -83,9 +85,8 @@ listen(
     }
     if (url.pathname.startsWith('/api/v1/') && host !== 'localhost') return problem(res, 404, 'not_found');
     if (url.pathname.startsWith('/public/v1/') && host !== '127.0.0.1') return problem(res, 404, 'not_found');
-    if (url.pathname === '/api/v1/meta' && req.method === 'GET') {
-      return res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify({ name: 'confera-api', version }));
-    }
+    if (url.pathname === '/public/v1/csp-reports' && req.method === 'POST') return req.on('data', () => undefined).on('end', () => res.writeHead(204, { 'cache-control': 'no-store' }).end());
+    if (url.pathname.startsWith('/api/v1/') || url.pathname === '/__stub/reset') return void answer(req, res, url);
     problem(res, 404, 'not_found');
   },
   3101,

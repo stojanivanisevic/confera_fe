@@ -235,7 +235,7 @@ const REVIEWED_MODULES: readonly RegExp[] = [
   /^react$/,
   /^react-dom\/server$/,
   /^next$/,
-  /^next\/(?:navigation|server|server\.js|headers|font\/local)$/,
+  /^next\/(?:navigation|link|server|server\.js|headers|font\/local)$/, // `next/link` since 0.2.0: the links of the admin screens
   /^node:(?:http|https|stream|net)$/,
   /^openapi-fetch$/, // the typed API client (ADR-19)
 ];

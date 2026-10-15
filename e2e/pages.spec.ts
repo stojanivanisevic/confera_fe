@@ -5,6 +5,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, PUBLIC_ORIGIN } from './env';
+import { resetStub, signIn } from './support/admin';
 import { expect, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
@@ -15,31 +16,20 @@ const scan = async (page: Page) =>
 
 test.describe('the admin home and the API (M1-FE-05)', () => {
   test('shows name and version of the API, from the typed call through the forward', async ({ page }) => {
+    await resetStub(page);
+    await signIn(page);
     const problems = watchPage(page);
     await page.goto(`${ADMIN_ORIGIN}/`);
-    await expect(page.getByRole('heading', { level: 1, name: 'Confera' })).toBeVisible();
-    await expect(page.getByText('Connected')).toBeVisible();
+    await expect(page.locator('[data-confera-connection="connected"]')).toContainText('Confera is working.');
+    await page.getByText('Technical details').click();
     const row = (label: string) => page.locator('.ud-dl__row', { has: page.locator('dt', { hasText: label }) }).locator('dd');
     await expect(row('Service')).toHaveText('confera-api');
     await expect(row('Version')).toHaveText(/^\d+\.\d+\.\d+/);
     await expect(row('Contract of this build')).toHaveText(await row('Version').innerText());
-    // The call went to the page's own origin: there is no cross-origin API call (ADR-02).
-    expect(problems.requests.filter((url) => url.includes('/api/'))).toEqual([`${ADMIN_ORIGIN}/api/v1/meta`]);
+    // Every call went to the page's own origin: there is no cross-origin API call (ADR-02).
+    expect(problems.requests.filter((url) => url.includes('/api/'))).toContain(`${ADMIN_ORIGIN}/api/v1/meta`);
+    expect(problems.requests.filter((url) => url.includes('/api/')).every((url) => url.startsWith(ADMIN_ORIGIN))).toBe(true);
     expect(problems.messages).toEqual([]);
-  });
-
-  test('stops on another major version of the API', async ({ page }) => {
-    await page.route('**/api/v1/meta', (route) => route.fulfill({ json: { name: 'confera-api', version: '9.0.0' } }));
-    await page.goto(`${ADMIN_ORIGIN}/`);
-    await expect(page.locator('.ud-alert--error')).toContainText('different versions');
-    await expect(page.locator('.ud-alert--error')).toContainText('9.0.0');
-    await expect(page.getByText('Connected')).toHaveCount(0);
-  });
-
-  test('says so when the API does not answer', async ({ page }) => {
-    await page.route('**/api/v1/meta', (route) => route.fulfill({ status: 502, contentType: 'application/problem+json', json: { status: 502, code: 'api_unreachable' } }));
-    await page.goto(`${ADMIN_ORIGIN}/`);
-    await expect(page.locator('.ud-alert--warning')).toContainText('The API does not answer');
   });
 });
 
@@ -49,12 +39,7 @@ for (const width of [1440, 375]) {
 
     // One page, or one state of the form, per test. A scan is the expensive step, most of all in
     // WebKit; a test that made three or four of them had no room left on a busy machine.
-    test('admin home', async ({ page }) => {
-      await page.goto(`${ADMIN_ORIGIN}/`);
-      await expect(page.getByText('Connected')).toBeVisible();
-      expect(await scan(page), 'admin home').toEqual([]);
-    });
-
+    // The admin screens behind sign-in are scanned in e2e/admin-axe.spec.ts.
     test('sign-in', async ({ page }) => {
       await page.goto(`${ADMIN_ORIGIN}/sign-in`);
       await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();

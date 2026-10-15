@@ -1,0 +1,55 @@
+// What the specs of the admin screens share: the fixture of the API stub, a reset of its
+// universe (one per browser engine, keyed by the User-Agent), and signing in through the page.
+import type { Page } from '@playwright/test';
+
+import { ADMIN_ORIGIN, API_STUB_ORIGIN } from '../env';
+// @ts-expect-error -- plain Node module of the stub, typed here as far as the specs use it
+import { STUB as FIXTURE } from '../servers/stub-fixture.mjs';
+import { expect } from './fixtures';
+
+export interface Person {
+  readonly email: string;
+  readonly password: string;
+  readonly name: string;
+}
+export interface Fixture {
+  readonly organisation: { readonly name: string; readonly contactEmail: string };
+  readonly admin: Person;
+  readonly otherAdmin: Person;
+  readonly reviewer: Person;
+  readonly invited: { readonly id: string; readonly email: string; readonly name: string };
+  readonly deactivated: { readonly id: string; readonly name: string };
+  readonly links: ReadonlyArray<{ readonly token: string; readonly purpose: string }>;
+  readonly emailChangeToken: string;
+  readonly newInvitationTokenPrefix: string;
+}
+export const STUB = FIXTURE as Fixture;
+export const linkToken = (purpose: 'invitation' | 'password_reset'): string => STUB.links.find((link) => link.purpose === purpose)!.token;
+
+/** Puts the stub's universe of this browser back to the fixture. Through the page's own request context, so it carries the engine's User-Agent. */
+export async function resetStub(page: Page): Promise<void> {
+  const response = await page.request.post(`${API_STUB_ORIGIN}/__stub/reset`, { headers: { Origin: ADMIN_ORIGIN } });
+  expect(response.status()).toBe(204);
+}
+
+/** Signs in through the page and lands on `next` (the home page by default). */
+export async function signIn(page: Page, person: Person = STUB.admin, next = '/'): Promise<void> {
+  await page.goto(`${ADMIN_ORIGIN}/sign-in${next === '/' ? '' : `?next=${encodeURIComponent(next)}`}`);
+  await page.getByLabel('Email address').fill(person.email);
+  await page.getByLabel('Password', { exact: true }).fill(person.password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page).toHaveURL(`${ADMIN_ORIGIN}${next}`);
+  await expect(page.locator('[data-confera-user]')).toHaveText(person.name);
+}
+
+/** The password asked again: the dialog of the design system, answered with the person's password. */
+export async function answerPasswordAgain(page: Page, password: string): Promise<void> {
+  const dialog = page.getByRole('dialog', { name: 'Your password, once more' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Password', { exact: true }).fill(password);
+  await dialog.getByRole('button', { name: 'Continue' }).click();
+  await expect(dialog).toBeHidden();
+}
+
+/** No sideways scroll at a phone's width (NFR-RESP-02). */
+export const fitsTheWidth = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);

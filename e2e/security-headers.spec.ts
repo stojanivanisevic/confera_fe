@@ -38,7 +38,10 @@ const ROUTES: Route[] = [
 ];
 const label = (r: Route) => `${r.origin === ADMIN_ORIGIN ? 'admin' : 'public'} ${r.path} (${r.kind})`;
 
-const nonceOf = (response: APIResponse) => /script-src 'self' 'nonce-([A-Za-z0-9+/=]+)'/.exec(response.headers()['content-security-policy-report-only'] ?? '')?.[1];
+/** The pages of the admin surface enforce the baseline (0.2.0); the public pages still report only. */
+const ENFORCED_KINDS = ['admin', 'auth'];
+const baselineOf = (response: APIResponse, kind: string) => (ENFORCED_KINDS.includes(kind) ? response.headers()['content-security-policy'] : response.headers()['content-security-policy-report-only']) ?? '';
+const nonceOf = (response: APIResponse, kind = 'hosted-form') => /script-src 'self' 'nonce-([A-Za-z0-9+/=]+)'/.exec(baselineOf(response, kind))?.[1];
 const scriptTags = (html: string) => [...html.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
 
 /** A request with a Host header of our choosing, straight to the server. */
@@ -64,9 +67,18 @@ test.describe('ST-12: each kind of route returns its header set', () => {
       expect(headers['content-type']).toContain('text/html');
 
       // Framing: 'none' with the legacy header, except the one frame page with a list.
-      const nonce = nonceOf(response);
+      const nonce = nonceOf(response, route.kind);
       expect(nonce, 'the response has a script nonce').toBeTruthy();
-      expect(headers['content-security-policy']).toBe(`frame-ancestors ${route.sites ?? "'none'"}; script-src-attr 'nonce-${nonce}'`);
+      const enforced = ENFORCED_KINDS.includes(route.kind);
+      if (enforced) {
+        // The admin surface (0.2.0): the whole baseline in one enforced policy, reported to the API; no report-only header.
+        expect(headers['content-security-policy']).toMatch(new RegExp(`^frame-ancestors 'none'; .*script-src-attr 'nonce-${String(nonce).replace(/[+/=]/g, '\\$&')}'`));
+        expect(headers['content-security-policy']).toContain(`report-uri ${PUBLIC_ORIGIN}/public/v1/csp-reports`);
+        expect(headers['content-security-policy-report-only']).toBeUndefined();
+        expect(headers['reporting-endpoints']).toBe(`csp="${PUBLIC_ORIGIN}/public/v1/csp-reports"`);
+      } else {
+        expect(headers['content-security-policy']).toBe(`frame-ancestors ${route.sites ?? "'none'"}; script-src-attr 'nonce-${nonce}'`);
+      }
       if (route.sites) expect(headers['x-frame-options']).toBeUndefined();
       else expect(headers['x-frame-options']).toBe('DENY');
 
@@ -74,8 +86,8 @@ test.describe('ST-12: each kind of route returns its header set', () => {
       expect(headers['cache-control']).toContain('no-store');
       expect(headers['cache-control']).not.toMatch(/public|s-maxage|immutable/);
 
-      // The baseline, report-only in 0.1.0.
-      const policy = headers['content-security-policy-report-only']!.split('; ');
+      // The baseline: enforced on the admin surface, report-only on the public pages until 0.3.0.
+      const policy = baselineOf(response, route.kind).split('; ');
       for (const directive of ["default-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'self'", "connect-src 'self'", "font-src 'self'"]) {
         expect(policy).toContain(directive);
       }
@@ -103,6 +115,10 @@ test.describe('ST-12: each kind of route returns its header set', () => {
     for (const route of ROUTES) {
       const policy = (await request.get(`${route.origin}${route.path}`)).headers()['content-security-policy'] ?? '';
       if (!policy.startsWith("frame-ancestors 'none';")) withList.push(`${route.path}: ${policy.split(';')[0]}`);
+    }
+    for (const path of ['/users', '/organisation', '/audit', '/account', '/forgot-password', '/invitations/x', '/password-resets/x', '/email-changes/x']) {
+      const policy = (await request.get(`${ADMIN_ORIGIN}${path}`)).headers()['content-security-policy'] ?? '';
+      if (!policy.startsWith("frame-ancestors 'none';")) withList.push(`${path}: ${policy.split(';')[0]}`);
     }
     expect(withList).toEqual([`/embed/spike-abstract: frame-ancestors ${HARNESS_ORIGIN}`]);
   });
@@ -223,6 +239,7 @@ test.describe('ST-12: responses outside the declared pages keep the rule', () =>
   /** The header set of a page that is no declared route: the "not found" page or the error page. */
   function expectPageHeaderSet(what: string, headers: Headers): void {
     expect(String(headers['content-type']), what).toContain('text/html');
+    // The error pages are of the kind `error`: framing and "no inline handlers" enforced, the baseline report-only.
     expect(String(headers['content-security-policy']), `${what}: the enforced policy`).toMatch(/^frame-ancestors 'none'; script-src-attr 'nonce-[A-Za-z0-9+/=]+'$/);
     expect(String(headers['content-security-policy-report-only']), `${what}: the baseline`).toContain("object-src 'none'");
     expect(headers['x-content-type-options'], `${what}: nosniff`).toBe('nosniff');

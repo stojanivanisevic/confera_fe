@@ -5,6 +5,7 @@ import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN } from './env';
 import { buildEmbedSnippet, frameId } from '../packages/embed-loader/src/index';
+import { answerPasswordAgain, linkToken, resetStub, signIn, STUB } from './support/admin';
 import { expect, isLocalSecuritySoftware, test } from './support/fixtures';
 
 interface Violation {
@@ -34,8 +35,9 @@ async function recordViolations(page: Page): Promise<() => Promise<Violation[]>>
 }
 
 const PAGES: Array<[string, string, (page: Page) => Promise<void>]> = [
-  ['the admin home', `${ADMIN_ORIGIN}/`, async (page) => void (await page.getByRole('heading', { level: 1 }).waitFor())],
   ['the sign-in page', `${ADMIN_ORIGIN}/sign-in`, async (page) => void (await page.getByRole('heading', { level: 1 }).waitFor())],
+  ['the forgot-password page', `${ADMIN_ORIGIN}/forgot-password`, async (page) => void (await page.getByRole('heading', { level: 1 }).waitFor())],
+  ['an invitation page', `${ADMIN_ORIGIN}/invitations/${linkToken('invitation')}`, async (page) => void (await page.getByRole('heading', { level: 1 }).waitFor())],
   ['a page that is not found', `${PUBLIC_ORIGIN}/no-such-page`, async (page) => void (await page.getByRole('heading', { level: 1 }).waitFor())],
   [
     'the hosted form, filled in and sent',
@@ -73,6 +75,34 @@ for (const [name, url, use] of PAGES) {
     expect(await violations()).toEqual([]);
   });
 }
+
+// The admin surface enforces the whole baseline (0.2.0, ADR-28): the signed-in screens, with a
+// dialog, the password-again dialog, a toast and a drawer, run without a violation.
+test('no policy violation: the admin screens, signed in, with their dialogs', async ({ page }) => {
+  const violations = await recordViolations(page);
+  await resetStub(page);
+  await signIn(page, STUB.admin, '/users');
+  await page.getByRole('button', { name: 'Invite a user' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Invite a user' });
+  await dialog.getByLabel('Name').fill('Nova Osoba');
+  await dialog.getByLabel('Email address').fill('nova.osoba@a.example.test');
+  await dialog.getByRole('button', { name: 'Send the invitation' }).click();
+  await answerPasswordAgain(page, STUB.admin.password);
+  await page.locator('.ud-toast').waitFor();
+  for (const path of ['/organisation', '/audit', '/account', '/']) {
+    await page.goto(`${ADMIN_ORIGIN}${path}`);
+    await page.getByRole('heading', { level: 1 }).waitFor();
+  }
+  await page.goto(`${ADMIN_ORIGIN}/audit`);
+  await page.locator('tbody button.ud-table__open').first().click();
+  await page.getByRole('dialog').waitFor();
+  await page.waitForTimeout(300);
+  expect(await violations()).toEqual([]);
+  // The enforced policy is really there: the page's own policy is the enforced header, not a report-only one.
+  const response = await page.request.get(`${ADMIN_ORIGIN}/users`);
+  expect(response.headers()['content-security-policy']).toContain("default-src 'self'");
+  expect(response.headers()['content-security-policy-report-only']).toBeUndefined();
+});
 
 test('no policy violation: the form inside the frame of a conference site', async ({ page }) => {
   const violations = await recordViolations(page);
