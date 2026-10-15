@@ -231,13 +231,14 @@ const REVIEWED_MODULES: readonly RegExp[] = [
   /^\.{1,2}\//, // files of the same package
   /^@\//, // files of the web application
   /^#dev-fixtures$/,
-  /^@confera\/(?:ui|form-renderer|embed-loader|api-client)(?:\/(?:styles|gallery))?$/, // the internal packages, by their public entries
+  /^@confera\/(?:ui|form-renderer|embed-loader|api-client|template-editor)(?:\/(?:styles|gallery))?$/, // the internal packages, by their public entries (the template editor since 0.2.0)
   /^react$/,
   /^react-dom\/server$/,
   /^next$/,
   /^next\/(?:navigation|link|server|server\.js|headers|font\/local)$/, // `next/link` since 0.2.0: the links of the admin screens
   /^node:(?:http|https|stream|net)$/,
   /^openapi-fetch$/, // the typed API client (ADR-19)
+  /^prosemirror-(?:model|state|view|commands|keymap|history)$/, // the rich-text engine of the template editor (ADR-12, M2-FE-05): no UI of its own, the toolbar is the design system's
 ];
 
 describe('3. application code imports from a reviewed list: no second UI kit (NFR-UI-01)', () => {

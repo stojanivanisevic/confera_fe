@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
   env: { CONFERA_DEV_PAGES: devPages ? '1' : '0' },
 
   // The internal packages are TypeScript source.
-  transpilePackages: ['@confera/ui', '@confera/form-renderer', '@confera/embed-loader', '@confera/api-client'],
+  transpilePackages: ['@confera/ui', '@confera/form-renderer', '@confera/embed-loader', '@confera/api-client', '@confera/template-editor'],
 
   turbopack: {
     resolveAlias: {
