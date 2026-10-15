@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, API_STUB_ORIGIN } from '../env';
 // @ts-expect-error -- plain Node module of the stub, typed here as far as the specs use it
-import { STUB as FIXTURE } from '../servers/stub-fixture.mjs';
+import { STUB as FIXTURE, STUB_PART_B as FIXTURE_PART_B } from '../servers/stub-fixture.mjs';
 import { expect } from './fixtures';
 
 export interface Person {
@@ -24,6 +24,14 @@ export interface Fixture {
   readonly newInvitationTokenPrefix: string;
 }
 export const STUB = FIXTURE as Fixture;
+/** The part B fixture, as far as the specs use it: the ids of the records they open. */
+export interface FixturePartB {
+  readonly ids: { readonly conference: string; readonly draftConference: string; readonly server: string; readonly spareServer: string; readonly hostileEntry: string };
+  readonly templates: ReadonlyArray<{ readonly id: string; readonly type: string; readonly language: string }>;
+}
+export const PART_B = FIXTURE_PART_B as FixturePartB;
+/** The id of a seeded template of the organisation. */
+export const templateId = (type: string, language: string): string => PART_B.templates.find((t) => t.type === type && t.language === language)!.id;
 
 /**
  * Why the screens behind sign-in do not run in WebKit: the session of ADR-03 is a `__Host-`

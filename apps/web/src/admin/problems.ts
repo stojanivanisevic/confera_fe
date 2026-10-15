@@ -95,6 +95,18 @@ export function explain(error: unknown, contact: string | null = null): Explaine
       return { ...base, title: TEXTS.users.emailTaken, text: TEXTS.users.emailTakenText };
     case 'not_found':
       return { ...base, title: TEXTS.problems.notFound, text: TEXTS.problems.notFoundText };
+    case 'conference_code_taken':
+      return { ...base, title: TEXTS.conferences.codeTaken, text: TEXTS.conferences.codeTakenText };
+    case 'conference_archived':
+      return { ...base, title: TEXTS.conferences.archived, text: TEXTS.conferences.archivedText };
+    case 'state_change_not_allowed':
+      return { ...base, title: TEXTS.conferences.stateNotAllowed, text: TEXTS.conferences.stateNotAllowedText };
+    case 'mail_server_in_use':
+      return { ...base, title: TEXTS.mailServers.inUse, text: TEXTS.mailServers.inUseText };
+    case 'tls_required':
+    case 'port_not_allowed':
+    case 'address_not_allowed':
+      return { ...base, title: TEXTS.problems.refused, text: fill(TEXTS.mailServers.testResult.refused!, { reason: TEXTS.mailServers.reasons[error.code] ?? TEXTS.mailServers.reasonFallback }) };
     case 'validation_failed':
     case 'bad_request':
     case 'password_refused':

@@ -1,11 +1,11 @@
-// M2-FE-01, M2-FE-02 (NFR-A11Y-01): every admin screen scanned for WCAG 2.1 A and AA at 1440 and
+// M2-FE-01 to M2-FE-05 (NFR-A11Y-01): every admin screen scanned for WCAG 2.1 A and AA at 1440 and
 // 375 px, signed in through the stub; the pages outside the shell too. One page per test: a scan
 // is the expensive step, most of all in WebKit.
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN } from './env';
-import { holdsSession, linkToken, NO_SESSION_IN_WEBKIT, resetStub, signIn, STUB } from './support/admin';
+import { holdsSession, linkToken, NO_SESSION_IN_WEBKIT, PART_B, resetStub, signIn, STUB, templateId } from './support/admin';
 import { expect, test } from './support/fixtures';
 
 test.describe.configure({ mode: 'default' });
@@ -22,6 +22,15 @@ const SCREENS: Array<[string, string]> = [
   ['organisation', '/organisation'],
   ['audit log', '/audit'],
   ['my account', '/account'],
+  ['conferences', '/conferences'],
+  ['a conference', `/conferences/${PART_B.ids.conference}`],
+  ['mail servers', '/mail-servers'],
+  ['a mail server', `/mail-servers/${PART_B.ids.server}`],
+  ['a new mail server', '/mail-servers/new'],
+  ['mail log', '/mail-log'],
+  ['a mail log entry', `/mail-log/${PART_B.ids.hostileEntry}`],
+  ['email templates', '/templates'],
+  ['the template editor', `/templates/${templateId('security_notice', 'en')}`],
 ];
 const OUTSIDE: Array<[string, string]> = [
   ['sign-in', '/sign-in'],
@@ -40,7 +49,8 @@ for (const width of [1440, 375]) {
         await resetStub(page);
         await signIn(page, STUB.admin, path);
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-        if (path === '/users' || path === '/audit') await expect(page.getByRole('table').locator('tbody tr').first()).toBeVisible();
+        if (['/users', '/audit', '/conferences', '/mail-servers', '/mail-log', '/templates'].includes(path)) await expect(page.getByRole('table').locator('tbody tr').first()).toBeVisible();
+        if (path.startsWith('/templates/')) await expect(page.locator('[data-confera-template-body] [data-placeholder]').first()).toBeVisible();
         expect(await scan(page), `${name} at ${width}px`).toEqual([]);
       });
     }

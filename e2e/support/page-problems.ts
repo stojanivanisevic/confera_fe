@@ -21,6 +21,9 @@ const BROWSER_NOTICES = [
   // WebKit, on every page while the baseline policy is report-only and no report address exists yet
   // (an open point of 0.1.0: the address needs a route in the API).
   /was delivered in report-only mode, but does not specify a 'report-(?:uri|to)'/,
+  // Chromium, for every script in the sandboxed frame of stored markup (ST-28), the init scripts of
+  // the test fixtures included: the sandbox refusing a script is what the frame is there for.
+  /^Blocked script execution in 'about:srcdoc' because the document's frame is sandboxed and the 'allow-scripts' permission is not set\.$/,
 ];
 
 // Chromium writes a console error for every answer with a status of 4xx, also one the page asked

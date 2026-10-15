@@ -8,7 +8,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 
 import type { Organisation as Profile } from '@confera/api-client';
-import { Alert, Button, Card, PageHeader, Textarea, TextButton, TextField, toast } from '@confera/ui';
+import { Alert, Button, Card, PageHeader, Switch, Textarea, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { formatDate, withinDays } from './format';
@@ -42,6 +42,7 @@ export function Organisation() {
   const [issuerFields, setIssuerFields] = useState<Record<string, string>>({});
   const [paymentFields, setPaymentFields] = useState<Record<string, string>>({});
   const [loadedVersion, setLoadedVersion] = useState<number | null>(null);
+  const [mailLogContent, setMailLogContent] = useState(true);
 
   // What the API holds goes into the fields when it arrives, and again after a reload: state
   // derived from the loaded record, adjusted while rendering (React's pattern for it).
@@ -49,6 +50,7 @@ export function Organisation() {
     setLoadedVersion(record.version);
     setIssuer(Object.fromEntries(ISSUER_KEYS.map((key) => [key, text(record[key])])) as Record<keyof Issuer, string>);
     setPayment(Object.fromEntries(PAYMENT_KEYS.map((key) => [key, text(record[key])])) as Record<keyof Payment, string>);
+    setMailLogContent(record.mailLogContent);
   }
   const contactEmail = record?.contactEmail ?? null;
   useEffect(() => {
@@ -73,6 +75,7 @@ export function Organisation() {
             contactEmail: orNull(issuer.contactEmail),
             vatNoteSr: orNull(issuer.vatNoteSr),
             vatNoteEn: orNull(issuer.vatNoteEn),
+            mailLogContent,
             version: record.version,
           },
         }),
@@ -168,6 +171,9 @@ export function Organisation() {
           </div>
           <div className={styles.all}>
             <Textarea label={t.vatNoteEn} name="vatNoteEn" rows={2} value={issuer.vatNoteEn} onChange={(event) => setIssuer({ ...issuer, vatNoteEn: event.target.value })} status={issuerFields.vatNoteEn ? 'error' : 'default'} message={issuerFields.vatNoteEn} />
+          </div>
+          <div className={styles.all}>
+            <Switch label={t.mailLogContent} description={t.mailLogContentHint} checked={mailLogContent} onChange={(event) => setMailLogContent(event.target.checked)} />
           </div>
           <div className={`${styles.all} ${styles.actions}`}>
             <Button type="submit" disabled={issuerBusy}>

@@ -144,3 +144,130 @@
   letter-spacing: var(--text-body-xs-tracking);
   color: var(--text-secondary);
 }
+
+/* The actions of a page header: a badge and buttons in one wrapping row. */
+.actionsInline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gutter-s);
+}
+
+/* Stored markup (a mail-log body, a template preview) inside the reviewed sandboxed frame (ST-28). */
+.frame {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(var(--gutter-6xl) * 6);
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-field);
+  background: var(--surface-1);
+}
+
+/* A plain-text body, as it was sent. */
+.plain {
+  margin: 0;
+  padding: var(--gutter-m);
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-field);
+  background: var(--background-2);
+  font: var(--text-body-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The template editor (M2-FE-05): the toolbar of design-system controls above the editable area. */
+.editorToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--gutter-s);
+}
+
+.editorGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--gutter-xs);
+}
+
+.editorField {
+  min-width: 0;
+  max-width: var(--filter-field-max);
+}
+
+.editorLabel {
+  font: var(--text-caption);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--ink);
+}
+
+.editor :global(.ProseMirror) {
+  box-sizing: border-box;
+  min-height: calc(var(--textarea-min) * 2);
+  padding: var(--gutter-m);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-field);
+  background: var(--surface-1);
+  color: var(--text-field);
+  font: var(--text-body-md);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  outline: none;
+}
+
+.editor :global(.ProseMirror):focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.editor :global(.ProseMirror) p,
+.editor :global(.ProseMirror) h1,
+.editor :global(.ProseMirror) h2,
+.editor :global(.ProseMirror) h3,
+.editor :global(.ProseMirror) ul,
+.editor :global(.ProseMirror) ol {
+  margin: 0 0 var(--gutter-s);
+}
+
+.editor :global(.ProseMirror) a {
+  color: var(--info-strong);
+  text-decoration: underline;
+}
+
+/* A placeholder: one object, shown as a chip with its name. */
+.editor :global([data-placeholder]) {
+  display: inline-block;
+  padding: 0 var(--gutter-xs);
+  border: 1px solid var(--info-border);
+  border-radius: var(--radius-sm);
+  background: var(--info-surface);
+  color: var(--info-strong);
+  font: var(--text-caption);
+  letter-spacing: var(--text-caption-tracking);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.editor :global([data-placeholder].is-selected) {
+  box-shadow: var(--focus-ring);
+}
+
+/* A block shown only when a condition holds. */
+.editor :global(section[data-condition]) {
+  margin: 0 0 var(--gutter-s);
+  padding: var(--gutter-s) var(--gutter-m);
+  border-left: 2px solid var(--brand-orange);
+  background: var(--background-2);
+}
+
+.subject :global(.ProseMirror) {
+  min-height: 0;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* A long address or id breaks anywhere rather than pushing the page sideways at 375 px. */
+.break {
+  overflow-wrap: anywhere;
+}

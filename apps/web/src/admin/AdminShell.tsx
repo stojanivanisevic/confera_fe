@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * The admin shell (M2-FE-01): the design system's AppShell with the navigation, the conference
- * switch (a placeholder until the conference screens of M2-FE-03), the person's menu, and the
- * guard of the session. Without a session the person goes to sign-in and comes back to the
+ * The admin shell (M2-FE-01, M2-FE-03): the design system's AppShell with the navigation (the
+ * entries the person's permissions allow), the conference switch, kept across screens, the
+ * person's menu, and the guard of the session. Without a session the person goes to sign-in and comes back to the
  * same page afterwards (the `next` rule); while the API does not answer, the shell says so.
  */
 import { usePathname, useRouter } from 'next/navigation';
@@ -15,22 +15,42 @@ import { signInHref } from '@/lib/next-path';
 
 import styles from './admin.module.css';
 import { FreshPasswordProvider } from './FreshPassword';
+import { conferenceLabel, ConferenceProvider, useConference } from './conference-context';
 import { call, callEmpty } from './problems';
 import { SessionProvider, useSession } from './session';
 import { fill, TEXTS } from './texts';
 
+// An entry shows when the person holds its permission; a screen reached by its address still says "not allowed".
 const NAV = [
-  { value: '/', label: TEXTS.nav.home, icon: 'home' as const },
-  { value: '/users', label: TEXTS.nav.users, icon: 'users' as const },
-  { value: '/organisation', label: TEXTS.nav.organisation, icon: 'settings' as const },
-  { value: '/audit', label: TEXTS.nav.audit, icon: 'file-text' as const },
-  { value: '/account', label: TEXTS.nav.account, icon: 'user' as const },
+  { value: '/', label: TEXTS.nav.home, icon: 'home' as const, permission: null },
+  { value: '/conferences', label: TEXTS.nav.conferenceList, icon: 'calendar' as const, permission: 'conferences.read' },
+  { value: '/templates', label: TEXTS.nav.templates, icon: 'mail' as const, permission: 'templates.read' },
+  { value: '/mail-log', label: TEXTS.nav.mailLog, icon: 'inbox' as const, permission: 'mail_log.read' },
+  { value: '/mail-servers', label: TEXTS.nav.mailServers, icon: 'send' as const, permission: 'mail_servers.read' },
+  { value: '/users', label: TEXTS.nav.users, icon: 'users' as const, permission: 'users.read' },
+  { value: '/organisation', label: TEXTS.nav.organisation, icon: 'settings' as const, permission: 'organisation.read' },
+  { value: '/audit', label: TEXTS.nav.audit, icon: 'file-text' as const, permission: 'audit.read' },
+  { value: '/account', label: TEXTS.nav.account, icon: 'user' as const, permission: null },
 ];
 
 /** The entry of the navigation a path belongs to: the longest prefix. */
 function current(pathname: string): string {
   const match = NAV.filter((item) => item.value === '/' ? pathname === '/' : pathname === item.value || pathname.startsWith(`${item.value}/`)).sort((a, b) => b.value.length - a.value.length)[0];
   return match?.value ?? '/';
+}
+
+/** The conference switch: the conference the screens show, kept while the person moves between them. */
+function ConferenceSwitch() {
+  const { conferences, selected, select } = useConference();
+  return (
+    <Select
+      label={TEXTS.nav.conferences}
+      value={selected?.id ?? ''}
+      options={[{ value: '', label: TEXTS.nav.allConferences }, ...conferences.map((conference) => ({ value: conference.id, label: conferenceLabel(conference) }))]}
+      onChange={(event) => select(event.target.value === '' ? null : event.target.value)}
+      data-confera-conference-switch
+    />
+  );
 }
 
 function Guarded({ children }: { children: ReactNode }) {
@@ -85,29 +105,32 @@ function Guarded({ children }: { children: ReactNode }) {
     }
   };
 
+  const permissions = session.user.permissions;
+  const nav = NAV.filter((item) => item.permission === null || permissions.includes(item.permission)).map(({ value, label, icon }) => ({ value, label, icon, href: value }));
+
   return (
-    <AppShell
-      product={TEXTS.product}
-      logo={<img src="/icon.png" alt="" width={28} height={28} />}
-      sidebar={<SidebarNav label={TEXTS.nav.main} value={current(pathname)} items={NAV.map((item) => ({ ...item, href: item.value }))} onNavigate={(value) => router.push(value)} />}
-      topbar={
-        <div className={styles.topbar}>
-          <div className={styles.conference}>
-            <Select label={TEXTS.nav.conferences} value="all" options={[{ value: 'all', label: TEXTS.nav.allConferences }]} disabled message={TEXTS.nav.conferenceSwitchHint} onChange={() => undefined} />
+    <ConferenceProvider>
+      <AppShell
+        product={TEXTS.product}
+        logo={<img src="/icon.png" alt="" width={28} height={28} />}
+        sidebar={<SidebarNav label={TEXTS.nav.main} value={current(pathname)} items={nav} onNavigate={(value) => router.push(value)} />}
+        topbar={
+          <div className={styles.topbar}>
+            <div className={styles.conference}>{permissions.includes('conferences.read') ? <ConferenceSwitch /> : null}</div>
+            <div className={styles.topbarEnd}>
+              <span className={styles.small} data-confera-user>
+                {session.user.displayName}
+              </span>
+              <TextButton icon="log-out" onClick={() => void signOut()}>
+                {TEXTS.nav.signOut}
+              </TextButton>
+            </div>
           </div>
-          <div className={styles.topbarEnd}>
-            <span className={styles.small} data-confera-user>
-              {session.user.displayName}
-            </span>
-            <TextButton icon="log-out" onClick={() => void signOut()}>
-              {TEXTS.nav.signOut}
-            </TextButton>
-          </div>
-        </div>
-      }
-    >
-      <FreshPasswordProvider>{children}</FreshPasswordProvider>
-    </AppShell>
+        }
+      >
+        <FreshPasswordProvider>{children}</FreshPasswordProvider>
+      </AppShell>
+    </ConferenceProvider>
   );
 }
 

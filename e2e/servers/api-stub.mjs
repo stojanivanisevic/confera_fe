@@ -1,4 +1,5 @@
-// The stand-in for confera_be's admin API of 0.2.0 part A, for the browser tests (ADR-24).
+// The stand-in for confera_be's admin API of 0.2.0, for the browser tests (ADR-24); part B (conferences,
+// mail servers, the mail log, templates) is in api-stub-part-b.mjs.
 //
 // It follows the rules of the API that the web application depends on, as the vendored
 // contract and confera_be's own tests describe them: the surface from the Host header, the
@@ -14,6 +15,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { freshPartB, handlePartB } from './api-stub-part-b.mjs';
 import { STUB } from './stub-fixture.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -27,7 +29,7 @@ export const SESSION_COOKIE = '__Host-confera_session';
 const DEVICE_COOKIE = '__Host-confera_device';
 const CONFIRMATION_MS = 5 * 60 * 1000;
 const PERMISSIONS = {
-  admin: ['account.manage', 'users.read', 'users.manage', 'organisation.read', 'organisation.manage', 'audit.read'],
+  admin: ['account.manage', 'users.read', 'users.manage', 'organisation.read', 'organisation.manage', 'audit.read', 'mail_servers.read', 'mail_servers.manage', 'conferences.read', 'conferences.manage', 'templates.read', 'mail_log.read'],
   reviewer: ['account.manage'],
 };
 
@@ -53,6 +55,7 @@ function fresh() {
     audit: [],
     resets: [],
     emailChanges: [],
+    ...freshPartB(),
   };
   state = next;
   record(null, 'organisation.updated', 'organisation', next.organisation.id, { fields: ['name'] });
@@ -393,7 +396,7 @@ export async function handleAdmin(req, url) {
     if (body.contactEmail != null && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.contactEmail)) errors.push({ path: 'contactEmail', code: 'isMailAddress' });
     if (errors.length > 0) refuse(400, 'validation_failed', errors);
     const fields = [];
-    for (const key of ['name', 'legalName', 'address', 'registrationNumber', 'taxNumber', 'contactEmail', 'vatNoteSr', 'vatNoteEn']) {
+    for (const key of ['name', 'legalName', 'address', 'registrationNumber', 'taxNumber', 'contactEmail', 'vatNoteSr', 'vatNoteEn', 'mailLogContent']) {
       if (key in body && body[key] !== state.organisation[key]) {
         fields.push(key);
         state.organisation[key] = body[key];
@@ -436,6 +439,9 @@ export async function handleAdmin(req, url) {
     const all = state.audit.filter((e) => (!action || e.action === action) && (from === null || Date.parse(e.occurredAt) >= from) && (to === null || Date.parse(e.occurredAt) < to));
     return { status: 200, body: { items: all.slice((page - 1) * pageSize, page * pageSize), total: all.length, page, pageSize } };
   }
+
+  const partB = handlePartB({ state, me, method, path, url, body, need, fresh, versionOf, refuse, record, id, now });
+  if (partB) return partB;
 
   refuse(404, 'not_found');
 }
