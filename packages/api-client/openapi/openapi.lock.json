@@ -3,23 +3,29 @@
   "source": {
     "repository": "confera_be",
     "directory": "openapi",
-    "commit": "57c78056f656bb1fd486f80d8ba88007d3c27d70",
+    "commit": "a83b25c467ab49a35491de81734081044dc1f9d1",
     "tag": null,
-    "branch": "m1/qa-be",
+    "branch": "m2/be",
     "committed": true
   },
   "files": {
     "openapi.json": {
       "title": "Confera admin API",
       "version": "0.1.0",
-      "sha256": "b3b15d1adbf8cc3742ccf52f76d83b40edeebf94ca41f25d13819fbdd1c5b38b",
-      "commit": "4f7fffbf8714fb7d3cf30977ef760f8985b6a6d5"
+      "sha256": "ec096dd16fc51325f5c9022b16952bc4d4192976ae41f8e0c6fa26863a1b213e",
+      "commit": "a83b25c467ab49a35491de81734081044dc1f9d1"
     },
     "openapi.public.json": {
       "title": "Confera public API",
       "version": "0.1.0",
-      "sha256": "711e7dd293ef53fa5337b2739800ff791c1190bf5deecfef6a5ba5616373675e",
-      "commit": "4f7fffbf8714fb7d3cf30977ef760f8985b6a6d5"
+      "sha256": "c6dd555dda835076737ab8fbdad178fc87341177520697af0892d422269b4cd2",
+      "commit": "a83b25c467ab49a35491de81734081044dc1f9d1"
+    },
+    "password-rules.json": {
+      "title": "contracts/password-rules.json",
+      "version": "1",
+      "sha256": "a6acfbd8e9cc5596be359cabd70ad6b2d3ff49b14d2651dad847f1189af38247",
+      "commit": "3cc409ddde17ef47aa8dd15ecefc9c154da9cd33"
     }
   },
   "generator": {

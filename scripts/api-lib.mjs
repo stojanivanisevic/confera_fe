@@ -22,6 +22,12 @@ export const DOCUMENTS = [
   { file: 'openapi.json', types: 'admin.d.ts', surface: 'admin' },
   { file: 'openapi.public.json', types: 'public.d.ts', surface: 'public' },
 ];
+/**
+ * The other contracts confera_be exports beside the OpenAPI documents, from its `contracts/`
+ * folder: data both repositories must agree on. They are vendored next to the documents and
+ * held by the same lock. 0.2.0: the password rule set with its shared vectors (ST-62).
+ */
+export const CONTRACTS = [{ file: 'password-rules.json', source: 'contracts' }];
 export const LOCK = 'openapi.lock.json';
 
 const lf = (text) => text.replace(/\r\n/g, '\n');
@@ -65,9 +71,12 @@ export function syncContract(options = {}) {
   for (const { file } of DOCUMENTS) {
     if (!existsSync(join(source, file))) throw new Error(`${join(source, file)} does not exist. Is confera_be checked out next to this repository, on a branch that has the contract?`);
   }
+  for (const { file, source: folder } of CONTRACTS) {
+    if (!existsSync(join(from, folder, file))) throw new Error(`${join(from, folder, file)} does not exist. Is confera_be on a branch that exports it (0.2.0 and later)?`);
+  }
   const commit = git(from, 'rev-parse', 'HEAD');
   if (!commit) throw new Error(`${from} is not a git checkout: the lock needs the commit the contract comes from`);
-  const uncommitted = git(from, 'status', '--porcelain', '--', 'openapi') ?? '';
+  const uncommitted = git(from, 'status', '--porcelain', '--', 'openapi', ...CONTRACTS.map(({ source: folder }) => folder)) ?? '';
   if (uncommitted !== '' && !options.allowUncommitted) {
     throw new Error(`The contract in ${source} has uncommitted changes:\n${uncommitted}\nCommit them in confera_be first: the lock names a commit.`);
   }
@@ -86,6 +95,16 @@ export function syncContract(options = {}) {
       sha256: checksum(text),
       // The last commit of confera_be that changed this file.
       commit: git(from, 'log', '-1', '--format=%H', '--', `openapi/${file}`),
+    };
+  }
+  for (const { file, source: folder } of CONTRACTS) {
+    const text = readLf(join(from, folder, file));
+    writeFileSync(join(dir, 'openapi', file), text);
+    files[file] = {
+      title: `${folder}/${file}`,
+      version: String(JSON.parse(text).version),
+      sha256: checksum(text),
+      commit: git(from, 'log', '-1', '--format=%H', '--', `${folder}/${file}`),
     };
   }
   const lock = {
@@ -147,6 +166,20 @@ export function checkContract(options = {}) {
       }
     } else if (options.strict) {
       problems.push(`no checkout of confera_be with openapi/${file} was found at ${backendDir}: the strict check needs it`);
+    }
+  }
+  for (const { file, source: folder } of CONTRACTS) {
+    const entry = lock.files?.[file];
+    const vendored = join(dir, 'openapi', file);
+    if (!entry) problems.push(`the lock has no entry for ${file}: run \`pnpm api:sync\` from a checkout of confera_be that exports ${folder}/${file}`);
+    if (!existsSync(vendored)) {
+      problems.push(`the vendored copy openapi/${file} is missing`);
+      continue;
+    }
+    const text = readLf(vendored);
+    if (entry && checksum(text) !== entry.sha256) problems.push(`openapi/${file} is not the file the lock names (checksum differs): it was edited, or the lock is stale. Run \`pnpm api:sync\``);
+    if (backendDir && existsSync(join(backendDir, folder, file)) && entry && checksum(readLf(join(backendDir, folder, file))) !== entry.sha256) {
+      (options.strict ? problems : notices).push(`the checkout of confera_be has another ${folder}/${file} than the vendored copy. Run \`pnpm api:sync\``);
     }
   }
   // Which checkout of confera_be was compared with, if one was (`api:check` says so).

@@ -34,8 +34,11 @@ beforeAll(() => {
   // A stand-in for the checkout of confera_be: a git repository with the two documents committed.
   backend = join(work, 'confera_be');
   mkdirSync(join(backend, 'openapi'), { recursive: true });
+  mkdirSync(join(backend, 'contracts'), { recursive: true });
   cpSync(join(client, 'openapi', 'openapi.json'), join(backend, 'openapi', 'openapi.json'));
   cpSync(join(client, 'openapi', 'openapi.public.json'), join(backend, 'openapi', 'openapi.public.json'));
+  // The other contract of 0.2.0: the password rule set with its vectors (contracts/ in confera_be).
+  cpSync(join(client, 'openapi', 'password-rules.json'), join(backend, 'contracts', 'password-rules.json'));
   execFileSync('git', ['init', '--quiet', backend]);
   git('add', '.');
   git('commit', '--quiet', '-m', 'contract');
@@ -111,7 +114,20 @@ describe('pnpm api:sync', () => {
       expect(lock.files[file]!.commit).toMatch(/^[0-9a-f]{40}$/);
     }
     expect(readFileSync(join(dir, 'src', 'generated', 'admin.d.ts'), 'utf8')).toContain('"/api/v1/meta"');
+    // The password rules are vendored next to the documents and held by the same lock (ST-62).
+    expect(readFileSync(join(dir, 'openapi', 'password-rules.json'), 'utf8')).toBe(readFileSync(join(backend, 'contracts', 'password-rules.json'), 'utf8').replace(/\r\n/g, '\n'));
+    expect(lock.files['password-rules.json']!.sha256).toBe(checksum(readFileSync(join(dir, 'openapi', 'password-rules.json'), 'utf8')));
     expect((checkContract({ dir, backendDir: backend, strict: true }) as Result).problems).toEqual([]);
+  });
+
+  it('fails when the vendored password rules were edited, and refuses a checkout without them', () => {
+    const dir = copyOfClient('edited-rules');
+    edit(join(dir, 'openapi', 'password-rules.json'), (t) => t.replace('"minimum": 12', '"minimum": 8'));
+    expect((checkContract({ dir, backendDir: null }) as Result).problems.join('\n')).toMatch(/password-rules\.json is not the file the lock names/);
+    const without = join(work, 'backend-without-rules');
+    cpSync(backend, without, { recursive: true });
+    rmSync(join(without, 'contracts'), { recursive: true });
+    expect(() => syncContract({ from: without, dir: join(work, 'never') })).toThrow(/password-rules\.json does not exist/);
   });
 
   it('gives the same checksum for a checkout with CRLF line endings', () => {
@@ -130,6 +146,7 @@ describe('pnpm api:sync', () => {
     expect(() => syncContract({ from: join(work, 'nowhere'), dir: join(work, 'never') })).toThrow(/does not exist/);
     const plain = join(work, 'plain');
     cpSync(join(backend, 'openapi'), join(plain, 'openapi'), { recursive: true });
+    cpSync(join(backend, 'contracts'), join(plain, 'contracts'), { recursive: true });
     // Inside the temp directory there is no repository above it either.
     expect(() => syncContract({ from: plain, dir: join(work, 'never') })).toThrow(/not a git checkout|uncommitted/);
   });

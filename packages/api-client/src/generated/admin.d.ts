@@ -4,6 +4,102 @@
  */
 
 export interface paths {
+    "/api/v1/account/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Asks for an email change; needs the current password. A link to confirm it goes to the
+         *     new address, a notice to the old one and to every active admin. 409 `email_taken` when
+         *     the address belongs to an account already.
+         */
+        post: operations["changeEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Changes the own password; needs the current one. Ends every other session of the user,
+         *     and tells every active admin. A new password that breaks a rule is refused with 400
+         *     `password_refused` and each broken rule named (`password_length`, `password_common`,
+         *     `password_personal`, `password_mismatch`).
+         */
+        post: operations["changePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The entries, newest first, a page at a time. */
+        get: operations["listAuditEntries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/email-changes/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The page of an email-change link: the address the account will have. Uses nothing up. */
+        get: operations["openEmailChange"];
+        put?: never;
+        /** Confirms an email change from the new address. Ends every session of the user. */
+        post: operations["confirmEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The page of an invitation link: whose account it is, for the password checklist. Uses nothing up. */
+        get: operations["openInvitation"];
+        put?: never;
+        /** Accepts an invitation: sets the password, makes the account active, uses the link up. */
+        post: operations["acceptInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meta": {
         parameters: {
             query?: never;
@@ -21,15 +117,347 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organisation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getOrganisation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Changes the issuer data. 409 `version_conflict` when another admin changed it first. */
+        patch: operations["updateOrganisation"];
+        trace?: never;
+    };
+    "/api/v1/organisation/payment-details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Changes the bank accounts and the PayPal payee: needs the password asked again
+         *     (403 `password_confirmation_required` without it), and every active admin is told.
+         */
+        put: operations["changePaymentDetails"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/password-resets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Asks for a password reset. The answer is 202 and nothing else, for every address, after
+         *     the same time: whether an account has it, is active, is in the cool-down of an earlier
+         *     request or has reached its daily cap, is not told.
+         */
+        post: operations["requestReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/password-resets/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The page of a reset link: whose account it is, for the password checklist. Uses nothing up. */
+        get: operations["openReset"];
+        put?: never;
+        /** Sets a new password through a reset link, and uses the link up. Ends every session of the user. */
+        post: operations["completeReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The signed-in user, the organisation and the CSRF value of the session. A request with
+         *     the header `X-Confera-Background` (a refetch the person did not ask for) does not renew
+         *     the session.
+         */
+        get: operations["getSession"];
+        put?: never;
+        /**
+         * Signs in. Every failure answers alike (401 `sign_in_failed`), after the same time: an
+         *     unknown address, a wrong password, a braked account or address, an account that is
+         *     deactivated, invited or removed. Sets the session cookie and, for a browser that was
+         *     not a known device of the account, the device cookie.
+         */
+        post: operations["signIn"];
+        /** Signs out: ends this session on the server and clears its cookie. */
+        delete: operations["signOut"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/session/password-confirmation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The password asked again before a sensitive change (ADR-03): valid for 5 minutes, in
+         *     this session only. A wrong password answers 403 `password_incorrect` and counts for the
+         *     brake of the account.
+         */
+        post: operations["confirmPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Signs out everywhere: ends every session of the user, this one included. */
+        delete: operations["signOutEverywhere"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The users, a page at a time; the removed ones only when asked for by state. */
+        get: operations["listUsers"];
+        put?: never;
+        /** Invites a user: the invitation goes to the address. 409 `email_taken` when it has an account. */
+        post: operations["inviteUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getUser"];
+        put?: never;
+        post?: never;
+        /** Removes a user; past actions stay attributed. 409 `last_admin` for the last active admin. */
+        delete: operations["removeUser"];
+        options?: never;
+        head?: never;
+        patch: operations["updateUser"];
+        trace?: never;
+    };
+    "/api/v1/users/{id}/deactivation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deactivates: the user cannot sign in, and the sessions end. 409 `last_admin` for the last active admin. */
+        post: operations["deactivateUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}/invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sends the invitation again, with a new link that ends the earlier one. */
+        post: operations["resendInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}/reactivation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reactivateUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Changes the role; ends the user's sessions. 409 `last_admin` for the last active admin. */
+        put: operations["changeRole"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Ends every session of the user (an admin's "end this user's sessions", ADR-03). */
+        delete: operations["endUserSessions"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AuditActorDto: {
+            id: string;
+            displayName: string;
+        };
+        AuditEntryDto: {
+            id: string;
+            occurredAt: string;
+            /** @description Who did it; null for the system (a summary). */
+            actor: components["schemas"]["AuditActorDto"] | null;
+            /** @description One of the actions of the audit log, for example `user.role_changed`. */
+            action: string;
+            subjectType: string;
+            subjectId: string | null;
+            /** @description The names of the fields that changed. */
+            fields: string[];
+            /** @description Old and new value, only for the fields whose values the log keeps (settings that are not personal). */
+            changes: {
+                [key: string]: unknown;
+            };
+            /** @description Counts and periods of a summary. */
+            detail: {
+                [key: string]: unknown;
+            };
+            traceId: string | null;
+        };
+        AuditPageDto: {
+            items: components["schemas"]["AuditEntryDto"][];
+            total: number;
+            page: number;
+            pageSize: number;
+        };
+        ChangeEmailDto: {
+            /** @description The current password: an email change needs it (ADR-03). */
+            password: string;
+            /** @description The new address. The change is confirmed from it. */
+            newEmail: string;
+        };
+        ChangePasswordDto: {
+            currentPassword: string;
+            newPassword: string;
+            /** @description The second entry of the new password: both entries must match. */
+            newPasswordRepeat: string;
+        };
+        ChangeRoleDto: {
+            /** @enum {string} */
+            role: "admin" | "reviewer";
+            version: number;
+        };
+        ConfirmationDto: {
+            /** @description The password asked again is valid until this moment, in this session only. */
+            confirmationValidUntil: string;
+        };
+        EmailChangeLinkDto: {
+            /** @description The address the account will have once the change is confirmed. */
+            newEmail: string;
+            expiresAt: string;
+        };
         FieldError: {
             /** @description Path of the field in the request, for example `authors.0.email`. */
             path: string;
             /** @description Stable code of the rule that failed, for example `isEmail`. Never the value. */
             code: string;
+        };
+        InviteUserDto: {
+            /** @description The address the invitation goes to; the user signs in with it. */
+            email: string;
+            displayName: string;
+            /** @enum {string} */
+            role: "admin" | "reviewer";
+        };
+        LinkPersonDto: {
+            email: string;
+            displayName: string;
+            organisationName: string;
+            /** @description The link stops working at this moment. */
+            expiresAt: string;
         };
         Meta: {
             /** @description Name of the service. */
@@ -39,6 +467,47 @@ export interface components {
              *     A client built for another major version must stop and ask for a reload.
              */
             version: string;
+        };
+        OrganisationDto: {
+            id: string;
+            /** @description The short name shown in the application. */
+            name: string;
+            legalName: string | null;
+            address: string | null;
+            /** @description Matični broj: 8 digits. */
+            registrationNumber: string | null;
+            /** @description PIB: 9 digits. */
+            taxNumber: string | null;
+            contactEmail: string | null;
+            /** @description The note on documents that the association is exempt from VAT, in Serbian. */
+            vatNoteSr: string | null;
+            /** @description The same note in English. */
+            vatNoteEn: string | null;
+            /** @description The account for payments in RSD. */
+            rsdAccount: string | null;
+            eurIban: string | null;
+            eurSwift: string | null;
+            eurBankName: string | null;
+            /** @description The PayPal account that receives payments. */
+            paypalPayee: string | null;
+            /** @description When the payment details were changed last; the issue screen shows it for 14 days. */
+            paymentDetailsChangedAt: string | null;
+            /** @description Who changed them. */
+            paymentDetailsChangedBy: components["schemas"]["UserReferenceDto"] | null;
+            /** @description Sent back with a change: a change made on an older version is refused (409). */
+            version: number;
+        };
+        PasswordConfirmationDto: {
+            /** @description The password of the signed-in user, asked again before a sensitive change. */
+            password: string;
+        };
+        PaymentDetailsDto: {
+            rsdAccount: string | null;
+            eurIban: string | null;
+            eurSwift: string | null;
+            eurBankName: string | null;
+            paypalPayee: string | null;
+            version: number;
         };
         Problem: {
             /** @description Stable, machine-readable code, for example `not_found` or `validation_failed`. */
@@ -52,6 +521,93 @@ export interface components {
             /** @description The refused fields, when the input was not valid. */
             errors?: components["schemas"]["FieldError"][];
         };
+        ResetRequestDto: {
+            /** @description The address of the account. The answer is the same whether it belongs to one or not. */
+            email: string;
+        };
+        SessionDto: {
+            user: components["schemas"]["SessionUserDto"];
+            organisation: components["schemas"]["SessionOrganisationDto"];
+            /**
+             * @description The value of the `X-CSRF-Token` header that every changing request of this session
+             *     carries (ADR-03). Bound to the session; never in a cookie.
+             */
+            csrf: string;
+            /** @description The session ends at this moment unless it is used before (24 hours after the last use). */
+            idleExpiresAt: string;
+            /** @description The session ends at this moment whatever happens (7 days after sign-in). */
+            absoluteExpiresAt: string;
+            /** @description Until when the password asked again is valid in this session; null when it was not asked. */
+            confirmationValidUntil: string | null;
+            /** @description The step of the second factor (built in 0.9.0): not_required, pending or passed. */
+            secondFactor: string;
+        };
+        SessionOrganisationDto: {
+            id: string;
+            name: string;
+        };
+        SessionUserDto: {
+            id: string;
+            email: string;
+            displayName: string;
+            /** @description The roles of the user: admin, reviewer. */
+            roles: string[];
+            /** @description What the user may do (src/modules/access/permissions.ts). */
+            permissions: string[];
+        };
+        SetPasswordDto: {
+            password: string;
+            /** @description The second entry: both entries must match. */
+            passwordRepeat: string;
+        };
+        SignInDto: {
+            /** @description The email address of the account. */
+            email: string;
+            /** @description The password of the account. */
+            password: string;
+        };
+        UpdateOrganisationDto: {
+            name?: string;
+            legalName?: string | null;
+            address?: string | null;
+            registrationNumber?: string | null;
+            taxNumber?: string | null;
+            contactEmail?: string | null;
+            vatNoteSr?: string | null;
+            vatNoteEn?: string | null;
+            version: number;
+        };
+        UpdateUserDto: {
+            displayName: string;
+            version: number;
+        };
+        UserDto: {
+            id: string;
+            email: string;
+            displayName: string;
+            /** @description admin or reviewer. */
+            role: string;
+            /** @description invited (no password yet), active, deactivated or removed. */
+            status: string;
+            createdAt: string;
+            /** @description Sent back with a change: a change made on an older version is refused (409). */
+            version: number;
+        };
+        UserPageDto: {
+            items: components["schemas"]["UserDto"][];
+            /** @description How many users match, over all pages. */
+            total: number;
+            page: number;
+            pageSize: number;
+        };
+        UserReferenceDto: {
+            id: string;
+            displayName: string;
+        };
+        VersionDto: {
+            /** @description The version the change is made on. */
+            version: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -61,6 +617,224 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    changeEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeEmailDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listAuditEntries: {
+        parameters: {
+            query?: {
+                action?: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.signed_out_everywhere" | "account.password_changed" | "account.email_change_requested" | "account.email_changed" | "password_reset.requested" | "password_reset.completed" | "invitation.queued" | "invitation.accepted" | "user.invited" | "user.updated" | "user.role_changed" | "user.deactivated" | "user.reactivated" | "user.removed" | "user.sessions_ended" | "organisation.updated" | "organisation.payment_details_changed" | "security.unknown_address_sign_ins";
+                actorUserId?: string;
+                subjectId?: string;
+                /** @description Entries from this moment on. */
+                from?: string;
+                /** @description Entries before this moment. */
+                to?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPageDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    openEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailChangeLinkDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    confirmEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    openInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkPersonDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    acceptInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPasswordDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     getMeta: {
         parameters: {
             query?: never;
@@ -77,6 +851,656 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Meta"];
                 };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getOrganisation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateOrganisation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrganisationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    changePaymentDetails: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentDetailsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    requestReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetRequestDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    openReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkPersonDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    completeReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPasswordDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    signIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignInDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    signOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    confirmPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordConfirmationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmationDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    signOutEverywhere: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listUsers: {
+        parameters: {
+            query?: {
+                /** @description Part of the name or the address, in any letter case. */
+                search?: string;
+                /** @description One state; without it every user but the removed ones. */
+                status?: "invited" | "active" | "deactivated" | "removed";
+                role?: "admin" | "reviewer";
+                /** @description The page, from 1. */
+                page?: number;
+                /** @description Rows per page, at most 100. Default 25. */
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPageDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    inviteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteUserDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    removeUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deactivateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    resendInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    reactivateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    changeRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeRoleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    endUserSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {
