@@ -40,6 +40,7 @@ function Guarded({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (status === 'signed-out') router.replace(signInHref(pathname));
+    if (status === 'ended') router.replace('/sign-in');
   }, [status, router, pathname]);
 
   // The support contact of the organisation (decision D8 pending): read in the background, once a
@@ -59,7 +60,7 @@ function Guarded({ children }: { children: ReactNode }) {
     };
   }, [status, mayReadOrganisation, background, setContact]);
 
-  if (status === 'loading' || status === 'signed-out') {
+  if (status === 'loading' || status === 'signed-out' || status === 'ended') {
     return (
       <div className={styles.center} aria-busy="true">
         <Spinner label={TEXTS.common.loading} />
@@ -80,8 +81,7 @@ function Guarded({ children }: { children: ReactNode }) {
     try {
       await callEmpty(client.DELETE('/api/v1/session'));
     } finally {
-      clear();
-      router.replace('/sign-in');
+      clear('ended');
     }
   };
 

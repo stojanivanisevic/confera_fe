@@ -5,7 +5,6 @@
  * the live checklist; the email address changed through a link to the new address; sign out,
  * also everywhere.
  */
-import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import { Alert, Button, Card, ConfirmDialog, DescriptionList, PageHeader, PasswordField, TextField, toast } from '@confera/ui';
@@ -20,7 +19,6 @@ type Problem = { title: string; text: string } | null;
 
 export function Account() {
   const { session, client, clear, refresh, contact } = useSession();
-  const router = useRouter();
   const t = TEXTS.account;
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -102,8 +100,7 @@ export function Account() {
     try {
       await callEmpty(client.DELETE(all ? '/api/v1/sessions' : '/api/v1/session'));
     } finally {
-      clear();
-      router.replace('/sign-in');
+      clear('ended');
     }
   };
 

@@ -17,7 +17,8 @@ import { createSessionClient, hasFreshPassword, type Session, type SessionClient
 
 import { call, isUnauthenticated } from './problems';
 
-export type SessionStatus = 'loading' | 'ready' | 'signed-out' | 'unreachable';
+/** `signed-out`: the API has no session (a screen sends to sign-in and comes back afterwards); `ended`: the person signed out (sign-in, without a way back). */
+export type SessionStatus = 'loading' | 'ready' | 'signed-out' | 'ended' | 'unreachable';
 
 export interface SessionState {
   readonly status: SessionStatus;
@@ -28,8 +29,8 @@ export interface SessionState {
   readonly background: SessionClient;
   /** Asks the API for the session again (after sign-in, a password confirmation, a change of the person). */
   readonly refresh: (options?: { background?: boolean }) => Promise<Session | null>;
-  /** Forgets the session (after sign-out, or when the API says 401). */
-  readonly clear: () => void;
+  /** Forgets the session: `ended` after a sign-out by the person, otherwise when the API says 401. */
+  readonly clear: (how?: 'ended') => void;
   /** The password asked again is still valid in this session. */
   readonly fresh: () => boolean;
   /** Remembers a confirmation the API just gave, without a round trip. */
@@ -84,7 +85,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       client: clients.client,
       background: clients.background,
       refresh,
-      clear: () => take(null, 'signed-out'),
+      clear: (how) => take(null, how ?? 'signed-out'),
       fresh: () => hasFreshPassword(session),
       confirmed: (validUntil) => setSession((current) => (current ? { ...current, confirmationValidUntil: validUntil } : current)),
       contact,

@@ -67,6 +67,8 @@ export function User({ id }: { id: string }) {
         setProblem(explain(error, contact));
       }
       if (isApiError(error) && error.code === 'version_conflict') await user.reload({ background: true });
+      // A form dialog shows the refusal at its fields; a confirmation has no place for it, so it closes and the page shows it.
+      if (ask !== 'rename' && ask !== 'role') setAsk(null);
     } finally {
       setBusy(false);
     }
