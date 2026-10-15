@@ -3,7 +3,7 @@
   "source": {
     "repository": "confera_be",
     "directory": "openapi",
-    "commit": "77add5fee31d591fdf88a1fedce30466763b2daf",
+    "commit": "8286bc370386e2fd526e4fc97e6839d06dd39edc",
     "tag": null,
     "branch": "m2/be",
     "committed": true
@@ -12,8 +12,8 @@
     "openapi.json": {
       "title": "Confera admin API",
       "version": "0.1.0",
-      "sha256": "ec096dd16fc51325f5c9022b16952bc4d4192976ae41f8e0c6fa26863a1b213e",
-      "commit": "a83b25c467ab49a35491de81734081044dc1f9d1"
+      "sha256": "f3648eded609d44ae36f31d9111a89c113d5cb4b4a728e9da9ebff686d272eb8",
+      "commit": "0c6110ef69e3a3d22d8c4b22a6d8c4919b8f97ec"
     },
     "openapi.public.json": {
       "title": "Confera public API",
@@ -26,6 +26,12 @@
       "version": "1",
       "sha256": "50c24619647c9387fc01bec9ae9d0b3817f0b9a5a9da85a8d8fea279b9244004",
       "commit": "77add5fee31d591fdf88a1fedce30466763b2daf"
+    },
+    "template-vectors.json": {
+      "title": "contracts/template-vectors.json",
+      "version": "1",
+      "sha256": "156ab3042630d0dc3877430f27a8939d1e71fb4d37467721b5b4bac5a408d167",
+      "commit": "349e1e58e818b40a42ac9f52c9765564b7ccad4a"
     }
   },
   "generator": {

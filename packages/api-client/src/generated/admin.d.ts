@@ -64,6 +64,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listConferences"];
+        put?: never;
+        post: operations["createConference"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conferences/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getConference"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateConference"];
+        trace?: never;
+    };
+    "/api/v1/conferences/{id}/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A new draft as a copy of this conference (FR-CONF-03). */
+        post: operations["copyConference"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conferences/{id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["changeConferenceState"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/email-changes/{token}": {
         parameters: {
             query?: never;
@@ -94,6 +159,138 @@ export interface paths {
         put?: never;
         /** Accepts an invitation: sets the password, makes the account active, uses the link up. */
         post: operations["acceptInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMailLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-log/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMailLogEntry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMailServers"];
+        put?: never;
+        post: operations["createMailServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-servers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMailServer"];
+        put?: never;
+        post?: never;
+        /** 409 `mail_server_in_use` while a conference or a template names it. */
+        delete: operations["deleteMailServer"];
+        options?: never;
+        head?: never;
+        /** 409 `version_conflict` when another admin changed it first. */
+        patch: operations["updateMailServer"];
+        trace?: never;
+    };
+    "/api/v1/mail-servers/{id}/test-message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sends a test message through this server to one address; the result is generic. */
+        post: operations["sendTestMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMailTemplates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-templates/catalogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The placeholder catalogue per type: what a template of the type may use. */
+        get: operations["getTemplateCatalogue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMailTemplate"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -430,9 +627,71 @@ export interface components {
             role: "admin" | "reviewer";
             version: number;
         };
+        ConferenceDto: {
+            id: string;
+            name: string;
+            /** @description Two capital letters: IT, ER, EM, LI, AI. */
+            code: string;
+            editionYear: number | null;
+            /** @description YYYY-MM-DD. */
+            startsOn: string | null;
+            endsOn: string | null;
+            venue: string | null;
+            listedSites: string[];
+            languages: string[];
+            /** @description An IANA time zone, for example Europe/Belgrade. */
+            timeZone: string;
+            /** @enum {string} */
+            state: "draft" | "open" | "closed" | "archived";
+            mailServerId: string | null;
+            version: number;
+        };
+        ConferenceListDto: {
+            items: components["schemas"]["ConferenceDto"][];
+        };
+        ConferenceStateDto: {
+            /** @enum {string} */
+            state: "draft" | "open" | "closed" | "archived";
+            version: number;
+        };
         ConfirmationDto: {
             /** @description The password asked again is valid until this moment, in this session only. */
             confirmationValidUntil: string;
+        };
+        CopyConferenceDto: {
+            name: string;
+            code?: string;
+            editionYear?: number | null;
+        };
+        CreateConferenceDto: {
+            name: string;
+            code: string;
+            editionYear?: number | null;
+            startsOn?: string | null;
+            endsOn?: string | null;
+            venue?: string | null;
+            /** @description At most 20; each is checked and kept as an origin (ST-30). */
+            listedSites?: string[];
+            languages?: ("en" | "sr")[];
+            timeZone?: string;
+            /** Format: uuid */
+            mailServerId?: string | null;
+        };
+        CreateMailServerDto: {
+            name: string;
+            host: string;
+            port: number;
+            /** @enum {string} */
+            tlsMode: "implicit" | "starttls" | "none";
+            username?: string | null;
+            /** @description Write-only. Stored sealed (AES-256-GCM), never returned. */
+            password?: string;
+            fromAddress: string;
+            fromName: string;
+            isDefault?: boolean;
+            isFallback?: boolean;
+            enabled?: boolean;
+            sendRatePerMinute?: number;
         };
         EmailChangeLinkDto: {
             /** @description The address the account will have once the change is confirmed. */
@@ -458,6 +717,101 @@ export interface components {
             organisationName: string;
             /** @description The link stops working at this moment. */
             expiresAt: string;
+        };
+        MailLogEntryDto: {
+            id: string;
+            messageId: string;
+            recipient: string;
+            /** @description The template type. */
+            kind: string;
+            language: string;
+            conferenceId: string | null;
+            mailServerId: string | null;
+            /** @description The name of the server when it was used. */
+            serverName: string | null;
+            attempt: number;
+            /** @enum {string} */
+            result: "sent" | "failed";
+            /** @description A code, never the server's words. */
+            errorCode: string | null;
+            sentAt: string;
+            subject: string | null;
+            bodyHtml: string | null;
+            bodyText: string | null;
+        };
+        MailLogPageDto: {
+            items: components["schemas"]["MailLogSummaryDto"][];
+            total: number;
+            page: number;
+            pageSize: number;
+        };
+        MailLogSummaryDto: {
+            id: string;
+            messageId: string;
+            recipient: string;
+            /** @description The template type. */
+            kind: string;
+            language: string;
+            conferenceId: string | null;
+            mailServerId: string | null;
+            /** @description The name of the server when it was used. */
+            serverName: string | null;
+            attempt: number;
+            /** @enum {string} */
+            result: "sent" | "failed";
+            /** @description A code, never the server's words. */
+            errorCode: string | null;
+            sentAt: string;
+        };
+        MailServerDto: {
+            id: string;
+            name: string;
+            host: string;
+            port: number;
+            /**
+             * @description implicit (TLS from the first byte), starttls (required), none (developer machines only).
+             * @enum {string}
+             */
+            tlsMode: "implicit" | "starttls" | "none";
+            username: string | null;
+            /** @description Whether a password is stored. The password itself is never returned. */
+            credentialSet: boolean;
+            /** @description When the stored password was set. */
+            credentialSetAt: string | null;
+            fromAddress: string;
+            fromName: string;
+            /** @description The organisation's default server, last in the order of FR-SMTP-02. */
+            isDefault: boolean;
+            /** @description Tried when sending through the chosen server fails. */
+            isFallback: boolean;
+            enabled: boolean;
+            /** @description Messages a minute the worker sends through this server at most. */
+            sendRatePerMinute: number;
+            version: number;
+        };
+        MailServerListDto: {
+            items: components["schemas"]["MailServerDto"][];
+        };
+        MailTemplateDto: {
+            id: string;
+            conferenceId: string | null;
+            type: string;
+            language: string;
+            /** @description A subject document: type subject, with text and placeholder children. */
+            subject: {
+                [key: string]: unknown;
+            };
+            /** @description A body document: type doc, with block children. */
+            body: {
+                [key: string]: unknown;
+            };
+            /** @description The server of this template, first in the order of FR-SMTP-02. */
+            mailServerId: string | null;
+            updatedAt: string;
+            version: number;
+        };
+        MailTemplateListDto: {
+            items: components["schemas"]["MailTemplateDto"][];
         };
         Meta: {
             /** @description Name of the service. */
@@ -494,6 +848,8 @@ export interface components {
             paymentDetailsChangedAt: string | null;
             /** @description Who changed them. */
             paymentDetailsChangedBy: components["schemas"]["UserReferenceDto"] | null;
+            /** @description Whether the mail log keeps the subject and body of what was sent (FR-SMTP-04). */
+            mailLogContent: boolean;
             /** @description Sent back with a change: a change made on an older version is refused (409). */
             version: number;
         };
@@ -566,6 +922,59 @@ export interface components {
             /** @description The password of the account. */
             password: string;
         };
+        TemplateCatalogueDto: {
+            types: components["schemas"]["TemplateTypeDto"][];
+            languages: string[];
+        };
+        TemplateTypeDto: {
+            type: string;
+            placeholders: string[];
+            conditions: string[];
+            /** @description Whether a message of this type carries a secure link: the address of a link node. */
+            carriesLink: boolean;
+        };
+        TestMessageDto: {
+            to: string;
+            /** @enum {string} */
+            language?: "en" | "sr";
+        };
+        TestMessageResultDto: {
+            /** @enum {string} */
+            result: "sent" | "failed" | "refused";
+            /** @description With `refused`: tls_required, port_not_allowed or address_not_allowed. */
+            reason: string | null;
+        };
+        UpdateConferenceDto: {
+            name?: string;
+            code?: string;
+            version: number;
+            editionYear?: number | null;
+            startsOn?: string | null;
+            endsOn?: string | null;
+            venue?: string | null;
+            /** @description At most 20; each is checked and kept as an origin (ST-30). */
+            listedSites?: string[];
+            languages?: ("en" | "sr")[];
+            timeZone?: string;
+            /** Format: uuid */
+            mailServerId?: string | null;
+        };
+        UpdateMailServerDto: {
+            name?: string;
+            host?: string;
+            port?: number;
+            /** @enum {string} */
+            tlsMode?: "implicit" | "starttls" | "none";
+            username?: string | null;
+            password?: string | null;
+            fromAddress?: string;
+            fromName?: string;
+            isDefault?: boolean;
+            isFallback?: boolean;
+            enabled?: boolean;
+            sendRatePerMinute?: number;
+            version: number;
+        };
         UpdateOrganisationDto: {
             name?: string;
             legalName?: string | null;
@@ -575,6 +984,8 @@ export interface components {
             contactEmail?: string | null;
             vatNoteSr?: string | null;
             vatNoteEn?: string | null;
+            /** @description Whether the mail log keeps the content of what was sent (FR-SMTP-04). */
+            mailLogContent?: boolean;
             version: number;
         };
         UpdateUserDto: {
@@ -680,7 +1091,7 @@ export interface operations {
     listAuditEntries: {
         parameters: {
             query?: {
-                action?: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.signed_out_everywhere" | "account.password_changed" | "account.email_change_requested" | "account.email_changed" | "password_reset.requested" | "password_reset.completed" | "invitation.queued" | "invitation.accepted" | "user.invited" | "user.updated" | "user.role_changed" | "user.deactivated" | "user.reactivated" | "user.removed" | "user.sessions_ended" | "organisation.updated" | "organisation.payment_details_changed" | "security.unknown_address_sign_ins";
+                action?: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.signed_out_everywhere" | "account.password_changed" | "account.email_change_requested" | "account.email_changed" | "password_reset.requested" | "password_reset.completed" | "invitation.queued" | "invitation.accepted" | "user.invited" | "user.updated" | "user.role_changed" | "user.deactivated" | "user.reactivated" | "user.removed" | "user.sessions_ended" | "organisation.updated" | "organisation.payment_details_changed" | "security.unknown_address_sign_ins" | "mail_server.created" | "mail_server.updated" | "mail_server.deleted" | "mail_server.tested" | "conference.created" | "conference.updated" | "conference.state_changed" | "conference.copied";
                 actorUserId?: string;
                 subjectId?: string;
                 /** @description Entries from this moment on. */
@@ -702,6 +1113,200 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditPageDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listConferences: {
+        parameters: {
+            query?: {
+                state?: "draft" | "open" | "closed" | "archived";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConferenceListDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createConference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConferenceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConferenceDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getConference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConferenceDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateConference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateConferenceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConferenceDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    copyConference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyConferenceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConferenceDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    changeConferenceState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConferenceStateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConferenceDto"];
                 };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
@@ -823,6 +1428,350 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listMailLog: {
+        parameters: {
+            query?: {
+                kind?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message";
+                result?: "sent" | "failed";
+                conferenceId?: string;
+                messageId?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailLogPageDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getMailLogEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailLogEntryDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listMailServers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailServerListDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createMailServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMailServerDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailServerDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getMailServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailServerDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteMailServer: {
+        parameters: {
+            query: {
+                version: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateMailServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMailServerDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailServerDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    sendTestMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestMessageDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestMessageResultDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listMailTemplates: {
+        parameters: {
+            query?: {
+                /** @description Only the templates of this conference; without it, only the organisation's own. */
+                conferenceId?: string;
+                type?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message";
+                language?: "en" | "sr";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailTemplateListDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getTemplateCatalogue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateCatalogueDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getMailTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailTemplateDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {

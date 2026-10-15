@@ -27,7 +27,10 @@ export const DOCUMENTS = [
  * folder: data both repositories must agree on. They are vendored next to the documents and
  * held by the same lock. 0.2.0: the password rule set with its shared vectors (ST-62).
  */
-export const CONTRACTS = [{ file: 'password-rules.json', source: 'contracts' }];
+export const CONTRACTS = [
+  { file: 'password-rules.json', source: 'contracts' },
+  { file: 'template-vectors.json', source: 'contracts' },
+];
 export const LOCK = 'openapi.lock.json';
 
 const lf = (text) => text.replace(/\r\n/g, '\n');

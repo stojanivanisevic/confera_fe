@@ -39,6 +39,8 @@ beforeAll(() => {
   cpSync(join(client, 'openapi', 'openapi.public.json'), join(backend, 'openapi', 'openapi.public.json'));
   // The other contract of 0.2.0: the password rule set with its vectors (contracts/ in confera_be).
   cpSync(join(client, 'openapi', 'password-rules.json'), join(backend, 'contracts', 'password-rules.json'));
+  // And the template document format with its vectors (ADR-12, M2-FE-05).
+  cpSync(join(client, 'openapi', 'template-vectors.json'), join(backend, 'contracts', 'template-vectors.json'));
   execFileSync('git', ['init', '--quiet', backend]);
   git('add', '.');
   git('commit', '--quiet', '-m', 'contract');
@@ -103,7 +105,7 @@ describe('pnpm api:sync', () => {
   it('vendors both documents, writes a lock with commit and checksums, and generates the types', () => {
     const dir = join(work, 'synced');
     mkdirSync(dir, { recursive: true });
-    const lock = syncContract({ from: backend, dir }) as { source: { commit: string; committed: boolean; tag: string | null }; files: Record<string, { sha256: string; version: string; commit: string }> };
+    const lock = syncContract({ from: backend, dir }) as { source: { commit: string; committed: boolean; tag: string | null }; files: Record<string, { sha256: string; version: string; commit: string; title: string }> };
 
     expect(lock.source.commit).toBe(git('rev-parse', 'HEAD').trim());
     expect(lock.source.committed).toBe(true);
@@ -117,6 +119,8 @@ describe('pnpm api:sync', () => {
     // The password rules are vendored next to the documents and held by the same lock (ST-62).
     expect(readFileSync(join(dir, 'openapi', 'password-rules.json'), 'utf8')).toBe(readFileSync(join(backend, 'contracts', 'password-rules.json'), 'utf8').replace(/\r\n/g, '\n'));
     expect(lock.files['password-rules.json']!.sha256).toBe(checksum(readFileSync(join(dir, 'openapi', 'password-rules.json'), 'utf8')));
+    expect(readFileSync(join(dir, 'openapi', 'template-vectors.json'), 'utf8')).toBe(readFileSync(join(backend, 'contracts', 'template-vectors.json'), 'utf8').replace(/\r\n/g, '\n'));
+    expect(lock.files['template-vectors.json']!.title).toBe('contracts/template-vectors.json');
     expect((checkContract({ dir, backendDir: backend, strict: true }) as Result).problems).toEqual([]);
   });
 
@@ -128,6 +132,12 @@ describe('pnpm api:sync', () => {
     cpSync(backend, without, { recursive: true });
     rmSync(join(without, 'contracts'), { recursive: true });
     expect(() => syncContract({ from: without, dir: join(work, 'never') })).toThrow(/password-rules\.json does not exist/);
+  });
+
+  it('fails when the vendored template vectors were edited', () => {
+    const dir = copyOfClient('edited-template-vectors');
+    edit(join(dir, 'openapi', 'template-vectors.json'), (t) => t.replace('"documentBytes": 204800', '"documentBytes": 409600'));
+    expect((checkContract({ dir, backendDir: null }) as Result).problems.join('\n')).toMatch(/template-vectors\.json is not the file the lock names/);
   });
 
   it('gives the same checksum for a checkout with CRLF line endings', () => {
