@@ -165,6 +165,12 @@ export async function startBrowser({ playwright, browserName, channel, headless,
 
 export const test = base.extend<{ injectedByLocalSoftware: string[]; virtualAuthenticator: void }>({
   browser: [startBrowser, { scope: 'worker', timeout: 0 }],
+  // The API stub keeps a universe of users and sessions per User-Agent (e2e/servers/api-stub.mjs).
+  // The engine's own string with the worker's slot added gives every worker a universe of its own,
+  // so a spec that resets the stub never ends the sessions of a spec running beside it.
+  userAgent: async ({ userAgent }, provide, testInfo) => {
+    await provide(userAgent === undefined ? undefined : `${userAgent} confera-e2e/${testInfo.parallelIndex}`);
+  },
   injectedByLocalSoftware: [
     async ({ context }, use) => {
       await use((await protect(context)).seen);

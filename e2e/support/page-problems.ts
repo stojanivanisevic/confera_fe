@@ -23,6 +23,14 @@ const BROWSER_NOTICES = [
   /was delivered in report-only mode, but does not specify a 'report-(?:uri|to)'/,
 ];
 
+// Chromium writes a console error for every answer with a status of 4xx, also one the page asked
+// for and handles: 401 without a session or with a wrong password, 403 when the password is asked
+// again, 400, 409 and 422 when the API refuses a change at a field, 404 for a used link, 429 when
+// it asks to wait. How the page handles the answer is what the tests check; the browser's note
+// about the status is not an error of the page. Only answers of the API count; a missing asset is
+// still a failure.
+const EXPECTED_API_ANSWER = /^Failed to load resource: the server responded with a status of (?:400|401|403|404|409|422|429) \(/;
+
 /** Starts recording what must not happen on a page. Call it before the page is loaded. */
 export function watchPage(page: Page): PageProblems {
   const messages: string[] = [];
@@ -32,6 +40,7 @@ export function watchPage(page: Page): PageProblems {
     if (message.type() !== 'error' && message.type() !== 'warning') return;
     if (isLocalSecuritySoftware(message.location().url)) return;
     if (BROWSER_NOTICES.some((notice) => notice.test(message.text()))) return;
+    if (EXPECTED_API_ANSWER.test(message.text()) && message.location().url.includes('/api/v1/')) return;
     messages.push(`console.${message.type()}: ${message.text()} (${message.location().url})`);
   });
   page.on('pageerror', (error) => messages.push(`pageerror: ${error.message}`));

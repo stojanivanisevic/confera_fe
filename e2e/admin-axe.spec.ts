@@ -5,7 +5,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN } from './env';
-import { linkToken, resetStub, signIn, STUB } from './support/admin';
+import { holdsSession, linkToken, NO_SESSION_IN_WEBKIT, resetStub, signIn, STUB } from './support/admin';
 import { expect, test } from './support/fixtures';
 
 test.describe.configure({ mode: 'default' });
@@ -35,7 +35,8 @@ for (const width of [1440, 375]) {
     test.use({ viewport: { width, height: 900 } });
 
     for (const [name, path] of SCREENS) {
-      test(name, async ({ page }) => {
+      test(name, async ({ page, browserName }) => {
+        test.skip(!holdsSession(browserName), NO_SESSION_IN_WEBKIT);
         await resetStub(page);
         await signIn(page, STUB.admin, path);
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -53,7 +54,8 @@ for (const width of [1440, 375]) {
       });
     }
 
-    test('the password-again dialog, and the invitation dialog', async ({ page }) => {
+    test('the password-again dialog, and the invitation dialog', async ({ page, browserName }) => {
+      test.skip(!holdsSession(browserName), NO_SESSION_IN_WEBKIT);
       await resetStub(page);
       await signIn(page, STUB.admin, '/users');
       await page.getByRole('button', { name: 'Invite a user' }).first().click();

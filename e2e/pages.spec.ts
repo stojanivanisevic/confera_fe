@@ -5,7 +5,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, PUBLIC_ORIGIN } from './env';
-import { resetStub, signIn } from './support/admin';
+import { holdsSession, NO_SESSION_IN_WEBKIT, resetStub, signIn } from './support/admin';
 import { expect, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
@@ -15,7 +15,8 @@ const scan = async (page: Page) =>
   );
 
 test.describe('the admin home and the API (M1-FE-05)', () => {
-  test('shows name and version of the API, from the typed call through the forward', async ({ page }) => {
+  test('shows name and version of the API, from the typed call through the forward', async ({ page, browserName }) => {
+    test.skip(!holdsSession(browserName), NO_SESSION_IN_WEBKIT);
     await resetStub(page);
     await signIn(page);
     const problems = watchPage(page);

@@ -1,5 +1,5 @@
 // What the specs of the admin screens share: the fixture of the API stub, a reset of its
-// universe (one per browser engine, keyed by the User-Agent), and signing in through the page.
+// universe (one per worker, keyed by the User-Agent), and signing in through the page.
 import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, API_STUB_ORIGIN } from '../env';
@@ -24,9 +24,18 @@ export interface Fixture {
   readonly newInvitationTokenPrefix: string;
 }
 export const STUB = FIXTURE as Fixture;
+
+/**
+ * Why the screens behind sign-in do not run in WebKit: the session of ADR-03 is a `__Host-`
+ * cookie, which must be Secure, and WebKit keeps no Secure cookie for http://localhost (Chromium
+ * and Firefox treat localhost as a secure origin). The pages outside the shell run in all three.
+ */
+export const NO_SESSION_IN_WEBKIT = 'WebKit keeps no Secure cookie on http://localhost, and the __Host- session cookie of ADR-03 must be Secure';
+/** The engine can hold a session against the local stack. */
+export const holdsSession = (browserName: string): boolean => browserName !== 'webkit';
 export const linkToken = (purpose: 'invitation' | 'password_reset'): string => STUB.links.find((link) => link.purpose === purpose)!.token;
 
-/** Puts the stub's universe of this browser back to the fixture. Through the page's own request context, so it carries the engine's User-Agent. */
+/** Puts the stub's universe of this browser back to the fixture. Through the page's own request context, so it carries the worker's User-Agent. */
 export async function resetStub(page: Page): Promise<void> {
   const response = await page.request.post(`${API_STUB_ORIGIN}/__stub/reset`, { headers: { Origin: ADMIN_ORIGIN } });
   expect(response.status()).toBe(204);
@@ -34,9 +43,12 @@ export async function resetStub(page: Page): Promise<void> {
 
 /** Signs in through the page and lands on `next` (the home page by default). */
 export async function signIn(page: Page, person: Person = STUB.admin, next = '/'): Promise<void> {
-  await page.goto(`${ADMIN_ORIGIN}/sign-in${next === '/' ? '' : `?next=${encodeURIComponent(next)}`}`);
+  const address = `${ADMIN_ORIGIN}/sign-in${next === '/' ? '' : `?next=${encodeURIComponent(next)}`}`;
+  // Already there (a link led to it): no second load, which would cut off the scripts still loading.
+  if (page.url() !== address) await page.goto(address);
+  await expect(page.locator('[data-confera-sign-in]')).toBeVisible();
   await page.getByLabel('Email address').fill(person.email);
-  await page.getByLabel('Password', { exact: true }).fill(person.password);
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill(person.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(`${ADMIN_ORIGIN}${next}`);
   await expect(page.locator('[data-confera-user]')).toHaveText(person.name);
@@ -46,7 +58,7 @@ export async function signIn(page: Page, person: Person = STUB.admin, next = '/'
 export async function answerPasswordAgain(page: Page, password: string): Promise<void> {
   const dialog = page.getByRole('dialog', { name: 'Your password, once more' });
   await expect(dialog).toBeVisible();
-  await dialog.getByLabel('Password', { exact: true }).fill(password);
+  await dialog.getByRole('textbox', { name: 'Password', exact: true }).fill(password);
   await dialog.getByRole('button', { name: 'Continue' }).click();
   await expect(dialog).toBeHidden();
 }

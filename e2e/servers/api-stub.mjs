@@ -38,9 +38,9 @@ const id = (prefix) => `${prefix}-${String(++counter).padStart(4, '0')}-4000-800
 
 /**
  * The state of one universe: the fixture, as it is at the start and after a reset. Every
- * browser engine of a run gets a universe of its own, keyed by its User-Agent, so the three
- * engines (three workers) can change users and settings at the same time without seeing each
- * other; the tests of one engine run one after the other.
+ * worker of a run gets a universe of its own, keyed by its User-Agent (the engine's string with
+ * the worker's slot, e2e/support/fixtures.ts), so the workers can change users and settings at
+ * the same time without seeing each other; the tests of one serial spec share one.
  */
 let state;
 const universes = new Map();

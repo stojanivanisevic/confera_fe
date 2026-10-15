@@ -331,7 +331,12 @@ test.describe('SEC-M1-01: the methods of a page', () => {
         const what = `${method} ${origin}${path} ${JSON.stringify(headers)}`;
         expect(response.status(), what).toBe(405);
         expect(response.headers()['allow'], what).toBe('GET, HEAD');
-        expect(response.headers()['content-security-policy'], what).toMatch(/^frame-ancestors 'none'; script-src-attr 'nonce-/);
+        const policy = response.headers()['content-security-policy'] ?? '';
+        expect(policy, what).toMatch(/^frame-ancestors 'none'; /);
+        expect(policy, what).toMatch(/(?:^|; )script-src-attr 'nonce-/);
+        // The admin surface enforces its whole baseline (0.2.0), also on a 405; the public pages keep it report-only.
+        if (origin === ADMIN_ORIGIN) expect(policy, what).toContain("default-src 'self'");
+        else expect(response.headers()['content-security-policy-report-only'], what).toContain("default-src 'self'");
         expect(response.headers()['x-content-type-options'], what).toBe('nosniff');
         expect(await response.text(), what).not.toContain('<html');
       }

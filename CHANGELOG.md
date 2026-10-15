@@ -4,7 +4,14 @@ All notable changes to `confera_fe`. Versions follow SemVer; `confera_be` carrie
 
 ## Unreleased
 
+### Added
+- **The admin screens of 0.2.0 part A (M2-FE-01, M2-FE-02).** The admin shell (navigation, the conference switch as a placeholder, the person and sign-out, the guard of the session with the `next` rule of ST-26); sign-in, forgot password, the pages of the invitation, reset and email-change links with the **live password checklist** (G2-25; the API's rule set vendored with its vectors and run in the browser, so nothing is sent while the password is typed, ST-62); my account; users (list, search, filters, invitation, rename, role, deactivate, reactivate, remove, resend, end sessions, each with the password asked again; the last-admin rule's refusal shown); the organisation profile (issuer data; payment details behind the password-again dialog; the 14-day notice); the audit log. The texts follow the design system's Voice, and the admin's connection card says "Confera cannot reach its server" with a button to try again (UX-M1-14; the support contact is the profile's contact email until decision D8).
+- **CSRF plumbing** (ADR-03): `@confera/api-client` gives a signed-in browser two clients that carry the session's `X-CSRF-Token` on every changing request and mark a background refetch with `X-Confera-Background`.
+- **The password rule set is vendored** with the API contract (`pnpm api:sync` takes `contracts/password-rules.json` of `confera_be` too; the lock holds it), and every shared vector gives the same four answers here.
+- **The API stub of the browser tests** answers the admin API of 0.2.0 part A as the contract describes it, one universe per worker; `e2e/admin.spec.ts` and `e2e/admin-axe.spec.ts` hold the screens in three engines at 375 and 1440 px.
+
 ### Changed
+- **The content security policy is enforced on the admin surface** (ADR-28, 0.2.0): the pages of the kinds `admin` and `auth` send the whole baseline in one enforced policy, reported to the API's `/public/v1/csp-reports` through the public origin (M1-ISS-11); the public pages keep the report-only baseline until 0.3.0.
 - **Design system 2.3.0**, before the admin screens of 0.2.0 use it (the UI reviewer's re-check of 2.2.0; M1-ISS-10, 19 to 26, 42, 44, 45). See `design-system/CHANGELOG.md`.
   - One focus ring everywhere (the blue outline also on the rows-per-page select, the Breadcrumbs links, the Stepper button and the sidebar links) and a text-link style, `ud-link`, which the error summary of the form now uses.
   - Targets of 44 x 44 px for every control where the pointer is a finger; 24 x 24 px for small controls with a mouse.

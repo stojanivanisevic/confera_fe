@@ -5,7 +5,7 @@ import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN } from './env';
 import { buildEmbedSnippet, frameId } from '../packages/embed-loader/src/index';
-import { answerPasswordAgain, linkToken, resetStub, signIn, STUB } from './support/admin';
+import { answerPasswordAgain, holdsSession, linkToken, NO_SESSION_IN_WEBKIT, resetStub, signIn, STUB } from './support/admin';
 import { expect, isLocalSecuritySoftware, test } from './support/fixtures';
 
 interface Violation {
@@ -78,7 +78,8 @@ for (const [name, url, use] of PAGES) {
 
 // The admin surface enforces the whole baseline (0.2.0, ADR-28): the signed-in screens, with a
 // dialog, the password-again dialog, a toast and a drawer, run without a violation.
-test('no policy violation: the admin screens, signed in, with their dialogs', async ({ page }) => {
+test('no policy violation: the admin screens, signed in, with their dialogs', async ({ page, browserName }) => {
+  test.skip(!holdsSession(browserName), NO_SESSION_IN_WEBKIT);
   const violations = await recordViolations(page);
   await resetStub(page);
   await signIn(page, STUB.admin, '/users');
@@ -127,5 +128,7 @@ test('the recorder does see a violation when there is one', async ({ page }) => 
     script.textContent = 'window.__planted = 1';
     document.head.append(script);
   });
-  await expect.poll(async () => (await violations()).map((v) => `${v.directive} ${v.blocked} ${v.disposition}`)).toContain('script-src-elem inline report');
+  // The admin surface enforces the baseline (ADR-28, 0.2.0): the violation is seen, and the script did not run.
+  await expect.poll(async () => (await violations()).map((v) => `${v.directive} ${v.blocked} ${v.disposition}`)).toContain('script-src-elem inline enforce');
+  expect(await page.evaluate(() => (window as unknown as { __planted?: number }).__planted)).toBeUndefined();
 });

@@ -44,12 +44,24 @@ corepack pnpm dev
 
 | Address | What you see |
 |---|---|
-| http://localhost:3000/ | the admin home. It asks the API for its name and version; without `confera_be` running it says "The API does not answer" |
-| http://localhost:3000/sign-in | the sign-in page (the form arrives with 0.2.0) |
+| http://localhost:3000/ | the admin: it asks for a session and sends you to sign-in. The screens of 0.2.0 part A are behind it (section 2a) |
+| http://localhost:3000/sign-in | sign-in; from there "Forgot your password?" |
 | http://127.0.0.1:3000/f/spike-abstract | the hosted form of the 0.1.0 spike |
-| http://127.0.0.1:3000/dev/gallery | the component gallery of design system v2 |
+| http://127.0.0.1:3000/dev/gallery | the component gallery of the design system |
 
-Stop it with `Ctrl+C`. To see the admin home talk to the real API, start `confera_be` first (its README, "First start"); it listens on port 3001, where `.env` already points.
+Stop it with `Ctrl+C`. The admin talks to the API at port 3001, where `.env` already points: start `confera_be` first (its README, "First start"). Without it the sign-in page says "Confera cannot reach its server".
+
+### 2a. The admin screens of 0.2.0
+
+Behind sign-in (an invitation link from `confera_be` makes the first account; `seed:e2e` gives the invented people no password yet): the home with the connection card; **Users** (search, filters, invite, rename, change the role, deactivate, reactivate, remove, send the invitation again, end the sessions); **Organisation** (the issuer data, the payment details); **Audit log**; **My account** (change the password, change the email address, sign out everywhere). The pages outside the shell are `/sign-in`, `/forgot-password` and the pages of the links, `/invitations/<token>`, `/password-resets/<token>` and `/email-changes/<token>`.
+
+What holds everywhere (ADR-03, ADR-20):
+- **The session** is the API's `__Host-` cookie; the web application never reads it. `GET /api/v1/session` gives the person, the organisation and the CSRF value, and every changing request carries it as `X-CSRF-Token` (`@confera/api-client`, `createSessionClient`). A refetch the person did not ask for says `X-Confera-Background` and does not renew the session. A 401 sends to sign-in, with `next` pointing back.
+- **`next`** after sign-in is only a path of this origin (`apps/web/src/lib/next-path.ts`, ST-26): a full address, `//host`, a backslash, a scheme or one of the auth pages is ignored.
+- **The password asked again** (bank and PayPal data, users and roles): a change the API refuses with `password_confirmation_required` opens the dialog, which confirms the password and then makes the change; it counts for 5 minutes in that session (`useFreshPassword`).
+- **The live password checklist** (G2-25, ST-62): the four lines are the API's rule set, vendored with its vectors (`packages/api-client/openapi/password-rules.json`) and run in the browser, so nothing is sent while the password is typed; the server checks the same rules and names a broken one by its code, which the checklist shows at the line. `tests/password-rules.test.ts` runs every shared vector.
+- **The content security policy is enforced** on the admin and auth pages (one policy with the whole baseline, reported to the API's `/public/v1/csp-reports` through the public origin); the public pages still report only, until 0.3.0.
+- The texts are English and live in one catalogue, `apps/web/src/admin/texts.ts`. The support contact named in error messages is the organisation profile's contact email (decision D8 is pending).
 
 `corepack pnpm build` and `corepack pnpm start` run the production build. It does not contain the gallery or the spike form (section 9).
 
@@ -59,7 +71,7 @@ Confera has two surfaces, each on its own host name (ADR-02), and the applicatio
 
 | Surface | Host name | Routes |
 |---|---|---|
-| admin | `localhost` | `/`, `/sign-in`, `/api/v1/…` |
+| admin | `localhost` | `/`, `/users`, `/organisation`, `/audit`, `/account`, `/sign-in`, `/forgot-password`, `/invitations/[token]`, `/password-resets/[token]`, `/email-changes/[token]`, `/api/v1/…` |
 | public | `127.0.0.1` | `/f/[form]`, `/embed/[form]`, `/s/[token]`, `/pay/[token]`, `/public/v1/…` |
 
 So http://localhost:3000/f/spike-abstract and http://127.0.0.1:3000/sign-in answer "not found". That is intended.
@@ -114,12 +126,12 @@ corepack pnpm e2e
 The run takes eight to fifteen minutes, depending on what else the machine is doing, and needs the ports **3000, 3100, 3101, 4000 and 4001** free (stop `pnpm dev` first). It builds a test build, starts it, starts the application once more in development mode, a harness "conference site" and an API stub, and stops them all at the end.
 
 - **Three engines**, each with third-party cookies blocked; one test proves the blocking is in effect.
-- **Tests that do not run in every engine**, each for a stated reason: the start-up guard (`config-guard`) and the Host-header requests (`qa-hosts`) involve no browser and run in the Chromium project only; the 16 px touch test needs pointer emulation, which only Chromium has (its stylesheet rule is held by a unit test). Nothing else is skipped.
+- **Tests that do not run in every engine**, each for a stated reason: the start-up guard (`config-guard`) and the Host-header requests (`qa-hosts`) involve no browser and run in the Chromium project only; the 16 px touch test needs pointer emulation, which only Chromium has (its stylesheet rule is held by a unit test); the admin screens behind sign-in run in Chromium and Firefox, not in WebKit, which keeps no Secure cookie on `http://localhost` while the session of ADR-03 is a `__Host-` cookie that must be Secure (the pages outside the shell, with the checklist, run in all three; `NO_SESSION_IN_WEBKIT` in `e2e/support/admin.ts`). Nothing else is skipped.
 - **`e2e/qa-probes.spec.ts`** looks where the acceptance list does not: 320 px, 200 % and 400 % zoom, a conference site that keeps resizing or forges height messages, storage that throws, the form components by keyboard only, reduced motion.
 - **What a failed test leaves behind**, in `playwright-report/index.html`: its trace (every action with the page as it was then, the console, the network) and a picture of the moment it failed. There is no film strip, on purpose. A film strip is recorded for every test, failed or not, by capturing each frame the page paints. WebKit paints at device scale 2 and without a graphics card on this kind of machine, and the gallery never stops painting (a spinner, skeletons), so that cost grew with the time a test took and not with what it did: three WebKit workers at once slowed each other down until tests of a few seconds passed their 60 s limit. On the gallery specs in WebKit, three workers: 317 s of test time with the film strip, 157 s without it.
 - **A test stays far from its limit**, so that a full run is green on a busy laptop without running anything again. When you write one: one page, or one state of a page, per test (an accessibility scan costs WebKit about a second before it has looked at anything); ask the page one question about many elements instead of one question per element (`page.evaluate`, as in `e2e/ds-gallery.spec.ts`); a file whose every test loads the whole gallery, or scans it, runs its tests one after the other (`test.describe.configure({ mode: 'default' })`), because three of those at once slow each other and everything else down; and if a test does come near its limit, find where the time goes before you touch the limit.
 - **The harness** (`e2e/harness/hostile.html`) is a site with hostile CSS and a hostile script on `localhost:4000`; the public surface is `127.0.0.1:3000`, another site, so the form's frame is a real third-party frame.
-- **The API stub** (`e2e/servers/harness.mjs`) answers `GET /api/v1/meta` and reads the surface from the `Host` header as `confera_be` does.
+- **The API stub** (`e2e/servers/harness.mjs`, `api-stub.mjs`) reads the surface from the `Host` header as `confera_be` does and answers the admin API of 0.2.0 part A as the vendored contract describes it: sign-in with the session cookie and the CSRF value, an exact `Origin`, the password asked again, users with the last-admin rule and versions, the organisation, the audit log, and the links as fixed tokens of its fixture (`stub-fixture.mjs`: invented people on `example.test`). Every worker has a universe of its own in it (keyed by the User-Agent, which carries the worker's slot), and `POST /__stub/reset` puts it back to the fixture, so the workers run at the same time. The admin screens are tested against the stub (`e2e/admin.spec.ts`, `admin-axe.spec.ts`): until the backend's part B sends the links, a real API has no invitation a browser test could start from.
 - Chromium runs as the full browser in its new headless mode (`channel: 'chromium'`), so the separate "headless shell" download is not needed.
 - **Chromium never starts on the profile the test runner would make for it.** On a Windows machine that is not in a domain, the full Chromium build tries an interactive logon with an empty password to learn whether the account has one, once per empty profile. Each try is a failed logon (Security event 4625, logon type 2, process `chrome.exe`), and a run starts enough browsers to lock the account (event 4740). So:
   - `e2e/support/fixtures.ts` starts Chromium on an isolated profile of our own whose `Local State` already holds that answer, with the password manager, sign-in before filling and autofill switched off, and gives every page a virtual WebAuthn authenticator. Take `test` from that file in every spec; `tests/os-isolation.test.ts` fails if a spec takes it from `@playwright/test` or launches a browser itself.
@@ -180,7 +192,7 @@ In 0.1.0 the API has one admin route (`GET /api/v1/meta`) and no public route, a
 
 ## 8. API contract
 
-`confera_be` generates and commits two OpenAPI documents. This repository vendors a copy of both in `packages/api-client/openapi/`, with `openapi.lock.json` (commit, tag, checksum and version) and the generated types in `packages/api-client/src/generated/`.
+`confera_be` generates and commits two OpenAPI documents, and, since 0.2.0, the password rule set with its shared vectors (`contracts/password-rules.json`). This repository vendors a copy of all three in `packages/api-client/openapi/`, with `openapi.lock.json` (commit, tag, checksum and version) and the generated types in `packages/api-client/src/generated/`.
 
 ```
 corepack pnpm api:sync              # from ..\confera_be; or: --from <directory>
@@ -208,7 +220,7 @@ The web application has no secret and must never be given one. `scripts/next.mjs
 
 A **test build** (`corepack pnpm build:test`, used by `dev` and `e2e`) also contains the gallery and the spike fixtures. A production build does not contain them at all, not even their names, and a test build refuses to start on `prod`.
 
-**Security headers** (ADR-28) are set in one place, `apps/web/src/proxy.ts`, by kind of page; `apps/web/src/server/security/routes.json` declares the kind of every route, and a route that is not declared fails `verify:build`. From 0.1.0 two rules are enforced: who may frame a page (`frame-ancestors 'none'` everywhere except the frame page of a form with a site list) and no inline event handlers. The rest of the policy is report-only until 0.2.0 (admin) and 0.3.0 (public). Every page carries a fresh nonce and is never stored. A page answers GET and HEAD only: any other method, and any request that names a server action (`Next-Action`), gets 405 with the header set of its kind before the framework sees it (SEC-M1-01); `/api/v1` and `/public/v1` keep every method. The proxy runs for every path except the framework's own files under `/_next/static/`, which keep their long cache and get `nosniff` (`next.config.ts`); any other path under `/_next/`, a file at the root that does not exist and the error page of a page that fails are pages like the others, with the header set of their kind (`e2e/security-headers.spec.ts`, `tests/proxy-coverage.test.ts`). There is no route handler and nothing is served from `public/`.
+**Security headers** (ADR-28) are set in one place, `apps/web/src/proxy.ts`, by kind of page; `apps/web/src/server/security/routes.json` declares the kind of every route, and a route that is not declared fails `verify:build`. From 0.1.0 two rules are enforced on every page: who may frame it (`frame-ancestors 'none'` everywhere except the frame page of a form with a site list) and no inline event handlers. From 0.2.0 the pages of the admin surface (the kinds `admin` and `auth`) enforce the whole baseline in one policy and report what it blocks to the API (`report-uri` and `report-to` at `<public origin>/public/v1/csp-reports`); the public pages keep the baseline report-only until 0.3.0. Every page carries a fresh nonce and is never stored. A page answers GET and HEAD only: any other method, and any request that names a server action (`Next-Action`), gets 405 with the header set of its kind before the framework sees it (SEC-M1-01); `/api/v1` and `/public/v1` keep every method. The proxy runs for every path except the framework's own files under `/_next/static/`, which keep their long cache and get `nosniff` (`next.config.ts`); any other path under `/_next/`, a file at the root that does not exist and the error page of a page that fails are pages like the others, with the header set of their kind (`e2e/security-headers.spec.ts`, `tests/proxy-coverage.test.ts`). There is no route handler and nothing is served from `public/`.
 
 ## 10. The embed
 
