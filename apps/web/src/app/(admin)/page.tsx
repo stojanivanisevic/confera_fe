@@ -1,17 +1,10 @@
 import type { Metadata } from 'next';
 
-import { PageHeader } from '@confera/ui';
+import { Home } from '@/admin/Home';
 
-import { ApiStatus } from '@/components/ApiStatus';
+export const metadata: Metadata = { title: 'Home' };
 
-export const metadata: Metadata = { title: 'Admin' };
-
-/** Admin home of 0.1.0: the foundation page. The dashboard arrives with 0.2.0. */
+/** The admin home: who is signed in, and whether Confera reaches its server. The dashboard arrives later. */
 export default function AdminHomePage() {
-  return (
-    <main className="confera-page">
-      <PageHeader title="Confera" description="Conferences and membership of UdEkoM Balkans. Release 0.1.0: foundations." />
-      <ApiStatus />
-    </main>
-  );
+  return <Home />;
 }

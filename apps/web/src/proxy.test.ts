@@ -48,7 +48,9 @@ describe('a page answers GET and HEAD only (SEC-M1-01)', () => {
       const response = await ask(method, path, host);
       expect(response.status, method).toBe(405);
       expect(response.headers.get('allow')).toBe('GET, HEAD');
-      expect(response.headers.get('content-security-policy')).toMatch(/^frame-ancestors 'none'; script-src-attr 'nonce-/);
+      // The header set of the page's kind: framing first; the admin pages enforce the whole baseline (0.2.0).
+      expect(response.headers.get('content-security-policy')).toMatch(/^frame-ancestors 'none'; /);
+      expect(response.headers.get('content-security-policy')).toMatch(/script-src-attr 'nonce-/);
       expect(response.headers.get('x-content-type-options')).toBe('nosniff');
       expect(response.headers.get('cache-control')).toContain('no-store');
       expect(response.headers.get('x-middleware-next')).toBeNull(); // the framework never sees it

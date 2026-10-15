@@ -119,7 +119,7 @@ export function FreshPasswordProvider({ children }: { children: ReactNode }) {
               {problem.text}
             </Alert>
           ) : null}
-          <PasswordField label={TEXTS.freshPassword.password} name="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+          <PasswordField label={TEXTS.freshPassword.passwordLabel} name="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
         </form>
       </Dialog>
     </FreshPasswordContext.Provider>
