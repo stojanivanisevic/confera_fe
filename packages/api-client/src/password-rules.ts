@@ -197,4 +197,4 @@ export interface PasswordVector {
 }
 
 /** The shared vectors of the rule set, as the API exports them. */
-export const PASSWORD_VECTORS: readonly PasswordVector[] = rules.vectors as readonly PasswordVector[];
+export const PASSWORD_VECTORS: readonly PasswordVector[] = rules.vectors;

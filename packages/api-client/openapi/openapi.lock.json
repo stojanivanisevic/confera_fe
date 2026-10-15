@@ -3,7 +3,7 @@
   "source": {
     "repository": "confera_be",
     "directory": "openapi",
-    "commit": "a83b25c467ab49a35491de81734081044dc1f9d1",
+    "commit": "18d0bdbaf6db39426b988e68f23b6eebe042cb27",
     "tag": null,
     "branch": "m2/be",
     "committed": true

@@ -1,8 +1,17 @@
 {
-  "$comment": "Every route of the web application declares its kind and its surface here (ADR-28, ADR-02). A page that is not listed fails `pnpm verify:build` and the header tests. The routes of a test build (--dev-pages) are declared with the dev fixtures, so that not even their names are in a production build. `answeredByTheProxy` are paths the proxy answers itself, without a page: the form's POST path for a Send pressed before its scripts arrived (UX-M1-03).",
+  "$comment": "Every route of the web application declares its kind and its surface here (ADR-28, ADR-02). A page that is not listed fails `pnpm verify:build` and the header tests. The routes of a test build (--dev-pages) are declared with the dev fixtures, so that not even their names are in a production build. `answeredByTheProxy` are paths the proxy answers itself, without a page: the form's POST path for a Send pressed before its scripts arrived (UX-M1-03). Kinds: `auth` are the pages a person reaches without a session (sign-in, the pages of the secure links); `admin` the screens behind sign-in.",
   "routes": [
     { "route": "/", "kind": "admin", "surface": "admin" },
+    { "route": "/account", "kind": "admin", "surface": "admin" },
+    { "route": "/users", "kind": "admin", "surface": "admin" },
+    { "route": "/users/[id]", "kind": "admin", "surface": "admin" },
+    { "route": "/organisation", "kind": "admin", "surface": "admin" },
+    { "route": "/audit", "kind": "admin", "surface": "admin" },
     { "route": "/sign-in", "kind": "auth", "surface": "admin" },
+    { "route": "/forgot-password", "kind": "auth", "surface": "admin" },
+    { "route": "/invitations/[token]", "kind": "auth", "surface": "admin" },
+    { "route": "/password-resets/[token]", "kind": "auth", "surface": "admin" },
+    { "route": "/email-changes/[token]", "kind": "auth", "surface": "admin" },
     { "route": "/f/[form]", "kind": "hosted-form", "surface": "public" },
     { "route": "/embed/[form]", "kind": "frame", "surface": "public" },
     { "route": "/s/[token]", "kind": "secure-link", "surface": "public", "planned": "0.5.0" },

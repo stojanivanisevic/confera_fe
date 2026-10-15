@@ -47,8 +47,8 @@ describe('the typed call to /api/v1/meta', () => {
     const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(json({})));
     const client = createPublicClient({ baseUrl: 'http://127.0.0.1:3000', fetch });
     expectTypeOf(client).not.toBeAny();
-    // The public contract has no path yet (0.1.0): the generated type allows none.
-    expectTypeOf<PublicPaths>().toEqualTypeOf<Record<string, never>>();
+    // The public contract of 0.2.0 has one path: where a browser reports what the content security policy blocked.
+    expectTypeOf<keyof PublicPaths>().toEqualTypeOf<'/public/v1/csp-reports'>();
     await (client as unknown as { GET: (path: string) => Promise<unknown> }).GET('/public/v1/anything');
     expect((fetch.mock.calls[0]![0] as Request).credentials).toBe('omit');
   });

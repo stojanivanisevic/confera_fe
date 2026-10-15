@@ -25,9 +25,12 @@ import { classifyRoute, surfaceOfHost } from '@/server/security/route-kinds';
 /** A path no route will ever have: rewriting to it renders the application's own "not found" page. */
 const NOT_FOUND_PATH = '/_confera/not-found';
 
+/** Where a browser reports what the enforced policy blocked: the API's public route, through the public origin (M1-ISS-11). */
+const reportAddress = (): string => `${getConfig().publicOrigin}/public/v1/csp-reports`;
+
 function page(request: NextRequest, kind: PageKind, frameSites: readonly string[] | null, notFound: boolean): NextResponse {
   const nonce = createNonce();
-  const headers = buildSecurityHeaders({ kind, nonce, frameSites, development: isDevelopmentRuntime() });
+  const headers = buildSecurityHeaders({ kind, nonce, frameSites, development: isDevelopmentRuntime(), reportTo: reportAddress() });
 
   // What the page receives. Policy headers sent by a client never reach the
   // renderer: the framework copies the response headers set below onto the
@@ -54,7 +57,7 @@ function pageMethodRefused(request: NextRequest): boolean {
 
 /** 405 with the header set of the page's kind: no body for a framework to render, nothing stored. */
 function methodNotAllowed(kind: PageKind, allow: string): NextResponse {
-  const headers = buildSecurityHeaders({ kind, nonce: createNonce(), frameSites: null, development: isDevelopmentRuntime() });
+  const headers = buildSecurityHeaders({ kind, nonce: createNonce(), frameSites: null, development: isDevelopmentRuntime(), reportTo: reportAddress() });
   const response = new NextResponse('Method Not Allowed\n', { status: 405, headers: { 'Content-Type': 'text/plain; charset=utf-8', Allow: allow } });
   for (const [name, value] of Object.entries(headers.response)) response.headers.set(name, value);
   return response;

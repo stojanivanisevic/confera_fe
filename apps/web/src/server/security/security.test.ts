@@ -9,37 +9,58 @@ import { classifyRoute, DECLARED_ROUTES, surfaceOfHost } from './route-kinds';
 
 const NONCE = 'bm9uY2Utbm9uY2Utbm9uY2U=';
 const SITES = ['https://itema.example.test', 'https://eman.example.test'];
+const REPORT = 'http://127.0.0.1:3000/public/v1/csp-reports';
 const PAGE_KINDS: PageKind[] = ['admin', 'auth', 'hosted-form', 'frame', 'secure-link', 'dev', 'error'];
+/** The pages of the admin surface enforce the whole baseline since 0.2.0; the public pages report only until 0.3.0. */
+const ENFORCED: PageKind[] = ['admin', 'auth'];
+const REPORTING: PageKind[] = ['hosted-form', 'frame', 'secure-link', 'dev', 'error'];
 const headers = (kind: PageKind, frameSites: readonly string[] | null = null, development = false) =>
-  buildSecurityHeaders({ kind, nonce: NONCE, frameSites, development });
+  buildSecurityHeaders({ kind, nonce: NONCE, frameSites, development, reportTo: REPORT });
+
+const BASELINE = ["default-src 'self'", `script-src 'self' 'nonce-${NONCE}' 'report-sample'`, "object-src 'none'", "base-uri 'none'", "form-action 'self'", "connect-src 'self'", "font-src 'self'"];
 
 describe('header set of every kind of page (ADR-28)', () => {
-  it.each(PAGE_KINDS)('%s: the baseline', (kind) => {
-    const { response, policy } = headers(kind);
-    expect(response['Content-Security-Policy']).toBe(`frame-ancestors 'none'; script-src-attr 'nonce-${NONCE}'`);
+  it.each(PAGE_KINDS)('%s: the common headers', (kind) => {
+    const { response } = headers(kind);
+    expect(response['Content-Security-Policy']).toMatch(/^frame-ancestors 'none'; /);
     expect(response['X-Frame-Options']).toBe('DENY');
     expect(response['Cache-Control']).toBe('no-store');
     expect(response['X-Content-Type-Options']).toBe('nosniff');
     expect(response['Referrer-Policy']).toBe('no-referrer');
     expect(response['Permissions-Policy']).toContain('camera=()');
+  });
+
+  it.each(REPORTING)('%s: framing and "no inline event handlers" enforced, the baseline report-only (until 0.3.0)', (kind) => {
+    const { response, policy } = headers(kind);
+    expect(response['Content-Security-Policy']).toBe(`frame-ancestors 'none'; script-src-attr 'nonce-${NONCE}'`);
     expect(response['Content-Security-Policy-Report-Only']).toBe(policy);
+    expect(response['Reporting-Endpoints']).toBeUndefined();
+    const directives = policy.split('; ');
+    for (const directive of BASELINE) expect(directives).toContain(directive);
   });
 
-  it('the report-only policy is the baseline of the decision', () => {
-    const directives = headers('admin').policy.split('; ');
-    expect(directives).toContain("default-src 'self'");
-    expect(directives).toContain(`script-src 'self' 'nonce-${NONCE}' 'report-sample'`);
-    expect(directives).toContain("object-src 'none'");
-    expect(directives).toContain("base-uri 'none'");
-    expect(directives).toContain("form-action 'self'");
-    expect(directives).toContain("connect-src 'self'");
-    expect(directives).toContain("font-src 'self'");
+  it.each(ENFORCED)('%s: the whole baseline enforced in one policy, reported to the API (0.2.0, M1-ISS-11)', (kind) => {
+    const { response, policy } = headers(kind);
+    expect(response['Content-Security-Policy']).toBe(policy);
+    expect(response['Content-Security-Policy-Report-Only']).toBeUndefined();
+    const directives = policy.split('; ');
+    expect(directives[0]).toBe("frame-ancestors 'none'");
+    // The framework reads the nonce from the first script-src* directive it finds.
+    expect(directives.find((d) => d.startsWith('script-src'))).toBe(`script-src 'self' 'nonce-${NONCE}' 'report-sample'`);
+    expect(directives).toContain(`script-src-attr 'nonce-${NONCE}'`);
+    for (const directive of BASELINE) expect(directives).toContain(directive);
+    expect(directives).toContain(`report-uri ${REPORT}`);
+    expect(directives).toContain('report-to csp');
+    expect(response['Reporting-Endpoints']).toBe(`csp="${REPORT}"`);
+    expect(policy).not.toMatch(/'unsafe-hashes'/);
+    expect(policy.split('; ').find((d) => d.startsWith('script-src '))).not.toMatch(/unsafe-inline|unsafe-eval|\*/);
   });
 
-  it('what is enforced from 0.1.0 is framing and "no inline event handlers", nothing else', () => {
-    const enforced = headers('admin').response['Content-Security-Policy']!.split('; ').map((d) => d.split(' ')[0]);
-    expect(enforced).toEqual(['frame-ancestors', 'script-src-attr']);
-    expect(headers('admin').response['Content-Security-Policy']).not.toMatch(/unsafe-inline|unsafe-hashes/);
+  it('without a report address the admin pages are still enforced, and nothing names an endpoint', () => {
+    const { response } = buildSecurityHeaders({ kind: 'admin', nonce: NONCE, frameSites: null, development: false, reportTo: null });
+    expect(response['Content-Security-Policy']).toContain("default-src 'self'");
+    expect(response['Content-Security-Policy']).not.toMatch(/report-uri|report-to/);
+    expect(response['Reporting-Endpoints']).toBeUndefined();
   });
 
   it('scripts: no inline handlers, no eval, no wildcard, no other origin', () => {
@@ -137,8 +158,17 @@ describe('the site list is validated and fails closed (SEC-A-08)', () => {
 describe('every route has a kind and a surface (ADR-28, ADR-02)', () => {
   it.each([
     ['/', 'admin', 'admin'],
+    ['/account', 'admin', 'admin'],
+    ['/users', 'admin', 'admin'],
+    ['/users/0e2e0000-0000-4000-8000-0000000000a1', 'admin', 'admin'],
+    ['/organisation', 'admin', 'admin'],
+    ['/audit', 'admin', 'admin'],
     ['/sign-in', 'auth', 'admin'],
     ['/sign-in/', 'auth', 'admin'],
+    ['/forgot-password', 'auth', 'admin'],
+    ['/invitations/some-token', 'auth', 'admin'],
+    ['/password-resets/some-token', 'auth', 'admin'],
+    ['/email-changes/some-token', 'auth', 'admin'],
     ['/f/itema-2026-abstract', 'hosted-form', 'public'],
     ['/embed/itema-2026-abstract', 'frame', 'public'],
     ['/s/some-token', 'secure-link', 'public'],
@@ -151,7 +181,7 @@ describe('every route has a kind and a surface (ADR-28, ADR-02)', () => {
     expect(classifyRoute(path, false)).toMatchObject({ kind, surface });
   });
 
-  it.each(['/admin', '/embed', '/embed/a/b', '/f', '/api', '/api/v2/meta', '/public', '/sign-in/extra', '/.env', '/uploads/abc', '/files/storage-key'])(
+  it.each(['/admin', '/embed', '/embed/a/b', '/f', '/api', '/api/v2/meta', '/public', '/sign-in/extra', '/.env', '/uploads/abc', '/files/storage-key', '/users/a/b', '/invitations', '/password-resets'])(
     '%s is not a route',
     (path) => {
       expect(classifyRoute(path, true)).toBeNull();

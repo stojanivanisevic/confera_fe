@@ -11,6 +11,8 @@ import type { components, paths as AdminPaths } from './generated/admin';
 import type { paths as PublicPaths } from './generated/public';
 
 export type { AdminPaths, PublicPaths };
+export * from './session';
+export * from './password-rules';
 export type Meta = components['schemas']['Meta'];
 export type Problem = components['schemas']['Problem'];
 export type FieldError = components['schemas']['FieldError'];

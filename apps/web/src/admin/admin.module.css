@@ -1,0 +1,145 @@
+/* Layout of the admin screens. Components are styled by the design system; every value here is a token. */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-2xl);
+  min-width: 0;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--gutter-2xl);
+  align-items: start;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--gutter-l) var(--gutter-2xl);
+}
+
+.all {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gutter-s);
+  margin-top: var(--gutter-l);
+}
+
+.text {
+  margin: 0;
+  font: var(--text-body-sm);
+  letter-spacing: var(--text-body-sm-tracking);
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.lead {
+  margin: 0 0 var(--gutter-l);
+  font: var(--text-body-sm);
+  letter-spacing: var(--text-body-sm-tracking);
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gutter-l);
+  padding: var(--gutter-4xl) var(--gutter-l);
+  text-align: center;
+}
+
+/* The pages a person reaches without a session (sign-in, the pages of the links): one column. */
+.auth {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-2xl);
+  width: 100%;
+  max-width: var(--dialog-sm);
+  margin: 0 auto;
+  padding: var(--gutter-3xl) var(--gutter-l) var(--gutter-6xl);
+}
+
+.authHead {
+  display: flex;
+  align-items: center;
+  gap: var(--gutter-m);
+}
+
+.brand {
+  font: var(--text-h5);
+  letter-spacing: var(--text-h5-tracking);
+  color: var(--ink);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-l);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gutter-l);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--gutter-m);
+  flex: 1;
+  min-width: 0;
+}
+
+.topbarEnd {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--gutter-s);
+}
+
+.conference {
+  min-width: 0;
+  max-width: var(--filter-field-max);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--gutter-m);
+}
+
+.toolbar > * {
+  flex: 1 1 180px;
+  max-width: var(--filter-field-max);
+}
+
+.kv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-xs);
+  min-width: 0;
+}
+
+.mono {
+  font: var(--text-body-xs);
+  letter-spacing: var(--text-body-xs-tracking);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.small {
+  font: var(--text-body-xs);
+  letter-spacing: var(--text-body-xs-tracking);
+  color: var(--text-secondary);
+}
