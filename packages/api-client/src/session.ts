@@ -18,6 +18,15 @@ export type AuditEntry = components['schemas']['AuditEntryDto'];
 export type AuditPage = components['schemas']['AuditPageDto'];
 export type LinkPerson = components['schemas']['LinkPersonDto'];
 export type EmailChangeLink = components['schemas']['EmailChangeLinkDto'];
+export type Conference = components['schemas']['ConferenceDto'];
+export type ConferenceState = Conference['state'];
+export type MailServer = components['schemas']['MailServerDto'];
+export type TestMessageResult = components['schemas']['TestMessageResultDto'];
+export type MailLogSummary = components['schemas']['MailLogSummaryDto'];
+export type MailLogPage = components['schemas']['MailLogPageDto'];
+export type MailLogEntry = components['schemas']['MailLogEntryDto'];
+export type MailTemplate = components['schemas']['MailTemplateDto'];
+export type TemplateCatalogue = components['schemas']['TemplateCatalogueDto'];
 /** A client of /api/v1 with the session's CSRF header on every changing request. */
 export type SessionClient = Client<AdminPaths>;
 
