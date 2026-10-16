@@ -2,6 +2,15 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.4.1 (2026-10-16)
+
+Fixes one finding of the UX and UI re-check of 2.4.0 (UXUI-M2-41). No token changed; no new token.
+
+### An Alert with an action does not squeeze its text (UXUI-M2-41)
+
+- **The text asks for 210px (half of `dialog-sm`) before it shares a line with the action.** In a box narrower than the icon, that text and the action (a phone, a card, a dialog: it follows the width of the Alert's own box, not the window), the action goes on a line of its own under the text; the close button keeps its place on the first line. Before, the action stayed beside the text, which at 375px left the text a column of about 90px.
+- The action sits in a part of its own (`ud-alert__action`). A container query was tried and left out: size containment collapses an Alert that sits in a box that takes the width of its content.
+
 ## 2.4.0 (2026-10-16)
 
 Fixes the design-system findings of the UX and UI review of Confera 0.2.0 (UXUI-M2-03, 04, 22, 25, 26, 27 and the low 35) and the issues M2-ISS-01, 07 and 08. No colour, radius, shadow, size or type token changed its value; there is no new token.

@@ -59,8 +59,9 @@ postcss.parse(css).walkRules((rule) => {
 });
 const rule = (selector: string, at = '') => RULES.findLast((r) => r.selectors.includes(selector) && r.at.replace(/\s+/g, '') === at.replace(/\s+/g, ''))?.decls;
 
-it('is version 2.4.0', () => {
-  expect(DS_VERSION).toBe('2.4.0');
+it('is version 2.4.0 or later', () => {
+  const [major, minor] = DS_VERSION.split('.').map(Number) as [number, number];
+  expect(major * 100 + minor).toBeGreaterThanOrEqual(204);
   expect(readFileSync(join(ds, 'CHANGELOG.md'), 'utf8')).toMatch(/^## 2\.4\.0 \(\d{4}-\d{2}-\d{2}\)$/m);
 });
 

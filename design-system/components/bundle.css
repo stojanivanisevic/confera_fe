@@ -468,8 +468,14 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-page-ellipsis { padding: 0 var(--gutter-xs); }
 
 /* Alerts and toasts */
-.ud-alert { display: flex; align-items: flex-start; gap: var(--gutter-m); padding: var(--gutter-m) var(--gutter-l); border-radius: var(--radius-field); font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking); color: var(--ink); border: 1px solid transparent; }
-.ud-alert__body { flex: 1; min-width: 0; }
+.ud-alert { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--gutter-m); padding: var(--gutter-m) var(--gutter-l); border-radius: var(--radius-field); font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking); color: var(--ink); border: 1px solid transparent; }
+.ud-alert__body { flex: 1 1 calc(var(--dialog-sm) / 2); min-width: 0; }
+/* A narrow Alert (2.4.1, UXUI-M2-41): the text asks for half a small dialog's width (210px) before it shares
+   a line with the action; in a box narrower than the icon, that text, the close button and the action,
+   the action goes on a line of its own under the text. It follows the width of the Alert's own box, so
+   it holds in a card or a dialog as on a phone; the close button keeps its place on the first line. */
+.ud-alert > .ud-icon-btn { order: 1; }
+.ud-alert__action { order: 2; flex: none; max-width: 100%; }
 .ud-alert__title { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
 .ud-alert__text { overflow-wrap: anywhere; }
 .ud-alert__text { margin-top: 2px; color: var(--ink); line-height: 1.4; }

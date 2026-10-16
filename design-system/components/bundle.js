@@ -1,5 +1,5 @@
 /* @ds-bundle: {"format":4,"namespace":"Udekom","components":[{"name":"Button"},{"name":"CircleButton"},{"name":"ArrowButton"},{"name":"NavLink"},{"name":"SegmentedTabs"},{"name":"TextField"},{"name":"Select"},{"name":"Textarea"},{"name":"Checkbox"},{"name":"Radio"},{"name":"Tag"},{"name":"FileButton"},{"name":"FormCard"},{"name":"Icon"},{"name":"TextButton"},{"name":"IconButton"},{"name":"NumberField"},{"name":"DateField"},{"name":"PasswordField"},{"name":"SearchField"},{"name":"Switch"},{"name":"RadioGroup"},{"name":"CheckboxGroup"},{"name":"ScaleField"},{"name":"Autocomplete"},{"name":"FileDropzone"},{"name":"DataTable"},{"name":"Pagination"},{"name":"StatusBadge"},{"name":"Avatar"},{"name":"Card"},{"name":"DescriptionList"},{"name":"EmptyState"},{"name":"Skeleton"},{"name":"Spinner"},{"name":"Tooltip"},{"name":"ProgressBar"},{"name":"Alert"},{"name":"ToastHost"},{"name":"Dialog"},{"name":"ConfirmDialog"},{"name":"Drawer"},{"name":"Tabs"},{"name":"Breadcrumbs"},{"name":"Stepper"},{"name":"Menu"},{"name":"SidebarNav"},{"name":"AppShell"},{"name":"PageHeader"},{"name":"Repeater"},{"name":"PermissionMatrix"},{"name":"FilterBar"},{"name":"LabelsProvider"}]} */
-/* @ds-version: 2.4.0 */
+/* @ds-version: 2.4.1 */
 (function () {
   var React = window.React;
   var h = React.createElement;
@@ -825,7 +825,7 @@
     return h("div", { ref: root, className: cx("ud-alert", "ud-alert--" + tone, props.className), role: tone === "error" || tone === "warning" ? "alert" : "status" },
       h(Icon, { name: ALERT_ICON[tone], size: 18, className: "ud-alert__icon" }),
       h("div", { className: "ud-alert__body" }, props.title ? h("p", { className: "ud-alert__title" }, props.title) : null, props.children ? h("div", { className: "ud-alert__text" }, props.children) : null),
-      props.action || null,
+      props.action ? h("div", { className: "ud-alert__action" }, props.action) : null,
       props.onClose ? h("button", { type: "button", className: "ud-icon-btn", onClick: dismiss, "aria-label": t("dismiss") }, h(Icon, { name: "x", size: 16 })) : null);
   }
 
@@ -1325,7 +1325,7 @@
     Alert: Alert, ToastHost: ToastHost, toast: toast, Dialog: Dialog, ConfirmDialog: ConfirmDialog, Drawer: Drawer,
     Tabs: Tabs, Breadcrumbs: Breadcrumbs, Stepper: Stepper, Menu: Menu, SidebarNav: SidebarNav, AppShell: AppShell, PageHeader: PageHeader,
     Repeater: Repeater, PermissionMatrix: PermissionMatrix, FilterBar: FilterBar,
-    LabelsProvider: LabelsProvider, defaultLabels: DEFAULT_LABELS, version: "2.4.0"
+    LabelsProvider: LabelsProvider, defaultLabels: DEFAULT_LABELS, version: "2.4.1"
   };
 
   window.Udekom = {
