@@ -146,7 +146,13 @@ test.describe('the flows of 0.2.0 against the real API, with their mail (M2-QA-0
     await dialog.getByLabel('Role').selectOption('reviewer');
     await dialog.getByRole('button', { name: 'Send the invitation' }).click();
     await answerPasswordAgain(page, SEED_ADMIN.password);
-    await expect(page.locator('.ud-toast').last()).toContainText(`Invitation sent to ${COLLEAGUE.email}`);
+    // Saved, not yet sent: the delivery state is what the API says it is (UXUI-M2-42).
+    await expect(page.locator('.ud-toast').last()).toContainText(`Invitation to ${COLLEAGUE.email} saved. It goes out in a moment.`);
+    await expect(page).toHaveURL(/\/users\/[0-9a-f-]{36}$/);
+    const userId = new URL(page.url()).pathname.split('/').pop()!;
+    // The outbox worker sends within seconds; the page follows the API until it knows.
+    await expect.poll(async () => ((await (await page.request.get(`${ADMIN_ORIGIN}/api/v1/users/${userId}`)).json()) as { invitationDelivery?: string }).invitationDelivery, { timeout: 45_000, intervals: [1_000] }).toBe('sent');
+    await expect(page.getByText(`The invitation was sent to ${COLLEAGUE.email}.`)).toBeVisible({ timeout: 15_000 });
 
     const invitation = await waitForMail(COLLEAGUE.email, /^Your account at /, since);
     expect(invitation.text).toContain(COLLEAGUE.name);
