@@ -5,6 +5,8 @@ const fromRoot = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 
 // Unit tests (ADR-24). Browser behaviour is tested with Playwright (`pnpm e2e`).
 export default defineConfig({
+  // The screens of apps/web are written for Next, whose tsconfig says `jsx: preserve`; the tests read them with the automatic runtime.
+  oxc: { jsx: { runtime: 'automatic' } },
   resolve: {
     // `@/…` is the application's own path alias (apps/web/tsconfig.json).
     alias: [
