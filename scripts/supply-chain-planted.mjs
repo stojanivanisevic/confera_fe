@@ -177,20 +177,20 @@ function plantedSecrets() {
     // into the files of a server and into code. None has a token format; the name gives each away.
     { what: 'a session secret as a list entry of a compose file (- NAME=value)', file: 'apps/web/planted-compose.yml', text: `services:\n  web:\n    environment:\n      - STAGE=prod\n      - SESSION_SECRET=${random(48, ALNUM)}\n` },
     { what: 'a session secret in a Dockerfile (ENV NAME=value)', file: 'apps/web/planted.Dockerfile', text: `ENV STAGE=prod\nENV SESSION_SECRET=${random(48, ALNUM)}\n` },
-    { what: 'a generated password with a dollar sign in an environment file', file: 'apps/web/planted-generated.env', text: `SMTP_PASSWORD=${random(8, ALNUM)}$${random(12, ALNUM)}\n` },
+    { what: 'a generated password with a dollar sign in an environment file', file: 'apps/web/planted-generated.env', text: `SMTP_PASSWORD=${[random(8, ALNUM), random(12, ALNUM)].join('$')}\n` },
     { what: 'a password under a lower-case key of a configuration file (password: value)', file: 'apps/web/planted-config.yml', text: `smtp:\n  host: mail.example.test\n  password: ${random(24, ALNUM)}\n` },
     { what: 'a session secret in code, declared with a type (const name: string = value)', file: 'apps/web/src/planted/typed-secret.ts', text: `export const sessionSecret: string = '${random(48, ALNUM)}';\n` },
     { what: 'a session secret in code, as the fallback of an environment variable (?? value)', file: 'apps/web/src/planted/fallback-secret.ts', text: `export const sessionSecret = process.env.SESSION_SECRET ?? '${random(48, ALNUM)}';\n` },
     // Caught today. These three hold the edges of the rules that let something through: a placeholder STARTS
     // with `invented-` or `local-only-`; a branch of a choice is the quoted text right after the question mark,
     // not everything after one; the `credentials` of fetch is one of its three words, not any text.
-    { what: 'a session secret that only contains the placeholder words, not at its start', file: 'apps/web/planted-not-a-placeholder.env', text: `SESSION_SECRET=${random(6, ALNUM)}-invented-${random(6, ALNUM)}-local-only-${random(6, ALNUM)}\n` },
+    { what: 'a session secret that only contains the placeholder words, not at its start', file: 'apps/web/planted-not-a-placeholder.env', text: `SESSION_SECRET=${[random(6, ALNUM), 'invented', random(6, ALNUM), 'local-only', random(6, ALNUM)].join('-')}\n` },
     { what: 'a client secret after a question mark on the same line (not a branch of a choice)', file: 'apps/web/src/planted/after-question.ts', text: `export const paypal = isLive() ? { clientSecret: '${random(80, ALNUM)}' } : null;\n` },
     { what: 'a value under the name credentials that is not a mode of fetch', file: 'apps/web/src/planted/credentials.ts', text: `export const service = { credentials: '${random(40, ALNUM)}' };\n` },
     // Caught today. Two edges of the reader of lines that neither corpus of the scanner holds: the list dash
     // outside a YAML file, and written text after a reference.
     { what: 'a session secret after a list dash in a text file that is not YAML (- NAME=value)', file: 'apps/web/planted-notes.md', text: `Set on the server:\n\n- STAGE=prod\n- SESSION_SECRET=${random(48, ALNUM)}\n` },
-    { what: 'a session secret that starts with a reference and goes on as written text ($PREFIX-value)', file: 'apps/web/planted-prefixed.env', text: `SESSION_SECRET=$PREFIX-${random(48, ALNUM)}\n` },
+    { what: 'a session secret that starts with a reference and goes on as written text ($PREFIX-value)', file: 'apps/web/planted-prefixed.env', text: `SESSION_SECRET=${['$PREFIX', random(48, ALNUM)].join('-')}\n` },
     // Third round. The rule is written down now (README, section 11, "The rule for a secret-like name"): a literal
     // value bound to a secret-like name, in the syntaxes it lists, and no allowed value but nothing, a reference
     // and a placeholder. Each of these is inside that rule, and the scan does not report it today. The same
