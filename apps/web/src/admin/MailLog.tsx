@@ -8,12 +8,13 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { TEMPLATE_TYPES, type AdminPaths, type MailLogPage, type MailLogSummary } from '@confera/api-client';
-import { Alert, DataTable, FilterBar, PageHeader, Pagination, Select, StatusBadge, TextButton } from '@confera/ui';
+import { Alert, DataTable, EmptyState, FilterBar, PageHeader, Pagination, Select, StatusBadge, TextButton } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';
 import { formatDateTime } from './format';
 import { call } from './problems';
+import { useSession } from './session';
 import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
 
@@ -24,6 +25,8 @@ type Result = NonNullable<Query['result']>;
 export function MailLog() {
   const router = useRouter();
   const { selected } = useConference();
+  const { session } = useSession();
+  const mayReadServers = session?.user.permissions.includes('mail_servers.read') ?? false;
   const t = TEXTS.mailLog;
   const [kind, setKind] = useState<'' | Kind>('');
   const [result, setResult] = useState<'' | Result>('');
@@ -57,7 +60,19 @@ export function MailLog() {
         loading={log.state.phase === 'loading' && !log.state.data}
         filtered={filtered}
         onClearFilters={clear}
-        empty={t.empty}
+        empty={
+          <EmptyState
+            title={t.empty}
+            description={t.emptyText}
+            action={
+              mayReadServers ? (
+                <TextButton icon="send" onClick={() => router.push('/mail-servers')}>
+                  {t.toServers}
+                </TextButton>
+              ) : undefined
+            }
+          />
+        }
         onRowClick={(row) => router.push(`/mail-log/${row.id}`)}
         openColumn="sentAt"
         columns={[

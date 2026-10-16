@@ -8,7 +8,7 @@
 import { useRouter } from 'next/navigation';
 
 import type { MailServer } from '@confera/api-client';
-import { Alert, Button, DataTable, PageHeader, StatusBadge, TextButton } from '@confera/ui';
+import { Alert, Button, DataTable, EmptyState, PageHeader, StatusBadge, TextButton } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { call } from './problems';
@@ -41,8 +41,7 @@ export function MailServers() {
         rows={[...(list.state.data ?? [])]}
         rowKey="id"
         loading={list.state.phase === 'loading' && !list.state.data}
-        empty={t.empty}
-        emptyAction={add}
+        empty={<EmptyState title={t.empty} description={t.emptyText} action={add} />}
         onRowClick={(row) => router.push(`/mail-servers/${row.id}`)}
         columns={[
           { key: 'name', header: t.name },

@@ -8,7 +8,7 @@
 import { useRouter } from 'next/navigation';
 
 import type { MailTemplate } from '@confera/api-client';
-import { Alert, DataTable, PageHeader, TextButton } from '@confera/ui';
+import { Alert, DataTable, EmptyState, PageHeader, TextButton } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';
@@ -37,7 +37,7 @@ export function Templates() {
         rows={[...(list.state.data ?? [])]}
         rowKey="id"
         loading={list.state.phase === 'loading' && !list.state.data}
-        empty={t.empty}
+        empty={<EmptyState title={t.empty} description={t.emptyText} />}
         onRowClick={(row) => router.push(`/templates/${row.id}`)}
         columns={[
           { key: 'type', header: t.type, render: (row) => t.types[row.type] ?? row.type },

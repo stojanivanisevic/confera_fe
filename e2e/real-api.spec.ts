@@ -210,7 +210,8 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
   });
 
   test('in a browser: the admin home, signed in, shows the name and the version the real API gave, from one same-origin call', async ({ page }) => {
-    await signIn(page, ADMIN);
+    // Signed in on another page, so that the home's one call is the only one seen.
+    await signIn(page, ADMIN, '/account');
     const problems = watchPage(page);
     const seen: { status: number; traceId: string | undefined; body: unknown }[] = [];
     page.on('response', (response) => {

@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import type { Conference, ConferenceState } from '@confera/api-client';
-import { Alert, Button, CheckboxGroup, DataTable, Dialog, FilterBar, PageHeader, Select, StatusBadge, TextButton, TextField, toast } from '@confera/ui';
+import { Alert, Button, CheckboxGroup, DataTable, Dialog, EmptyState, FilterBar, PageHeader, Select, StatusBadge, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { useConference } from './conference-context';
@@ -108,8 +108,7 @@ export function Conferences() {
         loading={list.state.phase === 'loading' && !list.state.data}
         filtered={state !== ''}
         onClearFilters={() => setState('')}
-        empty={t.empty}
-        emptyAction={createButton}
+        empty={<EmptyState title={t.empty} description={t.emptyText} action={createButton} />}
         onRowClick={(row) => router.push(`/conferences/${row.id}`)}
         columns={[
           { key: 'name', header: t.name },
