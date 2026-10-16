@@ -1003,6 +1003,14 @@ export interface components {
             createdAt: string;
             /** @description Sent back with a change: a change made on an older version is refused (409). */
             version: number;
+            /**
+             * @description For an invited user, what became of the latest invitation message: `queued` (to be
+             *     sent), `waiting_for_server` (no mail server can send it yet; it goes out once one is
+             *     configured, with a link made then), `sent` or `failed`. Null for anyone else, and for
+             *     an invitation that was given by hand (the first admin).
+             * @enum {string|null}
+             */
+            invitationDelivery: "queued" | "sent" | "failed" | "waiting_for_server" | null;
         };
         UserPageDto: {
             items: components["schemas"]["UserDto"][];
