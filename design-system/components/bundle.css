@@ -128,6 +128,8 @@ select.ud-field__control { appearance: none; -webkit-appearance: none; cursor: p
 .ud-field__message {
   margin: 0; padding: var(--gutter-xxs) 0; border-radius: var(--radius-xs);
   font: var(--text-field-message); letter-spacing: var(--text-field-message-tracking);
+  /* A message of two lines does not have its lines touching (2.4.0, UXUI-M2-27). */
+  line-height: 1.4;
   color: var(--text-secondary);
 }
 .ud-field--error .ud-field__box { border-color: var(--danger); }
@@ -238,6 +240,11 @@ select.ud-field__control { appearance: none; -webkit-appearance: none; cursor: p
   border: 0; border-radius: 50%; background: transparent; color: var(--neutral-700); cursor: pointer;
 }
 .ud-icon-btn:hover { background: var(--neutral-100); color: var(--ink); }
+/* A toggle that is on (aria-pressed): a second state that is seen, not only read (2.4.0, UXUI-M2-22, WCAG 1.4.1):
+   the ring of a chosen pill and a lighter surface. */
+.ud-icon-btn[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); box-shadow: inset 0 0 0 2px var(--brand-orange-strong); }
+.ud-btn[aria-pressed="true"], .ud-btn--dark[aria-pressed="true"] { background-color: var(--surface-1); color: var(--ink); box-shadow: inset 0 0 0 2px var(--brand-orange-strong); }
+.ud-btn--dark[aria-pressed="true"]:hover:not(:disabled) { background-color: var(--surface-2); }
 .ud-icon-btn--on-dark { color: var(--text-on-dark); }
 .ud-icon-btn--on-dark:hover { background: var(--on-dark-chip); color: var(--text-on-dark); }
 
@@ -420,9 +427,10 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-tooltip.is-dismissed .ud-tooltip__bubble { opacity: 0; pointer-events: none; }
 
 /* Data table and pagination */
-.ud-table-wrap { background: var(--surface-1); border-radius: var(--radius-card); overflow: hidden; font-family: var(--font-sans); min-width: 0; }
+.ud-table-wrap { background: var(--surface-1); border-radius: var(--radius-card); overflow: hidden; font-family: var(--font-sans); min-width: 0; container-type: inline-size; }
 .ud-table__toolbar { padding: var(--gutter-l) var(--gutter-xl); border-bottom: 1px solid var(--neutral-300); }
 .ud-table__scroll { overflow-x: auto; }
+.ud-table__scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .ud-table { width: 100%; border-collapse: collapse; font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking); color: var(--ink); }
 .ud-table th { padding: var(--gutter-m) var(--gutter-l); text-align: left; white-space: nowrap; background: var(--background-2); border-bottom: 1px solid var(--neutral-300);
   font: var(--text-caption-xs); font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-secondary); }
@@ -462,7 +470,8 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 /* Alerts and toasts */
 .ud-alert { display: flex; align-items: flex-start; gap: var(--gutter-m); padding: var(--gutter-m) var(--gutter-l); border-radius: var(--radius-field); font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking); color: var(--ink); border: 1px solid transparent; }
 .ud-alert__body { flex: 1; min-width: 0; }
-.ud-alert__title { margin: 0; font-weight: 700; }
+.ud-alert__title { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.ud-alert__text { overflow-wrap: anywhere; }
 .ud-alert__text { margin-top: 2px; color: var(--ink); line-height: 1.4; }
 .ud-alert__icon { margin-top: 1px; }
 .ud-alert--info { background: var(--info-surface); border-color: var(--info-border); }
@@ -671,3 +680,28 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
     content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--target-touch)); height: max(100%, var(--target-touch)); transform: translate(-50%, -50%);
   }
 }
+
+/* ---------- DataTable below 600px: a card per row (2.4.0, UXUI-M2-03) ----------
+   The table measures its own width (a container query), so a table in a narrow card narrows too. The
+   first column is the row's title; every other cell is "header: value" on a line of its own. The
+   header row is still read by a screen reader; the cells keep their roles. Nothing scrolls sideways. */
+@container (max-width: 599px) {
+  .ud-table, .ud-table tbody, .ud-table tr, .ud-table td { display: block; width: 100%; box-sizing: border-box; }
+  .ud-table thead { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .ud-table tbody tr { padding: var(--gutter-m) var(--gutter-l); border-bottom: 1px solid var(--neutral-300); }
+  .ud-table tbody tr:last-child { border-bottom: 0; }
+  .ud-table td { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: var(--gutter-s); padding: var(--gutter-xxs) 0; border-bottom: 0; text-align: left !important; overflow-wrap: anywhere; }
+  .ud-table td::before { content: attr(data-label); color: var(--text-secondary); font: var(--text-caption-xs); letter-spacing: var(--text-caption-xs-tracking); align-self: center; }
+  .ud-table td.ud-table__lead, .ud-table td.ud-table__whole, .ud-table td[data-label=""] { display: block; }
+  .ud-table td.ud-table__lead { padding-bottom: var(--gutter-xs); font-weight: 700; }
+  .ud-table td.ud-table__lead::before, .ud-table td.ud-table__whole::before, .ud-table td[data-label=""]::before { content: none; }
+  .ud-table td.ud-table__check { width: auto; }
+  .ud-table tbody tr:hover td { background: transparent; }
+}
+
+/* ---------- AppShell: the skip link (2.4.0) ---------- */
+.ud-skip { position: absolute; left: var(--gutter-s); top: var(--gutter-s); z-index: 100; padding: var(--gutter-s) var(--gutter-l); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--ink); font: var(--text-button-md); transform: translateY(-200%); }
+.ud-skip:focus { transform: none; outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---------- A scroll area of a Drawer takes the focus (2.4.0) ---------- */
+.ud-drawer__body:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }

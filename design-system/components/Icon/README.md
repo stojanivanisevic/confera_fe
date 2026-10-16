@@ -9,3 +9,4 @@ The Figma file uses Lucide names (mail, alert-circle, check-circle-2, x, check).
 - Added in version 2 (Lucide 1.56.0): download, copy, external-link, edit, globe, log-out, user, lock, clock, file-text, credit-card, link.
 
 An icon without a `title` is decorative and hidden from assistive technology; give the control around it a name.
+- **Added in 2.4.0** (Lucide, ISC): `bold`, `italic`, `underline`, `list`, `list-ordered`, `undo`, `redo`, `corner-down-left` (a line break), `braces` (a placeholder), the toolbar of a rich-text editor (M2-ISS-07); and `circle`, an empty circle for a line not done yet.

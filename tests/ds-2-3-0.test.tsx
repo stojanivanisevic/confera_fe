@@ -77,8 +77,9 @@ postcss.parse(css).walkRules((rule) => {
 /** The declarations of the rule that names this selector (outside @media unless one is given). */
 const rule = (selector: string, media = '') => RULES.find((r) => r.selectors.includes(selector) && r.media.replace(/\s+/g, '') === media.replace(/\s+/g, ''))?.decls;
 
-it('is version 2.3.0', () => {
-  expect(DS_VERSION).toBe('2.3.0');
+it('is version 2.3.0 or later', () => {
+  const [major, minor] = DS_VERSION.split('.').map(Number) as [number, number];
+  expect(major * 100 + minor).toBeGreaterThanOrEqual(203);
 });
 
 describe('one focus ring everywhere, and a text link (item 1: M1-ISS-21, R-02)', () => {

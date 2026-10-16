@@ -42,6 +42,8 @@ export const LABELS_SR: UdekomLabels = {
   openNavigation: 'Otvori navigaciju',
   navigation: 'Navigacija',
   closeNavigation: 'Zatvori navigaciju',
+  table: 'Tabela',
+  skipToContent: 'Pređi na sadržaj',
   removeRow: 'Ukloni {index}',
   addRow: 'Dodaj red',
   permission: 'Dozvola',

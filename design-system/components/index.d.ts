@@ -6,7 +6,8 @@ export type IconName =
   | "mail" | "alert-circle" | "check-circle-2" | "check" | "x" | "chevron-down" | "arrow-left" | "arrow-right" | "arrow-up-right" | "upload" | "info"
   | "search" | "eye" | "eye-off" | "calendar" | "chevron-up" | "chevron-left" | "chevron-right" | "chevrons-up-down" | "plus" | "trash" | "more" | "file"
   | "alert-triangle" | "menu" | "users" | "home" | "settings" | "inbox" | "send" | "refresh" | "filter" | "minus"
-  | "download" | "copy" | "external-link" | "edit" | "globe" | "log-out" | "user" | "lock" | "clock" | "file-text" | "credit-card" | "link";
+  | "download" | "copy" | "external-link" | "edit" | "globe" | "log-out" | "user" | "lock" | "clock" | "file-text" | "credit-card" | "link"
+  | "bold" | "italic" | "underline" | "list" | "list-ordered" | "undo" | "redo" | "corner-down-left" | "braces" | "circle";
 export type FieldStatus = "default" | "error" | "success";
 
 /**
@@ -31,6 +32,7 @@ export interface UdekomLabels {
   cancel: string; confirm: string; working: string;
   breadcrumb: string; moreActions: string; mainNavigation: string; openNavigation: string;
   /** The name of AppShell's sidebar, and of its drawer on a narrow screen (2.3.0). */ navigation: string; closeNavigation: string;
+  /** The name of a DataTable's scroll area without a caption, and AppShell's skip link (2.4.0). */ table: string; skipToContent: string;
   /** {index} */ removeRow: string; addRow: string;
   permission: string; /** {role} {permission} */ rolePermission: string;
   clearFilters: string;
@@ -132,7 +134,7 @@ export interface AutocompleteProps extends FieldBase, WithLabels { id?: string; 
 export interface FileItem { name: string; size?: number; /** 0–100 while uploading. */ progress?: number; /** Why the file was refused ("Larger than 20 MB"); shown under it, in the error colour (2.3.0). */ error?: string; }
 export interface FileDropzoneProps extends WithLabels { className?: string; label?: string; title?: string; hint?: string; /** Tied to the drop area as its description. */ message?: string; status?: FieldStatus; required?: boolean; multiple?: boolean; accept?: string; files?: FileItem[]; onFiles?: (files: File[]) => void; onRemove?: (index: number) => void; }
 
-export interface DataTableColumn<T = any> { key: string; header: React.ReactNode; sortable?: boolean; align?: "left" | "center" | "right"; width?: string | number; render?: (row: T) => React.ReactNode; }
+export interface DataTableColumn<T = any> { key: string; header: React.ReactNode; /** The text before the value in the narrow layout, when `header` is not a string (2.4.0). */ label?: string; sortable?: boolean; align?: "left" | "center" | "right"; width?: string | number; render?: (row: T) => React.ReactNode; }
 export interface DataTableProps<T = any> extends WithLabels {
   className?: string;
   columns: DataTableColumn<T>[]; rows: T[]; rowKey?: string; caption?: string;

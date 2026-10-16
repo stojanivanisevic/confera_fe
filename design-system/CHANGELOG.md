@@ -2,6 +2,47 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.4.0 (2026-10-16)
+
+Fixes the design-system findings of the UX and UI review of Confera 0.2.0 (UXUI-M2-03, 04, 22, 25, 26, 27 and the low 35) and the issues M2-ISS-01, 07 and 08. No colour, radius, shadow, size or type token changed its value; there is no new token.
+
+### DataTable on a phone (UXUI-M2-03, M2-ISS-08)
+
+- **A card per row below 600px.** The table measures its own width (a container query on `.ud-table-wrap`, so a table in a narrow card narrows too). Below 600px the header row is out of sight, each row is a card: the first column is its title (bold), every other cell a line "header: value" with the header in `text-secondary` caption-xs. Nothing scrolls sideways: on a 375px phone the users, the mail log, the mail servers and the audit log show every column. Before, the scroll area was up to 924px wide in a 343px window and the key columns were out of sight.
+- **The cells keep the roles of a table** (`role="table"`, `row`, `columnheader`, `cell`, `rowgroup`), so a screen reader still reads a table when the layout is a list of cards.
+- New column prop `label`: the text before the value in a card, for a column whose `header` is not a string.
+- **A scroll area that the keyboard reaches** (WCAG 2.1.1, axe `scrollable-region-focusable`): while the table is wider than its box, the scroll area takes the focus, shows the blue outline and is a region named by `caption` (new label `table`, "Table", without one). While it does not scroll it is no Tab stop. Measured after every render and when its size changes.
+
+### AppShell (UXUI-M2-04, 35)
+
+- **A link chosen in the open drawer closes it**, and the focus goes to the content area, not back to the menu button. Before, the drawer stayed open over the page the link led to.
+- **Skip to content.** The first stop of the Tab order is a link, out of sight until it takes the focus, that moves the focus to the content (`main`, which takes the focus now). Eleven Tab stops fewer before the first control of a Confera screen (WCAG 2.4.1). New label `skipToContent`.
+
+### Drawer (UXUI-M2-26)
+
+- While its body is longer than the drawer, the body takes the focus (blue outline) and is a region named by the drawer's title, so the keyboard can scroll it (axe `scrollable-region-focusable`).
+
+### A toggle that is on is seen (UXUI-M2-22)
+
+- **Button and IconButton with `aria-pressed="true"`** draw the inner `brand-orange-strong` ring of a chosen pill (2.2.0) on the blush `surface-2` (IconButton) or on `surface-1` with `ink` text (Button). Before, a pressed button differed from an unpressed one by three levels of grey and the state was only in `aria-pressed` (WCAG 1.4.1, 1.4.11).
+
+### Icons for a rich-text toolbar (M2-ISS-07)
+
+- New icons (Lucide, ISC): `bold`, `italic`, `underline`, `list`, `list-ordered`, `undo`, `redo`, `corner-down-left` (a line break), `braces` (a placeholder), and `circle` (an empty circle: a line of a checklist not done yet).
+
+### Long values and messages (UXUI-M2-25, 27)
+
+- **Alert breaks a long word** in its title and text (`overflow-wrap: anywhere`): a long address no longer runs under the close button. DescriptionList did already.
+- **A field message of two lines does not have its lines touching**: `ud-field__message` keeps its type token and takes the unitless line height 1.4 of running text that wraps (the README allows it). Before, 12px on a 12px line.
+
+### Documentation (M2-ISS-01)
+
+- Checkbox: the focus ring is a 1px white and a 2px blue ring outside it (3px in all), not "a 3px blue ring".
+
+### Not in this release
+
+- M2-ISS-02 (five rules that set the weight and tracking of caption-xs by hand) and M2-ISS-03 (no guard against a control in the opening cell of a selectable DataTable) stay logged for a later release: neither is seen by a person today.
+
 ## 2.3.0 (2026-10-14)
 
 Fixes the design system before the admin screens of Confera 0.2.0 use it: the UI reviewer's re-check of 2.2.0 (section 7 of the 0.1.0 UI review) and the issues M1-ISS-10, 19 to 26, 42, 44 and 45. No colour, radius, shadow or size token of 2.2.0 changed its value; `brand-orange` is still `#ef7b06`. The new tokens are listed below.

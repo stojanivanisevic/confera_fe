@@ -5,3 +5,5 @@ Layout of the Confera admin: dark sidebar with the logo, a top bar and the conte
 - Closed, the drawer is hidden: its links are out of the tab order (2.2.0).
 - Open, it is a modal dialog named "Navigation", with a visible close button (2.3.0). The focus goes into it and Tab stays inside, in every engine; the page behind is inert, so neither the keyboard nor a screen reader nor a finger reaches it. Escape, the close button and the scrim close it, and the focus goes back to the menu button.
 - When the view grows past 900px while the drawer is open (a phone turned, a browser widened), the drawer closes and the page is given back: it scrolls again and Tab reaches the content (2.3.0).
+- A link chosen in the open drawer closes it, and the focus goes to the content area (`main`), not back to the menu button (2.4.0).
+- **Skip to content (2.4.0).** The first stop of the Tab order is a link that appears when it takes the focus and moves the focus past the navigation to the content (WCAG 2.4.1). New label `skipToContent`.
