@@ -30,8 +30,10 @@ const toast = (page: Page) => page.locator('.ud-toast').last();
 test.describe('the conference switch (M2-FE-03)', () => {
   test('a conference chosen once narrows the mail log and the templates, and stays chosen across screens and a reload', async ({ page }) => {
     await signIn(page);
-    await expect(conferenceSwitch(page).locator('option')).toHaveText(['All conferences', 'Konferencija za probe (KP 2026)', 'Simpozijum za probe (SP 2027)']);
+    // The switch is shown only where it narrows what the screen shows (UXUI-M2-05).
+    await expect(conferenceSwitch(page)).toHaveCount(0);
     await page.goto(`${ADMIN_ORIGIN}/mail-log`);
+    await expect(conferenceSwitch(page).locator('option')).toHaveText(['All conferences', 'Konferencija za probe (KP 2026)', 'Simpozijum za probe (SP 2027)']);
     await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(2);
 
     await conferenceSwitch(page).selectOption({ label: 'Konferencija za probe (KP 2026)' });
@@ -42,11 +44,22 @@ test.describe('the conference switch (M2-FE-03)', () => {
     await page.getByRole('link', { name: 'Email templates' }).click();
     await expect(page.getByText('The templates of Konferencija za probe (KP 2026).')).toBeVisible();
     await expect(conferenceSwitch(page)).toHaveValue(PART_B.ids.conference);
+    // The conference has no templates of its own: the organisation's are listed, marked as such.
+    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(14);
+    await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(14);
     await page.reload();
     await expect(conferenceSwitch(page)).toHaveValue(PART_B.ids.conference);
 
     await conferenceSwitch(page).selectOption({ label: 'All conferences' });
     await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(14);
+    await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(0);
+
+    // An empty log of one conference says which, and offers all conferences.
+    await page.goto(`${ADMIN_ORIGIN}/mail-log`);
+    await conferenceSwitch(page).selectOption({ label: 'Simpozijum za probe (SP 2027)' });
+    await expect(page.getByText('No messages for Simpozijum za probe (SP 2027)')).toBeVisible();
+    await page.getByRole('button', { name: 'Show all conferences' }).click();
+    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(2);
   });
 });
 
@@ -64,8 +77,6 @@ test.describe('conferences (M2-FE-03)', () => {
     await expect(toast(page)).toContainText('Konferencija tri created');
     await expect(page.getByRole('heading', { level: 1, name: 'Konferencija tri' })).toBeVisible();
     await expect(page.locator('.ud-badge').first()).toHaveText('Draft');
-    // The new conference is the one the office works on now.
-    await expect(conferenceSwitch(page).locator('option:checked')).toHaveText(/Konferencija tri \(KT/);
 
     const settings = page.locator('[data-confera-conference-settings]');
     await settings.getByLabel('Listed sites').fill('https://kt.example.test\nhttps://kt.example.test/forms\nhttps://other.example.test');
@@ -75,6 +86,10 @@ test.describe('conferences (M2-FE-03)', () => {
     await settings.getByLabel('Time zone').selectOption('UTC');
     await settings.getByRole('button', { name: 'Save the settings' }).click();
     await expect(toast(page)).toContainText('Settings of Konferencija tri saved');
+    // A new conference does not change what the mail log shows (UXUI-M2-05).
+    await page.goto(`${ADMIN_ORIGIN}/mail-log`);
+    await expect(conferenceSwitch(page)).toHaveValue('');
+    await page.goBack();
 
     await page.getByRole('button', { name: 'Open the conference' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: 'Open the conference' }).click();
@@ -160,7 +175,7 @@ test.describe('mail servers (M2-FE-04)', () => {
     await form.getByLabel('Sender address').fill('office@a.example.test');
     await form.getByLabel('Sender name').fill('Udruženje');
     await form.getByRole('button', { name: 'Add the server' }).click();
-    await expect(form).toContainText('The host is an address of this network, which is not allowed.');
+    await expect(form).toContainText('This host is an address of a private network');
     await form.getByLabel('Host').fill('smtp.new.example.test');
     await form.getByRole('button', { name: 'Add the server' }).click();
     await expect(toast(page)).toContainText('Interni added');

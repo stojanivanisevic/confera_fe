@@ -128,7 +128,8 @@ test.describe('the pages of the links and the live checklist (M2-FE-01, ST-62)',
     await expect(page.getByText(`Set a password for ${STUB.invited.email}`)).toBeVisible();
     const calls = apiCalls(page);
     const line = (rule: string) => page.locator(`[data-rule="${rule}"]`);
-    for (const rule of ['length', 'not_common', 'not_personal', 'match']) await expect(line(rule)).toHaveAttribute('data-met', rule === 'not_personal' || rule === 'match' ? 'true' : 'false');
+    // Nothing is ticked before anything is typed (UXUI-M2-08).
+    for (const rule of ['length', 'not_common', 'not_personal', 'match']) await expect(line(rule)).toHaveAttribute('data-met', 'false');
 
     const password = page.getByRole('textbox', { name: 'Password', exact: true });
     const repeat = page.getByLabel('Password, once more');
@@ -148,7 +149,8 @@ test.describe('the pages of the links and the live checklist (M2-FE-01, ST-62)',
       route.request().method() === 'POST' ? route.fulfill({ status: 400, contentType: 'application/problem+json', json: { status: 400, code: 'password_refused', traceId: 'x', errors: [{ path: 'password', code: 'password_common' }] } }) : route.continue(),
     );
     await page.getByRole('button', { name: 'Set the password and finish' }).click();
-    await expect(page.locator('.ud-alert--error')).toContainText('The server did not accept the password');
+    await expect(page.locator('.ud-alert--error')).toContainText('That password cannot be used yet');
+    await expect(line('not_common')).toHaveAttribute('data-refused', 'true');
     await expect(line('not_common')).toHaveAttribute('data-met', 'true'); // the browser still ticks it; the server's word is shown next to it
     await page.unroute('**/api/v1/invitations/*');
 
@@ -290,7 +292,9 @@ test.describe('users (M2-FE-02)', () => {
     const again = page.getByRole('dialog', { name: 'Your password, once more' });
     await again.getByRole('textbox', { name: 'Password', exact: true }).fill('invented-not-mine');
     await again.getByRole('button', { name: 'Continue' }).click();
-    await expect(again.locator('.ud-alert--error')).toContainText('That is not your password');
+    // Said at the field, with the text selected for a new try (UXUI-M2-06).
+    await expect(again.locator('.ud-field--error')).toContainText('That is not your password');
+    await expect(again.getByRole('textbox', { name: 'Password', exact: true })).toBeFocused();
     await again.getByRole('button', { name: 'Cancel' }).click();
     await expect(again).toBeHidden();
     await expect(page.locator('.ud-badge')).toContainText('Deactivated');
@@ -323,14 +327,9 @@ test.describe('users (M2-FE-02)', () => {
     // Now Živana is the last active admin: she cannot become a reviewer.
     await page.goto(`${ADMIN_ORIGIN}/users`);
     await page.getByRole('button', { name: STUB.admin.name, exact: true }).click();
-    await page.getByRole('button', { name: 'Change the role' }).click();
-    await page.getByRole('dialog', { name: 'Change the role' }).getByLabel('Role').selectOption('reviewer');
-    await page.getByRole('dialog', { name: 'Change the role' }).getByRole('button', { name: 'Change the role' }).click();
-    await expect(page.getByRole('dialog', { name: 'Change the role' }).locator('.ud-alert--error')).toContainText(`${STUB.admin.name} is the last active admin`);
-    await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Remove' }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: 'Remove' }).click();
-    await expect(page.locator('.ud-alert--error')).toContainText('Confera needs at least one admin');
+    // The last active admin cannot be demoted, deactivated or removed, and the page says why before anything is asked (UXUI-M2-07).
+    await expect(page.locator('[data-confera-last-admin]')).toContainText('This is the last active admin');
+    for (const name of ['Change the role', 'Deactivate', 'Remove']) await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
   });
 });
 
@@ -343,7 +342,7 @@ test.describe('the organisation (M2-FE-02)', () => {
     const issuer = page.locator('[data-confera-issuer]');
     await issuer.getByLabel('Registration number (matični broj)').fill('1234');
     await issuer.getByRole('button', { name: 'Save the issuer data' }).click();
-    await expect(issuer.getByLabel('Registration number (matični broj)')).toHaveAccessibleDescription('Enter the 8 digits');
+    await expect(issuer.getByLabel('Registration number (matični broj)')).toHaveAccessibleDescription('This is not a valid registration number. Check the digits.');
     await issuer.getByLabel('Registration number (matični broj)').fill('87654321');
     await issuer.getByLabel('Contact email address').fill('kancelarija@a.example.test');
     await issuer.getByRole('button', { name: 'Save the issuer data' }).click();
