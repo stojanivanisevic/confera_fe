@@ -319,6 +319,7 @@ export const TEXTS = {
     codeHint: 'Two capital letters, like MK. With the edition it names the conference in codes and numbers.',
     edition: 'Edition (year)',
     editionHint: 'Leave it empty for a conference without editions.',
+    editionNotYear: 'Enter the year as four digits, like 2027',
     dates: 'Dates',
     startsOn: 'First day',
     endsOn: 'Last day',
@@ -565,6 +566,8 @@ export const TEXTS = {
     conditions: { hasActor: 'someone made the change', hasSubject: 'it concerns a person' } as Record<string, string>,
   },
   problems: {
+    sessionEnded: 'Your session has ended',
+    sessionEndedText: 'Nothing was saved. What you typed is still on this page: copy what you want to keep, then sign in again.',
     forbidden: 'You are not allowed to do this',
     forbiddenText: 'Ask an admin of your organisation.',
     outOfStep: 'The page and the server are out of step',

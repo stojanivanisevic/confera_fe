@@ -334,6 +334,11 @@ export async function handleAdmin(req, url) {
       return { status: 200, body: userDto(user) };
     }
     if (!sub && method === 'DELETE') {
+      // The removal names the version it is made on, as a query parameter: without it confera_be
+      // answers 400 validation_failed (E2-16; RemoveUserQueryDto), and so does the stub.
+      const given = url.searchParams.get('version');
+      if (given === null || !/^[1-9]\d*$/.test(given)) refuse(400, 'validation_failed', [{ path: 'version', code: 'isInt' }]);
+      versionOf(Number(given), user);
       if (lastAdmin()) refuse(409, 'last_admin');
       user.status = 'removed';
       user.version += 1;

@@ -14,7 +14,7 @@ import { Alert, Button, Card, CheckboxGroup, ConfirmDialog, DateField, Dialog, P
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';
-import { LANGUAGES, stateTone, timeZones, yearOf } from './Conferences';
+import { LANGUAGES, runtimeTimeZones, stateTone, yearOf } from './Conferences';
 import { call, explain, fieldMessages, isApiError, type Explained } from './problems';
 import { useSession } from './session';
 import { fill, TEXTS } from './texts';
@@ -63,7 +63,8 @@ function sitesMessage(fields: Record<string, string>): string | undefined {
   return lines.length > 0 ? lines.join(' ') : fields.listedSites;
 }
 
-export function ConferenceSettings({ id }: { id: string }) {
+/** `timeZones`: the zones the API accepts, read on the server (src/server/time-zones.ts). */
+export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id: string; timeZones?: readonly string[] }) {
   const router = useRouter();
   const { client, contact, session } = useSession();
   const switcher = useConference();
@@ -118,9 +119,11 @@ export function ConferenceSettings({ id }: { id: string }) {
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
-    setBusy(true);
     setProblem(null);
     setFields({});
+    const editionYear = yearOf(form.edition);
+    if (editionYear === undefined) return setFields({ editionYear: t.editionNotYear });
+    setBusy(true);
     try {
       const sites = form.sites
         .split('\n')
@@ -133,7 +136,7 @@ export function ConferenceSettings({ id }: { id: string }) {
             version: record.version,
             name: form.name.trim(),
             code: form.code.trim(),
-            editionYear: yearOf(form.edition),
+            editionYear,
             startsOn: form.startsOn === '' ? null : form.startsOn,
             endsOn: form.endsOn === '' ? null : form.endsOn,
             venue: form.venue.trim() === '' ? null : form.venue.trim(),
@@ -160,6 +163,8 @@ export function ConferenceSettings({ id }: { id: string }) {
     try {
       const next = await call(client.POST('/api/v1/conferences/{id}/state', { params: { path: { id } }, body: { state, version: record.version } }));
       setAsked(null);
+      // The new state does not throw away what was typed in the settings and not yet saved (E2-18).
+      setFormVersion(`${next.id}:${String(next.version)}`);
       conference.replace(next);
       toast({ title: fill(t.stateChanged, { name: next.name, state: (t.states[next.state] ?? next.state).toLowerCase() }), tone: 'success' });
       await switcher.reload();
@@ -182,11 +187,13 @@ export function ConferenceSettings({ id }: { id: string }) {
 
   const copy = async (event: FormEvent) => {
     event.preventDefault();
-    setBusy(true);
     setCopyFields({});
     setCopyProblem(null);
+    const editionYear = yearOf(copyEdition);
+    if (editionYear === undefined) return setCopyFields({ editionYear: t.editionNotYear });
+    setBusy(true);
     try {
-      const created = await call(client.POST('/api/v1/conferences/{id}/copy', { params: { path: { id } }, body: { name: copyName.trim(), code: copyCode.trim(), editionYear: yearOf(copyEdition) } }));
+      const created = await call(client.POST('/api/v1/conferences/{id}/copy', { params: { path: { id } }, body: { name: copyName.trim(), code: copyCode.trim(), editionYear } }));
       setCopying(false);
       toast({ title: fill(t.copied, { name: conferenceLabel(created) }), tone: 'success' });
       await switcher.reload();
@@ -212,10 +219,11 @@ export function ConferenceSettings({ id }: { id: string }) {
 
   return (
     <div className={styles.stack}>
+      {/* A name of 200 letters without a space breaks inside the 375 px page (E2-22). */}
       <PageHeader
-        title={record.name}
+        title={<span className={styles.break}>{record.name}</span>}
         description={`${record.code}${record.editionYear ? ` ${String(record.editionYear)}` : ''}`}
-        breadcrumbs={[{ label: t.back, href: '/conferences', onClick: () => router.push('/conferences') }, { label: record.name }]}
+        breadcrumbs={[{ label: t.back, href: '/conferences', onClick: () => router.push('/conferences') }, { label: <span className={styles.break}>{record.name}</span> }]}
         actions={
           <div className={styles.actionsInline}>
             <StatusBadge tone={stateTone(record.state)}>{t.states[record.state] ?? record.state}</StatusBadge>
@@ -252,7 +260,7 @@ export function ConferenceSettings({ id }: { id: string }) {
           <TextField label={t.venue} name="venue" value={form.venue} disabled={readOnly} onChange={(event) => set({ venue: event.target.value })} status={fields.venue ? 'error' : 'default'} message={fields.venue} />
           <DateField label={t.startsOn} name="startsOn" value={form.startsOn} disabled={readOnly} onChange={(event) => set({ startsOn: event.target.value })} status={fields.startsOn ? 'error' : 'default'} message={fields.startsOn} />
           <DateField label={t.endsOn} name="endsOn" value={form.endsOn} disabled={readOnly} onChange={(event) => set({ endsOn: event.target.value })} status={fields.endsOn ? 'error' : 'default'} message={fields.endsOn} />
-          <Select label={t.timeZone} name="timeZone" value={form.timeZone} disabled={readOnly} onChange={(event) => set({ timeZone: event.target.value })} options={timeZones()} status={fields.timeZone ? 'error' : 'default'} message={fields.timeZone ?? t.timeZoneHint} />
+          <Select label={t.timeZone} name="timeZone" value={form.timeZone} disabled={readOnly} onChange={(event) => set({ timeZone: event.target.value })} options={timeZones.includes(form.timeZone) ? [...timeZones] : [form.timeZone, ...timeZones]} status={fields.timeZone ? 'error' : 'default'} message={fields.timeZone ?? t.timeZoneHint} />
           <Select label={t.mailServer} name="mailServerId" value={form.mailServerId} disabled={readOnly} onChange={(event) => set({ mailServerId: event.target.value })} options={serverOptions} status={fields.mailServerId ? 'error' : 'default'} message={fields.mailServerId ?? t.mailServerHint} />
           <div className={styles.all}>
             <CheckboxGroup label={t.languages} value={form.languages} disabled={readOnly} onChange={(languages) => set({ languages })} options={LANGUAGES.map((value) => ({ value, label: t.languageNames[value] ?? value }))} direction="row" status={fields.languages ? 'error' : 'default'} message={fields.languages} />

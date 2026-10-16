@@ -82,6 +82,9 @@ export function explain(error: unknown, contact: string | null = null): Explaine
   }
   if (!isApiError(error)) return { ...base, title: TEXTS.problems.unknown, text: contact ? fill(TEXTS.problems.unknownText, { contact, traceId: '-' }) : fill(TEXTS.problems.unknownTextNoContact, { traceId: '-' }) };
   switch (error.code) {
+    case 'unauthenticated':
+      // A change that meets a session that has ended (E2-20): what was typed stays on the page.
+      return { ...base, title: TEXTS.problems.sessionEnded, text: TEXTS.problems.sessionEndedText };
     case 'forbidden':
       return { ...base, title: TEXTS.problems.forbidden, text: TEXTS.problems.forbiddenText };
     case 'csrf_refused':

@@ -21,21 +21,20 @@ import { useLoad } from './useLoad';
 export const CONFERENCE_STATES: readonly ConferenceState[] = ['draft', 'open', 'closed', 'archived'];
 export const LANGUAGES = ['en', 'sr'] as const;
 
+/** The zones of this runtime, for a form drawn without the server's list (a unit test); the pages always hand in the server's. */
+export const runtimeTimeZones = (): string[] => ['UTC', ...Intl.supportedValuesOf('timeZone').filter((zone) => zone !== 'UTC')];
+
 export const stateTone = (state: string): 'success' | 'info' | 'neutral' | 'warning' => (state === 'open' ? 'success' : state === 'draft' ? 'info' : state === 'closed' ? 'warning' : 'neutral');
 
-/** The time zones this browser knows, UTC first: the API checks the same IANA names. */
-export function timeZones(): string[] {
-  try {
-    return ['UTC', ...Intl.supportedValuesOf('timeZone').filter((zone) => zone !== 'UTC')];
-  } catch {
-    return ['UTC', 'Europe/Belgrade'];
-  }
-}
+/** A year typed in a field: a number, null for an empty field, undefined for a text that is no year ("2O27"), which is refused before anything is sent (E2-18). */
+export const yearOf = (text: string): number | null | undefined => {
+  const trimmed = text.trim();
+  if (trimmed === '') return null;
+  return /^\d{4}$/.test(trimmed) ? Number(trimmed) : undefined;
+};
 
-/** A year typed in a field: a number, or null for an empty field. */
-export const yearOf = (text: string): number | null => (text.trim() === '' ? null : Number(text.trim()));
-
-export function Conferences() {
+/** `timeZones`: the zones the API accepts, read on the server (src/server/time-zones.ts). */
+export function Conferences({ timeZones = runtimeTimeZones() }: { timeZones?: readonly string[] }) {
   const router = useRouter();
   const { client, contact, session } = useSession();
   const { reload: reloadSwitch, select } = useConference();
@@ -68,11 +67,13 @@ export function Conferences() {
 
   const create = async (event: FormEvent) => {
     event.preventDefault();
-    setBusy(true);
     setProblem(null);
     setFields({});
+    const editionYear = yearOf(edition);
+    if (editionYear === undefined) return setFields({ editionYear: t.editionNotYear });
+    setBusy(true);
     try {
-      const created = await call(client.POST('/api/v1/conferences', { body: { name: name.trim(), code: code.trim(), editionYear: yearOf(edition), timeZone, languages: languages as ('en' | 'sr')[] } }));
+      const created = await call(client.POST('/api/v1/conferences', { body: { name: name.trim(), code: code.trim(), editionYear, timeZone, languages: languages as ('en' | 'sr')[] } }));
       setCreating(false);
       toast({ title: fill(t.created, { name: created.name }), tone: 'success' });
       await reloadSwitch();
@@ -111,7 +112,7 @@ export function Conferences() {
         empty={<EmptyState title={t.empty} description={t.emptyText} action={createButton} />}
         onRowClick={(row) => router.push(`/conferences/${row.id}`)}
         columns={[
-          { key: 'name', header: t.name },
+          { key: 'name', header: t.name, render: (row) => <span className={styles.break}>{row.name}</span> },
           { key: 'code', header: t.code, render: (row) => `${row.code}${row.editionYear ? ` ${String(row.editionYear)}` : ''}` },
           { key: 'startsOn', header: t.dates, render: (row) => (row.startsOn ? `${formatDate(row.startsOn)}${row.endsOn ? ` – ${formatDate(row.endsOn)}` : ''}` : '') },
           { key: 'timeZone', header: t.timeZone },
@@ -149,7 +150,7 @@ export function Conferences() {
           <TextField label={t.name} name="name" value={name} onChange={(event) => setName(event.target.value)} required status={fields.name ? 'error' : 'default'} message={fields.name} />
           <TextField label={t.code} name="code" value={code} maxLength={2} autoCapitalize="characters" onChange={(event) => setCode(event.target.value.toUpperCase())} required status={fields.code ? 'error' : 'default'} message={fields.code ?? t.codeHint} />
           <TextField label={t.edition} name="editionYear" inputMode="numeric" value={edition} onChange={(event) => setEdition(event.target.value)} status={fields.editionYear ? 'error' : 'default'} message={fields.editionYear ?? t.editionHint} />
-          <Select label={t.timeZone} name="timeZone" value={timeZone} onChange={(event) => setTimeZone(event.target.value)} options={timeZones()} status={fields.timeZone ? 'error' : 'default'} message={fields.timeZone ?? t.timeZoneHint} />
+          <Select label={t.timeZone} name="timeZone" value={timeZone} onChange={(event) => setTimeZone(event.target.value)} options={[...timeZones]} status={fields.timeZone ? 'error' : 'default'} message={fields.timeZone ?? t.timeZoneHint} />
           <CheckboxGroup label={t.languages} value={languages} onChange={setLanguages} options={LANGUAGES.map((value) => ({ value, label: t.languageNames[value] ?? value }))} status={fields.languages ? 'error' : 'default'} message={fields.languages} />
         </form>
       </Dialog>

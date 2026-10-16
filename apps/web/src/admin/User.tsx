@@ -21,6 +21,13 @@ import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
 import { statusTone } from './Users';
 
+/**
+ * The removal names the version it is made on (E2-16): confera_be answers 400 without it. The
+ * vendored contract of 8286bc3 does not list the parameter yet (m2/be-fixes-2 adds it); until it
+ * is vendored, the query is typed here. openapi-fetch sends `params.query` as it is.
+ */
+const REMOVE_QUERY = (version: number) => ({ version }) as never;
+
 type Ask = null | 'rename' | 'role' | 'deactivate' | 'reactivate' | 'remove' | 'resend' | 'sessions';
 
 export function User({ id }: { id: string }) {
@@ -111,7 +118,8 @@ export function User({ id }: { id: string }) {
 
   return (
     <div className={styles.stack}>
-      <PageHeader title={record.displayName} breadcrumbs={[{ label: t.back, href: '/users', onClick: () => router.push('/users') }, { label: record.displayName }]} />
+      {/* A name of 200 letters without a space breaks inside the 375 px page (E2-22). */}
+      <PageHeader title={<span className={styles.break}>{record.displayName}</span>} breadcrumbs={[{ label: t.back, href: '/users', onClick: () => router.push('/users') }, { label: <span className={styles.break}>{record.displayName}</span> }]} />
       {problem && ask === null ? (
         <Alert tone="error" title={problem.title} onClose={() => setProblem(null)}>
           {problem.text}
@@ -121,8 +129,8 @@ export function User({ id }: { id: string }) {
         <Card title={t.details} headingLevel={2}>
           <DescriptionList
             items={[
-              { label: t.name, value: record.displayName },
-              { label: t.email, value: record.email },
+              { label: t.name, value: <span className={styles.break}>{record.displayName}</span> },
+              { label: t.email, value: <span className={styles.break}>{record.email}</span> },
               { label: t.role, value: TEXTS.users.roles[record.role] ?? record.role },
               { label: t.status, value: <StatusBadge tone={statusTone(record.status)}>{TEXTS.users.statuses[record.status] ?? record.status}</StatusBadge> },
               { label: t.created, value: formatDateTime(record.createdAt) },
@@ -155,7 +163,7 @@ export function User({ id }: { id: string }) {
       <ConfirmDialog open={ask === 'reactivate'} title={fill(t.reactivateQuestion, { name: record.displayName })} confirmText={t.reactivate} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => call(client.POST('/api/v1/users/{id}/reactivation', { params: { path: { id } }, body: { version: record.version } })), fill(t.reactivated, { name: record.displayName }))}>
         {t.reactivateText}
       </ConfirmDialog>
-      <ConfirmDialog open={ask === 'remove'} title={fill(t.removeQuestion, { name: record.displayName })} confirmText={t.remove} destructive busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => callEmpty(client.DELETE('/api/v1/users/{id}', { params: { path: { id } } })), fill(t.removed, { name: record.displayName }), () => router.push('/users'))}>
+      <ConfirmDialog open={ask === 'remove'} title={fill(t.removeQuestion, { name: record.displayName })} confirmText={t.remove} destructive busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => callEmpty(client.DELETE('/api/v1/users/{id}', { params: { path: { id }, query: REMOVE_QUERY(record.version) } })), fill(t.removed, { name: record.displayName }), () => router.push('/users'))}>
         {t.removeText}
       </ConfirmDialog>
       <ConfirmDialog open={ask === 'resend'} title={t.resend} confirmText={t.resend} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => call(client.POST('/api/v1/users/{id}/invitation', { params: { path: { id } } })), fill(t.resent, { email: record.email }))}>

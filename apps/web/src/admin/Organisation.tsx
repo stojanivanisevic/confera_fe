@@ -80,6 +80,10 @@ export function Organisation() {
           },
         }),
       );
+      // Only this form takes the saved record; what is typed in the payment form stays (E2-17).
+      setLoadedVersion(next.version);
+      setIssuer(Object.fromEntries(ISSUER_KEYS.map((key) => [key, text(next[key])])) as Record<keyof Issuer, string>);
+      setMailLogContent(next.mailLogContent);
       profile.replace(next);
       toast({ title: t.issuerSaved, tone: 'success' });
     } catch (error) {
@@ -104,6 +108,9 @@ export function Organisation() {
           }),
         ),
       );
+      // Only this form takes the saved record; what is typed in the issuer form stays (E2-17).
+      setLoadedVersion(next.version);
+      setPayment(Object.fromEntries(PAYMENT_KEYS.map((key) => [key, text(next[key])])) as Record<keyof Payment, string>);
       profile.replace(next);
       toast({ title: t.paymentSaved, description: t.paymentSavedText, tone: 'success', duration: 8000 });
     } catch (error) {

@@ -28,7 +28,8 @@ export function safeNextPath(next: string | null | undefined): string {
 }
 
 /** The sign-in address that comes back to `path` afterwards (when `path` is a safe destination). */
-export function signInHref(path: string): string {
+export function signInHref(path: string, reason?: 'session-ended'): string {
   const next = safeNextPath(path);
-  return next === HOME_PATH ? '/sign-in' : `/sign-in?next=${encodeURIComponent(next)}`;
+  const query = [...(next === HOME_PATH ? [] : [`next=${encodeURIComponent(next)}`]), ...(reason ? [`reason=${reason}`] : [])];
+  return query.length === 0 ? '/sign-in' : `/sign-in?${query.join('&')}`;
 }

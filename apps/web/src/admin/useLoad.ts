@@ -6,7 +6,7 @@
  * not ask for (after a change elsewhere on the page) is marked as background, so it does not
  * renew the session.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { SessionClient } from '@confera/api-client';
 
@@ -26,16 +26,20 @@ export interface Load<T> {
 export function useLoad<T>(fetcher: (client: SessionClient) => Promise<T>, deps: readonly unknown[]): Load<T> {
   const { client, background, clear, contact } = useSession();
   const [state, setState] = useState<Loaded<T>>({ phase: 'loading', data: null });
+  // Only the answer to the latest question is shown: an older answer that arrives later (the
+  // person typed on in a search) is dropped (E2-19).
+  const latest = useRef(0);
 
   const reload = useCallback(
     async (options: { background?: boolean } = {}): Promise<void> => {
+      const asked = ++latest.current;
       setState((current) => ({ phase: 'loading', data: current.data }));
       try {
         const data = await fetcher(options.background ? background : client);
-        setState({ phase: 'ready', data });
+        if (asked === latest.current) setState({ phase: 'ready', data });
       } catch (error) {
         if (isUnauthenticated(error)) clear();
-        setState((current) => ({ phase: 'failed', data: current.data, problem: explain(error, contact) }));
+        if (asked === latest.current) setState((current) => ({ phase: 'failed', data: current.data, problem: explain(error, contact) }));
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the caller names what the request depends on
@@ -46,5 +50,13 @@ export function useLoad<T>(fetcher: (client: SessionClient) => Promise<T>, deps:
     void reload();
   }, [reload]);
 
-  return { state, reload, replace: (data) => setState({ phase: 'ready', data }) };
+  return {
+    state,
+    reload,
+    replace: (data) => {
+      // A record a change answered with is newer than any answer still on its way.
+      latest.current += 1;
+      setState({ phase: 'ready', data });
+    },
+  };
 }

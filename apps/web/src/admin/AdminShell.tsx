@@ -60,6 +60,8 @@ function Guarded({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (status === 'signed-out') router.replace(signInHref(pathname));
+    // The session ran out or was ended elsewhere: sign-in says so, and leads back here (E2-20).
+    if (status === 'expired') router.replace(signInHref(pathname, 'session-ended'));
     if (status === 'ended') router.replace('/sign-in');
   }, [status, router, pathname]);
 
@@ -80,7 +82,7 @@ function Guarded({ children }: { children: ReactNode }) {
     };
   }, [status, mayReadOrganisation, background, setContact]);
 
-  if (status === 'loading' || status === 'signed-out' || status === 'ended') {
+  if (status === 'loading' || status === 'signed-out' || status === 'expired' || status === 'ended') {
     return (
       <div className={styles.center} aria-busy="true">
         <Spinner label={TEXTS.common.loading} />

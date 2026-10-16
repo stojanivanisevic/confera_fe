@@ -18,7 +18,7 @@ import { createSessionClient, hasFreshPassword, type Session, type SessionClient
 import { call, isUnauthenticated } from './problems';
 
 /** `signed-out`: the API has no session (a screen sends to sign-in and comes back afterwards); `ended`: the person signed out (sign-in, without a way back). */
-export type SessionStatus = 'loading' | 'ready' | 'signed-out' | 'ended' | 'unreachable';
+export type SessionStatus = 'loading' | 'ready' | 'signed-out' | 'expired' | 'ended' | 'unreachable';
 
 export interface SessionState {
   readonly status: SessionStatus;
@@ -54,7 +54,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       clients.setCsrf(next?.csrf ?? null);
       setSession(next);
       // A request still on its way when the person signed out answers 401: the sign-out stays a sign-out.
-      setStatus((current) => (current === 'ended' && nextStatus === 'signed-out' ? current : nextStatus));
+      // A session that was there and is gone now (it ran out, it was ended elsewhere) has expired (E2-20).
+      setStatus((current) => (nextStatus !== 'signed-out' ? nextStatus : current === 'ended' ? current : current === 'ready' || current === 'expired' ? 'expired' : nextStatus));
     },
     [clients],
   );

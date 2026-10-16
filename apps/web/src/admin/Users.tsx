@@ -119,8 +119,8 @@ export function Users() {
         emptyAction={<Button icon="plus" onClick={openInvite}>{t.invite}</Button>}
         onRowClick={(row) => router.push(`/users/${row.id}`)}
         columns={[
-          { key: 'displayName', header: t.name },
-          { key: 'email', header: t.email },
+          { key: 'displayName', header: t.name, render: (row) => <span className={styles.break}>{row.displayName}</span> },
+          { key: 'email', header: t.email, render: (row) => <span className={styles.break}>{row.email}</span> },
           { key: 'role', header: t.role, render: (row) => t.roles[row.role] ?? row.role },
           { key: 'status', header: t.status, render: (row) => <StatusBadge tone={statusTone(row.status)}>{t.statuses[row.status] ?? row.status}</StatusBadge> },
           { key: 'createdAt', header: t.created, render: (row) => formatDate(row.createdAt) },
