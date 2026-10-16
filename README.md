@@ -61,6 +61,8 @@ The **template editor** is the spike of ADR-12 (M2-FE-05): `packages/template-ed
 
 What holds everywhere (ADR-03, ADR-20):
 - **The session** is the API's `__Host-` cookie; the web application never reads it. `GET /api/v1/session` gives the person, the organisation and the CSRF value, and every changing request carries it as `X-CSRF-Token` (`@confera/api-client`, `createSessionClient`). A refetch the person did not ask for says `X-Confera-Background` and does not renew the session. A 401 sends to sign-in, with `next` pointing back.
+- **A screen behind sign-in without any session cookie** is answered by the proxy with a 307 to `/sign-in?next=` (the cookie's presence is read, never its value; the API still decides whether a session is valid). No spinner, and it works without scripts.
+- **A change that meets an ended session** keeps the page as it is and offers "Sign in in a new tab" and Continue; Continue reads the new session and the change goes on.
 - **`next`** after sign-in is only a path of this origin (`apps/web/src/lib/next-path.ts`, ST-26): a full address, `//host`, a backslash, a scheme or one of the auth pages is ignored.
 - **The password asked again** (bank and PayPal data, users and roles): a change the API refuses with `password_confirmation_required` opens the dialog, which confirms the password and then makes the change; it counts for 5 minutes in that session (`useFreshPassword`).
 - **The live password checklist** (G2-25, ST-62): the four lines are the API's rule set, vendored with its vectors (`packages/api-client/openapi/password-rules.json`) and run in the browser, so nothing is sent while the password is typed; the server checks the same rules and names a broken one by its code, which the checklist shows at the line. `tests/password-rules.test.ts` runs every shared vector.
@@ -190,7 +192,7 @@ In 0.2.0 the admin routes want a session, and the pages of the links answer an u
 
 ## 7. Design system
 
-`design-system/` is the UdEkoM Balkans design system, **version 2.3.0**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
+`design-system/` is the UdEkoM Balkans design system, **version 2.4.0**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
 
 - The UI comes only from it: no other UI kit, no Tailwind, no colour literal outside `design-system/tokens.css`. Since design system 2.3.0 type, spacing and sizes are tokens too: a stylesheet writes `font: var(--text-body-sm)`, `var(--gutter-l)`, `var(--target-touch)`, never a px size or a font family (1 and 2 px borders and the breakpoints stay px). The lint enforces this (`colour-literal`, `size-literal`, `font-literal` and the rest), and `lint-fixtures/` holds a planted violation for every rule.
 - Application code imports `@confera/ui`, never the folder. `packages/ui/src/generated/` is the design-system script wrapped, unchanged, in a client module so that it renders on the server and hydrates. `corepack pnpm ds:build` regenerates it.
