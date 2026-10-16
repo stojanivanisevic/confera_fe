@@ -247,15 +247,16 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
           <U.ToastHost />
         </div>,
       );
+      // A time long enough that a busy machine still focuses the toast before it would have gone.
       await act(async () => {
-        U.toast({ title: 'Saved', duration: 60 });
+        U.toast({ title: 'Saved', duration: 1000 });
         await Promise.resolve();
       });
       await focus(container.querySelector('.ud-toast button')!);
-      await settle(150);
+      await settle(1200);
       expect(toasts()).toEqual(['Saved']);
       await focus(byText('Elsewhere')!);
-      await settle(150);
+      await settle(1200);
       expect(toasts()).toEqual([]);
     });
 
