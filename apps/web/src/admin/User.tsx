@@ -21,13 +21,6 @@ import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
 import { statusTone } from './Users';
 
-/**
- * The removal names the version it is made on (E2-16): confera_be answers 400 without it. The
- * vendored contract of 8286bc3 does not list the parameter yet (m2/be-fixes-2 adds it); until it
- * is vendored, the query is typed here. openapi-fetch sends `params.query` as it is.
- */
-const REMOVE_QUERY = (version: number) => ({ version }) as never;
-
 type Ask = null | 'rename' | 'role' | 'deactivate' | 'reactivate' | 'remove' | 'resend' | 'sessions';
 
 export function User({ id }: { id: string }) {
@@ -163,7 +156,7 @@ export function User({ id }: { id: string }) {
       <ConfirmDialog open={ask === 'reactivate'} title={fill(t.reactivateQuestion, { name: record.displayName })} confirmText={t.reactivate} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => call(client.POST('/api/v1/users/{id}/reactivation', { params: { path: { id } }, body: { version: record.version } })), fill(t.reactivated, { name: record.displayName }))}>
         {t.reactivateText}
       </ConfirmDialog>
-      <ConfirmDialog open={ask === 'remove'} title={fill(t.removeQuestion, { name: record.displayName })} confirmText={t.remove} destructive busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => callEmpty(client.DELETE('/api/v1/users/{id}', { params: { path: { id }, query: REMOVE_QUERY(record.version) } })), fill(t.removed, { name: record.displayName }), () => router.push('/users'))}>
+      <ConfirmDialog open={ask === 'remove'} title={fill(t.removeQuestion, { name: record.displayName })} confirmText={t.remove} destructive busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => callEmpty(client.DELETE('/api/v1/users/{id}', { params: { path: { id }, query: { version: record.version } } })), fill(t.removed, { name: record.displayName }), () => router.push('/users'))}>
         {t.removeText}
       </ConfirmDialog>
       <ConfirmDialog open={ask === 'resend'} title={t.resend} confirmText={t.resend} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => call(client.POST('/api/v1/users/{id}/invitation', { params: { path: { id } } })), fill(t.resent, { email: record.email }))}>

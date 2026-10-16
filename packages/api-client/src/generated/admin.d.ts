@@ -2242,7 +2242,9 @@ export interface operations {
     };
     removeUser: {
         parameters: {
-            query?: never;
+            query: {
+                version: number;
+            };
             header?: never;
             path: {
                 id: string;
