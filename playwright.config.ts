@@ -14,6 +14,8 @@ const reuse = !process.env.CI;
 // set, the web application forwards to a real confera_be, and one more project runs: e2e/real-api.spec.ts,
 // which asks what only the real API can answer. Without the variable that file belongs to no project.
 const REAL_API_SPEC = '**/real-api.spec.ts';
+// The flows of "To show" of 0.2.0 with their mail (M2-QA-02): only a real API can answer them.
+const REAL_API_FLOWS = '**/qa-real-api-flows.spec.ts';
 // A web application that is already running was started with another API address: it is never taken over.
 const reuseWeb = reuse && REAL_API_ORIGIN === null;
 
@@ -49,7 +51,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: ['**/hydration-dev.spec.ts', REAL_API_SPEC],
+      testIgnore: ['**/hydration-dev.spec.ts', REAL_API_SPEC, REAL_API_FLOWS],
       use: {
         ...devices['Desktop Chrome'],
         // The full Chromium build in its new headless mode (README, "Browser tests").
@@ -61,7 +63,7 @@ export default defineConfig({
     },
     {
       name: 'firefox',
-      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC], // the start-up guard and the Host-header requests involve no browser: once is enough
+      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC, REAL_API_FLOWS], // the start-up guard and the Host-header requests involve no browser: once is enough
       use: {
         ...devices['Desktop Firefox'],
         viewport: { width: 1440, height: 900 },
@@ -70,7 +72,7 @@ export default defineConfig({
     },
     {
       name: 'webkit',
-      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC], // the start-up guard and the Host-header requests involve no browser: once is enough
+      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC, REAL_API_FLOWS], // the start-up guard and the Host-header requests involve no browser: once is enough
       use: { ...devices['Desktop Safari'], viewport: { width: 1440, height: 900 } },
     },
     {
@@ -85,7 +87,7 @@ export default defineConfig({
           {
             // The smoke test against a real confera_be: HTTP requests, and one page in Chromium.
             name: 'real-api',
-            testMatch: REAL_API_SPEC,
+            testMatch: [REAL_API_SPEC, REAL_API_FLOWS],
             use: { ...devices['Desktop Chrome'], channel: 'chromium', baseURL: ADMIN_ORIGIN, viewport: { width: 1440, height: 900 }, launchOptions: { args: ['--test-third-party-cookie-phaseout'] } },
           },
         ]),
