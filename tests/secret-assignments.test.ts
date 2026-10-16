@@ -260,7 +260,7 @@ describe('scan for literal values bound to secret-like names', () => {
       expect(exitCode).toBe(1);
       expect(findings.sort()).toEqual(['config/app.yml:3 password', 'deploy/server.env:2 SMTP_PASSWORD', 'src/session.ts:1 sessionSecret']);
       expect(output).not.toContain(value);
-      expect(output).toContain('3 literal value(s) bound to a name like a secret.');
+      expect(output).toContain('3 literal value(s) bound to a name like a secret or handed to a key.');
       expect(output).toContain('invented- or local-only-');
     });
 
