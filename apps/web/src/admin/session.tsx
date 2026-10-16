@@ -53,7 +53,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     (next: Session | null, nextStatus: SessionStatus) => {
       clients.setCsrf(next?.csrf ?? null);
       setSession(next);
-      setStatus(nextStatus);
+      // A request still on its way when the person signed out answers 401: the sign-out stays a sign-out.
+      setStatus((current) => (current === 'ended' && nextStatus === 'signed-out' ? current : nextStatus));
     },
     [clients],
   );

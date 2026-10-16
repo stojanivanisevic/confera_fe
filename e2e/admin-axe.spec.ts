@@ -10,8 +10,12 @@ import { expect, test } from './support/fixtures';
 
 test.describe.configure({ mode: 'default' });
 
+// The sandboxed frame of stored markup (a mail-log body, a template preview; ST-28) runs no script,
+// so axe cannot run inside it (Chromium waits for it until the test times out): it is left out.
+// What is inside is the message as it was sent, not the page; the spec of part B checks that the
+// frame has its title and its empty sandbox.
 const scan = async (page: Page) =>
-  (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(
+  (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('iframe[sandbox]').analyze()).violations.map(
     (v) => `${v.id}: ${v.help} — ${v.nodes.slice(0, 4).map((n) => n.target.join(' ')).join(' | ')}`,
   );
 
