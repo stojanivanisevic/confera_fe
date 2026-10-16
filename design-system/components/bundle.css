@@ -700,7 +700,7 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
 }
 
 /* ---------- AppShell: the skip link (2.4.0) ---------- */
-.ud-skip { position: absolute; left: var(--gutter-s); top: var(--gutter-s); z-index: 100; padding: var(--gutter-s) var(--gutter-l); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--ink); font: var(--text-button-md); transform: translateY(-200%); }
+.ud-skip { position: absolute; left: var(--gutter-s); top: var(--gutter-s); z-index: 100; display: inline-flex; align-items: center; box-sizing: border-box; min-height: var(--target-touch); padding: var(--gutter-s) var(--gutter-l); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--ink); font: var(--text-button-md); transform: translateY(-200%); }
 .ud-skip:focus { transform: none; outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* ---------- A scroll area of a Drawer takes the focus (2.4.0) ---------- */
