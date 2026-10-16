@@ -9,13 +9,16 @@
 //
 // What is asked here is what the stub cannot answer: the trace id and the security headers
 // of the API, its one error format, the readiness of its database, and the version of the
-// contract this build was made with. In 0.1.0 the API has one route (GET /api/v1/meta) and
-// the public API none; a route that arrives later joins by the vendored OpenAPI files.
+// contract this build was made with. Every GET route of the vendored OpenAPI files is asked
+// for; since 0.2.0 the admin routes want a session, and the pages of the links answer an
+// unknown token with 404 `link_invalid`. The admin home is behind sign-in: the browser test
+// signs in as the admin of `seed:e2e` (e2e/support/admin.ts).
 import { readFileSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
 import { join } from 'node:path';
 
 import { ADMIN_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN, REAL_API_ORIGIN, WEB_PORT } from './env';
+import { ADMIN, signIn } from './support/admin';
 import { expect, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
@@ -122,8 +125,11 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
     expect(paths).toContain('/api/v1/meta');
     for (const path of paths) {
       const answer = await throughWeb(path, ADMIN_HOST);
-      // 401 and 403 arrive with sign-in (0.2.0); what must never come back is "no such route" or an error of the server.
-      expect([200, 401, 403], `${path}: ${String(answer.status)} ${answer.text.slice(0, 120)}`).toContain(answer.status);
+      // 401 and 403 arrive with sign-in (0.2.0); the page of a link answers a token it does not know with
+      // 404 `link_invalid`. What must never come back is "no such route" or an error of the server.
+      const link = /^\/api\/v1\/(invitations|password-resets|email-changes)\//.test(path);
+      if (link && answer.status === 404) expect((answer.json() as { code?: string }).code, `${path}: the 404 of a link`).toBe('link_invalid');
+      else expect([200, 401, 403], `${path}: ${String(answer.status)} ${answer.text.slice(0, 120)}`).toContain(answer.status);
       expect(String(answer.headers['x-trace-id']), path).toMatch(UUID);
     }
   });
@@ -203,7 +209,8 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
     expect(new Set(answers.map((answer) => answer.headers['x-trace-id'])).size).toBe(20);
   });
 
-  test('in a browser: the admin home shows the name and the version the real API gave, from one same-origin call', async ({ page }) => {
+  test('in a browser: the admin home, signed in, shows the name and the version the real API gave, from one same-origin call', async ({ page }) => {
+    await signIn(page, ADMIN);
     const problems = watchPage(page);
     const seen: { status: number; traceId: string | undefined; body: unknown }[] = [];
     page.on('response', (response) => {
@@ -211,7 +218,8 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
       void response.json().then((body: unknown) => seen.push({ status: response.status(), traceId: response.headers()['x-trace-id'], body }));
     });
     await page.goto(`${ADMIN_ORIGIN}/`);
-    await expect(page.getByText('Connected')).toBeVisible();
+    await expect(page.locator('[data-confera-connection="connected"]')).toContainText('Confera is working.');
+    await page.getByText('Technical details').click();
     const row = (label: string) => page.locator('.ud-dl__row', { has: page.locator('dt', { hasText: label }) }).locator('dd');
     await expect(row('Service')).toHaveText('confera-api');
     await expect(row('Version')).toHaveText(ADMIN_CONTRACT.info.version);
@@ -219,8 +227,9 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
     expect(seen[0]?.status).toBe(200);
     expect(seen[0]?.body).toEqual({ name: 'confera-api', version: ADMIN_CONTRACT.info.version });
     expect(String(seen[0]?.traceId), 'the answer on the page came from the real API').toMatch(UUID);
-    // One call, to the page's own origin (ADR-02): the browser never talks to the API's address.
-    expect(problems.requests.filter((url) => url.includes('/api/'))).toEqual([`${ADMIN_ORIGIN}/api/v1/meta`]);
+    // One call of the meta route, and every call to the page's own origin (ADR-02): the browser never talks to the API's address.
+    expect(problems.requests.filter((url) => url.endsWith('/api/v1/meta'))).toEqual([`${ADMIN_ORIGIN}/api/v1/meta`]);
+    expect(problems.requests.filter((url) => url.includes('/api/')).every((url) => url.startsWith(`${ADMIN_ORIGIN}/api/v1/`))).toBe(true);
     expect(problems.requests.filter((url) => url.startsWith(API))).toEqual([]);
     expect(problems.messages).toEqual([]);
   });

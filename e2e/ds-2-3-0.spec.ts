@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, PUBLIC_ORIGIN } from './env';
+import { ADMIN, holdsSession, NO_SESSION_IN_WEBKIT, resetStub, signIn } from './support/admin';
 import { expect, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
@@ -215,10 +216,14 @@ test.describe('item 3: Toast, Alert and DataTable', () => {
 });
 
 test.describe('item 4: the admin home', () => {
-  test('a card under the page’s h1 is an h2', async ({ page }) => {
-    await page.goto(`${ADMIN_ORIGIN}/`);
-    await expect(page.getByRole('heading', { level: 1, name: 'Confera' })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 2, name: 'API' })).toBeVisible();
+  // Since 0.2.0 the home is behind sign-in: its h1 greets the person, its card is "Connection".
+  test('a card under the page’s h1 is an h2', async ({ page, browserName }) => {
+    test.skip(!holdsSession(browserName), NO_SESSION_IN_WEBKIT);
+    await resetStub(page);
+    await signIn(page);
+    await expect(page).toHaveURL(`${ADMIN_ORIGIN}/`);
+    await expect(page.getByRole('heading', { level: 1, name: `Welcome, ${ADMIN.name}` })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Connection' })).toBeVisible();
     expect(await page.getByRole('heading', { level: 3 }).count()).toBe(0);
   });
 });

@@ -16,6 +16,11 @@ const reuse = !process.env.CI;
 const REAL_API_SPEC = '**/real-api.spec.ts';
 // The flows of "To show" of 0.2.0 with their mail (M2-QA-02): only a real API can answer them.
 const REAL_API_FLOWS = '**/qa-real-api-flows.spec.ts';
+// Specs built on the records, link tokens and reset of the API stub (e2e/servers): with a real API they
+// are left out of every project, by name, instead of failing (and of signing in with the stub's
+// passwords, which would set off the real API's brake for the seed admin). Their screens are covered
+// against the real API by admin-axe, csp, pages and the flows of qa-real-api-flows.
+const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts'];
 // A web application that is already running was started with another API address: it is never taken over.
 const reuseWeb = reuse && REAL_API_ORIGIN === null;
 
@@ -51,7 +56,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: ['**/hydration-dev.spec.ts', REAL_API_SPEC, REAL_API_FLOWS],
+      testIgnore: ['**/hydration-dev.spec.ts', REAL_API_SPEC, REAL_API_FLOWS, ...STUB_ONLY_SPECS],
       use: {
         ...devices['Desktop Chrome'],
         // The full Chromium build in its new headless mode (README, "Browser tests").
@@ -63,7 +68,7 @@ export default defineConfig({
     },
     {
       name: 'firefox',
-      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC, REAL_API_FLOWS], // the start-up guard and the Host-header requests involve no browser: once is enough
+      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC, REAL_API_FLOWS, ...STUB_ONLY_SPECS], // the start-up guard and the Host-header requests involve no browser: once is enough
       use: {
         ...devices['Desktop Firefox'],
         viewport: { width: 1440, height: 900 },
@@ -72,7 +77,7 @@ export default defineConfig({
     },
     {
       name: 'webkit',
-      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC, REAL_API_FLOWS], // the start-up guard and the Host-header requests involve no browser: once is enough
+      testIgnore: ['**/hydration-dev.spec.ts', '**/config-guard.spec.ts', '**/qa-hosts.spec.ts', REAL_API_SPEC, REAL_API_FLOWS, ...STUB_ONLY_SPECS], // the start-up guard and the Host-header requests involve no browser: once is enough
       use: { ...devices['Desktop Safari'], viewport: { width: 1440, height: 900 } },
     },
     {

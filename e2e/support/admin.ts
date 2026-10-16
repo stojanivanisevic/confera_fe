@@ -1,8 +1,15 @@
 // What the specs of the admin screens share: the fixture of the API stub, a reset of its
 // universe (one per worker, keyed by the User-Agent), and signing in through the page.
+//
+// Two modes. Against the stub (the default) the people are the stub's fixture. Against a real
+// confera_be (CONFERA_E2E_API_ORIGIN; README, "Against the real API") they are the people of its
+// `seed:e2e` (test/e2e/seed/e2e-seed.json there): the same names and addresses, their own
+// password. `signIn` is the one way a spec signs in; against a real API it refuses, before
+// anything is typed, a person `seed:e2e` does not have, so that no spec causes a failed
+// sign-in there (the API's brake would then slow the seed admin down for every other spec).
 import type { Page } from '@playwright/test';
 
-import { ADMIN_ORIGIN, API_STUB_ORIGIN } from '../env';
+import { ADMIN_ORIGIN, API_STUB_ORIGIN, REAL_API_ORIGIN } from '../env';
 // @ts-expect-error -- plain Node module of the stub, typed here as far as the specs use it
 import { STUB as FIXTURE, STUB_PART_B as FIXTURE_PART_B } from '../servers/stub-fixture.mjs';
 import { expect } from './fixtures';
@@ -24,6 +31,17 @@ export interface Fixture {
   readonly newInvitationTokenPrefix: string;
 }
 export const STUB = FIXTURE as Fixture;
+
+/** The run is in front of a real confera_be, not the stub. */
+export const AGAINST_REAL_API = REAL_API_ORIGIN !== null;
+/** Why a spec, or a test, does not run against a real API: it needs the stub's fixture (its records, tokens and reset). */
+export const STUB_ONLY = 'needs the records, link tokens and reset of the API stub, which a real confera_be does not have';
+/** The password of every person of confera_be's seed:e2e. */
+const SEED_E2E_PASSWORD = 'invented-Jasen-Kula-Reka-42';
+/** Who the specs sign in as, in this mode: the admin and the reviewer of organisation A. */
+export const ADMIN: Person = AGAINST_REAL_API ? { ...STUB.admin, password: SEED_E2E_PASSWORD } : STUB.admin;
+export const REVIEWER: Person = AGAINST_REAL_API ? { ...STUB.reviewer, password: SEED_E2E_PASSWORD } : STUB.reviewer;
+
 /** The part B fixture, as far as the specs use it: the ids of the records they open. */
 export interface FixturePartB {
   readonly ids: { readonly conference: string; readonly draftConference: string; readonly server: string; readonly spareServer: string; readonly hostileEntry: string };
@@ -43,14 +61,18 @@ export const NO_SESSION_IN_WEBKIT = 'WebKit keeps no Secure cookie on http://loc
 export const holdsSession = (browserName: string): boolean => browserName !== 'webkit';
 export const linkToken = (purpose: 'invitation' | 'password_reset'): string => STUB.links.find((link) => link.purpose === purpose)!.token;
 
-/** Puts the stub's universe of this browser back to the fixture. Through the page's own request context, so it carries the worker's User-Agent. */
+/** Puts the stub's universe of this browser back to the fixture. Through the page's own request context, so it carries the worker's User-Agent. Against a real API there is no stub: nothing happens. */
 export async function resetStub(page: Page): Promise<void> {
+  if (AGAINST_REAL_API) return;
   const response = await page.request.post(`${API_STUB_ORIGIN}/__stub/reset`, { headers: { Origin: ADMIN_ORIGIN } });
   expect(response.status()).toBe(204);
 }
 
-/** Signs in through the page and lands on `next` (the home page by default). */
-export async function signIn(page: Page, person: Person = STUB.admin, next = '/'): Promise<void> {
+/** Signs in through the page and lands on `next` (the home page by default), as the admin of this mode unless told otherwise. */
+export async function signIn(page: Page, person: Person = ADMIN, next = '/'): Promise<void> {
+  if (AGAINST_REAL_API && person !== ADMIN && person !== REVIEWER) {
+    throw new Error(`signIn: ${person.email} with this password is a person of the stub; against a real API only the people of seed:e2e sign in (no failed sign-in may reach its brake)`);
+  }
   const address = `${ADMIN_ORIGIN}/sign-in${next === '/' ? '' : `?next=${encodeURIComponent(next)}`}`;
   // Already there (a link led to it): no second load, which would cut off the scripts still loading.
   if (page.url() !== address) await page.goto(address);

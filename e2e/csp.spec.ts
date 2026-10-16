@@ -5,7 +5,7 @@ import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN } from './env';
 import { buildEmbedSnippet, frameId } from '../packages/embed-loader/src/index';
-import { answerPasswordAgain, holdsSession, linkToken, NO_SESSION_IN_WEBKIT, resetStub, signIn, STUB } from './support/admin';
+import { ADMIN, answerPasswordAgain, holdsSession, linkToken, NO_SESSION_IN_WEBKIT, resetStub, signIn } from './support/admin';
 import { expect, isLocalSecuritySoftware, test } from './support/fixtures';
 
 interface Violation {
@@ -82,13 +82,14 @@ test('no policy violation: the admin screens, signed in, with their dialogs', as
   test.skip(!holdsSession(browserName), NO_SESSION_IN_WEBKIT);
   const violations = await recordViolations(page);
   await resetStub(page);
-  await signIn(page, STUB.admin, '/users');
+  await signIn(page, ADMIN, '/users');
   await page.getByRole('button', { name: 'Invite a user' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Invite a user' });
   await dialog.getByLabel('Name').fill('Nova Osoba');
-  await dialog.getByLabel('Email address').fill('nova.osoba@a.example.test');
+  // A new address in every run: against a real API the invitation is made, and the next run must not meet it.
+  await dialog.getByLabel('Email address').fill(`nova.osoba.${Date.now().toString(36)}@a.example.test`);
   await dialog.getByRole('button', { name: 'Send the invitation' }).click();
-  await answerPasswordAgain(page, STUB.admin.password);
+  await answerPasswordAgain(page, ADMIN.password);
   await page.locator('.ud-toast').waitFor();
   for (const path of ['/organisation', '/audit', '/account', '/']) {
     await page.goto(`${ADMIN_ORIGIN}${path}`);
