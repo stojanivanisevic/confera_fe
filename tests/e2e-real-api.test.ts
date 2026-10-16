@@ -59,7 +59,10 @@ describe('CONFERA_E2E_API_ORIGIN', () => {
     expect(config.match(/reuseExistingServer: reuseWeb,/g)).toHaveLength(2);
     // The smoke spec belongs to its own project, which exists only in such a run.
     expect(config).toContain('...(REAL_API_ORIGIN === null');
-    expect(config.match(/REAL_API_SPEC\]/g), 'the three engines leave the smoke spec alone').toHaveLength(3);
+    // The three engines leave the smoke spec and the flows of 0.2.0 to that project, and, in such a run,
+    // the specs that need the stub's records are left out of them by name, instead of failing.
+    expect(config.match(/REAL_API_SPEC, REAL_API_FLOWS, \.\.\.STUB_ONLY_SPECS\]/g), 'the three engines leave the smoke spec, the flows and the stub-only specs alone').toHaveLength(3);
+    expect(config).toContain("const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts'];");
   });
 });
 
