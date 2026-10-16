@@ -72,7 +72,9 @@ export function Audit() {
     const kind = t.subjects[entry.subjectType] ?? entry.subjectType;
     return name ? `${kind}: ${name}` : kind;
   };
-  const fieldsOf = (fields: readonly string[]): string => fields.map((field) => t.fieldNames[field] ?? field).join(', ');
+  /** A field in words; a field without a name of its own is written with a capital (`password`: Password). */
+  const fieldName = (field: string): string => t.fieldNames[field] ?? field.charAt(0).toUpperCase() + field.slice(1);
+  const fieldsOf = (fields: readonly string[]): string => fields.map(fieldName).join(', ');
   const [action, setAction] = useState<'' | Action>('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -98,7 +100,7 @@ export function Audit() {
     setPage(1);
   };
 
-  const changes = (entry: AuditEntry) => Object.entries(entry.changes as Record<string, { old?: unknown; new?: unknown }>).map(([field, change]) => ({ label: t.fieldNames[field] ?? field, value: <span className={styles.break}>{`${show(change.old)} → ${show(change.new)}`}</span> }));
+  const changes = (entry: AuditEntry) => Object.entries(entry.changes as Record<string, { old?: unknown; new?: unknown }>).map(([field, change]) => ({ label: fieldName(field), value: <span className={styles.break}>{`${show(change.old)} → ${show(change.new)}`}</span> }));
 
   return (
     <div className={styles.stack}>

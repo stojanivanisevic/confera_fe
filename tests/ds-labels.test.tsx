@@ -76,7 +76,8 @@ describe('every built-in text can be translated', () => {
   );
   // Built-in texts that need an interaction to appear (a toast, an open listbox, a shown password)
   // are covered by the bundle scan above: they are read from the same labels.
-  const NOT_IN_STATIC_MARKUP: Array<keyof U.UdekomLabels> = ['hidePasswordText', 'noMatches', 'search', 'confirm'];
+  // `table` names a DataTable's scroll area only while it scrolls, which needs a measured layout (2.4.0; tests/ds-2-4-0.test.tsx).
+  const NOT_IN_STATIC_MARKUP: Array<keyof U.UdekomLabels> = ['hidePasswordText', 'noMatches', 'search', 'confirm', 'table'];
 
   const english = text(everything);
   const serbian = text(<U.LabelsProvider labels={LABELS_SR}>{everything}</U.LabelsProvider>);

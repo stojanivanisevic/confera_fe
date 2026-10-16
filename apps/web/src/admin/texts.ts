@@ -294,7 +294,7 @@ export const TEXTS = {
       name: 'Name', legalName: 'Legal name', address: 'Address', registrationNumber: 'Registration number', taxNumber: 'Tax number', contactEmail: 'Contact email',
       vatNoteSr: 'VAT note (Serbian)', vatNoteEn: 'VAT note (English)', mailLogContent: 'Mail log content',
       rsdAccount: 'RSD account', eurIban: 'IBAN', eurSwift: 'SWIFT', eurBankName: 'Bank name', paypalPayee: 'PayPal',
-      email: 'Email address', displayName: 'Name', role: 'Role', status: 'Status', password: 'Password',
+      email: 'Email address', displayName: 'Name', role: 'Role', status: 'Status',
       code: 'Code', editionYear: 'Edition', startsOn: 'First day', endsOn: 'Last day', venue: 'Venue', listedSites: 'Listed sites', languages: 'Languages', timeZone: 'Time zone', state: 'State', mailServerId: 'Mail server',
       host: 'Host', port: 'Port', tlsMode: 'Encryption', username: 'User name', fromAddress: 'Sender address', fromName: 'Sender name', isDefault: 'Default', isFallback: 'Fallback', enabled: 'Switched on', sendRatePerMinute: 'Messages per minute',
     } as Record<string, string>,
