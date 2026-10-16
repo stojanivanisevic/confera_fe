@@ -262,7 +262,10 @@ test.describe('users (M2-FE-02)', () => {
     await dialog.getByLabel('Role').selectOption('reviewer');
     await dialog.getByRole('button', { name: 'Send the invitation' }).click();
     await answerPasswordAgain(page, STUB.admin.password);
-    await expect(page.locator('.ud-toast')).toContainText('Invitation sent to nova.osoba@a.example.test');
+    // What is true at that moment: saved, not yet sent; the page follows the API until it is sent (UXUI-M2-42).
+    await expect(page.locator('.ud-toast')).toContainText('Invitation to nova.osoba@a.example.test saved. It goes out in a moment.');
+    await expect(page.getByText('The invitation is saved and goes out in a moment.')).toBeVisible();
+    await expect(page.getByText('The invitation was sent to nova.osoba@a.example.test.')).toBeVisible({ timeout: 15_000 });
     await expect(page).toHaveURL(/\/users\/0e2e/);
     await expect(page.getByRole('heading', { level: 1, name: 'Nova Osoba' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send the invitation again' })).toBeVisible();
@@ -282,7 +285,7 @@ test.describe('users (M2-FE-02)', () => {
     await dialog.getByRole('button', { name: 'Send the invitation' }).click();
     // Confirmed a moment ago: no second dialog.
     await expect(page.getByRole('dialog', { name: 'Your password, once more' })).toHaveCount(0);
-    await expect(page.locator('.ud-toast')).toContainText('Invitation sent');
+    await expect(page.locator('.ud-toast')).toContainText('Invitation to nova.osoba@a.example.test saved');
   });
 
   test('a wrong password in the dialog is said there; cancelling changes nothing', async ({ page }) => {

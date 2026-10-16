@@ -7,7 +7,7 @@
  * last-admin rule's refusal is shown as the API gives it (409 `last_admin`).
  */
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import type { UserRecord } from '@confera/api-client';
 import { Alert, Button, Card, ConfirmDialog, DescriptionList, Dialog, PageHeader, Select, StatusBadge, TextButton, TextField, toast } from '@confera/ui';
@@ -41,6 +41,19 @@ export function User({ id }: { id: string }) {
   const [role, setRole] = useState<'admin' | 'reviewer'>('reviewer');
 
   const record = user.state.data;
+  // A message on its way: ask again until the API knows what became of it (UXUI-M2-42), for a minute at most.
+  const queued = record?.status === 'invited' && record.invitationDelivery === 'queued';
+  const reloadUser = user.reload;
+  useEffect(() => {
+    if (!queued) return;
+    let asked = 0;
+    const again = window.setInterval(() => {
+      asked += 1;
+      if (asked > 20) window.clearInterval(again);
+      else void reloadUser({ background: true });
+    }, 3000);
+    return () => window.clearInterval(again);
+  }, [queued, reloadUser]);
   const open = (what: Exclude<Ask, null>) => {
     if (!record) return;
     setName(record.displayName);
@@ -137,6 +150,7 @@ export function User({ id }: { id: string }) {
         </Alert>
       ) : null}
       {record.status === 'invited' && record.invitationDelivery === 'queued' ? <Alert tone="info" title={t.onItsWay} /> : null}
+      {record.status === 'invited' && record.invitationDelivery === 'sent' ? <Alert tone="success" title={fill(t.sentTo, { email: record.email })} /> : null}
       <div className={styles.cards}>
         <Card title={t.details} headingLevel={2}>
           <DescriptionList
@@ -178,7 +192,7 @@ export function User({ id }: { id: string }) {
       <ConfirmDialog open={ask === 'remove'} title={fill(t.removeQuestion, { name: record.displayName })} confirmText={t.remove} destructive busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => callEmpty(client.DELETE('/api/v1/users/{id}', { params: { path: { id }, query: { version: record.version } } })), fill(t.removed, { name: record.displayName }), () => router.push('/users'))}>
         {t.removeText}
       </ConfirmDialog>
-      <ConfirmDialog open={ask === 'resend'} title={t.resend} confirmText={t.resend} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => call(client.POST('/api/v1/users/{id}/invitation', { params: { path: { id } } })), (answer) => fill(answer && answer.invitationDelivery === 'waiting_for_server' ? t.resentWaiting : t.resent, { email: record.email }))}>
+      <ConfirmDialog open={ask === 'resend'} title={t.resend} confirmText={t.resend} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => call(client.POST('/api/v1/users/{id}/invitation', { params: { path: { id } } })), (answer) => fill(answer && answer.invitationDelivery === 'sent' ? t.resent : answer && answer.invitationDelivery === 'waiting_for_server' ? t.resentWaiting : t.resentSaved, { email: record.email }))}>
         {fill(t.resendText, { email: record.email })}
       </ConfirmDialog>
       <ConfirmDialog open={ask === 'sessions'} title={fill(t.endSessionsQuestion, { name: record.displayName })} confirmText={t.endSessions} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => callEmpty(client.DELETE('/api/v1/users/{id}/sessions', { params: { path: { id } } })), fill(t.sessionsEnded, { name: record.displayName }))}>

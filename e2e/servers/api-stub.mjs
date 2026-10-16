@@ -100,7 +100,12 @@ function passwordProblems(password, repeat) {
 }
 
 // An invitation waits for a mail server that is switched on, and is sent once one exists (UXUI-M2-01).
-const invitationDelivery = (user) => (user.status !== 'invited' ? null : (state.mailServers ?? []).some((server) => server.enabled) ? 'sent' : 'waiting_for_server');
+// A new or resent invitation is `queued` for its first two seconds, as the API's outbox has it (UXUI-M2-42).
+const invitationDelivery = (user) => {
+  if (user.status !== 'invited') return null;
+  if (!(state.mailServers ?? []).some((server) => server.enabled)) return 'waiting_for_server';
+  return user.invitedAt && Date.now() - user.invitedAt < 2000 ? 'queued' : 'sent';
+};
 const userDto = (user) => ({ id: user.id, email: user.email, displayName: user.displayName, role: user.role, status: user.status, createdAt: user.createdAt, version: user.version, invitationDelivery: invitationDelivery(user) });
 const organisationDto = () => ({ ...state.organisation });
 
@@ -308,7 +313,7 @@ export async function handleAdmin(req, url) {
     if (!['admin', 'reviewer'].includes(body.role)) errors.push({ path: 'role', code: 'isIn' });
     if (errors.length > 0) refuse(400, 'validation_failed', errors);
     if (state.users.some((u) => u.email.toLowerCase() === email.toLowerCase())) refuse(409, 'email_taken');
-    const user = { id: id('0e2e0000-0000'), email, displayName: String(body.displayName).trim(), role: body.role, status: 'invited', createdAt: now(), version: 1, password: null };
+    const user = { id: id('0e2e0000-0000'), email, displayName: String(body.displayName).trim(), role: body.role, status: 'invited', createdAt: now(), version: 1, password: null, invitedAt: Date.now() };
     state.users.push(user);
     state.links.push({ token: `${STUB.newInvitationTokenPrefix}${user.id}`, purpose: 'invitation', userId: user.id, recipient: email, expiresAt: new Date(Date.now() + 72 * 3600e3).toISOString(), used: false });
     record(me.id, 'user.invited', 'user', user.id, { fields: ['email', 'displayName', 'role'] });
@@ -379,6 +384,7 @@ export async function handleAdmin(req, url) {
       if (user.status !== 'invited') refuse(409, 'not_invited');
       for (const l of state.links) if (l.userId === user.id && l.purpose === 'invitation') l.used = true;
       state.links.push({ token: `${STUB.newInvitationTokenPrefix}${user.id}`, purpose: 'invitation', userId: user.id, recipient: user.email, expiresAt: new Date(Date.now() + 72 * 3600e3).toISOString(), used: false });
+      user.invitedAt = Date.now();
       record(me.id, 'invitation.queued', 'user', user.id);
       return { status: 202, body: userDto(user) };
     }

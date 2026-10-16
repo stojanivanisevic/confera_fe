@@ -87,7 +87,8 @@ export function Users() {
       const created = await withFreshPassword(() => call(client.POST('/api/v1/users', { body: { email: inviteEmail.trim(), displayName: inviteName.trim(), role: inviteRole } })));
       setInviting(false);
       // Without a mail server the invitation waits: the toast says what is true (UXUI-M2-01).
-      toast({ title: fill(created.invitationDelivery === 'waiting_for_server' ? t.invitedWaiting : t.invited, { email: created.email }), tone: 'success' });
+      // What is true at this moment (UXUI-M2-42): "sent" only once the API says so; the user's page follows the rest.
+      toast({ title: fill(created.invitationDelivery === 'sent' ? t.invited : created.invitationDelivery === 'waiting_for_server' ? t.invitedWaiting : t.invitedSaved, { email: created.email }), tone: 'success' });
       router.push(`/users/${created.id}`);
     } catch (error) {
       if (isCancelled(error)) {
