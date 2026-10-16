@@ -13,6 +13,7 @@ import type { UserRecord } from '@confera/api-client';
 import { Alert, Button, Card, ConfirmDialog, DescriptionList, Dialog, PageHeader, Select, StatusBadge, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
+import { ProblemAlert } from './ProblemAlert';
 import { formatDateTime } from './format';
 import { isCancelled, useFreshPassword } from './FreshPassword';
 import { call, callEmpty, explain, fieldMessages, isApiError, type Explained } from './problems';
@@ -29,6 +30,8 @@ export function User({ id }: { id: string }) {
   const { withFreshPassword } = useFreshPassword();
   const t = TEXTS.user;
   const user = useLoad<UserRecord>((c) => call(c.GET('/api/v1/users/{id}', { params: { path: { id } } })), [id]);
+  // How many admins can sign in: the last one cannot be deactivated, demoted or removed (UXUI-M2-07).
+  const admins = useLoad<number>((c) => call(c.GET('/api/v1/users', { params: { query: { role: 'admin', status: 'active', page: 1, pageSize: 2 } } })).then((page) => page.total), [user.state.data?.version]);
 
   const [ask, setAsk] = useState<Ask>(null);
   const [busy, setBusy] = useState(false);
@@ -48,14 +51,14 @@ export function User({ id }: { id: string }) {
   };
 
   /** Runs a change with the password asked again; shows the refusal; reloads on success. */
-  const change = async (work: () => Promise<UserRecord | void>, done: string, after?: () => void) => {
+  const change = async (work: () => Promise<UserRecord | void>, done: string | ((result: UserRecord | void) => string), after?: () => void) => {
     setBusy(true);
     setProblem(null);
     setFields({});
     try {
       const result = await withFreshPassword(work);
       setAsk(null);
-      toast({ title: done, tone: 'success' });
+      toast({ title: typeof done === 'string' ? done : done(result), tone: 'success' });
       if (after) after();
       else if (result) user.replace(result);
       else await user.reload({ background: true });
@@ -97,16 +100,20 @@ export function User({ id }: { id: string }) {
   };
 
   const removed = record.status === 'removed';
+  const lastAdmin = record.role === 'admin' && record.status === 'active' && admins.state.data === 1;
   const actions = (
-    <div className={styles.actions}>
-      {!removed ? <Button variant="dark" onClick={() => open('rename')}>{t.rename}</Button> : null}
-      {!removed ? <Button variant="dark" onClick={() => open('role')}>{t.changeRole}</Button> : null}
-      {record.status === 'invited' ? <Button variant="dark" onClick={() => open('resend')}>{t.resend}</Button> : null}
-      {record.status === 'active' ? <Button variant="dark" onClick={() => open('deactivate')}>{t.deactivate}</Button> : null}
-      {record.status === 'deactivated' ? <Button variant="dark" onClick={() => open('reactivate')}>{t.reactivate}</Button> : null}
-      {record.status === 'active' ? <Button variant="dark" onClick={() => open('sessions')}>{t.endSessions}</Button> : null}
-      {!removed ? <Button variant="danger" onClick={() => open('remove')}>{t.remove}</Button> : null}
-    </div>
+    <>
+      <div className={styles.actions}>
+        {!removed ? <Button variant="dark" onClick={() => open('rename')}>{t.rename}</Button> : null}
+        {!removed ? <Button variant="dark" disabled={lastAdmin} onClick={() => open('role')}>{t.changeRole}</Button> : null}
+        {record.status === 'invited' ? <Button variant="dark" onClick={() => open('resend')}>{t.resend}</Button> : null}
+        {record.status === 'active' ? <Button variant="dark" disabled={lastAdmin} onClick={() => open('deactivate')}>{t.deactivate}</Button> : null}
+        {record.status === 'deactivated' ? <Button variant="dark" onClick={() => open('reactivate')}>{t.reactivate}</Button> : null}
+        {record.status === 'active' ? <Button variant="dark" onClick={() => open('sessions')}>{t.endSessions}</Button> : null}
+        {!removed ? <Button variant="danger" disabled={lastAdmin} onClick={() => open('remove')}>{t.remove}</Button> : null}
+      </div>
+      {lastAdmin ? <p className={styles.text} data-confera-last-admin>{t.lastAdminNote}</p> : null}
+    </>
   );
 
   return (
@@ -114,10 +121,22 @@ export function User({ id }: { id: string }) {
       {/* A name of 200 letters without a space breaks inside the 375 px page (E2-22). */}
       <PageHeader title={<span className={styles.break}>{record.displayName}</span>} breadcrumbs={[{ label: t.back, href: '/users', onClick: () => router.push('/users') }, { label: <span className={styles.break}>{record.displayName}</span> }]} />
       {problem && ask === null ? (
-        <Alert tone="error" title={problem.title} onClose={() => setProblem(null)}>
+        <ProblemAlert title={problem.title} onClose={() => setProblem(null)}>
           {problem.text}
+        </ProblemAlert>
+      ) : null}
+      {/* What became of the invitation, as the API says it (UXUI-M2-01). */}
+      {record.status === 'invited' && record.invitationDelivery === 'waiting_for_server' ? (
+        <Alert tone="warning" title={t.notSent} action={<Button variant="dark" onClick={() => router.push('/mail-servers/new')}>{TEXTS.mailServers.add}</Button>}>
+          {t.notSentText}
         </Alert>
       ) : null}
+      {record.status === 'invited' && record.invitationDelivery === 'failed' ? (
+        <Alert tone="error" title={t.sendFailed}>
+          {t.sendFailedText}
+        </Alert>
+      ) : null}
+      {record.status === 'invited' && record.invitationDelivery === 'queued' ? <Alert tone="info" title={t.onItsWay} /> : null}
       <div className={styles.cards}>
         <Card title={t.details} headingLevel={2}>
           <DescriptionList
@@ -137,7 +156,7 @@ export function User({ id }: { id: string }) {
 
       <Dialog open={ask === 'rename'} onClose={() => setAsk(null)} title={t.rename} size="sm" actions={<><TextButton onClick={() => setAsk(null)}>{TEXTS.common.cancel}</TextButton><Button type="submit" form="rename-form" disabled={busy}>{t.renameSubmit}</Button></>}>
         <form id="rename-form" className={styles.form} onSubmit={rename} noValidate>
-          {problem ? <Alert tone="error" title={problem.title}>{problem.text}</Alert> : null}
+          {problem ? <ProblemAlert title={problem.title}>{problem.text}</ProblemAlert> : null}
           <TextField label={t.name} name="displayName" value={name} onChange={(event) => setName(event.target.value)} required status={fields.displayName ? 'error' : 'default'} message={fields.displayName} />
         </form>
       </Dialog>
@@ -145,7 +164,7 @@ export function User({ id }: { id: string }) {
       <Dialog open={ask === 'role'} onClose={() => setAsk(null)} title={t.changeRole} size="sm" actions={<><TextButton onClick={() => setAsk(null)}>{TEXTS.common.cancel}</TextButton><Button type="submit" form="role-form" disabled={busy}>{t.changeRoleSubmit}</Button></>}>
         <form id="role-form" className={styles.form} onSubmit={changeRole} noValidate>
           <p className="ud-dialog__text">{t.changeRoleText}</p>
-          {problem ? <Alert tone="error" title={problem.title}>{problem.text}</Alert> : null}
+          {problem ? <ProblemAlert title={problem.title}>{problem.text}</ProblemAlert> : null}
           <Select label={t.role} name="role" value={role} onChange={(event) => setRole(event.target.value === 'admin' ? 'admin' : 'reviewer')} options={[{ value: 'admin', label: TEXTS.users.roles.admin! }, { value: 'reviewer', label: TEXTS.users.roles.reviewer! }]} />
         </form>
       </Dialog>
@@ -159,7 +178,7 @@ export function User({ id }: { id: string }) {
       <ConfirmDialog open={ask === 'remove'} title={fill(t.removeQuestion, { name: record.displayName })} confirmText={t.remove} destructive busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => callEmpty(client.DELETE('/api/v1/users/{id}', { params: { path: { id }, query: { version: record.version } } })), fill(t.removed, { name: record.displayName }), () => router.push('/users'))}>
         {t.removeText}
       </ConfirmDialog>
-      <ConfirmDialog open={ask === 'resend'} title={t.resend} confirmText={t.resend} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => call(client.POST('/api/v1/users/{id}/invitation', { params: { path: { id } } })), fill(t.resent, { email: record.email }))}>
+      <ConfirmDialog open={ask === 'resend'} title={t.resend} confirmText={t.resend} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => call(client.POST('/api/v1/users/{id}/invitation', { params: { path: { id } } })), (answer) => fill(answer && answer.invitationDelivery === 'waiting_for_server' ? t.resentWaiting : t.resent, { email: record.email }))}>
         {fill(t.resendText, { email: record.email })}
       </ConfirmDialog>
       <ConfirmDialog open={ask === 'sessions'} title={fill(t.endSessionsQuestion, { name: record.displayName })} confirmText={t.endSessions} busy={busy} onCancel={() => setAsk(null)} onConfirm={() => void change(() => callEmpty(client.DELETE('/api/v1/users/{id}/sessions', { params: { path: { id } } })), fill(t.sessionsEnded, { name: record.displayName }))}>

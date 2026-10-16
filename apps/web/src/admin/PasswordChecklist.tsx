@@ -35,7 +35,9 @@ export function lineText(id: PasswordRuleId, organisation: string | undefined): 
 export function PasswordChecklist({ password, repeat, context, refused = [], id }: PasswordChecklistProps) {
   const autoId = useId();
   const listId = id ?? autoId;
-  const lines = checkPassword(password, repeat, context);
+  // Nothing is ticked before anything is typed: "not personal" holds for a password that exists, and
+  // "both entries match" once the repeat is typed too (UXUI-M2-08).
+  const lines = checkPassword(password, repeat, context).map((line) => ({ ...line, met: line.met && password !== '' && (line.id !== 'match' || repeat !== '') }));
   const refusedIds = new Set(refused.map((code) => CODE_OF[code]).filter((rule): rule is PasswordRuleId => rule !== undefined));
   return (
     <div className={styles.checklist} id={listId}>
@@ -44,10 +46,11 @@ export function PasswordChecklist({ password, repeat, context, refused = [], id 
       </p>
       <ul className={styles.list} aria-labelledby={`${listId}-title`} aria-live="polite" aria-atomic="false">
         {lines.map(({ id: rule, met }) => {
-          const failed = refusedIds.has(rule) && !met;
+          // A rule the server named is red, even where the browser's own check holds it met (UXUI-M2-09).
+          const failed = refusedIds.has(rule);
           return (
-            <li key={rule} className={met ? styles.met : failed ? styles.refused : styles.open} data-rule={rule} data-met={met ? 'true' : 'false'}>
-              <Icon name={met ? 'check-circle-2' : 'alert-circle'} size={16} />
+            <li key={rule} className={failed ? styles.refused : met ? styles.met : styles.open} data-rule={rule} data-met={met ? 'true' : 'false'} data-refused={failed ? 'true' : undefined}>
+              <Icon name={failed ? 'alert-circle' : met ? 'check-circle-2' : 'circle'} size={16} />
               <span>{lineText(rule, context.organisationName)}</span>
               <span className="ud-sr">{met ? ` (${TEXTS.setPassword.met})` : ` (${TEXTS.setPassword.notMet})`}</span>
             </li>

@@ -11,6 +11,7 @@ import type { Organisation as Profile } from '@confera/api-client';
 import { Alert, Button, Card, PageHeader, Switch, Textarea, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
+import { ProblemAlert } from './ProblemAlert';
 import { formatDate, withinDays } from './format';
 import { isCancelled, useFreshPassword } from './FreshPassword';
 import { call, explain, fieldMessages, type Explained } from './problems';
@@ -160,9 +161,9 @@ export function Organisation() {
         <form className={styles.fields} onSubmit={(event) => void saveIssuer(event)} noValidate data-confera-issuer>
           {issuerProblem ? (
             <div className={styles.all}>
-              <Alert tone="error" title={issuerProblem.title} action={conflict(issuerProblem) ? reloadAction : undefined}>
+              <ProblemAlert title={issuerProblem.title} action={conflict(issuerProblem) ? reloadAction : undefined}>
                 {issuerProblem.text}
-              </Alert>
+              </ProblemAlert>
             </div>
           ) : null}
           {field('name', t.name, { hint: t.nameHint })}
@@ -193,9 +194,9 @@ export function Organisation() {
         <form className={styles.fields} onSubmit={(event) => void savePayment(event)} noValidate data-confera-payment>
           {paymentProblem ? (
             <div className={styles.all}>
-              <Alert tone="error" title={paymentProblem.title} action={conflict(paymentProblem) ? reloadAction : undefined}>
+              <ProblemAlert title={paymentProblem.title} action={conflict(paymentProblem) ? reloadAction : undefined}>
                 {paymentProblem.text}
-              </Alert>
+              </ProblemAlert>
             </div>
           ) : null}
           {payField('rsdAccount', t.rsdAccount)}

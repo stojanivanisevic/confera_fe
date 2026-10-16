@@ -13,6 +13,7 @@ import type { Conference as ConferenceRecord, ConferenceState, MailServer } from
 import { Alert, Button, Card, CheckboxGroup, ConfirmDialog, DateField, Dialog, PageHeader, Select, StatusBadge, Textarea, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
+import { ProblemAlert } from './ProblemAlert';
 import { conferenceLabel, useConference } from './conference-context';
 import { LANGUAGES, runtimeTimeZones, stateTone, yearOf } from './Conferences';
 import { call, explain, fieldMessages, isApiError, type Explained } from './problems';
@@ -177,7 +178,7 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
   };
 
   const openCopy = () => {
-    setCopyName(`${record.name}`);
+    setCopyName(fill(t.copyName, { name: record.name }));
     setCopyCode(record.code);
     setCopyEdition(record.editionYear === null ? '' : String(record.editionYear + 1));
     setCopyFields({});
@@ -206,7 +207,6 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
     }
   };
 
-  const working = switcher.selected?.id === record.id;
   const stateButtons = mayManage
     ? NEXT_STATES[record.state].map((state) => (
         <Button key={state} variant={state === 'archived' ? 'danger' : 'dark'} onClick={() => setAsked(state)}>
@@ -227,11 +227,6 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
         actions={
           <div className={styles.actionsInline}>
             <StatusBadge tone={stateTone(record.state)}>{t.states[record.state] ?? record.state}</StatusBadge>
-            {working ? null : (
-              <Button variant="dark" onClick={() => switcher.select(record.id)}>
-                {t.use}
-              </Button>
-            )}
             {mayManage ? (
               <Button variant="dark" icon="copy" onClick={openCopy}>
                 {t.copy}
@@ -241,16 +236,15 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
           </div>
         }
       />
-      {working ? <p className={styles.text}>{t.inUse}</p> : null}
       {archived ? (
         <Alert tone="info" title={t.archived}>
           {t.archivedText}
         </Alert>
       ) : null}
       {problem ? (
-        <Alert tone="error" title={problem.title} onClose={() => setProblem(null)}>
+        <ProblemAlert title={problem.title} onClose={() => setProblem(null)}>
           {problem.text}
-        </Alert>
+        </ProblemAlert>
       ) : null}
       <Card title={t.settings} headingLevel={2}>
         <form className={styles.fields} onSubmit={(event) => void save(event)} noValidate data-confera-conference-settings>
@@ -300,9 +294,9 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
         <form id="copy-form" className={styles.form} onSubmit={(event) => void copy(event)} noValidate>
           <p className="ud-dialog__text">{t.copyText}</p>
           {copyProblem ? (
-            <Alert tone="error" title={copyProblem.title}>
+            <ProblemAlert title={copyProblem.title}>
               {copyProblem.text}
-            </Alert>
+            </ProblemAlert>
           ) : null}
           <TextField label={t.name} name="name" value={copyName} onChange={(event) => setCopyName(event.target.value)} required status={copyFields.name ? 'error' : 'default'} message={copyFields.name} />
           <TextField label={t.code} name="code" value={copyCode} maxLength={2} onChange={(event) => setCopyCode(event.target.value.toUpperCase())} status={copyFields.code ? 'error' : 'default'} message={copyFields.code ?? t.codeHint} />

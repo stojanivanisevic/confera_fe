@@ -8,11 +8,15 @@
  * for the password, confirms it (POST /api/v1/session/password-confirmation) and then runs
  * the change. A wrong password is said at the field; cancelling runs nothing.
  */
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 
 import { Alert, Button, Dialog, PasswordField, TextButton } from '@confera/ui';
 
-import { call, explain, isApiError, needsFreshPassword } from './problems';
+import { signInHref } from '@/lib/next-path';
+
+import styles from './admin.module.css';
+import { call, explain, isApiError, isUnauthenticated, needsFreshPassword } from './problems';
 import { useSession } from './session';
 import { TEXTS } from './texts';
 
@@ -24,6 +28,8 @@ interface Pending {
 interface FreshPasswordApi {
   /** Runs `change` with a fresh password, asking for it first when needed. Rejects with `CANCELLED` when the person cancels. */
   readonly withFreshPassword: <T>(change: () => Promise<T>) => Promise<T>;
+  /** The dialog is open: the form behind it is not "sending" (UXUI-M2-06). */
+  readonly asking: boolean;
 }
 
 export const CANCELLED = Symbol('cancelled');
@@ -32,12 +38,24 @@ export const isCancelled = (error: unknown): boolean => error === CANCELLED;
 const FreshPasswordContext = createContext<FreshPasswordApi | null>(null);
 
 export function FreshPasswordProvider({ children }: { children: ReactNode }) {
-  const { client, fresh, confirmed, contact } = useSession();
+  const { client, fresh, confirmed, contact, refresh } = useSession();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<{ title: string; text: string } | null>(null);
+  // A wrong password is said at the field (UXUI-M2-06); a session that ended, with the way to sign in again (UXUI-M2-02).
+  const [wrong, setWrong] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const field = useRef<HTMLDivElement>(null);
   const pending = useRef<Pending | null>(null);
+
+  useEffect(() => {
+    if (!wrong) return;
+    const input = field.current?.querySelector('input');
+    input?.focus();
+    input?.select();
+  }, [wrong]);
 
   const ask = useCallback(
     () =>
@@ -45,6 +63,8 @@ export function FreshPasswordProvider({ children }: { children: ReactNode }) {
         pending.current = { resolve, reject };
         setPassword('');
         setProblem(null);
+        setWrong(false);
+        setEnded(false);
         setOpen(true);
       }),
     [],
@@ -63,14 +83,24 @@ export function FreshPasswordProvider({ children }: { children: ReactNode }) {
     event.preventDefault();
     setBusy(true);
     setProblem(null);
+    setWrong(false);
     try {
+      // Back from signing in again in another tab: read the new session (and its CSRF value) first.
+      if (ended && !(await refresh({ quiet: true }))) {
+        setProblem({ title: TEXTS.problems.sessionEnded, text: TEXTS.problems.stillSignedOut });
+        return;
+      }
+      setEnded(false);
       const result = await call(client.POST('/api/v1/session/password-confirmation', { body: { password } }));
       confirmed(result.confirmationValidUntil);
       setPassword('');
       close('done');
     } catch (error) {
-      if (isApiError(error) && error.code === 'password_incorrect') setProblem({ title: TEXTS.freshPassword.wrong, text: TEXTS.freshPassword.wrongText });
-      else setProblem(explain(error, contact));
+      if (isApiError(error) && error.code === 'password_incorrect') setWrong(true);
+      else if (isUnauthenticated(error)) {
+        setEnded(true);
+        setProblem({ title: TEXTS.problems.sessionEnded, text: TEXTS.problems.sessionEndedText });
+      } else setProblem(explain(error, contact));
     } finally {
       setBusy(false);
     }
@@ -89,8 +119,9 @@ export function FreshPasswordProvider({ children }: { children: ReactNode }) {
           return change();
         }
       },
+      asking: open,
     }),
-    [fresh, ask],
+    [fresh, ask, open],
   );
 
   return (
@@ -112,14 +143,38 @@ export function FreshPasswordProvider({ children }: { children: ReactNode }) {
           </>
         }
       >
-        <form id="fresh-password-form" onSubmit={(event) => void submit(event)} noValidate>
+        <form id="fresh-password-form" className={styles.form} onSubmit={(event) => void submit(event)} noValidate>
           <p className="ud-dialog__text">{TEXTS.freshPassword.text}</p>
           {problem ? (
-            <Alert tone="error" title={problem.title}>
+            <Alert
+              tone={ended ? 'warning' : 'error'}
+              title={problem.title}
+              action={
+                ended ? (
+                  <a className="ud-link" href={signInHref(pathname)} target="_blank" rel="noopener noreferrer">
+                    {TEXTS.problems.signInNewTab}
+                  </a>
+                ) : undefined
+              }
+            >
               {problem.text}
             </Alert>
           ) : null}
-          <PasswordField label={TEXTS.freshPassword.passwordLabel} name="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+          <div ref={field}>
+            <PasswordField
+              label={TEXTS.freshPassword.passwordLabel}
+              name="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setWrong(false);
+              }}
+              status={wrong ? 'error' : 'default'}
+              message={wrong ? `${TEXTS.freshPassword.wrong}. ${TEXTS.freshPassword.wrongText}` : undefined}
+              required
+            />
+          </div>
         </form>
       </Dialog>
     </FreshPasswordContext.Provider>

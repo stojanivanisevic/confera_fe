@@ -14,6 +14,7 @@ import type { MailServer as MailServerRecord, TestMessageResult } from '@confera
 import { Alert, Button, Card, ConfirmDialog, NumberField, PageHeader, PasswordField, Select, Switch, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
+import { ProblemAlert } from './ProblemAlert';
 import { LANGUAGES } from './Conferences';
 import { formatDateTime } from './format';
 import { isCancelled, useFreshPassword } from './FreshPassword';
@@ -137,9 +138,11 @@ export function MailServer({ id }: { id: string }) {
       }
     } catch (error) {
       if (isCancelled(error)) return;
-      setFields(fieldMessages(error));
-      // The target rules of ADR-11 are answered with 422 and a code: shown at the field they concern.
-      if (isApiError(error) && (error.code === 'tls_required' || error.code === 'port_not_allowed' || error.code === 'address_not_allowed')) {
+      const named = fieldMessages(error);
+      setFields(named);
+      // The target rules of ADR-11 are answered with 422 and the field they concern (UXUI-M2-10); an API that
+      // names no field still has its code shown at the field.
+      if (Object.keys(named).length === 0 && isApiError(error) && (error.code === 'tls_required' || error.code === 'port_not_allowed' || error.code === 'address_not_allowed')) {
         const reason = t.reasons[error.code] ?? t.reasonFallback;
         setFields({ [error.code === 'tls_required' ? 'tlsMode' : error.code === 'port_not_allowed' ? 'port' : 'host']: reason.charAt(0).toUpperCase() + reason.slice(1) });
       }
@@ -201,9 +204,9 @@ export function MailServer({ id }: { id: string }) {
         }
       />
       {problem ? (
-        <Alert tone="error" title={problem.title} onClose={() => setProblem(null)}>
+        <ProblemAlert title={problem.title} onClose={() => setProblem(null)}>
           {problem.text}
-        </Alert>
+        </ProblemAlert>
       ) : null}
       <Card title={TEXTS.conferences.settings} headingLevel={2}>
         <form className={styles.fields} onSubmit={(event) => void save(event)} noValidate data-confera-mail-server>
@@ -240,12 +243,13 @@ export function MailServer({ id }: { id: string }) {
           ) : null}
           <TextField label={t.fromAddress} name="fromAddress" type="email" value={form.fromAddress} disabled={readOnly} onChange={(event) => set({ fromAddress: event.target.value })} required status={fields.fromAddress ? 'error' : 'default'} message={fields.fromAddress} />
           <TextField label={t.fromName} name="fromName" value={form.fromName} disabled={readOnly} onChange={(event) => set({ fromName: event.target.value })} required status={fields.fromName ? 'error' : 'default'} message={fields.fromName} />
-          <NumberField label={t.rate} name="sendRatePerMinute" value={form.rate} disabled={readOnly} min={1} max={600} onChange={(event) => set({ rate: event.target.value })} status={fields.sendRatePerMinute ? 'error' : 'default'} message={fields.sendRatePerMinute} />
+          <NumberField label={t.rate} name="sendRatePerMinute" value={form.rate} disabled={readOnly} min={1} max={600} onChange={(event) => set({ rate: event.target.value })} status={fields.sendRatePerMinute ? 'error' : 'default'} message={fields.sendRatePerMinute ?? t.rateHint} />
           <div className={styles.all}>
-            <div className={styles.actionsInline}>
-              <Switch label={t.isDefault} checked={form.isDefault} disabled={readOnly} onChange={(event) => set({ isDefault: event.target.checked })} />
-              <Switch label={t.isFallback} checked={form.isFallback} disabled={readOnly} onChange={(event) => set({ isFallback: event.target.checked })} />
-              <Switch label={t.enabled} checked={form.enabled} disabled={readOnly} onChange={(event) => set({ enabled: event.target.checked })} />
+            {/* One switch per line, each with what it means (UXUI-M2-23). */}
+            <div className={styles.form}>
+              <Switch label={t.isDefault} description={t.isDefaultHint} checked={form.isDefault} disabled={readOnly} onChange={(event) => set({ isDefault: event.target.checked })} />
+              <Switch label={t.isFallback} description={t.isFallbackHint} checked={form.isFallback} disabled={readOnly} onChange={(event) => set({ isFallback: event.target.checked })} />
+              <Switch label={t.enabled} description={t.enabledHint} checked={form.enabled} disabled={readOnly} onChange={(event) => set({ enabled: event.target.checked })} />
             </div>
           </div>
           {readOnly ? null : (
@@ -278,9 +282,9 @@ export function MailServer({ id }: { id: string }) {
             ) : null}
             {testProblem ? (
               <div className={styles.all}>
-                <Alert tone="error" title={testProblem.title}>
+                <ProblemAlert title={testProblem.title}>
                   {testProblem.text}
-                </Alert>
+                </ProblemAlert>
               </div>
             ) : null}
           </form>

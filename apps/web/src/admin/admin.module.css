@@ -271,3 +271,39 @@
 .break {
   overflow-wrap: anywhere;
 }
+
+/* A message for the whole page above its content: the session ended, the server does not answer. */
+.banner {
+  margin-bottom: var(--gutter-2xl);
+}
+
+/* An alert of a refusal takes the focus, so a keyboard user starts from it (UXUI-M2-21). */
+.problem:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-card);
+}
+
+/* The home's first steps: an icon, the link, and its state. */
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-m);
+}
+
+.steps li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--gutter-s);
+}
+
+/* Shown from 600px: the person's name in the top bar, which a phone has no room for (UXUI-M2-24). */
+@media (max-width: 599px) {
+  .wideOnly {
+    display: none;
+  }
+}

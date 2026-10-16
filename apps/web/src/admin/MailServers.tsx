@@ -36,6 +36,8 @@ export function MailServers() {
           {list.state.problem.text}
         </Alert>
       ) : null}
+      {/* While the list failed it shows no empty state that would contradict the alert (UXUI-M2-15). */}
+      {list.state.phase === 'failed' && !list.state.data ? null : (
       <DataTable<MailServer>
         caption={t.title}
         rows={[...(list.state.data ?? [])]}
@@ -61,6 +63,7 @@ export function MailServers() {
           { key: 'enabled', header: t.enabled, render: (row) => <StatusBadge tone={row.enabled ? 'success' : 'neutral'}>{row.enabled ? t.on : t.off}</StatusBadge> },
         ]}
       />
+      )}
     </div>
   );
 }

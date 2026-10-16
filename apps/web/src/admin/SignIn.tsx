@@ -14,6 +14,7 @@ import { Alert, Button, PageHeader, PasswordField, TextField } from '@confera/ui
 import { safeNextPath } from '@/lib/next-path';
 
 import styles from './admin.module.css';
+import { ProblemAlert } from './ProblemAlert';
 import { call, explain, isApiError, isUnauthenticated } from './problems';
 import { TEXTS } from './texts';
 
@@ -65,9 +66,9 @@ export function SignIn() {
       <PageHeader title={t.title} />
       {reason === 'session-ended' ? <Alert tone="info" title={t.signedOut}>{t.sessionEnded}</Alert> : null}
       {problem ? (
-        <Alert tone="error" title={problem.title}>
+        <ProblemAlert title={problem.title}>
           {problem.text}
-        </Alert>
+        </ProblemAlert>
       ) : null}
       <form className={styles.form} onSubmit={(event) => void submit(event)} noValidate data-confera-sign-in>
         <TextField label={t.email} name="email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required />

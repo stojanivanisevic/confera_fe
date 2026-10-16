@@ -12,6 +12,7 @@ import { createSessionClient, type LinkPerson } from '@confera/api-client';
 import { Alert, Button, PageHeader, PasswordField } from '@confera/ui';
 
 import styles from './admin.module.css';
+import { ProblemAlert } from './ProblemAlert';
 import { formatDateTime } from './format';
 import { PasswordChecklist } from './PasswordChecklist';
 import { call, callEmpty, explain, isApiError } from './problems';
@@ -127,9 +128,9 @@ export function SetPasswordByLink({ purpose, token }: SetPasswordByLinkProps) {
         description={invitation ? fill(t.invitationLead, { email: person.email }) : fill(t.resetLead, { email: person.email })}
       />
       {problem ? (
-        <Alert tone="error" title={problem.title}>
+        <ProblemAlert title={problem.title}>
           {problem.text}
-        </Alert>
+        </ProblemAlert>
       ) : null}
       <form className={styles.form} onSubmit={(event) => void submit(event)} noValidate data-confera-set-password>
         <PasswordField label={t.passwordLabel} name="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required aria-describedby="password-checklist" />

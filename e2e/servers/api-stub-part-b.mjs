@@ -171,7 +171,7 @@ export function handlePartB(ctx) {
   };
   // A target on this network is refused, as confera_be refuses it on `prod` (the stub always does, so the screen's answer can be tested).
   const checkTarget = (host) => {
-    if (PRIVATE.test(host)) refuse(422, 'address_not_allowed');
+    if (PRIVATE.test(host)) refuse(422, 'address_not_allowed', [{ path: 'host', code: 'address_not_allowed' }]);
   };
   const unmark = (except, isDefault, isFallback) => {
     for (const server of state.mailServers) {

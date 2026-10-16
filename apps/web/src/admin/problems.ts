@@ -32,6 +32,14 @@ interface Answer<T> {
  * Unwraps an openapi-fetch call: the data, or an ApiError. A call that threw (no connection,
  * a timeout) becomes an ApiError with the status 0 and the code `api_unreachable`.
  */
+/** The shell listens: a change met a session that has ended (UXUI-M2-02). */
+export const SESSION_ENDED_EVENT = 'confera:session-ended';
+
+function announce(status: number, error: unknown): void {
+  const code = typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined;
+  if (status === 401 && code === 'unauthenticated' && typeof window !== 'undefined') window.dispatchEvent(new Event(SESSION_ENDED_EVENT));
+}
+
 export async function call<T>(promise: Promise<Answer<T>>): Promise<T> {
   let answer: Answer<T>;
   try {
@@ -39,7 +47,10 @@ export async function call<T>(promise: Promise<Answer<T>>): Promise<T> {
   } catch {
     throw new ApiError(0, { code: UNREACHABLE });
   }
-  if (answer.error !== undefined || (answer.data === undefined && !answer.response.ok)) throw new ApiError(answer.response.status, answer.error);
+  if (answer.error !== undefined || (answer.data === undefined && !answer.response.ok)) {
+    announce(answer.response.status, answer.error);
+    throw new ApiError(answer.response.status, answer.error);
+  }
   return answer.data as T;
 }
 
@@ -51,7 +62,10 @@ export async function callEmpty(promise: Promise<Answer<unknown>>): Promise<void
   } catch {
     throw new ApiError(0, { code: UNREACHABLE });
   }
-  if (!answer.response.ok) throw new ApiError(answer.response.status, answer.error);
+  if (!answer.response.ok) {
+    announce(answer.response.status, answer.error);
+    throw new ApiError(answer.response.status, answer.error);
+  }
 }
 
 export const isApiError = (error: unknown): error is ApiError => error instanceof ApiError;

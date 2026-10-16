@@ -24,7 +24,7 @@ type Result = NonNullable<Query['result']>;
 
 export function MailLog() {
   const router = useRouter();
-  const { selected } = useConference();
+  const { selected, select } = useConference();
   const { session } = useSession();
   const mayReadServers = session?.user.permissions.includes('mail_servers.read') ?? false;
   const t = TEXTS.mailLog;
@@ -53,6 +53,8 @@ export function MailLog() {
           {log.state.problem.text}
         </Alert>
       ) : null}
+      {/* While the list failed it shows no empty state that would contradict the alert (UXUI-M2-15). */}
+      {log.state.phase === 'failed' && !log.state.data ? null : (
       <DataTable<MailLogSummary>
         caption={t.title}
         rows={log.state.data?.items ?? []}
@@ -61,6 +63,18 @@ export function MailLog() {
         filtered={filtered}
         onClearFilters={clear}
         empty={
+          selected ? (
+            // The log of one conference is empty: say which, and that invitations and notices belong to no conference (UXUI-M2-05).
+            <EmptyState
+              title={fill(t.emptyConference, { conference: conferenceLabel(selected) })}
+              description={t.emptyConferenceText}
+              action={
+                <TextButton icon="x" onClick={() => select(null)}>
+                  {t.showAll}
+                </TextButton>
+              }
+            />
+          ) : (
           <EmptyState
             title={t.empty}
             description={t.emptyText}
@@ -72,6 +86,7 @@ export function MailLog() {
               ) : undefined
             }
           />
+          )
         }
         onRowClick={(row) => router.push(`/mail-log/${row.id}`)}
         openColumn="sentAt"
@@ -83,7 +98,7 @@ export function MailLog() {
           { key: 'serverName', header: t.server, render: (row) => row.serverName ?? '' },
           { key: 'attempt', header: t.attempt, align: 'right' },
           { key: 'result', header: t.result, render: (row) => <StatusBadge tone={row.result === 'sent' ? 'success' : 'danger'}>{t.results[row.result] ?? row.result}</StatusBadge> },
-          { key: 'errorCode', header: t.errorCode, render: (row) => row.errorCode ?? '' },
+          { key: 'errorCode', header: t.errorCode, render: (row) => (row.errorCode ? (t.errors[row.errorCode] ?? row.errorCode) : '') },
         ]}
         toolbar={
           <FilterBar onReset={filtered ? clear : undefined}>
@@ -121,6 +136,7 @@ export function MailLog() {
           />
         }
       />
+      )}
     </div>
   );
 }

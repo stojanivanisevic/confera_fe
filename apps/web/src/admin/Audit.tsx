@@ -7,11 +7,13 @@
 import { useState } from 'react';
 
 import type { AdminPaths, AuditEntry, AuditPage } from '@confera/api-client';
-import { Alert, Button, DataTable, DateField, DescriptionList, Drawer, FilterBar, PageHeader, Pagination, Select, TextButton } from '@confera/ui';
+import { Alert, DataTable, DateField, DescriptionList, Drawer, FilterBar, PageHeader, Pagination, Select, TextButton } from '@confera/ui';
 
 import styles from './admin.module.css';
+import { conferenceLabel } from './conference-context';
 import { formatDateTime } from './format';
 import { call } from './problems';
+import { useSession } from './session';
 import { TEXTS } from './texts';
 import { useLoad } from './useLoad';
 
@@ -37,8 +39,40 @@ const dayEnd = (day: string) => {
   return next.toISOString();
 };
 
+/** The names of what the log speaks of, read once: users, conferences, mail servers (UXUI-M2-12). */
+function useNames(): ReadonlyMap<string, string> {
+  const { session } = useSession();
+  const may = (permission: string) => session?.user.permissions.includes(permission) ?? false;
+  const names = useLoad<ReadonlyMap<string, string>>(
+    async (c) => {
+      const out = new Map<string, string>();
+      const quietly = <T,>(promise: Promise<T>): Promise<T | null> => promise.catch(() => null);
+      const [users, conferences, servers] = await Promise.all([
+        may('users.read') ? quietly(call(c.GET('/api/v1/users', { params: { query: { page: 1, pageSize: 100 } } }))) : null,
+        may('conferences.read') ? quietly(call(c.GET('/api/v1/conferences'))) : null,
+        may('mail_servers.read') ? quietly(call(c.GET('/api/v1/mail-servers'))) : null,
+      ]);
+      for (const user of users?.items ?? []) out.set(user.id, user.displayName);
+      for (const conference of conferences?.items ?? []) out.set(conference.id, conferenceLabel(conference));
+      for (const server of servers?.items ?? []) out.set(server.id, server.name);
+      return out;
+    },
+    [session?.user.id],
+  );
+  return names.state.data ?? new Map();
+}
+
 export function Audit() {
   const t = TEXTS.audit;
+  const names = useNames();
+  /** What an entry concerns, in words: the name of the object where it is known. */
+  const subjectOf = (entry: AuditEntry): string => {
+    if (entry.action === 'organisation.payment_details_changed') return t.subjects.payment ?? entry.subjectType;
+    const name = entry.subjectId ? names.get(entry.subjectId) : undefined;
+    const kind = t.subjects[entry.subjectType] ?? entry.subjectType;
+    return name ? `${kind}: ${name}` : kind;
+  };
+  const fieldsOf = (fields: readonly string[]): string => fields.map((field) => t.fieldNames[field] ?? field).join(', ');
   const [action, setAction] = useState<'' | Action>('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -64,7 +98,7 @@ export function Audit() {
     setPage(1);
   };
 
-  const changes = (entry: AuditEntry) => Object.entries(entry.changes as Record<string, { old?: unknown; new?: unknown }>).map(([field, change]) => ({ label: field, value: `${show(change.old)} → ${show(change.new)}` }));
+  const changes = (entry: AuditEntry) => Object.entries(entry.changes as Record<string, { old?: unknown; new?: unknown }>).map(([field, change]) => ({ label: t.fieldNames[field] ?? field, value: <span className={styles.break}>{`${show(change.old)} → ${show(change.new)}`}</span> }));
 
   return (
     <div className={styles.stack}>
@@ -74,6 +108,8 @@ export function Audit() {
           {entries.state.problem.text}
         </Alert>
       ) : null}
+      {/* While the list failed it shows no empty state that would contradict the alert (UXUI-M2-15). */}
+      {entries.state.phase === 'failed' && !entries.state.data ? null : (
       <DataTable<AuditEntry>
         caption={t.title}
         rows={rows}
@@ -87,11 +123,11 @@ export function Audit() {
           { key: 'occurredAt', header: t.when, render: (row) => formatDateTime(row.occurredAt) },
           { key: 'actor', header: t.who, render: (row) => row.actor?.displayName ?? t.system },
           { key: 'action', header: t.action, render: (row) => actionText(row.action) },
-          { key: 'subjectType', header: t.subject, render: (row) => row.subjectType },
-          { key: 'fields', header: t.fields, render: (row) => row.fields.join(', ') },
+          { key: 'subjectType', header: t.subject, render: (row) => <span className={styles.break}>{subjectOf(row)}</span> },
+          { key: 'fields', header: t.fields, render: (row) => fieldsOf(row.fields) },
         ]}
         toolbar={
-          <FilterBar onReset={filtered ? clearFilters : undefined} actions={<Button variant="dark" onClick={() => void entries.reload()}>{t.apply}</Button>}>
+          <FilterBar onReset={filtered ? clearFilters : undefined}>
             <Select label={t.action} value={action} onChange={(event) => { setAction(event.target.value as '' | Action); setPage(1); }} options={[{ value: '', label: t.anyAction }, ...ACTIONS.map((value) => ({ value, label: actionText(value) }))]} />
             <DateField label={t.from} value={from} onChange={(event) => { setFrom(event.target.value); setPage(1); }} />
             <DateField label={t.to} value={to} onChange={(event) => { setTo(event.target.value); setPage(1); }} />
@@ -99,6 +135,7 @@ export function Audit() {
         }
         footer={<Pagination page={page} pageSize={pageSize} total={entries.state.data?.total ?? 0} onPageChange={setPage} pageSizeOptions={[10, 25, 50, 100]} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
       />
+      )}
       <Drawer open={opened !== null} onClose={() => setOpened(null)} title={opened ? actionText(opened.action) : t.entry}>
         {opened ? (
           <>
@@ -106,8 +143,9 @@ export function Audit() {
               items={[
                 { label: t.when, value: formatDateTime(opened.occurredAt) },
                 { label: t.who, value: opened.actor?.displayName ?? t.system },
-                { label: t.subject, value: `${opened.subjectType}${opened.subjectId ? ` ${opened.subjectId}` : ''}` },
-                { label: t.fields, value: opened.fields.join(', ') },
+                { label: t.subject, value: <span className={styles.break}>{subjectOf(opened)}</span> },
+                { label: t.fields, value: fieldsOf(opened.fields) },
+                ...(opened.subjectId ? [{ label: t.recordId, value: <span className={styles.break}>{opened.subjectId}</span> }] : []),
                 { label: t.traceId, value: opened.traceId ?? '—' },
               ]}
             />

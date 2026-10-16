@@ -99,7 +99,9 @@ function passwordProblems(password, repeat) {
   return problems;
 }
 
-const userDto = (user) => ({ id: user.id, email: user.email, displayName: user.displayName, role: user.role, status: user.status, createdAt: user.createdAt, version: user.version });
+// An invitation waits for a mail server that is switched on, and is sent once one exists (UXUI-M2-01).
+const invitationDelivery = (user) => (user.status !== 'invited' ? null : (state.mailServers ?? []).some((server) => server.enabled) ? 'sent' : 'waiting_for_server');
+const userDto = (user) => ({ id: user.id, email: user.email, displayName: user.displayName, role: user.role, status: user.status, createdAt: user.createdAt, version: user.version, invitationDelivery: invitationDelivery(user) });
 const organisationDto = () => ({ ...state.organisation });
 
 function cookieValue(req, name) {

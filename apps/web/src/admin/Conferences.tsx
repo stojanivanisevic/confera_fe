@@ -11,6 +11,7 @@ import type { Conference, ConferenceState } from '@confera/api-client';
 import { Alert, Button, CheckboxGroup, DataTable, Dialog, EmptyState, FilterBar, PageHeader, Select, StatusBadge, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
+import { ProblemAlert } from './ProblemAlert';
 import { useConference } from './conference-context';
 import { formatDate } from './format';
 import { call, explain, fieldMessages, type Explained } from './problems';
@@ -37,7 +38,7 @@ export const yearOf = (text: string): number | null | undefined => {
 export function Conferences({ timeZones = runtimeTimeZones() }: { timeZones?: readonly string[] }) {
   const router = useRouter();
   const { client, contact, session } = useSession();
-  const { reload: reloadSwitch, select } = useConference();
+  const { reload: reloadSwitch } = useConference();
   const t = TEXTS.conferences;
   const mayManage = session?.user.permissions.includes('conferences.manage') ?? false;
 
@@ -76,8 +77,8 @@ export function Conferences({ timeZones = runtimeTimeZones() }: { timeZones?: re
       const created = await call(client.POST('/api/v1/conferences', { body: { name: name.trim(), code: code.trim(), editionYear, timeZone, languages: languages as ('en' | 'sr')[] } }));
       setCreating(false);
       toast({ title: fill(t.created, { name: created.name }), tone: 'success' });
+      // A new conference does not change what the mail log and the templates show (UXUI-M2-05).
       await reloadSwitch();
-      select(created.id);
       router.push(`/conferences/${created.id}`);
     } catch (error) {
       setFields(fieldMessages(error));
@@ -102,6 +103,8 @@ export function Conferences({ timeZones = runtimeTimeZones() }: { timeZones?: re
           {list.state.problem.text}
         </Alert>
       ) : null}
+      {/* While the list failed it shows no empty state that would contradict the alert (UXUI-M2-15). */}
+      {list.state.phase === 'failed' && !list.state.data ? null : (
       <DataTable<Conference>
         caption={t.title}
         rows={rows}
@@ -124,6 +127,7 @@ export function Conferences({ timeZones = runtimeTimeZones() }: { timeZones?: re
           </FilterBar>
         }
       />
+      )}
 
       <Dialog
         open={creating}
@@ -143,9 +147,9 @@ export function Conferences({ timeZones = runtimeTimeZones() }: { timeZones?: re
         <form id="conference-form" className={styles.form} onSubmit={(event) => void create(event)} noValidate>
           <p className="ud-dialog__text">{t.createText}</p>
           {problem ? (
-            <Alert tone="error" title={problem.title}>
+            <ProblemAlert title={problem.title}>
               {problem.text}
-            </Alert>
+            </ProblemAlert>
           ) : null}
           <TextField label={t.name} name="name" value={name} onChange={(event) => setName(event.target.value)} required status={fields.name ? 'error' : 'default'} message={fields.name} />
           <TextField label={t.code} name="code" value={code} maxLength={2} autoCapitalize="characters" onChange={(event) => setCode(event.target.value.toUpperCase())} required status={fields.code ? 'error' : 'default'} message={fields.code ?? t.codeHint} />

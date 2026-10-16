@@ -10,6 +10,7 @@ import { useState, type FormEvent } from 'react';
 import { Alert, Button, Card, ConfirmDialog, DescriptionList, PageHeader, PasswordField, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
+import { ProblemAlert } from './ProblemAlert';
 import { PasswordChecklist } from './PasswordChecklist';
 import { callEmpty, explain, fieldMessages, isApiError } from './problems';
 import { useSession } from './session';
@@ -122,9 +123,9 @@ export function Account() {
         <Card title={t.changePasswordTitle} headingLevel={2}>
           <form className={styles.form} onSubmit={(event) => void changePassword(event)} noValidate data-confera-change-password>
             {passwordProblem ? (
-              <Alert tone="error" title={passwordProblem.title}>
+              <ProblemAlert title={passwordProblem.title}>
                 {passwordProblem.text}
-              </Alert>
+              </ProblemAlert>
             ) : null}
             <PasswordField label={t.currentPasswordLabel} name="currentPassword" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required status={passwordFields.currentPassword ? 'error' : 'default'} message={passwordFields.currentPassword} />
             <PasswordField label={t.newPasswordLabel} name="newPassword" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required aria-describedby="account-checklist" />
@@ -146,9 +147,9 @@ export function Account() {
           ) : null}
           <form className={styles.form} onSubmit={(event) => void changeEmail(event)} noValidate data-confera-change-email>
             {emailProblem ? (
-              <Alert tone="error" title={emailProblem.title}>
+              <ProblemAlert title={emailProblem.title}>
                 {emailProblem.text}
-              </Alert>
+              </ProblemAlert>
             ) : null}
             <TextField label={t.newEmail} name="newEmail" type="email" autoComplete="off" value={newEmail} onChange={(event) => setNewEmail(event.target.value)} required status={emailFields.newEmail ? 'error' : 'default'} message={emailFields.newEmail} />
             <PasswordField label={t.passwordForEmail} name="password" autoComplete="current-password" value={emailPassword} onChange={(event) => setEmailPassword(event.target.value)} required status={emailFields.password ? 'error' : 'default'} message={emailFields.password} />

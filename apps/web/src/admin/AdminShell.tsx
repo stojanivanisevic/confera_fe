@@ -7,16 +7,16 @@
  * same page afterwards (the `next` rule); while the API does not answer, the shell says so.
  */
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { Alert, AppShell, Button, Select, SidebarNav, Spinner, TextButton, ToastHost } from '@confera/ui';
+import { Alert, AppShell, Button, PageHeader, Select, SidebarNav, Spinner, TextButton, toast, ToastHost } from '@confera/ui';
 
 import { signInHref } from '@/lib/next-path';
 
 import styles from './admin.module.css';
 import { FreshPasswordProvider } from './FreshPassword';
 import { conferenceLabel, ConferenceProvider, useConference } from './conference-context';
-import { call, callEmpty } from './problems';
+import { call, callEmpty, SESSION_ENDED_EVENT } from './problems';
 import { SessionProvider, useSession } from './session';
 import { fill, TEXTS } from './texts';
 
@@ -39,7 +39,11 @@ function current(pathname: string): string {
   return match?.value ?? '/';
 }
 
-/** The conference switch: the conference the screens show, kept while the person moves between them. */
+/** The screens the conference switch narrows; elsewhere it is not shown (UXUI-M2-05). */
+const NARROWED = ['/mail-log', '/templates'];
+const narrows = (pathname: string) => NARROWED.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+
+/** The conference switch: what the mail log and the templates show, kept while the person moves between screens. */
 function ConferenceSwitch() {
   const { conferences, selected, select } = useConference();
   return (
@@ -53,10 +57,81 @@ function ConferenceSwitch() {
   );
 }
 
+/**
+ * A change met a session that has ended (UXUI-M2-02): nothing on the page is lost. The person signs in
+ * again in a new tab (the session cookie is shared), comes back and continues; the page reads the new
+ * session (and its CSRF value) and the next save goes through.
+ */
+function SessionEnded({ onContinued }: { onContinued: () => void }) {
+  const { refresh } = useSession();
+  const pathname = usePathname();
+  const [still, setStill] = useState(false);
+  const t = TEXTS.problems;
+  const goOn = async () => {
+    const back = await refresh({ quiet: true });
+    if (back) {
+      onContinued();
+      toast({ title: t.signedInAgain, tone: 'success' });
+    } else {
+      setStill(true);
+    }
+  };
+  return (
+    <div className={styles.banner} data-confera-session-ended>
+      <Alert
+        tone="warning"
+        title={t.sessionEnded}
+        action={
+          <div className={styles.actionsInline}>
+            <a className="ud-link" href={signInHref(pathname)} target="_blank" rel="noopener noreferrer">
+              {t.signInNewTab}
+            </a>
+            <Button variant="dark" onClick={() => void goOn()}>
+              {t.continue}
+            </Button>
+          </div>
+        }
+      >
+        {still ? t.stillSignedOut : t.sessionEndedText}
+      </Alert>
+    </div>
+  );
+}
+
+/** The API does not answer: the shell stays, the page says so in its content and tries again every 30 seconds (UXUI-M2-16). */
+function Unreachable({ page = false }: { page?: boolean }) {
+  const { refresh, contact } = useSession();
+  useEffect(() => {
+    const again = window.setInterval(() => void refresh({ background: true }), 30_000);
+    return () => window.clearInterval(again);
+  }, [refresh]);
+  return (
+    <div className={styles.stack} data-confera-unreachable>
+      {page ? <PageHeader title={TEXTS.connection.down} /> : null}
+      <Alert tone="error" title={TEXTS.connection.down} action={<Button variant="dark" onClick={() => void refresh()}>{TEXTS.connection.tryNow}</Button>}>
+        {contact ? fill(TEXTS.connection.downTextRetry, { contact }) : TEXTS.connection.downTextRetryNoContact}
+      </Alert>
+    </div>
+  );
+}
+
 function Guarded({ children }: { children: ReactNode }) {
-  const { status, session, refresh, client, background, clear, contact, setContact } = useSession();
+  const { status, session, client, background, clear, setContact } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  // The session a change found ended, by its CSRF value: a new session (signed in again) has another,
+  // and the message goes by itself (UXUI-M2-02).
+  const csrfNow = useRef<string | null>(null);
+  useEffect(() => {
+    csrfNow.current = session?.csrf ?? null;
+  }, [session]);
+  const [endedFor, setEndedFor] = useState<string | null>(null);
+  useEffect(() => {
+    const onEnded = () => setEndedFor(csrfNow.current ?? '');
+    window.addEventListener(SESSION_ENDED_EVENT, onEnded);
+    return () => window.removeEventListener(SESSION_ENDED_EVENT, onEnded);
+  }, []);
+  const ended = endedFor !== null && endedFor === (session?.csrf ?? '');
 
   useEffect(() => {
     if (status === 'signed-out') router.replace(signInHref(pathname));
@@ -85,19 +160,26 @@ function Guarded({ children }: { children: ReactNode }) {
   if (status === 'loading' || status === 'signed-out' || status === 'expired' || status === 'ended') {
     return (
       <div className={styles.center} aria-busy="true">
+        <noscript>
+          <p className={styles.text}>{TEXTS.common.noScript}</p>
+        </noscript>
         <Spinner label={TEXTS.common.loading} />
       </div>
     );
   }
-  if (status === 'unreachable' || !session) {
+  if (status === 'unreachable' && !session) {
+    // Nothing is known of the person yet: the shell with the home only, and the page that says why.
     return (
-      <div className={styles.auth}>
-        <Alert tone="error" title={TEXTS.connection.down} action={<Button variant="dark" onClick={() => void refresh()}>{TEXTS.connection.tryAgain}</Button>}>
-          {contact ? fill(TEXTS.connection.downText, { contact }) : TEXTS.connection.downTextNoContact}
-        </Alert>
-      </div>
+      <AppShell
+        product={TEXTS.product}
+        logo={<img src="/icon.png" alt="" width={28} height={28} />}
+        sidebar={<SidebarNav label={TEXTS.nav.main} value="/" items={[{ value: '/', label: TEXTS.nav.home, icon: 'home' as const, href: '/' }]} onNavigate={(value) => router.push(value)} />}
+      >
+        <Unreachable page />
+      </AppShell>
     );
   }
+  if (!session) return null;
 
   const signOut = async () => {
     try {
@@ -118,9 +200,9 @@ function Guarded({ children }: { children: ReactNode }) {
         sidebar={<SidebarNav label={TEXTS.nav.main} value={current(pathname)} items={nav} onNavigate={(value) => router.push(value)} />}
         topbar={
           <div className={styles.topbar}>
-            <div className={styles.conference}>{permissions.includes('conferences.read') ? <ConferenceSwitch /> : null}</div>
+            <div className={styles.conference}>{permissions.includes('conferences.read') && narrows(pathname) ? <ConferenceSwitch /> : null}</div>
             <div className={styles.topbarEnd}>
-              <span className={styles.small} data-confera-user>
+              <span className={`${styles.small} ${styles.wideOnly}`} data-confera-user>
                 {session.user.displayName}
               </span>
               <TextButton icon="log-out" onClick={() => void signOut()}>
@@ -130,6 +212,8 @@ function Guarded({ children }: { children: ReactNode }) {
           </div>
         }
       >
+        {ended ? <SessionEnded onContinued={() => setEndedFor(null)} /> : null}
+        {status === 'unreachable' ? <Unreachable /> : null}
         <FreshPasswordProvider>{children}</FreshPasswordProvider>
       </AppShell>
     </ConferenceProvider>

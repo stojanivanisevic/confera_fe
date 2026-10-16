@@ -28,7 +28,7 @@ export interface SessionState {
   /** The client of a refetch the person did not ask for: it does not renew the session. */
   readonly background: SessionClient;
   /** Asks the API for the session again (after sign-in, a password confirmation, a change of the person). */
-  readonly refresh: (options?: { background?: boolean }) => Promise<Session | null>;
+  readonly refresh: (options?: { background?: boolean; quiet?: boolean }) => Promise<Session | null>;
   /** Forgets the session: `ended` after a sign-out by the person, otherwise when the API says 401. */
   readonly clear: (how?: 'ended') => void;
   /** The password asked again is still valid in this session. */
@@ -45,7 +45,22 @@ const SessionContext = createContext<SessionState | null>(null);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SessionStatus>('loading');
   const [session, setSession] = useState<Session | null>(null);
-  const [contact, setContact] = useState<string | null>(null);
+  // The support contact of the last good load in this tab, so that "cannot reach its server" can name it (UXUI-M2-16).
+  const [contact, setContactState] = useState<string | null>(() => {
+    try {
+      return typeof window === 'undefined' ? null : window.sessionStorage.getItem('confera.contact');
+    } catch {
+      return null;
+    }
+  });
+  const setContact = useCallback((next: string | null) => {
+    setContactState(next);
+    try {
+      if (next) window.sessionStorage.setItem('confera.contact', next);
+    } catch {
+      // Without storage the contact is known while the page is open.
+    }
+  }, []);
   // The clients are made once; they hold the CSRF value themselves, given when a session comes or goes.
   const [clients] = useState(() => createSessionClient());
 
@@ -61,13 +76,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const refresh = useCallback(
-    (options: { background?: boolean } = {}): Promise<Session | null> =>
+    (options: { background?: boolean; quiet?: boolean } = {}): Promise<Session | null> =>
       call((options.background ? clients.background : clients.client).GET('/api/v1/session')).then(
         (next) => {
           take(next, 'ready');
           return next;
         },
         (error: unknown) => {
+          // `quiet`: the person is signing in again in another tab; the page and what was typed stay (UXUI-M2-02).
+          if (options.quiet) return null;
           if (isUnauthenticated(error)) take(null, 'signed-out');
           else setStatus('unreachable');
           return null;
@@ -93,7 +110,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       contact,
       setContact,
     }),
-    [status, session, clients, refresh, take, contact],
+    [status, session, clients, refresh, take, contact, setContact],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

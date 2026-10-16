@@ -17,6 +17,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { getConfig, isDevelopmentRuntime } from '@/config/env';
+import { signInHref } from '@/lib/next-path';
 import { forwardToApi } from '@/server/forward';
 import { formExists, resolveFrameSites } from '@/server/security/frame-sites';
 import { buildSecurityHeaders, createNonce, type PageKind } from '@/server/security/headers';
@@ -45,6 +46,18 @@ function page(request: NextRequest, kind: PageKind, frameSites: readonly string[
     : NextResponse.next({ request: { headers: forwarded } });
   for (const [name, value] of Object.entries(headers.response)) response.headers.set(name, value);
   for (const name of headers.remove) response.headers.delete(name);
+  return response;
+}
+
+/** The session cookie of the API (ADR-03). The web application reads whether it is there, never what it holds. */
+const SESSION_COOKIE = '__Host-confera_session';
+
+/** 307 to sign-in with `next` set to the path asked for, with the header set of an auth page. */
+function signInFirst(request: NextRequest): NextResponse {
+  const response = NextResponse.redirect(new URL(signInHref(request.nextUrl.pathname), request.url), 307);
+  const headers = buildSecurityHeaders({ kind: 'auth', nonce: createNonce(), frameSites: null, development: isDevelopmentRuntime(), reportTo: reportAddress() });
+  for (const [name, value] of Object.entries(headers.response)) response.headers.set(name, value);
+  response.headers.set('Cache-Control', 'no-store');
   return response;
 }
 
@@ -125,6 +138,11 @@ export async function proxy(request: NextRequest): Promise<Response> {
   }
 
   if (pageMethodRefused(request)) return methodNotAllowed(match.kind, 'GET, HEAD');
+
+  // A screen behind sign-in asked without any session cookie: straight to sign-in, from the server, with the
+  // way back (UXUI-M2-14): no spinner, and it works without scripts. Only the cookie's presence is read, never
+  // its value: whether the session is valid is the API's to say, and the page asks it as before.
+  if (match.kind === 'admin' && !request.cookies.has(SESSION_COOKIE)) return signInFirst(request);
 
   // Only the frame page can ever carry a site list, and only for a form that has a valid one.
   const frameSites = match.kind === 'frame' ? resolveFrameSites(match.params.form ?? '') : null;

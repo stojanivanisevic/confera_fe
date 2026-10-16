@@ -50,7 +50,7 @@ export function MailLogEntry({ id }: { id: string }) {
           items={[
             { label: t.sentAt, value: formatDateTime(record.sentAt) },
             { label: t.result, value: <StatusBadge tone={record.result === 'sent' ? 'success' : 'danger'}>{t.results[record.result] ?? record.result}</StatusBadge> },
-            ...(record.errorCode ? [{ label: t.errorCode, value: record.errorCode }] : []),
+            ...(record.errorCode ? [{ label: t.errorCode, value: t.errors[record.errorCode] ?? record.errorCode }] : []),
             { label: t.kind, value: TEXTS.templates.types[record.kind] ?? record.kind },
             { label: t.language, value: TEXTS.conferences.languageNames[record.language] ?? record.language },
             { label: t.server, value: record.serverName ?? '' },

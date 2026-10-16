@@ -9,10 +9,10 @@
  * no save in 0.2.0 (the API has no write route for templates before 0.4.0).
  */
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 
 import { carriesLink, catalogueOf, checkBody, checkSubject, DocumentError, isTypedLink, renderBody, renderSubject, type DocNode, type MailTemplate, type SubjectNode } from '@confera/api-client';
-import { Alert, Button, Card, Dialog, PageHeader, RadioGroup, SandboxedMarkupFrame, Select, TextButton, TextField } from '@confera/ui';
+import { Alert, Button, Card, Dialog, IconButton, PageHeader, RadioGroup, SandboxedMarkupFrame, Select, TextButton, TextField, type IconName } from '@confera/ui';
 import {
   insertHardBreak,
   insertPlaceholder,
@@ -66,7 +66,9 @@ type CheckResult = { readonly ok: true } | { readonly ok: false; readonly part: 
 const NO_TOOLBAR: ToolbarState = { marks: { bold: false, italic: false, underline: false }, block: 'paragraph', list: null, link: null, canUndo: false, canRedo: false };
 
 /** A toolbar button: it keeps the editor's selection (no focus on mouse down) and says whether it is on. */
-function ToolButton({ pressed, onPress, disabled, children }: { pressed?: boolean; onPress: () => void; disabled?: boolean; children: ReactNode }) {
+function ToolButton({ pressed, onPress, disabled, icon, children }: { pressed?: boolean; onPress: () => void; disabled?: boolean; icon?: IconName; children: string }) {
+  // An icon of the design system's toolbar set (2.4.0, M2-ISS-07), named by its text; a toggle that is on draws the ring (UXUI-M2-22).
+  if (icon) return <IconButton icon={icon} label={children} aria-pressed={pressed} disabled={disabled} onMouseDown={(event: MouseEvent) => event.preventDefault()} onClick={onPress} />;
   return (
     <Button type="button" variant="dark" aria-pressed={pressed} disabled={disabled} onMouseDown={(event: MouseEvent) => event.preventDefault()} onClick={onPress}>
       {children}
@@ -213,22 +215,22 @@ export function TemplateEditor({ id }: { id: string }) {
               </div>
               <div className={styles.editorGroup}>
                 {(['bold', 'italic', 'underline'] as const satisfies readonly TextMark[]).map((mark) => (
-                  <ToolButton key={mark} pressed={toolbar.marks[mark]} onPress={body((handle) => handle.run(toggleTextMark(mark)))}>
+                  <ToolButton key={mark} icon={mark} pressed={toolbar.marks[mark]} onPress={body((handle) => handle.run(toggleTextMark(mark)))}>
                     {t[mark]}
                   </ToolButton>
                 ))}
               </div>
               <div className={styles.editorGroup}>
-                <ToolButton pressed={toolbar.list === 'bulletList'} onPress={body((handle) => handle.run(toggleList('bulletList')))}>
+                <ToolButton icon="list" pressed={toolbar.list === 'bulletList'} onPress={body((handle) => handle.run(toggleList('bulletList')))}>
                   {t.bulletList}
                 </ToolButton>
-                <ToolButton pressed={toolbar.list === 'numberedList'} onPress={body((handle) => handle.run(toggleList('numberedList')))}>
+                <ToolButton icon="list-ordered" pressed={toolbar.list === 'numberedList'} onPress={body((handle) => handle.run(toggleList('numberedList')))}>
                   {t.numberedList}
                 </ToolButton>
-                <ToolButton onPress={body((handle) => handle.run(insertHardBreak))}>{t.lineBreak}</ToolButton>
+                <ToolButton icon="corner-down-left" onPress={body((handle) => handle.run(insertHardBreak))}>{t.lineBreak}</ToolButton>
               </div>
               <div className={styles.editorGroup}>
-                <ToolButton pressed={toolbar.link !== null} onPress={openLink}>
+                <ToolButton icon="link" pressed={toolbar.link !== null} onPress={openLink}>
                   {t.link}
                 </ToolButton>
                 {toolbar.link !== null ? <ToolButton onPress={body((handle) => handle.run(removeLink))}>{t.linkRemove}</ToolButton> : null}
@@ -243,10 +245,10 @@ export function TemplateEditor({ id }: { id: string }) {
               ) : null}
               {conditions.length > 0 ? <ToolButton onPress={body((handle) => handle.run(liftOutOfCondition))}>{t.conditionLift}</ToolButton> : null}
               <div className={styles.editorGroup}>
-                <ToolButton disabled={!toolbar.canUndo} onPress={body((handle) => handle.run(undo))}>
+                <ToolButton icon="undo" disabled={!toolbar.canUndo} onPress={body((handle) => handle.run(undo))}>
                   {t.undo}
                 </ToolButton>
-                <ToolButton disabled={!toolbar.canRedo} onPress={body((handle) => handle.run(redo))}>
+                <ToolButton icon="redo" disabled={!toolbar.canRedo} onPress={body((handle) => handle.run(redo))}>
                   {t.redo}
                 </ToolButton>
               </div>
