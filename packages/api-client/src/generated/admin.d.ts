@@ -628,6 +628,8 @@ export interface components {
             version: number;
         };
         ConferenceDto: {
+            /** @enum {string} */
+            state: "draft" | "open" | "closed" | "archived";
             id: string;
             name: string;
             /** @description Two capital letters: IT, ER, EM, LI, AI. */
@@ -641,8 +643,6 @@ export interface components {
             languages: string[];
             /** @description An IANA time zone, for example Europe/Belgrade. */
             timeZone: string;
-            /** @enum {string} */
-            state: "draft" | "open" | "closed" | "archived";
             mailServerId: string | null;
             version: number;
         };
@@ -678,11 +678,11 @@ export interface components {
             mailServerId?: string | null;
         };
         CreateMailServerDto: {
+            /** @enum {string} */
+            tlsMode: "implicit" | "starttls" | "none";
             name: string;
             host: string;
             port: number;
-            /** @enum {string} */
-            tlsMode: "implicit" | "starttls" | "none";
             username?: string | null;
             /** @description Write-only. Stored sealed (AES-256-GCM), never returned. */
             password?: string;
@@ -719,6 +719,8 @@ export interface components {
             expiresAt: string;
         };
         MailLogEntryDto: {
+            /** @enum {string} */
+            result: "sent" | "failed";
             id: string;
             messageId: string;
             recipient: string;
@@ -730,8 +732,6 @@ export interface components {
             /** @description The name of the server when it was used. */
             serverName: string | null;
             attempt: number;
-            /** @enum {string} */
-            result: "sent" | "failed";
             /** @description A code, never the server's words. */
             errorCode: string | null;
             sentAt: string;
@@ -746,6 +746,8 @@ export interface components {
             pageSize: number;
         };
         MailLogSummaryDto: {
+            /** @enum {string} */
+            result: "sent" | "failed";
             id: string;
             messageId: string;
             recipient: string;
@@ -757,22 +759,20 @@ export interface components {
             /** @description The name of the server when it was used. */
             serverName: string | null;
             attempt: number;
-            /** @enum {string} */
-            result: "sent" | "failed";
             /** @description A code, never the server's words. */
             errorCode: string | null;
             sentAt: string;
         };
         MailServerDto: {
-            id: string;
-            name: string;
-            host: string;
-            port: number;
             /**
              * @description implicit (TLS from the first byte), starttls (required), none (developer machines only).
              * @enum {string}
              */
             tlsMode: "implicit" | "starttls" | "none";
+            id: string;
+            name: string;
+            host: string;
+            port: number;
             username: string | null;
             /** @description Whether a password is stored. The password itself is never returned. */
             credentialSet: boolean;
@@ -993,6 +993,14 @@ export interface components {
             version: number;
         };
         UserDto: {
+            /**
+             * @description For an invited user, what became of the latest invitation message: `queued` (to be
+             *     sent), `waiting_for_server` (no mail server can send it yet; it goes out once one is
+             *     configured, with a link made then), `sent` or `failed`. Null for anyone else, and for
+             *     an invitation that was given by hand (the first admin).
+             * @enum {string|null}
+             */
+            invitationDelivery: "queued" | "waiting_for_server" | "sent" | "failed" | null;
             id: string;
             email: string;
             displayName: string;
@@ -1003,14 +1011,6 @@ export interface components {
             createdAt: string;
             /** @description Sent back with a change: a change made on an older version is refused (409). */
             version: number;
-            /**
-             * @description For an invited user, what became of the latest invitation message: `queued` (to be
-             *     sent), `waiting_for_server` (no mail server can send it yet; it goes out once one is
-             *     configured, with a link made then), `sent` or `failed`. Null for anyone else, and for
-             *     an invitation that was given by hand (the first admin).
-             * @enum {string|null}
-             */
-            invitationDelivery: "queued" | "sent" | "failed" | "waiting_for_server" | null;
         };
         UserPageDto: {
             items: components["schemas"]["UserDto"][];

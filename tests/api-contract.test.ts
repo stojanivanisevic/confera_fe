@@ -85,7 +85,8 @@ describe('pnpm api:check', () => {
   it('a contract that moved on in confera_be: a notice by default, a failure in the strict check', () => {
     const moved = join(work, 'moved-backend');
     cpSync(backend, moved, { recursive: true });
-    edit(join(moved, 'openapi', 'openapi.json'), (t) => t.replace('"version": "0.1.0"', '"version": "0.2.0"'));
+    // Another version than the vendored one, whatever that is (it moves with every release).
+    edit(join(moved, 'openapi', 'openapi.json'), (t) => t.replace(/"version": "\d+\.\d+\.\d+"/, '"version": "99.0.0"'));
 
     const lenient = checkContract({ backendDir: moved }) as Result;
     expect(lenient.problems).toEqual([]);
