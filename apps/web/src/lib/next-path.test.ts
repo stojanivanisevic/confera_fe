@@ -38,5 +38,8 @@ describe('the next rule (ST-26)', () => {
     expect(signInHref('/users')).toBe('/sign-in?next=%2Fusers');
     expect(signInHref('/')).toBe('/sign-in');
     expect(signInHref('//evil.example.test')).toBe('/sign-in');
+    // A session that ended says so on the sign-in page (E2-20), with or without a way back.
+    expect(signInHref('/organisation', 'session-ended')).toBe('/sign-in?next=%2Forganisation&reason=session-ended');
+    expect(signInHref('/', 'session-ended')).toBe('/sign-in?reason=session-ended');
   });
 });
