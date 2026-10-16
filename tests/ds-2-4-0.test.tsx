@@ -131,7 +131,7 @@ describe('AppShell (UXUI-M2-04, 35)', () => {
   });
 
   it('the first stop of the Tab order skips to the content', async () => {
-    await mount(<U.AppShell product="Confera">content</U.AppShell>);
+    await mount(<U.AppShell product="Confera" sidebar={null}>content</U.AppShell>);
     const skip = container.querySelector<HTMLAnchorElement>('.ud-shell > a')!;
     expect(skip.textContent).toBe('Skip to content');
     expect(skip.getAttribute('href')).toBe(`#${container.querySelector('main')!.id}`);
