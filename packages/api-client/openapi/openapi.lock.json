@@ -3,7 +3,7 @@
   "source": {
     "repository": "confera_be",
     "directory": "openapi",
-    "commit": "c52dec1a620819155c1234bcf6e2dc604994ebc5",
+    "commit": "2a8d157581d4e0f76bdae1eb11970a146116192b",
     "tag": null,
     "branch": "m3/be",
     "committed": true
@@ -25,7 +25,7 @@
       "title": "contracts/password-rules.json",
       "version": "1",
       "sha256": "50c24619647c9387fc01bec9ae9d0b3817f0b9a5a9da85a8d8fea279b9244004",
-      "commit": "79803813176c9ef2ce0b1845091d6b808d0c46b8"
+      "commit": "77add5fee31d591fdf88a1fedce30466763b2daf"
     },
     "template-vectors.json": {
       "title": "contracts/template-vectors.json",
