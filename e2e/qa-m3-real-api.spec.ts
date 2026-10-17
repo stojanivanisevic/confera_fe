@@ -17,8 +17,8 @@ import { createHash } from 'node:crypto';
 import type { Frame, Page } from '@playwright/test';
 
 import { buildEmbedSnippet, frameId } from '../packages/embed-loader/src/index';
-import { HARNESS_ORIGIN, PUBLIC_ORIGIN } from './env';
-import { AGAINST_REAL_API } from './support/admin';
+import { ADMIN_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN } from './env';
+import { ADMIN, AGAINST_REAL_API, signIn } from './support/admin';
 import { expect, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
@@ -226,6 +226,27 @@ test.describe('the seeded form on sites that do things to it (M3-QA-01, edge cas
     console.log(`NFR-PERF-01 ${browserName}: usable after ${String(usable)} ms; submit answered after ${String(submit)} ms`);
     expect(usable).toBeLessThan(2_000);
     expect(submit).toBeLessThan(2_000);
+  });
+
+  test('ST-36: a site taken off the list of the conference is blocked at the next load of the frame page', async ({ page, browserName }) => {
+    test.skip(browserName !== 'chromium', 'needs a session; once is enough');
+    const CONFERENCE = '0e2e0000-0000-4000-8000-0000000000c1'; // seed:e2e, test/e2e/seed/e2e-seed.json of confera_be
+    const ancestors = async () => (await page.request.get(`${PUBLIC_ORIGIN}/embed/${SLUG}`)).headers()['content-security-policy']?.split('; ')[0];
+    expect(await ancestors()).toBe(`frame-ancestors ${HARNESS_ORIGIN}`);
+    await signIn(page, ADMIN);
+    const session = (await (await page.request.get(`${ADMIN_ORIGIN}/api/v1/session`)).json()) as { csrf: string };
+    const change = async (listedSites: string[]) => {
+      const current = (await (await page.request.get(`${ADMIN_ORIGIN}/api/v1/conferences/${CONFERENCE}`)).json()) as { version: number };
+      const answer = await page.request.patch(`${ADMIN_ORIGIN}/api/v1/conferences/${CONFERENCE}`, { headers: { Origin: ADMIN_ORIGIN, 'X-CSRF-Token': session.csrf, 'Content-Type': 'application/json' }, data: { listedSites, version: current.version } });
+      expect(answer.status(), await answer.text()).toBe(200);
+    };
+    await change([]);
+    try {
+      expect(await ancestors()).toBe("frame-ancestors 'none'");
+    } finally {
+      await change([HARNESS_ORIGIN]);
+    }
+    expect(await ancestors()).toBe(`frame-ancestors ${HARNESS_ORIGIN}`);
   });
 
   test('Q3-01: a token that expired while the author typed: the thank-you stands for a stored submission and its email', async ({ page, browserName }) => {
