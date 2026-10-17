@@ -1,4 +1,4 @@
-// The snippet builder and the frame's height reporter (ADR-07, the parts of
+﻿// The snippet builder and the frame's height reporter (ADR-07, the parts of
 // ST-37 that need no browser). The inline listener itself is run in
 // tests/embed-listener.test.ts.
 import { describe, expect, it, vi } from 'vitest';
@@ -56,6 +56,26 @@ describe('the snippet', () => {
     expect(snippet).toContain('<a href="https://forms.example.test/f/itema-2026-abstract"');
     expect(snippet.match(/<script>/g)).toHaveLength(1);
     expect(snippet).not.toMatch(/<script[^>]+src=/); // no code is loaded from anywhere
+  });
+
+  it('puts the link to the hosted form above the frame, so it is in view while the frame loads or is blocked (D5)', () => {
+    expect(snippet.indexOf('<a href=')).toBeLessThan(snippet.indexOf('<iframe'));
+    expect(snippet.split('\n')[0]).toBe('<p><a href="https://forms.example.test/f/itema-2026-abstract">Open the form</a></p>');
+    // It opens in the same tab: nothing opens a new tab without saying so (UX-M1-12).
+    expect(snippet).not.toContain('target=');
+  });
+
+  it('carries the language of the site on the frame and the link (D2)', () => {
+    const serbian = buildEmbedSnippet({ ...base, language: 'sr', linkText: 'Obrazac se ne prikazuje? Otvorite ga na posebnoj stranici.' });
+    expect(serbian).toContain('<p lang="sr"><a href="https://forms.example.test/f/itema-2026-abstract?lang=sr">Obrazac se ne prikazuje? Otvorite ga na posebnoj stranici.</a></p>');
+    expect(serbian).toContain('src="https://forms.example.test/embed/itema-2026-abstract?lang=sr"');
+    expect(serbian).toContain(' lang="sr" loading="lazy"');
+    // Without one, the form follows the browser: no language in the addresses.
+    expect(snippet).not.toContain('lang=');
+  });
+
+  it.each(['de', 'SR', 'sr-RS', '"><script>', 'en&x=1'])('a language like %j builds no snippet', (language) => {
+    expect(() => buildEmbedSnippet({ ...base, language: language as 'sr' })).toThrow(EmbedSnippetError);
   });
 
   it('keeps the frame visible and sized whatever the theme says about frames', () => {
@@ -126,7 +146,20 @@ describe('the inline lines', () => {
   });
 
   it('are short', () => {
-    expect(source.length).toBeLessThan(600);
+    // 600 characters held the height alone; the scroll of decision D1 (below) takes about 200 more.
+    expect(source.length).toBeLessThan(800);
+  });
+
+  it('scroll only within the limits of decision D1: that frame, vertical, out of view, a clamped number, once a second', () => {
+    const handler = source.slice(source.indexOf('addEventListener("message"'));
+    expect(handler).toContain('if(d.type==="confera:into-view"&&N(t)&&n-w>999){');
+    expect(handler).toContain('t=r.top+Math.min(Math.max(t,0),r.height);');
+    expect(handler).toContain('h=innerHeight;');
+    expect(handler).toContain('if(t<0||t>h){w=n;scrollBy(0,t-h/4)}');
+    expect(source).toContain('function N(x){return typeof x=="number"&&isFinite(x)}');
+    // Nothing else moves: no scrollTo, no scrollIntoView, no focus, no horizontal value.
+    expect(source).not.toMatch(/scrollTo|scrollIntoView|focus\(|scrollX|pageXOffset/);
+    expect(source.match(/scrollBy\(/g)).toHaveLength(1);
   });
 });
 

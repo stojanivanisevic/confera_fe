@@ -1,9 +1,21 @@
-/**
+﻿/**
  * The snippet an admin pastes into a conference site (FR-FORM-06; decision
- * G2-17, form (a)): a plain frame served by Confera, a link to the hosted
- * form, and a few inline lines that only set the frame's height. No code is
+ * G2-17, form (a)): a line with a link to the hosted form, a plain frame
+ * served by Confera, and a few inline lines that set the frame's height and,
+ * after Send, bring the frame's summary or thank-you into view. No code is
  * loaded from Confera into the conference site; to update, the snippet is
  * pasted again.
+ *
+ * Decided for 0.3.0 (the owner's decisions of the 0.1.0 reviews, built as recommended):
+ *  - D2: the snippet carries the language of the site it is pasted into
+ *    (`?lang=sr` on the frame and on the link); without one, the browser's
+ *    language decides inside the form;
+ *  - D5: the link "Form not showing? Open it on its own page." stands ABOVE
+ *    the frame, in that language, so it is in view while the frame loads and
+ *    when a site that is not listed gets a blocked frame (UX-M1-12). The frame
+ *    shows no heading of its own; the site's page has one;
+ *  - D1: the lines may scroll the page to the part of the form the frame asks
+ *    for, within the Security reviewer's limits (below).
  *
  * Rules of the inline lines (ADR-07, SEC-A-09), each covered by a test:
  *  - the frame address is built from the configured origin and a slug that
@@ -14,11 +26,18 @@
  *    everything else is ignored;
  *  - the lines never talk to the frame and never wait for anything; they work
  *    however late they run and whenever the frame arrives or is replaced;
- *  - the height must be a finite number and is kept inside fixed bounds.
+ *  - the height must be a finite number and is kept inside fixed bounds;
+ *  - the scroll (D1): only for that frame, only vertical, only when the part
+ *    the frame names is out of view, `top` a finite number clamped to the
+ *    frame's own height, at most once a second, and nothing else.
  * Without the script (a site that strips scripts) the frame keeps its fixed
  * height and scrolls inside; the link to the hosted form is always there.
  */
-import { FORM_SLUG_PATTERN, HEIGHT_MESSAGE, MAX_FRAME_HEIGHT, MIN_FRAME_HEIGHT } from './protocol';
+import { FORM_SLUG_PATTERN, HEIGHT_MESSAGE, INTO_VIEW_MESSAGE, MAX_FRAME_HEIGHT, MIN_FRAME_HEIGHT } from './protocol';
+
+/** The languages a snippet can carry (the form's languages). */
+export const SNIPPET_LANGUAGES = ['en', 'sr'] as const;
+export type SnippetLanguage = (typeof SNIPPET_LANGUAGES)[number];
 
 export interface EmbedSnippetOptions {
   /** Origin of Confera's public surface, from configuration. */
@@ -26,8 +45,10 @@ export interface EmbedSnippetOptions {
   readonly slug: string;
   /** Accessible name of the frame, for example the form's title. */
   readonly title: string;
-  /** Text of the link to the hosted form. */
+  /** Text of the link to the hosted form, above the frame (D5). */
   readonly linkText: string;
+  /** The language of the site (D2). Without it the form follows the visitor's browser. */
+  readonly language?: SnippetLanguage;
   /** Height before the first message arrives, and for ever where scripts are stripped. */
   readonly initialHeight?: number;
 }
@@ -78,20 +99,32 @@ function frameStyle(height: number): string {
  *    pixel taller; a frame the page has never yet made as tall as it said answers that by
  *    telling its height again.
  *    No message is sent into the frame and nothing waits.
+ *
+ * After Send the frame asks for the part it shows next (the summary of errors, the thank-you):
+ * `top` is how far down the frame that part starts. The lines clamp it to the frame's height,
+ * and scroll the page (vertically, `scrollBy(0, …)`) only when that point is outside the window,
+ * so that it lands a quarter of the window from the top (below a site's sticky header). A second
+ * request within a second is ignored (D1, the Security reviewer's limits). Chromium and Firefox
+ * scroll the site along with the focus inside the frame; Safari does not, which is why this is here.
  */
 export function listenerSource(frameId: string, origin: string): string {
   return (
     '(function(){' +
     `var o=${JSON.stringify(origin)},i=${JSON.stringify(frameId)};` +
     'function z(f,h){f.style.setProperty("height",h+"px","important")}' +
+    'function N(x){return typeof x=="number"&&isFinite(x)}' +
+    'var w=0;' +
     'var f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);' +
     'if(s)z(f,s+1);' +
     'window.addEventListener("message",function(e){' +
     'if(e.origin!==o||!e.source)return;' +
     'for(var a=document.querySelectorAll("iframe#"+i),k=0,g;k<a.length;k++)if(a[k].contentWindow===e.source)g=a[k];' +
-    'var d=e.data;' +
-    `if(g&&d&&d.type===${JSON.stringify(HEIGHT_MESSAGE)}&&typeof d.height=="number"&&isFinite(d.height))` +
-    `z(g,Math.min(${MAX_FRAME_HEIGHT},Math.max(${MIN_FRAME_HEIGHT},Math.round(d.height))))` +
+    'var d=g&&e.data||{},t=d.top,r,n=Date.now(),h=innerHeight;' +
+    `if(d.type===${JSON.stringify(HEIGHT_MESSAGE)}&&N(d.height))` +
+    `z(g,Math.min(${MAX_FRAME_HEIGHT},Math.max(${MIN_FRAME_HEIGHT},Math.round(d.height))));` +
+    `if(d.type===${JSON.stringify(INTO_VIEW_MESSAGE)}&&N(t)&&n-w>999){` +
+    'r=g.getBoundingClientRect();t=r.top+Math.min(Math.max(t,0),r.height);' +
+    'if(t<0||t>h){w=n;scrollBy(0,t-h/4)}}' +
     '})' +
     '})();'
   );
@@ -101,17 +134,24 @@ export function frameId(slug: string): string {
   return `confera-form-${slug}`;
 }
 
-/** Builds the snippet. Throws EmbedSnippetError instead of building one from a bad slug or origin. */
+/** The address of the frame page or of the hosted form, with the snippet's language. */
+function address(origin: string, path: 'embed' | 'f', slug: string, language: SnippetLanguage | undefined): string {
+  return `${origin}/${path}/${slug}${language ? `?lang=${language}` : ''}`;
+}
+
+/** Builds the snippet. Throws EmbedSnippetError instead of building one from a bad slug, origin or language. */
 export function buildEmbedSnippet(options: EmbedSnippetOptions): string {
   if (!FORM_SLUG_PATTERN.test(options.slug)) throw new EmbedSnippetError('The form address may contain only lower-case letters, digits and hyphens');
   const origin = checkedOrigin(options.publicOrigin);
   const height = Math.round(options.initialHeight ?? 900);
   if (!Number.isFinite(height) || height < MIN_FRAME_HEIGHT || height > MAX_FRAME_HEIGHT) throw new EmbedSnippetError('The initial height is outside the bounds');
+  if (options.language !== undefined && !(SNIPPET_LANGUAGES as readonly string[]).includes(options.language)) throw new EmbedSnippetError('The language is not one of the form languages');
   const id = frameId(options.slug);
+  const lang = options.language ? ` lang="${options.language}"` : '';
 
   return [
-    `<iframe id="${id}" src="${origin}/embed/${options.slug}" title="${escapeHtml(options.title)}" loading="lazy" referrerpolicy="no-referrer" style="${frameStyle(height)}"></iframe>`,
-    `<p><a href="${origin}/f/${options.slug}" target="_blank" rel="noopener">${escapeHtml(options.linkText)}</a></p>`,
+    `<p${lang}><a href="${address(origin, 'f', options.slug, options.language)}">${escapeHtml(options.linkText)}</a></p>`,
+    `<iframe id="${id}" src="${address(origin, 'embed', options.slug, options.language)}" title="${escapeHtml(options.title)}"${lang} loading="lazy" referrerpolicy="no-referrer" style="${frameStyle(height)}"></iframe>`,
     `<script>${listenerSource(id, origin)}</script>`,
   ].join('\n');
 }
