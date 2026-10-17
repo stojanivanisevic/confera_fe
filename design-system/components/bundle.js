@@ -1,5 +1,5 @@
 /* @ds-bundle: {"format":4,"namespace":"Udekom","components":[{"name":"Button"},{"name":"CircleButton"},{"name":"ArrowButton"},{"name":"NavLink"},{"name":"SegmentedTabs"},{"name":"TextField"},{"name":"Select"},{"name":"Textarea"},{"name":"Checkbox"},{"name":"Radio"},{"name":"Tag"},{"name":"FileButton"},{"name":"FormCard"},{"name":"Icon"},{"name":"TextButton"},{"name":"IconButton"},{"name":"NumberField"},{"name":"DateField"},{"name":"PasswordField"},{"name":"SearchField"},{"name":"Switch"},{"name":"RadioGroup"},{"name":"CheckboxGroup"},{"name":"ScaleField"},{"name":"Autocomplete"},{"name":"FileDropzone"},{"name":"DataTable"},{"name":"Pagination"},{"name":"StatusBadge"},{"name":"Avatar"},{"name":"Card"},{"name":"DescriptionList"},{"name":"EmptyState"},{"name":"Skeleton"},{"name":"Spinner"},{"name":"Tooltip"},{"name":"ProgressBar"},{"name":"Alert"},{"name":"ToastHost"},{"name":"Dialog"},{"name":"ConfirmDialog"},{"name":"Drawer"},{"name":"Tabs"},{"name":"Breadcrumbs"},{"name":"Stepper"},{"name":"Menu"},{"name":"SidebarNav"},{"name":"AppShell"},{"name":"PageHeader"},{"name":"Repeater"},{"name":"PermissionMatrix"},{"name":"FilterBar"},{"name":"LabelsProvider"}]} */
-/* @ds-version: 2.4.1 */
+/* @ds-version: 2.5.0 */
 (function () {
   var React = window.React;
   var h = React.createElement;
@@ -166,6 +166,8 @@
           "aria-controls": hasPanels && selected ? base + "-panel" : undefined,
           tabIndex: selected || (index < 0 && i === 0) ? 0 : -1,
           className: cx("ud-tab", selected ? "is-selected" : null),
+          /* A pill named in another language says so (2.5.0, WCAG 3.1.2): "English" and "Srpski" of a language switch. */
+          lang: o.lang,
           onClick: function () { choose(i); }, onKeyDown: function (e) { onKey(e, i); }
         }, o.label);
       }));
@@ -546,7 +548,8 @@
     var describedBy = cx(props.hint ? base + "-hint" : null, props.message ? base + "-msg" : null) || undefined;
     function take(list) { if (props.onFiles) props.onFiles(Array.prototype.slice.call(list || [])); }
     return h("div", { className: cx("ud-dropzone-wrap", props.className), role: "group", "aria-labelledby": labelId || undefined },
-      props.label ? h("span", { className: "ud-field__label", id: labelId }, props.label, props.required ? " *" : "") : null,
+      /* The mark of a required field is not read out as "star" (2.5.0, UX-M1-21): as in TextField. */
+      props.label ? h("span", { className: "ud-field__label", id: labelId }, props.label, props.required ? h("span", { "aria-hidden": true }, " *") : null) : null,
       h("div", {
         className: cx("ud-dropzone", over[0] ? "is-over" : null, props.status === "error" ? "is-error" : null), role: "button", tabIndex: 0,
         "aria-labelledby": cx(labelId, base + "-title"), "aria-describedby": describedBy,
@@ -1325,7 +1328,7 @@
     Alert: Alert, ToastHost: ToastHost, toast: toast, Dialog: Dialog, ConfirmDialog: ConfirmDialog, Drawer: Drawer,
     Tabs: Tabs, Breadcrumbs: Breadcrumbs, Stepper: Stepper, Menu: Menu, SidebarNav: SidebarNav, AppShell: AppShell, PageHeader: PageHeader,
     Repeater: Repeater, PermissionMatrix: PermissionMatrix, FilterBar: FilterBar,
-    LabelsProvider: LabelsProvider, defaultLabels: DEFAULT_LABELS, version: "2.4.1"
+    LabelsProvider: LabelsProvider, defaultLabels: DEFAULT_LABELS, version: "2.5.0"
   };
 
   window.Udekom = {

@@ -35,6 +35,13 @@ const nextConfig: NextConfig = {
   // rewrite to another server (a 500). The proxy uses its path and query, and builds that rewrite on it.
   skipProxyUrlNormalize: true,
 
+  // The framework copies the body of every request its proxy sees and keeps only the first 10 MB of
+  // it (SEC-M1-09). An upload of a form is up to 20 MB by default and at most 50 MB (FR-FILE-01): on
+  // a developer's machine and in the browser tests the web application forwards it to the API, so a
+  // test build takes 51 MB. A production build keeps the framework's 10 MB: there the reverse proxy
+  // routes /public/v1 and /api/v1 to the API itself, and an upload never passes through here (ADR-20).
+  experimental: devPages ? { proxyClientMaxBodySize: '51mb' } : {},
+
   pageExtensions: devPages ? ['tsx', 'ts', 'dev.tsx', 'dev.ts'] : ['tsx', 'ts'],
 
   // Fixed at build time: read by the configuration module only.

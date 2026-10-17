@@ -211,7 +211,7 @@ function Guarded({ children }: { children: ReactNode }) {
                 label={TEXTS.nav.userMenu}
                 align="end"
                 trigger={
-                  <TextButton icon="user" data-confera-user>
+                  <TextButton icon="user" data-confera-user aria-label={`${TEXTS.nav.userMenu}: ${session.user.displayName}`}>
                     <span className={styles.userName}>{session.user.displayName}</span>
                   </TextButton>
                 }

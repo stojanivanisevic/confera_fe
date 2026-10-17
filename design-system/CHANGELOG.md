@@ -2,6 +2,18 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.5.0 (2026-10-17)
+
+For the public forms of Confera 0.3.0 (UX-M1-21 and UX-M1-23 of the 0.1.0 UX review). No token changed; there is no new token and no new label.
+
+### SegmentedTabs: a pill in another language says so
+
+- **An option may carry `lang`** (`{ value: 'sr', label: 'Srpski', lang: 'sr' }`), which its button gets. The language switch of a form names each language in that language: a screen reader now reads "Srpski" with Serbian rules on an English page and "English" with English rules on a Serbian one (WCAG 3.1.2). An option without it is as before.
+
+### FileDropzone: the mark of a required field is not read out
+
+- **The " *" after the label is hidden from screen readers**, as in TextField, Select and Textarea: the drop area was named "Biographies star". It is still seen; the form says what the star means in a line of its own.
+
 ## 2.4.1 (2026-10-16)
 
 Fixes one finding of the UX and UI re-check of 2.4.0 (UXUI-M2-41). No token changed; no new token.

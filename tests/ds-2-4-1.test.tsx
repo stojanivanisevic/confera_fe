@@ -18,8 +18,9 @@ import * as U from '../packages/ui/src/generated/udekom.client';
 const ds = join(process.cwd(), 'design-system');
 const css = readFileSync(join(ds, 'components', 'bundle.css'), 'utf8');
 
-it('is version 2.4.1', () => {
-  expect(DS_VERSION).toBe('2.4.1');
+it('is version 2.4.1 or later', () => {
+  const [major, minor, patch] = DS_VERSION.split('.').map(Number) as [number, number, number];
+  expect(major * 10000 + minor * 100 + patch).toBeGreaterThanOrEqual(20401);
   expect(readFileSync(join(ds, 'CHANGELOG.md'), 'utf8')).toMatch(/^## 2\.4\.1 \(\d{4}-\d{2}-\d{2}\)$/m);
 });
 

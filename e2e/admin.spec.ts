@@ -165,7 +165,8 @@ test.describe('the pages of the links and the live checklist (M2-FE-01, ST-62)',
 
   test('a used or unknown link says so; a reset link sets a new password and ends the sessions', async ({ page, browserName }) => {
     await page.goto(`${ADMIN_ORIGIN}/invitations/invented-unknown-token`);
-    await expect(page.locator('.ud-alert--error')).toContainText('This link does not work any more');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('This link does not work any more');
+    await expect(page.locator('.ud-alert--error')).toBeVisible();
     await page.goto(`${ADMIN_ORIGIN}/password-resets/${linkToken('password_reset')}`);
     await expect(page.getByRole('heading', { level: 1, name: 'Set a new password' })).toBeVisible();
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(RESET_PASSWORD);
@@ -173,7 +174,8 @@ test.describe('the pages of the links and the live checklist (M2-FE-01, ST-62)',
     await page.getByRole('button', { name: 'Set the new password' }).click();
     await expect(page.locator('.ud-alert--success')).toContainText('Your password is set');
     await page.goto(`${ADMIN_ORIGIN}/password-resets/${linkToken('password_reset')}`);
-    await expect(page.locator('.ud-alert--error')).toContainText('This link does not work any more');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('This link does not work any more');
+    await expect(page.locator('.ud-alert--error')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Ask for a new link' })).toBeVisible();
     // The new password signs in (not in WebKit: NO_SESSION_IN_WEBKIT).
     if (holdsSession(browserName)) await signIn(page, { ...STUB.admin, password: RESET_PASSWORD });

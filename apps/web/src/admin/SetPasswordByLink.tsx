@@ -61,8 +61,9 @@ export function SetPasswordByLink({ purpose, token }: SetPasswordByLinkProps) {
   if (state.phase === 'invalid' || state.phase === 'failed') {
     return (
       <>
-        <PageHeader title={invitation ? TEXTS.product : t.resetTitle} />
-        <Alert tone="error" title={state.phase === 'invalid' ? t.invalidTitle : state.title}>
+        {/* A dead link says so as the page's heading, not as a heading over an alert (UXUI-M2-28). */}
+        <PageHeader title={state.phase === 'invalid' ? t.invalidTitle : invitation ? TEXTS.product : t.resetTitle} />
+        <Alert tone="error" title={state.phase === 'invalid' ? undefined : state.title}>
           {state.phase === 'invalid' ? (invitation ? t.invalidInvitation : t.invalidReset) : state.text}
         </Alert>
         <div className={styles.links}>

@@ -127,7 +127,8 @@ export function buildSecurityHeaders(input: HeaderInput): SecurityHeaders {
   if (enforced && reportTo) response['Reporting-Endpoints'] = `${REPORT_GROUP}="${reportTo}"`;
   // The legacy header cannot express a site list: it is sent with 'none' and dropped with a list.
   if (!framed) response['X-Frame-Options'] = 'DENY';
-  if (input.kind === 'secure-link') response['X-Robots-Tag'] = 'noindex, nofollow';
+  // The pages of secure links, and the auth pages that open them (an invitation, a reset: M2-ISS-12), stay out of search engines.
+  if (input.kind === 'secure-link' || input.kind === 'auth') response['X-Robots-Tag'] = 'noindex, nofollow';
 
   return { response, policy, remove: framed ? ['X-Frame-Options'] : [] };
 }

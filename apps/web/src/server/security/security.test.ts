@@ -73,9 +73,10 @@ describe('header set of every kind of page (ADR-28)', () => {
     expect(headers('admin', null, false).policy).not.toContain("'unsafe-eval'");
   });
 
-  it('secure-link pages are also kept out of search engines', () => {
+  it('secure-link pages and the auth pages of the links are also kept out of search engines (M2-ISS-12)', () => {
     expect(headers('secure-link').response['X-Robots-Tag']).toBe('noindex, nofollow');
-    for (const kind of PAGE_KINDS.filter((k) => k !== 'secure-link')) expect(headers(kind).response['X-Robots-Tag']).toBeUndefined();
+    expect(headers('auth').response['X-Robots-Tag']).toBe('noindex, nofollow');
+    for (const kind of PAGE_KINDS.filter((k) => k !== 'secure-link' && k !== 'auth')) expect(headers(kind).response['X-Robots-Tag']).toBeUndefined();
   });
 
   it('a nonce is fresh and unguessable', () => {

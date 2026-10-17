@@ -44,14 +44,14 @@ test.describe('the conference switch (M2-FE-03)', () => {
     await page.getByRole('link', { name: 'Email templates' }).click();
     await expect(page.getByText('The templates of Konferencija za probe (KP 2026).')).toBeVisible();
     await expect(conferenceSwitch(page)).toHaveValue(PART_B.ids.conference);
-    // The conference has no templates of its own: the organisation's are listed, marked as such.
-    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(14);
-    await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(14);
+    // The conference has no templates of its own: the organisation's are listed, marked as such (16 since 0.3.0: the confirmation of a submission, in two languages).
+    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(16);
+    await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(16);
     await page.reload();
     await expect(conferenceSwitch(page)).toHaveValue(PART_B.ids.conference);
 
     await conferenceSwitch(page).selectOption({ label: 'All conferences' });
-    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(14);
+    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(16);
     await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(0);
 
     // An empty log of one conference says which, and offers all conferences.
@@ -104,7 +104,11 @@ test.describe('conferences (M2-FE-03)', () => {
     await expect(page.getByText('This conference is archived')).toBeVisible();
     await expect(settings.getByLabel('Name')).toBeDisabled();
     await expect(settings.getByRole('button', { name: 'Save the settings' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /submissions|Conference actions/ })).toHaveCount(0);
+    // No state can follow; the menu of the conference still offers a copy, and only that (FR-CONF-04).
+    await expect(page.getByRole('button', { name: /submissions/ })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Conference actions' }).click();
+    await expect(page.getByRole('menuitem')).toHaveText(['Make a copy']);
+    await page.keyboard.press('Escape');
   });
 
   test('a copy is a new draft without dates; a code and edition that are taken are refused', async ({ page }) => {

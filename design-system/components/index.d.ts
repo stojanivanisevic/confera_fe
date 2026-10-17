@@ -74,7 +74,8 @@ export interface NavLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorEleme
 }
 export interface SegmentedTabsProps {
   /** With `content` the pills are tabs with a panel; without, they are a radio group. */
-  options: Array<string | { value: string; label: string; content?: React.ReactNode }>;
+  /** `lang`: the language the label is written in, when it is not the page's (2.5.0: the names of a language switch). */
+  options: Array<string | { value: string; label: string; content?: React.ReactNode; lang?: string }>;
   value: string;
   onChange?: (value: string) => void;
   /** Accessible name of the group. */

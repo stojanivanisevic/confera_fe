@@ -22,7 +22,9 @@ interface Route {
   sites?: string;
 }
 const ROUTES: Route[] = [
-  { origin: ADMIN_ORIGIN, path: '/', status: 200, kind: 'admin' },
+  // Without a session, / sends the browser to the sign-in page: it ends on an auth page (noindex since 0.3.0).
+  // The header set of a signed-in admin page: security.test.ts.
+  { origin: ADMIN_ORIGIN, path: '/', status: 200, kind: 'auth' },
   { origin: ADMIN_ORIGIN, path: '/sign-in', status: 200, kind: 'auth' },
   { origin: PUBLIC_ORIGIN, path: '/f/spike-abstract', status: 200, kind: 'hosted-form' },
   { origin: PUBLIC_ORIGIN, path: '/embed/spike-abstract', status: 200, kind: 'frame', sites: HARNESS_ORIGIN },
@@ -96,7 +98,7 @@ test.describe('ST-12: each kind of route returns its header set', () => {
       expect(headers['x-content-type-options']).toBe('nosniff');
       expect(headers['referrer-policy']).toBe('no-referrer');
       expect(headers['permissions-policy']).toContain('camera=()');
-      if (route.kind === 'secure-link') expect(headers['x-robots-tag']).toBe('noindex, nofollow');
+      if (route.kind === 'secure-link' || route.kind === 'auth') expect(headers['x-robots-tag']).toBe('noindex, nofollow');
       else expect(headers['x-robots-tag']).toBeUndefined();
 
       // ADR-20: no version header. ADR-08: no CORS grant. ADR-02: no cookie from the web application.

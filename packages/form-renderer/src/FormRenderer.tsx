@@ -193,7 +193,7 @@ export function FormRenderer(props: FormRendererProps) {
         const chosen = form.conference.languages.find((l) => l === next);
         if (chosen) setLanguage(chosen);
       }}
-      options={form.conference.languages.map((value) => ({ value, label: FORM_TEXTS[value].languageNames[value] }))}
+      options={form.conference.languages.map((value) => ({ value, label: FORM_TEXTS[value].languageNames[value], lang: value }))}
     />
   );
   const intro = textOf(form.definition.texts.intro, language);
