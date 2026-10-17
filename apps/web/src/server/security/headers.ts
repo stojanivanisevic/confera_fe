@@ -15,8 +15,10 @@
  *    From 0.2.0 the admin and auth pages enforce the WHOLE baseline (ADR-28:
  *    "enforced on the admin at 0.2.0"): one policy, and what it blocks is
  *    reported to the API (`report-uri`, `report-to`; M1-ISS-11).
- *  - the baseline in REPORT-ONLY mode, still sent by the public pages (the hosted
- *    form, the frame, the secure-link pages) until 0.3.0 enforces it there too.
+ *    From 0.3.0 the public pages (the hosted form, the frame, the secure-link pages)
+ *    enforce it too (ADR-28), with the frame page's site list as its framing rule.
+ *  - the baseline in REPORT-ONLY mode: what is left of it is the error page, which keeps
+ *    the two rules of 0.1.0 enforced and reports the rest.
  * Every HTML response carries a fresh script nonce and is never stored (SEC-A-51).
  */
 import type { RouteKind } from './route-kinds';
@@ -24,8 +26,8 @@ import type { RouteKind } from './route-kinds';
 /** Kinds that answer with a page. API kinds are forwarded and keep the API's own headers. */
 export type PageKind = Exclude<RouteKind, 'admin-api' | 'public-api' | 'asset' | 'form-send'> | 'error';
 
-/** The kinds whose baseline is enforced (0.2.0): the pages of the admin surface. */
-export const ENFORCED_KINDS: readonly PageKind[] = ['admin', 'auth'];
+/** The kinds whose baseline is enforced: the pages of the admin surface (0.2.0) and the public pages (0.3.0, ADR-28). */
+export const ENFORCED_KINDS: readonly PageKind[] = ['admin', 'auth', 'hosted-form', 'frame', 'secure-link'];
 
 export interface HeaderInput {
   readonly kind: PageKind;

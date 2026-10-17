@@ -60,7 +60,8 @@ describe('the test-build-only routes and the list verify-build checks', () => {
     expect(routeMarkers).toEqual(devPages);
   });
 
-  it('and for every form that only the test build has', () => {
-    for (const slug of Object.keys(devFixtures.forms)) expect(markers, slug).toContain(slug);
+  it('and for the forms of the browser tests, which no build holds since 0.3.0: they come from the API stub', () => {
+    expect(devFixtures).not.toHaveProperty('forms');
+    for (const slug of ['spike-abstract', 'spike-unlisted']) expect(markers, slug).toContain(slug);
   });
 });

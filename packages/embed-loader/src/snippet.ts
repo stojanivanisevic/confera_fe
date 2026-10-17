@@ -1,4 +1,4 @@
-﻿/**
+/**
  * The snippet an admin pastes into a conference site (FR-FORM-06; decision
  * G2-17, form (a)): a line with a link to the hosted form, a plain frame
  * served by Confera, and a few inline lines that set the frame's height and,

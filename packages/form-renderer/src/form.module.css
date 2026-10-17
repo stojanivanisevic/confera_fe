@@ -1,0 +1,94 @@
+/* Layout of a public form. Components are styled by the design system; every value here is a
+   token (NFR-UI-01; the style lint holds it). */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--gutter-l);
+  width: 100%;
+  max-width: var(--form-card-max);
+  margin: 0 auto;
+  font-family: var(--font-sans);
+  color: var(--ink);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-l);
+  min-width: 0;
+}
+
+.intro,
+.note {
+  margin: 0;
+  font: var(--text-body-sm);
+  letter-spacing: var(--text-body-sm-tracking);
+  line-height: 1.4;
+}
+
+.intro {
+  font: var(--text-body-md);
+  letter-spacing: var(--text-body-md-tracking);
+  line-height: 1.4;
+}
+
+.note {
+  color: var(--text-secondary);
+}
+
+/* The title of one block ("Author 2") above its fields. */
+.blockTitle {
+  margin: 0;
+  font: var(--text-caption);
+  letter-spacing: var(--text-caption-tracking);
+}
+
+.list {
+  margin: 0;
+  padding-left: var(--gutter-xl);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-xs);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gutter-m);
+}
+
+/* Where the focus lands after Send and after a question: the summary, the thank-you, the question. */
+.landing {
+  border-radius: var(--radius-sm);
+  scroll-margin-top: var(--gutter-l);
+}
+
+.landing:focus {
+  outline: none;
+}
+
+.landing:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* The hosted page gives the form room; inside a frame the site around it does, with an inner
+   gutter so that the cards do not touch the frame's edge (UI-M1-18). */
+.hosted {
+  padding: var(--gutter-3xl) var(--gutter-l) var(--gutter-6xl);
+}
+
+.embedded {
+  padding: var(--gutter-xs);
+}
+
+/* Inside a frame the page around shows through: no beige ground painted on the site (UI-M1-18). */
+:global(body):has(.embedded) {
+  background: transparent;
+}

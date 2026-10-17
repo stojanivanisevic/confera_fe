@@ -37,6 +37,8 @@ export interface FormCatalogue {
   /** Send, when the form's definition names no text of its own. */
   send: string;
   sending: string;
+  /** The empty choice of a list. */
+  choose: string;
   /** While the proof-of-work of a busy form runs (ADR-08). */
   checking: string;
   /** The title of the summary of errors, by kind of form (UX-M1-08). */
@@ -52,6 +54,8 @@ export interface FormCatalogue {
     requiredTick: string;
     /** A field of a repeated block: `{row}` is the block ("Author 2"), `{message}` the message. */
     inRow: string;
+    /** The consent is not ticked, by kind of form. */
+    consent: Record<FormType, string>;
     email: string;
     /** {count} {max} {over}: over the limit, where {over} is a number with its noun ("85 words"). */
     tooManyWords: string;
@@ -92,6 +96,10 @@ export interface FormCatalogue {
   };
 
   authors: {
+    /** The add button, when the form names none of its own. */
+    add: string;
+    /** The remove button of a block; the design system adds its number ("Remove author 2"). */
+    removeLabel: string;
     /** Under the authors. */
     corresponding: string;
     /** {max} {email}: the limit (D7), with the office's address. */
@@ -160,6 +168,9 @@ export interface FormCatalogue {
     loadTitle: string;
     loadText: string;
     tryAgain: string;
+    /** The page cannot read the form from the API. */
+    unavailableTitle: string;
+    unavailableText: string;
   };
 
   page: {
@@ -183,6 +194,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
     noScript: 'This form needs JavaScript. Turn it on, or open the form in another browser.',
     send: 'Send',
     sending: 'Sending…',
+    choose: 'Choose',
     checking: 'Checking the form before it is sent…',
     errorsTitle: {
       abstract: 'Check these fields to send your abstract',
@@ -191,21 +203,26 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
     },
     errorCount: { one: '{n} field to check', other: '{n} fields to check' },
     rules: {
-      requiredText: 'Fill in “{label}”.',
-      requiredChoice: 'Choose an answer for “{label}”.',
-      requiredFile: 'Add a file for “{label}”.',
-      requiredTick: 'Tick “{label}” to send the form.',
+      requiredText: 'Fill in “{label}”',
+      requiredChoice: 'Choose an answer for “{label}”',
+      requiredFile: 'Add a file for “{label}”',
+      requiredTick: 'Tick “{label}” to send the form',
       inRow: '{row}: {message}',
-      email: 'Enter an email address like name@university.edu.',
+      consent: {
+        abstract: 'Accept the terms to send your abstract',
+        full_paper: 'Accept the terms to send your paper',
+        membership: 'Accept the terms to send your application',
+      },
+      email: 'Enter an email address like name@university.edu',
       tooManyWords: '{count} of {max} words. Shorten the text by {over}.',
-      tooLong: 'Shorten this to {max} characters or fewer.',
-      noUrl: 'Leave out web addresses here.',
-      notAnOption: 'Choose one of the answers given.',
+      tooLong: 'Shorten this to {max} characters or fewer',
+      noUrl: 'Leave out web addresses here',
+      notAnOption: 'Choose one of the answers given',
       patterns: {
-        orcid: 'Enter the ORCID iD as 16 digits in groups of four, like 0000-0002-1825-0097.',
-        phone: 'Enter a phone number with digits and spaces, with + and the country code at the start if you like.',
-        taxNumber: 'Enter the tax number (PIB): 9 digits.',
-        registrationNumber: 'Enter the registration number: 8 digits.',
+        orcid: 'Enter the ORCID iD as 16 digits in groups of four, like 0000-0002-1825-0097',
+        phone: 'Enter a phone number with digits and spaces, with + and the country code at the start if you like',
+        taxNumber: 'Enter the tax number (PIB): 9 digits',
+        registrationNumber: 'Enter the registration number: 8 digits',
       },
       fallback: 'Check this field: the form could not accept what it holds.',
     },
@@ -224,6 +241,8 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       notKept: 'Files are not kept in the draft: add them again.',
     },
     authors: {
+      add: 'Add author',
+      removeLabel: 'Remove author',
       corresponding: 'The first author is the corresponding author: the confirmation goes to their email address.',
       limit: 'You can add up to {max} authors. For more, write to {email}.',
       limitNoContact: 'You can add up to {max} authors.',
@@ -268,6 +287,8 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       loadTitle: 'The form could not be prepared for sending',
       loadText: 'Check the connection, then try again. Nothing you typed is lost.',
       tryAgain: 'Try again',
+      unavailableTitle: 'The form cannot be shown right now',
+      unavailableText: 'Reload the page in a few minutes.',
     },
     page: {
       title: '{title} · {conference}',
@@ -283,6 +304,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
     noScript: 'Za ovaj obrazac potreban je JavaScript. Uključite ga ili otvorite obrazac u drugom pregledaču.',
     send: 'Pošalji',
     sending: 'Šalje se…',
+    choose: 'Izaberite',
     checking: 'Proveravamo obrazac pre slanja…',
     errorsTitle: {
       abstract: 'Proverite ova polja da biste poslali apstrakt',
@@ -291,21 +313,26 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
     },
     errorCount: { one: '{n} polje za proveru', few: '{n} polja za proveru', other: '{n} polja za proveru' },
     rules: {
-      requiredText: 'Popunite polje „{label}“.',
-      requiredChoice: 'Izaberite odgovor za „{label}“.',
-      requiredFile: 'Dodajte fajl za „{label}“.',
-      requiredTick: 'Označite „{label}“ da biste poslali obrazac.',
+      requiredText: 'Popunite polje „{label}“',
+      requiredChoice: 'Izaberite odgovor za „{label}“',
+      requiredFile: 'Dodajte fajl za „{label}“',
+      requiredTick: 'Označite „{label}“ da biste poslali obrazac',
       inRow: '{row}: {message}',
-      email: 'Unesite imejl adresu u obliku ime@univerzitet.rs.',
+      consent: {
+        abstract: 'Prihvatite uslove da biste poslali apstrakt',
+        full_paper: 'Prihvatite uslove da biste poslali rad',
+        membership: 'Prihvatite uslove da biste poslali prijavu',
+      },
+      email: 'Unesite imejl adresu u obliku ime@univerzitet.rs',
       tooManyWords: '{count} od {max} reči. Skratite tekst za {over}.',
-      tooLong: 'Skratite ovo na najviše {max} znakova.',
-      noUrl: 'Ovde ne upisujte veb adrese.',
-      notAnOption: 'Izaberite jedan od ponuđenih odgovora.',
+      tooLong: 'Skratite ovo na najviše {max} znakova',
+      noUrl: 'Ovde ne upisujte veb adrese',
+      notAnOption: 'Izaberite jedan od ponuđenih odgovora',
       patterns: {
-        orcid: 'Unesite ORCID iD kao 16 cifara u grupama od po četiri, na primer 0000-0002-1825-0097.',
-        phone: 'Unesite broj telefona ciframa i razmacima, po želji sa + i pozivnim brojem zemlje na početku.',
-        taxNumber: 'Unesite PIB: 9 cifara.',
-        registrationNumber: 'Unesite matični broj: 8 cifara.',
+        orcid: 'Unesite ORCID iD kao 16 cifara u grupama od po četiri, na primer 0000-0002-1825-0097',
+        phone: 'Unesite broj telefona ciframa i razmacima, po želji sa + i pozivnim brojem zemlje na početku',
+        taxNumber: 'Unesite PIB: 9 cifara',
+        registrationNumber: 'Unesite matični broj: 8 cifara',
       },
       fallback: 'Proverite ovo polje: obrazac nije mogao da prihvati ono što je upisano.',
     },
@@ -324,6 +351,8 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       notKept: 'Fajlovi se ne čuvaju u nacrtu: dodajte ih ponovo.',
     },
     authors: {
+      add: 'Dodaj autora',
+      removeLabel: 'Ukloni autora',
       corresponding: 'Prvi autor je autor za korespondenciju: potvrda stiže na njegovu imejl adresu.',
       limit: 'Možete dodati najviše {max} autora. Za više autora pišite na {email}.',
       limitNoContact: 'Možete dodati najviše {max} autora.',
@@ -368,6 +397,8 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       loadTitle: 'Obrazac nije mogao da se pripremi za slanje',
       loadText: 'Proverite vezu, pa pokušajte ponovo. Ništa od upisanog nije izgubljeno.',
       tryAgain: 'Pokušaj ponovo',
+      unavailableTitle: 'Obrazac trenutno ne može da se prikaže',
+      unavailableText: 'Ponovo učitajte stranicu za nekoliko minuta.',
     },
     page: {
       title: '{title} · {conference}',

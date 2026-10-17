@@ -9,6 +9,7 @@ import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { answer } from './api-stub.mjs';
+import { answerPublic } from './api-stub-public.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pages = resolve(here, '..', 'harness');
@@ -64,7 +65,9 @@ site(4001, hostPolicy);
 //  - the admin API of 0.2.0 part A as the vendored contract describes it (./api-stub.mjs):
 //    sign-in with the session cookie and the CSRF value, the password asked again, users,
 //    the organisation, the audit log, the links; `POST /__stub/reset` restores the fixture;
-//  - POST /public/v1/csp-reports takes the reports of the content security policy (204).
+//  - POST /public/v1/csp-reports takes the reports of the content security policy (204);
+//  - the public form API of 0.3.0 (./api-stub-public.mjs): the published forms of
+//    public-forms.json, the form token, uploads and submissions.
 const problem = (res, status, code) => res.writeHead(status, { 'content-type': 'application/problem+json', 'cache-control': 'no-store' }).end(JSON.stringify({ type: 'about:blank', status, code }));
 
 listen(
@@ -86,6 +89,7 @@ listen(
     if (url.pathname.startsWith('/api/v1/') && host !== 'localhost') return problem(res, 404, 'not_found');
     if (url.pathname.startsWith('/public/v1/') && host !== '127.0.0.1') return problem(res, 404, 'not_found');
     if (url.pathname === '/public/v1/csp-reports' && req.method === 'POST') return req.on('data', () => undefined).on('end', () => res.writeHead(204, { 'cache-control': 'no-store' }).end());
+    if (url.pathname.startsWith('/public/v1/forms/') || url.pathname.startsWith('/__stub/public/')) return void answerPublic(req, res, url);
     if (url.pathname.startsWith('/api/v1/') || url.pathname === '/__stub/reset') return void answer(req, res, url);
     problem(res, 404, 'not_found');
   },

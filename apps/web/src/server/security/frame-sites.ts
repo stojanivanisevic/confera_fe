@@ -1,12 +1,14 @@
 /**
  * The sites that may frame a form (FR-FORM-07, ADR-07, SEC-A-08).
  *
- * The value of `frame-ancestors` is built here and nowhere else, from stored
- * entries only, and it fails closed: an empty list, an entry that is not a
- * clean origin, too many entries, an unknown form or a failed lookup all give
- * `'none'`.
+ * The value of `frame-ancestors` is built here and nowhere else, from the list the API keeps for
+ * the form's conference, and it fails closed: an empty list, an entry that is not a clean origin,
+ * too many entries, an unknown form or a failed lookup all give `'none'`. https only, except for
+ * loopback names on the stages that run on a developer's machine (the local harness; M1-ISS-39,
+ * M2-ISS-21: on `prod` a loopback entry closes the frame).
  */
-import { devFixtures } from '#dev-fixtures';
+import { getConfig } from '@/config/env';
+import { lookUpForm } from '@/server/public-forms';
 
 export const MAX_FRAME_SITES = 20;
 const FORM_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
@@ -16,11 +18,11 @@ function isLoopback(hostname: string): boolean {
 }
 
 /**
- * Reduces one stored entry to `scheme://host[:port]`, or returns null when it
- * is not exactly an origin. https only, except for loopback names (the local
- * harness). No wildcard, path, query, fragment or user part; lower case.
+ * Reduces one stored entry to `scheme://host[:port]`, or returns null when it is not exactly an
+ * origin. https only, except for loopback names when `allowLoopback` (never on `prod`). No
+ * wildcard, path, query, fragment or user part; lower case.
  */
-export function normaliseFrameSite(entry: string): string | null {
+export function normaliseFrameSite(entry: string, allowLoopback = true): string | null {
   if (typeof entry !== 'string' || entry.length > 300 || /[\s;,'"*<>\\]/.test(entry)) return null;
   let url: URL;
   try {
@@ -29,38 +31,41 @@ export function normaliseFrameSite(entry: string): string | null {
     return null;
   }
   if (url.username || url.password || url.search || url.hash || url.pathname !== '/') return null;
-  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && isLoopback(url.hostname))) return null;
+  const loopback = isLoopback(url.hostname);
+  if (loopback && !allowLoopback) return null;
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback)) return null;
   // The entry must already be in its normal form: nothing is repaired silently.
   if (entry !== url.origin || entry !== entry.toLowerCase()) return null;
   return url.origin;
 }
 
 /** The validated site list of a form, or null when the form may be framed nowhere. */
-export function frameSitesFrom(entries: readonly string[] | null | undefined): readonly string[] | null {
+export function frameSitesFrom(entries: readonly string[] | null | undefined, allowLoopback = true): readonly string[] | null {
   if (!entries || entries.length === 0 || entries.length > MAX_FRAME_SITES) return null;
   const sites: string[] = [];
   for (const entry of entries) {
-    const site = normaliseFrameSite(entry);
+    const site = normaliseFrameSite(entry, allowLoopback);
     if (site === null) return null; // one bad entry closes the frame: fail closed
     if (!sites.includes(site)) sites.push(site);
   }
   return sites;
 }
 
-/**
- * The sites that may frame the form with this slug, or null (`'none'`).
- *
- * In 0.1.0 the forms are the spike fixtures of a test build; a production
- * build has none, so every form is unknown. From 0.3.0 this reads the
- * conference's site list from the API (M3-FE-02); a failed lookup stays null.
- */
-export function resolveFrameSites(slug: string): readonly string[] | null {
+/** How the site list of a form is found: the API's published form. Tests give one of their own. */
+export type FrameSiteLookup = (slug: string) => Promise<readonly string[] | null>;
+
+const fromApi: FrameSiteLookup = async (slug) => {
+  const found = await lookUpForm(slug);
+  return found.kind === 'form' ? found.form.frameSites : null;
+};
+
+/** The sites that may frame the form with this slug, or null (`'none'`). */
+export async function resolveFrameSites(slug: string, lookup: FrameSiteLookup = fromApi, allowLoopback: boolean = getConfig().stage !== 'prod'): Promise<readonly string[] | null> {
   if (!FORM_SLUG.test(slug)) return null;
-  const form = Object.hasOwn(devFixtures.forms, slug) ? devFixtures.forms[slug] : undefined;
-  return frameSitesFrom(form?.sites);
+  try {
+    return frameSitesFrom(await lookup(slug), allowLoopback);
+  } catch {
+    return null;
+  }
 }
 
-/** True when a form with this slug exists (0.1.0: in the spike fixtures). */
-export function formExists(slug: string): boolean {
-  return FORM_SLUG.test(slug) && Object.hasOwn(devFixtures.forms, slug);
-}

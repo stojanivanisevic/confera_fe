@@ -11,9 +11,9 @@ const NONCE = 'bm9uY2Utbm9uY2Utbm9uY2U=';
 const SITES = ['https://itema.example.test', 'https://eman.example.test'];
 const REPORT = 'http://127.0.0.1:3000/public/v1/csp-reports';
 const PAGE_KINDS: PageKind[] = ['admin', 'auth', 'hosted-form', 'frame', 'secure-link', 'dev', 'error'];
-/** The pages of the admin surface enforce the whole baseline since 0.2.0; the public pages report only until 0.3.0. */
-const ENFORCED: PageKind[] = ['admin', 'auth'];
-const REPORTING: PageKind[] = ['hosted-form', 'frame', 'secure-link', 'dev', 'error'];
+/** The pages of the admin surface enforce the whole baseline since 0.2.0, the public pages since 0.3.0 (ADR-28). */
+const ENFORCED: PageKind[] = ['admin', 'auth', 'hosted-form', 'frame', 'secure-link'];
+const REPORTING: PageKind[] = ['dev', 'error'];
 const headers = (kind: PageKind, frameSites: readonly string[] | null = null, development = false) =>
   buildSecurityHeaders({ kind, nonce: NONCE, frameSites, development, reportTo: REPORT });
 
@@ -30,7 +30,7 @@ describe('header set of every kind of page (ADR-28)', () => {
     expect(response['Permissions-Policy']).toContain('camera=()');
   });
 
-  it.each(REPORTING)('%s: framing and "no inline event handlers" enforced, the baseline report-only (until 0.3.0)', (kind) => {
+  it.each(REPORTING)('%s: framing and "no inline event handlers" enforced, the baseline report-only', (kind) => {
     const { response, policy } = headers(kind);
     expect(response['Content-Security-Policy']).toBe(`frame-ancestors 'none'; script-src-attr 'nonce-${NONCE}'`);
     expect(response['Content-Security-Policy-Report-Only']).toBe(policy);
@@ -39,7 +39,7 @@ describe('header set of every kind of page (ADR-28)', () => {
     for (const directive of BASELINE) expect(directives).toContain(directive);
   });
 
-  it.each(ENFORCED)('%s: the whole baseline enforced in one policy, reported to the API (0.2.0, M1-ISS-11)', (kind) => {
+  it.each(ENFORCED)('%s: the whole baseline enforced in one policy, reported to the API (0.2.0 admin, 0.3.0 public; M1-ISS-11)', (kind) => {
     const { response, policy } = headers(kind);
     expect(response['Content-Security-Policy']).toBe(policy);
     expect(response['Content-Security-Policy-Report-Only']).toBeUndefined();
@@ -88,7 +88,9 @@ describe('header set of every kind of page (ADR-28)', () => {
 describe('only the frame page can ever carry a site list (ADR-07)', () => {
   it('the frame page of a form with a list gets the list, and the legacy header is dropped', () => {
     const result = headers('frame', SITES);
-    expect(result.response['Content-Security-Policy']).toBe(`frame-ancestors ${SITES.join(' ')}; script-src-attr 'nonce-${NONCE}'`);
+    expect(result.response['Content-Security-Policy']).toBe(result.policy);
+    expect(result.policy.split('; ')[0]).toBe(`frame-ancestors ${SITES.join(' ')}`);
+    for (const directive of BASELINE) expect(result.policy.split('; ')).toContain(directive);
     expect(result.response['X-Frame-Options']).toBeUndefined();
     expect(result.remove).toEqual(['X-Frame-Options']);
   });
@@ -145,13 +147,33 @@ describe('the site list is validated and fails closed (SEC-A-08)', () => {
     expect(frameSitesFrom(many.slice(0, MAX_FRAME_SITES))).toHaveLength(MAX_FRAME_SITES);
   });
 
-  it('an unknown form, a form without sites and a bad slug resolve to none', () => {
-    expect(resolveFrameSites('spike-abstract')).toEqual(['http://localhost:4000']);
-    expect(resolveFrameSites('spike-unlisted')).toBeNull();
-    expect(resolveFrameSites('no-such-form')).toBeNull();
-    expect(resolveFrameSites('../spike-abstract')).toBeNull();
-    expect(resolveFrameSites('constructor')).toBeNull();
-    expect(resolveFrameSites('__proto__')).toBeNull();
+  // The list comes from the API's published form (0.3.0); here from a lookup of the test's own.
+  const lookup = async (slug: string): Promise<readonly string[] | null> => {
+    if (slug === 'spike-abstract') return ['http://localhost:4000'];
+    if (slug === 'spike-unlisted') return [];
+    if (slug === 'broken-api') throw new Error('the API did not answer');
+    if (slug === 'bad-entry') return ['https://itema.example.test', 'http://evil.example.test'];
+    return null;
+  };
+
+  it('an unknown form, a form without sites, a failed lookup and a bad slug resolve to none', async () => {
+    expect(await resolveFrameSites('spike-abstract', lookup, true)).toEqual(['http://localhost:4000']);
+    expect(await resolveFrameSites('spike-unlisted', lookup, true)).toBeNull();
+    expect(await resolveFrameSites('no-such-form', lookup, true)).toBeNull();
+    expect(await resolveFrameSites('broken-api', lookup, true)).toBeNull();
+    expect(await resolveFrameSites('bad-entry', lookup, true)).toBeNull();
+    for (const slug of ['../spike-abstract', 'constructor', '__proto__', 'Spike-Abstract']) {
+      let asked = false;
+      expect(await resolveFrameSites(slug, async (s) => ((asked = true), lookup(s)), true)).toBeNull();
+      expect(asked, slug).toBe(slug === 'constructor');
+    }
+  });
+
+  it('on prod a loopback entry closes the frame (M1-ISS-39, M2-ISS-21)', async () => {
+    expect(await resolveFrameSites('spike-abstract', lookup, false)).toBeNull();
+    expect(normaliseFrameSite('http://localhost:4000', false)).toBeNull();
+    expect(normaliseFrameSite('https://localhost', false)).toBeNull();
+    expect(normaliseFrameSite('https://itema.example.test', false)).toBe('https://itema.example.test');
   });
 });
 

@@ -1,4 +1,4 @@
-﻿// @vitest-environment jsdom
+// @vitest-environment jsdom
 //
 // ST-37, for the snippet form of G2-17 (a): the few inline lines of the
 // snippet are run here exactly as a conference site would run them, and are
@@ -34,15 +34,12 @@ beforeEach(() => {
   document.body.replaceChildren(...Array.from(parsed.body.children).filter((el) => el.tagName !== 'SCRIPT').map((el) => document.importNode(el, true)));
   frame = document.querySelector<HTMLIFrameElement>('#confera-form-itema-2026-abstract')!;
   other = document.querySelector<HTMLIFrameElement>('#other')!;
-  const add = window.addEventListener;
-  window.addEventListener = ((type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => {
-    listening.push([type, listener]);
-    add.call(window, type, listener, options);
-  }) as typeof window.addEventListener;
+  const spy = vi.spyOn(window, 'addEventListener');
   try {
     runInThisContext(script);
+    for (const [type, listener] of spy.mock.calls) if (listener) listening.push([type, listener]);
   } finally {
-    window.addEventListener = add;
+    spy.mockRestore();
   }
 });
 
@@ -126,7 +123,7 @@ describe('the scroll after Send (decision D1)', () => {
   let now: number;
   /** The frame starts `top` px below the top of the window and is `tall` px tall. */
   const place = (top: number, tall = 2000) => {
-    frame.getBoundingClientRect = () => ({ top, height: tall, bottom: top + tall, left: 0, right: 800, width: 800, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+    frame.getBoundingClientRect = () => ({ top, height: tall, bottom: top + tall, left: 0, right: 800, width: 800, x: 0, y: top, toJSON: () => ({}) });
   };
   beforeEach(() => {
     scrolled = [];
@@ -192,7 +189,7 @@ describe('the scroll after Send (decision D1)', () => {
     ['not a number', Number.NaN],
     ['infinity', Number.POSITIVE_INFINITY],
     ['null', null],
-    ['an object', { valueOf: () => 1500 }],
+    ['an object', { valueOf: (): number => 1500 }],
     ['an array', [1500]],
   ])('ignores a top that is %s', (_what, top) => {
     place(100);

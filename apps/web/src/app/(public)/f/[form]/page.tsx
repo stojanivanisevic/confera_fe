@@ -3,17 +3,27 @@ import { notFound } from 'next/navigation';
 
 import { HostedForm } from '@confera/form-renderer';
 
-import { formExists } from '@/server/security/frame-sites';
+import { formMetadata, formOf, FormUnavailable, languageFor } from '@/server/form-page';
 
-export const metadata: Metadata = { title: 'Form' };
+interface Props {
+  readonly params: Promise<{ form: string }>;
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  return formMetadata((await params).form, (await searchParams).lang);
+}
 
 /**
- * The hosted form: a page of its own on Confera's public host. It can be
- * framed nowhere (frame-ancestors 'none', ADR-07); the frame page is /embed.
- * In 0.1.0 the only forms are the spike fixtures of a test build.
+ * The hosted form: a page of its own on Confera's public host, for a site that strips the snippet
+ * and for the snippet's link (D5). It can be framed nowhere (frame-ancestors 'none', ADR-07); the
+ * frame page is /embed. The form comes from the API (M3-FE-02).
  */
-export default async function HostedFormPage({ params }: { params: Promise<{ form: string }> }) {
+export default async function HostedFormPage({ params, searchParams }: Props) {
   const { form } = await params;
-  if (!formExists(form)) notFound();
-  return <HostedForm slug={form} />;
+  const { lang } = await searchParams;
+  const found = await formOf(form);
+  if (found.kind === 'missing') notFound();
+  if (found.kind === 'unavailable') return <FormUnavailable language={await languageFor(null, lang)} />;
+  return <HostedForm form={found.form} language={await languageFor(found.form, lang)} />;
 }

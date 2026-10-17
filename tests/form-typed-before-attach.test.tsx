@@ -10,18 +10,21 @@ import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SpikeForm } from '../packages/form-renderer/src/SpikeForm';
+import { FormRenderer } from '../packages/form-renderer/src/FormRenderer';
+import { createDraftStorage } from '../packages/form-renderer/src/safe-storage';
+import { fakeApi, publishedForm } from './support/form-harness';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 // jsdom lays nothing out and has no scrollIntoView; the form asks for it before it moves the focus.
 Element.prototype.scrollIntoView = function scrollIntoView() {};
 
-const DRAFT_KEY = 'confera:draft:spike-abstract';
-const tree: ReactElement = (
-  <StrictMode>
-    <SpikeForm slug="spike-abstract" />
-  </StrictMode>
-);
+const DRAFT_KEY = 'confera:draft:spike-abstract:1';
+const FORM = publishedForm('spike-abstract');
+const storage = () => createDraftStorage(() => window.sessionStorage);
+let tree: ReactElement;
+/** A draft as the form keeps it (D3): the fields, the blocks, the language and the idempotency key. */
+const draftOf = (values: Record<string, string>) => JSON.stringify({ language: 'en', values, rows: { authors: [1] }, idempotencyKey: '11111111-2222-4333-8444-555555555555' });
+const keptValues = () => (JSON.parse(window.sessionStorage.getItem(DRAFT_KEY)!) as { values: Record<string, string> }).values;
 
 let container: HTMLElement;
 let root: Root | undefined;
@@ -59,6 +62,11 @@ async function attach(): Promise<unknown[]> {
 
 beforeEach(() => {
   window.sessionStorage.clear();
+  tree = (
+    <StrictMode>
+      <FormRenderer form={FORM} language="en" api={fakeApi()} storage={storage} />
+    </StrictMode>
+  );
   errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   warnings = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   container = document.createElement('div');
@@ -119,17 +127,23 @@ describe('typing before the form is attached', () => {
 
     await act(async () => {
       container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
-      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(container.querySelector('.ud-alert--error')).toBeNull();
-    expect(container.querySelector('.ud-alert--success')!.textContent).toContain('Thank you');
+    expect(container.querySelector('.ud-alert--success')!.textContent).toContain('Abstract sent');
   });
 
   it('it is kept as the draft of the tab, although no key was pressed after attaching', async () => {
     serverPage();
     typeInto(field('title'), 'Održivi turizam na Balkanu');
     await attach();
-    expect(JSON.parse(window.sessionStorage.getItem(DRAFT_KEY)!)).toEqual({ title: 'Održivi turizam na Balkanu', abstract: '' });
+    expect(keptValues()).toMatchObject({ title: 'Održivi turizam na Balkanu', abstract: '' });
+    // Never the consent, never the trap field.
+    expect(keptValues()).not.toHaveProperty('consent');
+    expect(keptValues()).not.toHaveProperty('website');
   });
 
   it('a field that was left empty is still reported, with its message', async () => {
@@ -149,7 +163,7 @@ describe('typing before the form is attached', () => {
 
 describe('a draft kept in the tab and text typed before attaching', () => {
   it('the draft fills the fields the author has not touched', async () => {
-    window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ title: 'From the draft', abstract: 'Jedna dva' }));
+    window.sessionStorage.setItem(DRAFT_KEY, draftOf({ title: 'From the draft', abstract: 'Jedna dva' }));
     serverPage();
     await attach();
     expect(field('title').value).toBe('From the draft');
@@ -158,7 +172,7 @@ describe('a draft kept in the tab and text typed before attaching', () => {
   });
 
   it('what the author typed wins over the draft', async () => {
-    window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ title: 'From the draft', abstract: 'Jedna dva' }));
+    window.sessionStorage.setItem(DRAFT_KEY, draftOf({ title: 'From the draft', abstract: 'Jedna dva' }));
     serverPage();
     typeInto(field('title'), 'Typed just now');
     await attach();
@@ -174,6 +188,6 @@ describe('a draft kept in the tab and text typed before attaching', () => {
       await Promise.resolve();
     });
     expect(container.textContent).toContain('3 of 300 words');
-    expect(JSON.parse(window.sessionStorage.getItem(DRAFT_KEY)!)).toEqual({ title: '', abstract: 'Jedna dva tri' });
+    expect(keptValues()).toMatchObject({ title: '', abstract: 'Jedna dva tri' });
   });
 });

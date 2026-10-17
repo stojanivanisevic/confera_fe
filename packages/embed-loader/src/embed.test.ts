@@ -1,4 +1,4 @@
-﻿// The snippet builder and the frame's height reporter (ADR-07, the parts of
+// The snippet builder and the frame's height reporter (ADR-07, the parts of
 // ST-37 that need no browser). The inline listener itself is run in
 // tests/embed-listener.test.ts.
 import { describe, expect, it, vi } from 'vitest';

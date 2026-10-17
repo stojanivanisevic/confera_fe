@@ -59,7 +59,7 @@ const SAMPLE = 'apps/web/src/sample.tsx';
 describe('the source tree', () => {
   it('is read: the app and the four packages', () => {
     expect(files.length).toBeGreaterThan(25);
-    for (const part of ['apps/web/src/proxy.ts', 'packages/ui/src/index.ts', 'packages/form-renderer/src/SpikeForm.tsx', 'packages/embed-loader/src/snippet.ts', 'packages/api-client/src/index.ts']) {
+    for (const part of ['apps/web/src/proxy.ts', 'packages/ui/src/index.ts', 'packages/form-renderer/src/FormRenderer.tsx', 'packages/embed-loader/src/snippet.ts', 'packages/api-client/src/index.ts']) {
       expect(files.map((file) => file.name)).toContain(part);
     }
   });

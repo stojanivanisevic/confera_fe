@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDraftStorage } from './safe-storage';
-import { isEmailAddress, wordsOver } from './rules';
-import { countOf, countWords, fill, SPIKE_FORM_TEXTS } from './texts';
+import { countOf, fill, FORM_TEXTS } from './i18n/catalogue';
+import { countWords, isEmailAddress, wordsOver } from './rules';
 
 function fakeStorage(overrides: Partial<Storage> = {}): Storage {
   const values = new Map<string, string>();
@@ -72,34 +72,34 @@ describe('draft storage in a browser that refuses storage (FR-FORM-18)', () => {
 });
 
 describe('texts of the form', () => {
+  /** Every text of a catalogue by its path; a noun is a text per plural form. */
+  const leaves = (value: unknown, path = ''): Array<[string, string]> =>
+    typeof value === 'string' ? [[path, value]] : value && typeof value === 'object' ? Object.entries(value).flatMap(([key, child]) => leaves(child, path ? `${path}.${key}` : key)) : [];
+
   it('both languages have every text, and none is empty', () => {
-    expect(Object.keys(SPIKE_FORM_TEXTS.sr).sort()).toEqual(Object.keys(SPIKE_FORM_TEXTS.en).sort());
-    for (const language of ['en', 'sr'] as const) {
-      for (const [key, text] of Object.entries(SPIKE_FORM_TEXTS[language])) {
-        // A noun is a text per plural form: each of them is a text.
-        for (const one of typeof text === 'string' ? [text] : Object.values<string>(text)) expect(one.trim(), `${language}.${key}`).not.toBe('');
-      }
-    }
+    const keys = (language: 'en' | 'sr') => leaves(FORM_TEXTS[language]).map(([key]) => key).filter((key) => !/.(one|few|many|two|zero)$/.test(key)).sort();
+    expect(keys('sr')).toEqual(keys('en'));
+    for (const language of ['en', 'sr'] as const) for (const [key, text] of leaves(FORM_TEXTS[language])) expect(text.trim(), `${language}.${key}`).not.toBe('');
   });
 
   it('both languages have the same parts in braces', () => {
-    const parts = (text: string) => [...text.matchAll(/\{[a-z]+\}/g)].map((m) => m[0]).sort();
-    for (const key of Object.keys(SPIKE_FORM_TEXTS.en) as Array<keyof typeof SPIKE_FORM_TEXTS.en>) {
-      const en = SPIKE_FORM_TEXTS.en[key];
-      const sr = SPIKE_FORM_TEXTS.sr[key];
-      if (typeof en === 'string' && typeof sr === 'string') expect(parts(sr), key).toEqual(parts(en));
+    const parts = (text: string) => [...text.matchAll(/{[a-zA-Z]+}/g)].map((m) => m[0]).sort();
+    const sr = new Map(leaves(FORM_TEXTS.sr));
+    for (const [key, en] of leaves(FORM_TEXTS.en)) {
+      const other = sr.get(key);
+      if (other !== undefined) expect(parts(other), key).toEqual(parts(en));
     }
   });
 
   it('a noun after a number takes the plural form of the language (Intl.PluralRules)', () => {
-    expect([1, 2, 5, 21, 85].map((n) => countOf(n, SPIKE_FORM_TEXTS.en.word, 'en'))).toEqual(['1 word', '2 words', '5 words', '21 words', '85 words']);
-    expect([1, 2, 5, 21, 22, 85].map((n) => countOf(n, SPIKE_FORM_TEXTS.sr.word, 'sr'))).toEqual(['1 reč', '2 reči', '5 reči', '21 reč', '22 reči', '85 reči']);
+    expect([1, 2, 5, 21, 85].map((n) => countOf(n, FORM_TEXTS.en.word, 'en'))).toEqual(['1 word', '2 words', '5 words', '21 words', '85 words']);
+    expect([1, 2, 5, 21, 22, 85].map((n) => countOf(n, FORM_TEXTS.sr.word, 'sr'))).toEqual(['1 reč', '2 reči', '5 reči', '21 reč', '22 reči', '85 reči']);
   });
 
-  it('the message of a text over its limit, as the UX review proposes it', () => {
-    const over = (language: 'en' | 'sr') => fill(SPIKE_FORM_TEXTS[language].wordsOver, { count: 385, max: 300, over: countOf(85, SPIKE_FORM_TEXTS[language].word, language) });
-    expect(over('en')).toBe('385 of 300 words. Shorten the abstract by 85 words.');
-    expect(over('sr')).toBe('385 od 300 reči. Skratite apstrakt za 85 reči.');
+  it('the message of a text over its limit', () => {
+    const over = (language: 'en' | 'sr') => fill(FORM_TEXTS[language].rules.tooManyWords, { count: 385, max: 300, over: countOf(85, FORM_TEXTS[language].word, language) });
+    expect(over('en')).toBe('385 of 300 words. Shorten the text by 85 words.');
+    expect(over('sr')).toBe('385 od 300 reči. Skratite tekst za 85 reči.');
   });
 });
 

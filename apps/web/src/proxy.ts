@@ -19,7 +19,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getConfig, isDevelopmentRuntime } from '@/config/env';
 import { signInHref } from '@/lib/next-path';
 import { forwardToApi } from '@/server/forward';
-import { formExists, resolveFrameSites } from '@/server/security/frame-sites';
+import { lookUpForm } from '@/server/public-forms';
+import { resolveFrameSites } from '@/server/security/frame-sites';
 import { buildSecurityHeaders, createNonce, type PageKind } from '@/server/security/headers';
 import { classifyRoute, surfaceOfHost } from '@/server/security/route-kinds';
 
@@ -82,10 +83,12 @@ function methodNotAllowed(kind: PageKind, allow: string): NextResponse {
  * this answers 204 No Content, so the browser stays on the page, with everything that was typed.
  * The body is not read and nothing is kept. Once the scripts are there, the form sends itself.
  */
-function formSend(request: NextRequest, form: string): NextResponse {
+async function formSend(request: NextRequest, form: string): Promise<NextResponse> {
   if (request.method !== 'POST' || request.headers.has('next-action')) return methodNotAllowed('hosted-form', 'POST');
+  // A form the API does not know is not found; while the API cannot say, the page stays (204).
+  const missing = (await lookUpForm(form)).kind === 'missing';
   return new NextResponse(null, {
-    status: formExists(form) ? 204 : 404,
+    status: missing ? 404 : 204,
     headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' },
   });
 }
@@ -145,7 +148,7 @@ export async function proxy(request: NextRequest): Promise<Response> {
   if (match.kind === 'admin' && !request.cookies.has(SESSION_COOKIE)) return signInFirst(request);
 
   // Only the frame page can ever carry a site list, and only for a form that has a valid one.
-  const frameSites = match.kind === 'frame' ? resolveFrameSites(match.params.form ?? '') : null;
+  const frameSites = match.kind === 'frame' ? await resolveFrameSites(match.params.form ?? '') : null;
   return page(request, match.kind, frameSites, false);
 }
 
