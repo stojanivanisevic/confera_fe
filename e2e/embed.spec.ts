@@ -284,7 +284,9 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
     page.on('response', (r) => {
       if (!r.url().startsWith(PUBLIC_ORIGIN)) return;
       if (r.request().resourceType() === 'document') documents.set(new URL(r.url()).pathname, { status: r.status(), policy: r.headers()['content-security-policy'], legacy: r.headers()['x-frame-options'] });
-      else loadedByFrames.push(new URL(r.url()).pathname);
+      // The report of the refusal is the browser's, not the page's: WebKit posts it to the report address of the
+      // refused page's policy, which the public pages enforce since 0.3.0. Nothing of the page itself is loaded.
+      else if (!(r.request().method() === 'POST' && new URL(r.url()).pathname === '/public/v1/csp-reports')) loadedByFrames.push(new URL(r.url()).pathname);
     });
     page.on('console', (m) => {
       if (REFUSED.test(m.text())) refusals.push(m.text());
@@ -349,7 +351,9 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
       .toBe(false);
 
     // The form works all the same.
-    await frame.getByRole('radio', { name: 'Srpski' }).click();
+    // By the keyboard: the pill is the first thing in the frame (D5), and on this site's fixed header WebKit
+    // scrolls it under the header, where no pointer reaches it.
+    await frame.getByRole('radio', { name: 'Srpski' }).press('Enter');
     await expect(frame.getByRole('heading', { level: 1 })).toHaveText('Prijava apstrakta');
     await frame.getByLabel('Naslov rada').fill('Održivi turizam na Balkanu');
     await frame.getByLabel('Ime i prezime autora 1').fill('Marta Kovač');
@@ -392,7 +396,9 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
     await openSite(page, HARNESS_ORIGIN, snippetFor(SLUG));
     const frame = await formFrame(page);
     await frame.getByLabel('Title of the paper').fill('Šta đaci čitaju');
-    await frame.getByRole('radio', { name: 'Srpski' }).click();
+    // By the keyboard: the pill is the first thing in the frame (D5), and on this site's fixed header WebKit
+    // scrolls it under the header, where no pointer reaches it.
+    await frame.getByRole('radio', { name: 'Srpski' }).press('Enter');
     await expect(frame.getByLabel('Naslov rada')).toHaveValue('Šta đaci čitaju');
     await expect(frame.getByRole('button', { name: 'Dodaj autora' })).toBeVisible();
     expect(await frame.evaluate(() => document.documentElement.lang)).toBe('sr');

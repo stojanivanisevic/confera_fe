@@ -414,6 +414,9 @@ for (const width of [1440, 375]) {
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
         await expect.poll(() => fitsTheWidth(page), `${path} at ${width}px`).toBe(true);
       }
+      // The pages of the links as a person without a session sees them: with one, the sign-in page sends the
+      // browser on to "/", and that navigation could cut off the next one (NS_BINDING_ABORTED in Firefox).
+      await page.context().clearCookies();
       for (const path of ['/sign-in', '/forgot-password', `/invitations/${linkToken('invitation')}`]) {
         await page.goto(`${ADMIN_ORIGIN}${path}`);
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
