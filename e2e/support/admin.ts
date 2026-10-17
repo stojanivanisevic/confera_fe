@@ -11,6 +11,8 @@ import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, API_STUB_ORIGIN, REAL_API_ORIGIN } from '../env';
 // @ts-expect-error -- plain Node module of the stub, typed here as far as the specs use it
+import { PART_C as FIXTURE_PART_C } from '../servers/api-stub-part-c.mjs';
+// @ts-expect-error -- plain Node module of the stub, typed here as far as the specs use it
 import { STUB as FIXTURE, STUB_PART_B as FIXTURE_PART_B } from '../servers/stub-fixture.mjs';
 import { expect } from './fixtures';
 
@@ -95,3 +97,12 @@ export async function answerPasswordAgain(page: Page, password: string): Promise
 
 /** No sideways scroll at a phone's width (NFR-RESP-02). */
 export const fitsTheWidth = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+
+/** Signs out through the person's menu of the top bar (UXUI-M2-24: the name and its two entries). */
+export async function signOutFromMenu(page: Page): Promise<void> {
+  await page.locator('[data-confera-user]').click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
+}
+
+/** The records of the stub's part C (forms, submissions, held emails; e2e/servers/api-stub-part-c.mjs). */
+export const PART_C = FIXTURE_PART_C as { form: string; submissions: [string, string]; files: { clean: string; pending: string }; held: [string, string] };

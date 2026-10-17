@@ -117,7 +117,8 @@ describe('rules of the form (./rules), the client copy of what the API checks', 
     ['marta@.test', false],
     ['', false],
   ])('%j is an email address: %s', (value, expected) => {
-    expect(isEmailAddress(value)).toBe(expected);
+    // The form trims every value before its rules, as the API does (contracts/form-rule-vectors.json, "values").
+    expect(isEmailAddress(value.trim())).toBe(expected);
   });
 
   it('counts the words over a limit', () => {

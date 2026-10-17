@@ -6,11 +6,12 @@
 // kept; there is no cross-origin call anywhere (ADR-02).
 import createClient, { type Client } from 'openapi-fetch';
 
+import configurationSchema from '../openapi/form-configuration.schema.json';
 import lock from '../openapi/openapi.lock.json';
 import type { components, paths as AdminPaths } from './generated/admin';
 import type { paths as PublicPaths } from './generated/public';
 
-export type { AdminPaths, PublicPaths };
+export type { AdminPaths, PublicPaths, components };
 export * from './session';
 export * from './password-rules';
 export * from './template-document';
@@ -19,6 +20,19 @@ export type Problem = components['schemas']['Problem'];
 export type FieldError = components['schemas']['FieldError'];
 export type AdminClient = Client<AdminPaths>;
 export type PublicClient = Client<PublicPaths>;
+
+/**
+ * What the configuration of a form may name (contracts/form-configuration.schema.json of
+ * confera_be, vendored with the contract): the keys of its texts, sections and fields, and the
+ * file types. The admin's form screen lists every field of the catalogue from these, also the
+ * ones switched off, which the draft's definition leaves out.
+ */
+export const FORM_CONFIGURATION = {
+  texts: configurationSchema.properties.texts.propertyNames.enum,
+  sections: configurationSchema.properties.sections.propertyNames.enum,
+  fields: configurationSchema.properties.fields.propertyNames.enum,
+  fileTypes: configurationSchema.properties.fields.additionalProperties.properties.file.properties.accept.items.enum,
+} as const;
 
 /** Version of the admin contract this build was generated from (`info.version` of openapi.json). */
 export const CONTRACT_VERSION: string = lock.files['openapi.json'].version;

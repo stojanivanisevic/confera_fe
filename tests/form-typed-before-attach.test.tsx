@@ -154,8 +154,8 @@ describe('typing before the form is attached', () => {
       container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
       await Promise.resolve();
     });
-    expect(container.querySelector('.ud-alert--error')!.textContent).toContain('Enter the title of the paper');
-    expect(container.querySelector('.ud-alert--error')!.textContent).not.toContain('Enter the first and last name of author 1');
+    expect(container.querySelector('.ud-alert--error')!.textContent).toContain('Fill in “Title of the paper”');
+    expect(container.querySelector('.ud-alert--error')!.textContent).not.toContain('Fill in “First and last name of author 1”');
     expect(field('title').getAttribute('aria-invalid')).toBe('true');
     expect(field('authors.1.name').value).toBe('Marta Kovač');
   });

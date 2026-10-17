@@ -16,6 +16,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { freshPartB, handlePartB } from './api-stub-part-b.mjs';
+import { freshPartC, handlePartC } from './api-stub-part-c.mjs';
 import { STUB } from './stub-fixture.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -29,7 +30,7 @@ export const SESSION_COOKIE = '__Host-confera_session';
 const DEVICE_COOKIE = '__Host-confera_device';
 const CONFIRMATION_MS = 5 * 60 * 1000;
 const PERMISSIONS = {
-  admin: ['account.manage', 'users.read', 'users.manage', 'organisation.read', 'organisation.manage', 'audit.read', 'mail_servers.read', 'mail_servers.manage', 'conferences.read', 'conferences.manage', 'templates.read', 'mail_log.read'],
+  admin: ['account.manage', 'users.read', 'users.manage', 'organisation.read', 'organisation.manage', 'audit.read', 'mail_servers.read', 'mail_servers.manage', 'conferences.read', 'conferences.manage', 'templates.read', 'mail_log.read', 'forms.read', 'forms.manage', 'submissions.read', 'held_mail.manage'],
   reviewer: ['account.manage'],
 };
 
@@ -56,6 +57,7 @@ function fresh() {
     resets: [],
     emailChanges: [],
     ...freshPartB(),
+    ...freshPartC(),
   };
   state = next;
   record(null, 'organisation.updated', 'organisation', next.organisation.id, { fields: ['name'] });
@@ -455,6 +457,8 @@ export async function handleAdmin(req, url) {
 
   const partB = handlePartB({ state, me, method, path, url, body, need, fresh, versionOf, refuse, record, id, now });
   if (partB) return partB;
+  const partC = handlePartC({ state, me, method, path, url, body, need, versionOf, refuse, record });
+  if (partC) return partC;
 
   refuse(404, 'not_found');
 }
@@ -464,6 +468,8 @@ export async function answer(req, res, url) {
   try {
     const result = await handleAdmin(req, url);
     const headers = { 'cache-control': 'no-store', 'x-trace-id': sha(String(counter++)).slice(0, 16), ...(result.headers ?? {}) };
+    // A file of a submission: an attachment with its name kept, as confera_be sends it (ADR-10, FR-FILE-03).
+    if (result.raw) return res.writeHead(result.status, { ...headers, 'content-type': result.raw.type, 'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(result.raw.name)}`, 'x-content-type-options': 'nosniff' }).end(result.raw.bytes);
     if (result.body === undefined) return res.writeHead(result.status, headers).end();
     return res.writeHead(result.status, { ...headers, 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(result.body));
   } catch (error) {

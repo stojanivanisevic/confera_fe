@@ -12,10 +12,12 @@ import { cache } from 'react';
 import { Alert } from '@confera/ui';
 import { fill, FORM_LANGUAGES, FORM_TEXTS, pickLanguage, textOf, type FormLanguage, type PublishedForm } from '@confera/form-renderer';
 
-import { lookUpForm } from './public-forms';
+import { lookUpForm, lookUpFrameSites } from './public-forms';
 
 /** One lookup per request, for the page and its metadata. */
 export const formOf = cache(lookUpForm);
+/** The site list of the frame, once per request. */
+export const frameSitesOf = cache(lookUpFrameSites);
 
 export async function languageFor(form: PublishedForm | null, requested: string | string[] | undefined): Promise<FormLanguage> {
   const browser = (await headers()).get('accept-language');

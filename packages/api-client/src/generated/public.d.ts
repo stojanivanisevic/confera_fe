@@ -24,6 +24,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/public/v1/forms/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The published form: its definition, and whether it is open (FR-FORM-06, FR-DL-02). */
+        get: operations["getPublicForm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/v1/forms/{slug}/frame-sites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The sites that may frame the form, for `frame-ancestors` of /embed/<slug> (ADR-07): the
+         *     conference's checked list while it is open for submissions, otherwise none.
+         */
+        get: operations["getFrameSites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/v1/forms/{slug}/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The submit (ADR-08, FR-FORM-14): processed once per `Idempotency-Key`. Refused answers
+         *     are 400 `validation_failed` with `answers.<path>` and the codes of
+         *     contracts/form-rule-vectors.json. 403 `form_token_invalid` or `proof_of_work_failed`,
+         *     409 `form_token_used`, `form_closed` or `idempotency_key_reused`, 429 `too_many_requests`.
+         */
+        post: operations["submitForm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/v1/forms/{slug}/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A single-use form token (ADR-08). Under load it asks for a proof-of-work. JSON only:
+         *     the body is `{}`. 409 `form_closed` when the form takes no submissions.
+         */
+        post: operations["issueFormToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/v1/forms/{slug}/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * One file for a file field (ADR-10): multipart with the parts `field` and `file`, in
+         *     that order. 413 `file_too_large`, 415 `file_type_refused`, 422 `docx_macros`, 429
+         *     `too_many_uploads`, 503 `upload_quota_reached`.
+         */
+        post: operations["uploadFormFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -33,6 +133,14 @@ export interface components {
             path: string;
             /** @description Stable code of the rule that failed, for example `isEmail`. Never the value. */
             code: string;
+        };
+        FormTokenDto: {
+            formToken: string;
+            expiresAt: string;
+            proofOfWork: components["schemas"]["ProofOfWorkDto"] | null;
+        };
+        FrameSitesDto: {
+            sites: string[];
         };
         Problem: {
             /** @description Stable, machine-readable code, for example `not_found` or `validation_failed`. */
@@ -45,6 +153,64 @@ export interface components {
             title?: string;
             /** @description The refused fields, when the input was not valid. */
             errors?: components["schemas"]["FieldError"][];
+        };
+        ProofOfWorkDto: {
+            challenge: string;
+            /** @description Leading zero bits of SHA-256(challenge + ":" + counter). */
+            difficulty: number;
+        };
+        PublicFormDto: {
+            /** @enum {string} */
+            state: "open" | "closed";
+            /** @enum {string|null} */
+            closedReason: "conference_closed" | "deadline_passed" | "not_published" | null;
+            slug: string;
+            /** @description The last day of submissions, YYYY-MM-DD, in the conference's time zone; null without a deadline. */
+            deadline: string | null;
+            /** @description The instant the form closes (the start of the day after the deadline there); null without one. */
+            closesAt: string | null;
+            conference: {
+                code: string;
+                name: string;
+                timeZone: string;
+                languages: string[];
+            };
+            consentLinks: {
+                terms: string | null;
+                privacy: string | null;
+            };
+            /** @description The number of the version: a submission keeps it. */
+            versionNumber: number;
+            /** @description contracts/form-definition.schema.json. */
+            definition: {
+                [key: string]: unknown;
+            };
+        };
+        SubmitDto: {
+            /** @enum {string} */
+            language: "en" | "sr";
+            answers: {
+                [key: string]: unknown;
+            };
+            /** @description The trap: a field no person sees. It must be empty. */
+            website?: string;
+            /** @description The counter that answers the token's challenge (a decimal number as text). */
+            proofOfWork?: string;
+        };
+        SubmittedDto: {
+            /** @enum {string} */
+            language: "en" | "sr";
+            /** @description Shown to the author: IT27-0001. */
+            reference: string;
+            receivedAt: string;
+        };
+        UploadedFileDto: {
+            /** @enum {string} */
+            type: "pdf" | "docx" | "doc" | "jpeg" | "png";
+            fileId: string;
+            /** @description The name as it will be shown and downloaded: cleaned, with the extension of its content. */
+            name: string;
+            sizeBytes: number;
         };
     };
     responses: never;
@@ -69,6 +235,166 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getPublicForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicFormDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getFrameSites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameSitesDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    submitForm: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A UUID per form instance. */
+                "Idempotency-Key": string;
+                "X-Form-Token": string;
+            };
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmittedDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    issueFormToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormTokenDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    uploadFormFile: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Form-Token": string;
+            };
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadedFileDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {

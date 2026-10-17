@@ -25,11 +25,16 @@ export const DOCUMENTS = [
 /**
  * The other contracts confera_be exports beside the OpenAPI documents, from its `contracts/`
  * folder: data both repositories must agree on. They are vendored next to the documents and
- * held by the same lock. 0.2.0: the password rule set with its shared vectors (ST-62).
+ * held by the same lock. 0.2.0: the password rule set with its shared vectors (ST-62) and the
+ * template document format. 0.3.0: the form definition and its configuration as JSON schemas, and
+ * the rules of the public forms with their shared vectors (ADR-09).
  */
 export const CONTRACTS = [
   { file: 'password-rules.json', source: 'contracts' },
   { file: 'template-vectors.json', source: 'contracts' },
+  { file: 'form-definition.schema.json', source: 'contracts' },
+  { file: 'form-configuration.schema.json', source: 'contracts' },
+  { file: 'form-rule-vectors.json', source: 'contracts' },
 ];
 export const LOCK = 'openapi.lock.json';
 
@@ -105,7 +110,8 @@ export function syncContract(options = {}) {
     writeFileSync(join(dir, 'openapi', file), text);
     files[file] = {
       title: `${folder}/${file}`,
-      version: String(JSON.parse(text).version),
+      // A schema has no version of its own: the lock says so instead of writing "undefined".
+      version: String(JSON.parse(text).version ?? 'schema'),
       sha256: checksum(text),
       commit: git(from, 'log', '-1', '--format=%H', '--', `${folder}/${file}`),
     };

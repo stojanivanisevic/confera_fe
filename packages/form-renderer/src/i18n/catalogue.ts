@@ -63,6 +63,7 @@ export interface FormCatalogue {
     tooLong: string;
     noUrl: string;
     notAnOption: string;
+    invalidCharacters: string;
     /** By name of a pattern of the field catalogue (ADR-09: patterns come only from the catalogue in code). */
     patterns: Record<'orcid' | 'phone' | 'taxNumber' | 'registrationNumber', string>;
     /** Any other code the API may give: the form says that the field was refused, and the API's code is not shown. */
@@ -85,6 +86,8 @@ export interface FormCatalogue {
     empty: string;
     /** {name} */
     failed: string;
+    /** Too many uploads from this connection, or no room for files just now. */
+    busy: string;
     /** {name} {percent} */
     uploading: string;
     /** {name} */
@@ -129,8 +132,8 @@ export interface FormCatalogue {
 
   states: {
     thanksTitle: Record<FormType, string>;
-    /** {email} */
-    thanksText: string;
+    /** {email}: where the confirmation goes, so that a mistyped address is seen at once. */
+    sentTo: string;
     /** {reference} */
     reference: string;
     again: Record<FormType, string>;
@@ -171,6 +174,9 @@ export interface FormCatalogue {
     /** The page cannot read the form from the API. */
     unavailableTitle: string;
     unavailableText: string;
+    /** Send in the admin's preview of a draft. */
+    previewTitle: string;
+    previewText: string;
   };
 
   page: {
@@ -218,11 +224,12 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       tooLong: 'Shorten this to {max} characters or fewer',
       noUrl: 'Leave out web addresses here',
       notAnOption: 'Choose one of the answers given',
+      invalidCharacters: 'Remove the invisible or control characters from this text',
       patterns: {
-        orcid: 'Enter the ORCID iD as 16 digits in groups of four, like 0000-0002-1825-0097',
+        orcid: 'Enter the ORCID iD as four groups of four digits, like 0000-0002-1825-0097',
         phone: 'Enter a phone number with digits and spaces, with + and the country code at the start if you like',
-        taxNumber: 'Enter the tax number (PIB): 9 digits',
-        registrationNumber: 'Enter the registration number: 8 digits',
+        taxNumber: 'Enter the tax number with digits and letters only, like 100002010',
+        registrationNumber: 'Enter the registration number with digits and letters only, like 07001703',
       },
       fallback: 'Check this field: the form could not accept what it holds.',
     },
@@ -235,6 +242,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       macros: '{name} contains macros. In Word choose File › Save As, pick “Word Document (*.docx)” and add the new file.',
       empty: '{name} is empty. Choose the file again.',
       failed: 'The upload of {name} stopped. Check the connection and add the file again.',
+      busy: 'Files cannot be taken just now. Try again in a few minutes.',
       uploading: 'Uploading {name}: {percent} %',
       uploaded: '{name} is uploaded.',
       wait: 'Wait until the file is uploaded, then send.',
@@ -258,7 +266,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
     consent: { newTab: '(opens in a new tab)' },
     states: {
       thanksTitle: { abstract: 'Abstract sent', full_paper: 'Paper sent', membership: 'Application sent' },
-      thanksText: 'We emailed a confirmation with your reference number to {email}. If it does not arrive within 15 minutes, check your spam folder.',
+      sentTo: 'The confirmation goes to {email}. If it does not arrive within 15 minutes, check your spam folder.',
       reference: 'Your reference: {reference}',
       again: { abstract: 'Send another abstract', full_paper: 'Send another paper', membership: 'Send another application' },
       closedTitle: 'This form is closed',
@@ -289,6 +297,8 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       tryAgain: 'Try again',
       unavailableTitle: 'The form cannot be shown right now',
       unavailableText: 'Reload the page in a few minutes.',
+      previewTitle: 'This is the preview',
+      previewText: 'The form would be sent now. Nothing is sent from the preview.',
     },
     page: {
       title: '{title} · {conference}',
@@ -328,11 +338,12 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       tooLong: 'Skratite ovo na najviše {max} znakova',
       noUrl: 'Ovde ne upisujte veb adrese',
       notAnOption: 'Izaberite jedan od ponuđenih odgovora',
+      invalidCharacters: 'Uklonite nevidljive ili kontrolne znakove iz ovog teksta',
       patterns: {
-        orcid: 'Unesite ORCID iD kao 16 cifara u grupama od po četiri, na primer 0000-0002-1825-0097',
+        orcid: 'Unesite ORCID iD kao četiri grupe od po četiri cifre, na primer 0000-0002-1825-0097',
         phone: 'Unesite broj telefona ciframa i razmacima, po želji sa + i pozivnim brojem zemlje na početku',
-        taxNumber: 'Unesite PIB: 9 cifara',
-        registrationNumber: 'Unesite matični broj: 8 cifara',
+        taxNumber: 'Unesite PIB samo ciframa i slovima, na primer 100002010',
+        registrationNumber: 'Unesite matični broj samo ciframa i slovima, na primer 07001703',
       },
       fallback: 'Proverite ovo polje: obrazac nije mogao da prihvati ono što je upisano.',
     },
@@ -345,6 +356,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       macros: '{name} sadrži makroe. U Wordu izaberite Datoteka › Sačuvaj kao, zatim „Word dokument (*.docx)“ i dodajte novi fajl.',
       empty: '{name} je prazan. Izaberite fajl ponovo.',
       failed: 'Otpremanje fajla {name} je prekinuto. Proverite vezu i dodajte fajl ponovo.',
+      busy: 'Fajlovi trenutno ne mogu da se prime. Pokušajte ponovo za nekoliko minuta.',
       uploading: 'Otprema se {name}: {percent} %',
       uploaded: '{name} je otpremljen.',
       wait: 'Sačekajte da se fajl otpremi, pa pošaljite.',
@@ -368,7 +380,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
     consent: { newTab: '(otvara se u novoj kartici)' },
     states: {
       thanksTitle: { abstract: 'Apstrakt je poslat', full_paper: 'Rad je poslat', membership: 'Prijava je poslata' },
-      thanksText: 'Potvrdu sa brojem prijave poslali smo na {email}. Ako ne stigne za 15 minuta, proverite folder za neželjenu poštu.',
+      sentTo: 'Potvrda stiže na {email}. Ako ne stigne za 15 minuta, proverite folder za neželjenu poštu.',
       reference: 'Broj vaše prijave: {reference}',
       again: { abstract: 'Pošalji još jedan apstrakt', full_paper: 'Pošalji još jedan rad', membership: 'Pošalji još jednu prijavu' },
       closedTitle: 'Ovaj obrazac je zatvoren',
@@ -399,6 +411,8 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       tryAgain: 'Pokušaj ponovo',
       unavailableTitle: 'Obrazac trenutno ne može da se prikaže',
       unavailableText: 'Ponovo učitajte stranicu za nekoliko minuta.',
+      previewTitle: 'Ovo je pregled',
+      previewText: 'Obrazac bi sada bio poslat. Iz pregleda se ništa ne šalje.',
     },
     page: {
       title: '{title} · {conference}',

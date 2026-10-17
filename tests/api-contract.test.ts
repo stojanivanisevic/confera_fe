@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // @ts-expect-error -- plain Node script without type declarations
-import { checkContract, checksum, syncContract } from '../scripts/api-lib.mjs';
+import { checkContract, checksum, CONTRACTS, syncContract } from '../scripts/api-lib.mjs';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const client = join(root, 'packages', 'api-client');
@@ -37,10 +37,9 @@ beforeAll(() => {
   mkdirSync(join(backend, 'contracts'), { recursive: true });
   cpSync(join(client, 'openapi', 'openapi.json'), join(backend, 'openapi', 'openapi.json'));
   cpSync(join(client, 'openapi', 'openapi.public.json'), join(backend, 'openapi', 'openapi.public.json'));
-  // The other contract of 0.2.0: the password rule set with its vectors (contracts/ in confera_be).
-  cpSync(join(client, 'openapi', 'password-rules.json'), join(backend, 'contracts', 'password-rules.json'));
-  // And the template document format with its vectors (ADR-12, M2-FE-05).
-  cpSync(join(client, 'openapi', 'template-vectors.json'), join(backend, 'contracts', 'template-vectors.json'));
+  // The other contracts (contracts/ in confera_be): the password rule set (0.2.0), the template document
+  // format (ADR-12, M2-FE-05), the form definition, its configuration and the form rules (0.3.0, ADR-09).
+  for (const { file } of CONTRACTS as Array<{ file: string }>) cpSync(join(client, 'openapi', file), join(backend, 'contracts', file));
   execFileSync('git', ['init', '--quiet', backend]);
   git('add', '.');
   git('commit', '--quiet', '-m', 'contract');

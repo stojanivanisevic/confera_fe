@@ -307,3 +307,36 @@
     display: none;
   }
 }
+
+/* The person's name in the menu of the top bar: shown from 600px; on a phone the icon is the target (UXUI-M2-24). */
+.userName {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 599px) {
+  .userName {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* A list of plain lines: the refusals of a draft, the files of a submission. */
+.plainList {
+  margin: 0;
+  padding-left: var(--gutter-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-s);
+}
+
+/* One file of a submission: its name, type and size, and its scan state. */
+.fileRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gutter-s) var(--gutter-m);
+}

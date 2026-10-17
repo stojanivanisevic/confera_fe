@@ -47,8 +47,11 @@ describe('the typed call to /api/v1/meta', () => {
     const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(json({})));
     const client = createPublicClient({ baseUrl: 'http://127.0.0.1:3000', fetch });
     expectTypeOf(client).not.toBeAny();
-    // The public contract of 0.2.0 has one path: where a browser reports what the content security policy blocked.
-    expectTypeOf<keyof PublicPaths>().toEqualTypeOf<'/public/v1/csp-reports'>();
+    // The public contract: where a browser reports what the content security policy blocked (0.2.0), and the
+    // public forms (0.3.0): the form, its site list, a token, an upload and the submit.
+    expectTypeOf<keyof PublicPaths>().toEqualTypeOf<
+      '/public/v1/csp-reports' | '/public/v1/forms/{slug}' | '/public/v1/forms/{slug}/frame-sites' | '/public/v1/forms/{slug}/tokens' | '/public/v1/forms/{slug}/uploads' | '/public/v1/forms/{slug}/submissions'
+    >();
     await (client as unknown as { GET: (path: string) => Promise<unknown> }).GET('/public/v1/anything');
     expect((fetch.mock.calls[0]![0] as Request).credentials).toBe('omit');
   });

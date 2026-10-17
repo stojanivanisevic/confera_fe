@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { EmbeddedForm } from '@confera/form-renderer';
 
-import { formMetadata, formOf, FormUnavailable, languageFor } from '@/server/form-page';
+import { formMetadata, formOf, frameSitesOf, FormUnavailable, languageFor } from '@/server/form-page';
 import { frameSitesFrom } from '@/server/security/frame-sites';
 import { getConfig } from '@/config/env';
 
@@ -27,6 +27,6 @@ export default async function EmbedPage({ params, searchParams }: Props) {
   const found = await formOf(form);
   if (found.kind === 'missing') notFound();
   if (found.kind === 'unavailable') return <FormUnavailable language={await languageFor(null, lang)} />;
-  const sites = frameSitesFrom(found.form.frameSites, getConfig().stage !== 'prod') ?? [];
+  const sites = frameSitesFrom(await frameSitesOf(form), getConfig().stage !== 'prod') ?? [];
   return <EmbeddedForm form={found.form} language={await languageFor(found.form, lang)} parentOrigins={sites} />;
 }

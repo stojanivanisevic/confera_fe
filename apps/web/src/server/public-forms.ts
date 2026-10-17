@@ -23,26 +23,51 @@ const MAX_BYTES = 1_000_000;
 
 export type FormLookup = { readonly kind: 'form'; readonly form: PublishedForm } | { readonly kind: 'missing' } | { readonly kind: 'unavailable' };
 
-export async function lookUpForm(slug: string): Promise<FormLookup> {
-  if (!FORM_SLUG.test(slug)) return { kind: 'missing' };
+/** One GET of the public surface of the API: the status and the parsed body, or null when it did not answer. */
+async function getPublic(path: string): Promise<{ status: number; body: unknown } | null> {
   const config = getConfig();
   try {
     const response = await forwardToApi({
       apiOrigin: config.apiOrigin,
-      pathAndQuery: `/public/v1/forms/${slug}`,
+      pathAndQuery: path,
       method: 'GET',
       headers: new Headers({ host: config.publicHost, accept: 'application/json' }),
       body: null,
       surface: 'public',
       timeoutMs: TIMEOUT_MS,
     });
-    if (response.status === 404) return { kind: 'missing' };
-    if (!response.ok) return { kind: 'unavailable' };
+    if (!response.ok) return { status: response.status, body: null };
     const text = await response.text();
-    if (text.length > MAX_BYTES) return { kind: 'unavailable' };
-    const form = readPublishedForm(JSON.parse(text));
+    if (text.length > MAX_BYTES) return null;
+    return { status: response.status, body: JSON.parse(text) as unknown };
+  } catch {
+    return null;
+  }
+}
+
+/** The published form of a slug (GET /public/v1/forms/{slug}). */
+export async function lookUpForm(slug: string): Promise<FormLookup> {
+  if (!FORM_SLUG.test(slug)) return { kind: 'missing' };
+  const answer = await getPublic(`/public/v1/forms/${slug}`);
+  if (answer?.status === 404) return { kind: 'missing' };
+  if (!answer || answer.status !== 200) return { kind: 'unavailable' };
+  try {
+    const form = readPublishedForm(answer.body);
     return form.slug === slug ? { kind: 'form', form } : { kind: 'unavailable' };
   } catch {
     return { kind: 'unavailable' };
   }
+}
+
+/**
+ * The sites that may frame the form (GET /public/v1/forms/{slug}/frame-sites): the conference's
+ * checked list while it takes submissions, else none. Null when there is no answer to read: the
+ * frame is then framed nowhere (fail closed).
+ */
+export async function lookUpFrameSites(slug: string): Promise<readonly string[] | null> {
+  if (!FORM_SLUG.test(slug)) return null;
+  const answer = await getPublic(`/public/v1/forms/${slug}/frame-sites`);
+  if (!answer || answer.status !== 200 || typeof answer.body !== 'object' || answer.body === null) return null;
+  const sites = (answer.body as { sites?: unknown }).sites;
+  return Array.isArray(sites) && sites.every((site): site is string => typeof site === 'string') ? sites : null;
 }

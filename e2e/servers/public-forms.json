@@ -1,11 +1,12 @@
 {
-  "$comment": "Published forms of the API stub (GET /public/v1/forms/{slug}) and of the unit tests. 'spike-abstract' is the small form of the 0.1.0 spike written as a definition, so that the browser tests of the embed, the moment after Send and the probes keep proving the same things on the real renderer; 'spike-unlisted' is the same form with an empty site list. 'itema-2026-abstract' is the abstract form of FR-FORM-04 with the fields of the current ITEMA form (FORMS); 'itema-2026-closed' is that form after its deadline. Invented people only, on example.test.",
+  "$comment": "Published forms of the API stub (GET /public/v1/forms/{slug}, the PublicFormDto of openapi.public.json) and of the unit tests, with the site lists of GET /public/v1/forms/{slug}/frame-sites. \"spike-abstract\" is the small form of the 0.1.0 spike written in the definition schema of confera_be, so that the browser tests of the embed, the moment after Send and the probes keep proving the same things on the real renderer; \"spike-unlisted\" is the same form with an empty site list. \"itema-2026-abstract\" is the seeded abstract form of confera_be (seededAbstractDefinition of contracts/form-rule-vectors.json) with a deadline; \"itema-2026-closed\" is that form after its deadline. Written by a script from the vendored contract; invented people only, on example.test.",
   "forms": {
     "spike-abstract": {
-      "slug": "spike-abstract",
-      "version": 1,
       "state": "open",
+      "closedReason": null,
+      "slug": "spike-abstract",
       "deadline": null,
+      "closesAt": null,
       "conference": {
         "code": "IT",
         "name": "ITEMA 2026",
@@ -13,76 +14,99 @@
         "languages": [
           "en",
           "sr"
-        ],
-        "contactEmail": "office@example.test"
+        ]
       },
-      "frameSites": [
-        "http://localhost:4000"
-      ],
+      "consentLinks": {
+        "terms": "https://www.example.test/terms",
+        "privacy": "https://www.example.test/privacy"
+      },
+      "versionNumber": 1,
       "definition": {
+        "schemaVersion": 1,
         "type": "abstract",
         "texts": {
           "title": {
             "en": "Abstract submission",
             "sr": "Prijava apstrakta"
           },
+          "intro": {
+            "en": "",
+            "sr": ""
+          },
           "submit": {
             "en": "Send abstract",
             "sr": "Pošalji apstrakt"
-          }
-        },
-        "consent": {
-          "version": "2026-10",
-          "label": {
+          },
+          "thankYou": {
+            "en": "Thank you. A confirmation with its reference is on its way to your email address.",
+            "sr": "Hvala. Potvrda sa brojem prijave stiže na Vašu adresu e-pošte."
+          },
+          "closed": {
+            "en": "Submissions for this conference are closed.",
+            "sr": "Prijave za ovu konferenciju su zatvorene."
+          },
+          "consent": {
             "en": "I accept the terms of publication",
             "sr": "Prihvatam uslove objavljivanja"
-          },
-          "message": {
-            "en": "Accept the terms of publication to send your abstract",
-            "sr": "Prihvatite uslove objavljivanja da biste poslali apstrakt"
           }
         },
+        "patterns": {},
         "sections": [
           {
-            "id": "paper",
+            "key": "paper",
+            "label": {
+              "en": "The paper",
+              "sr": "Rad"
+            },
+            "repeat": null,
+            "visibleWhen": null,
             "fields": [
               {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
                 "key": "title",
                 "kind": "text",
-                "enabled": true,
                 "required": true,
                 "label": {
                   "en": "Title of the paper",
                   "sr": "Naslov rada"
-                },
-                "rules": {
-                  "maxLength": 300,
-                  "noUrl": true
-                },
-                "messages": {
-                  "required": {
-                    "en": "Enter the title of the paper",
-                    "sr": "Unesite naslov rada"
-                  }
                 }
               },
               {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null,
+                "rules": {
+                  "maxLength": 10000,
+                  "maxWords": 300,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
                 "key": "abstract",
-                "kind": "textarea",
-                "enabled": true,
+                "kind": "longText",
                 "required": false,
                 "label": {
                   "en": "Abstract",
                   "sr": "Apstrakt"
-                },
-                "rules": {
-                  "maxWords": 300
                 }
               }
             ]
           },
           {
-            "id": "authors",
+            "key": "authors",
             "label": {
               "en": "Authors",
               "sr": "Autori"
@@ -93,50 +117,92 @@
               "itemLabel": {
                 "en": "Author {n}",
                 "sr": "Autor {n}"
-              }
+              },
+              "addLabel": {
+                "en": "Add author",
+                "sr": "Dodaj autora"
+              },
+              "removeLabel": {
+                "en": "Remove author {n}",
+                "sr": "Ukloni autora {n}"
+              },
+              "noticeFrom": null,
+              "notice": null
             },
+            "visibleWhen": null,
             "fields": [
               {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "name",
+                "rules": {
+                  "maxLength": 200,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
                 "key": "name",
                 "kind": "text",
-                "enabled": true,
                 "required": true,
                 "label": {
                   "en": "First and last name of author {n}",
                   "sr": "Ime i prezime autora {n}"
-                },
-                "autocomplete": "name",
-                "rules": {
-                  "maxLength": 200,
-                  "noUrl": true
-                },
-                "messages": {
-                  "required": {
-                    "en": "Enter the first and last name of author {n}",
-                    "sr": "Unesite ime i prezime autora {n}"
-                  }
                 }
               },
               {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "email",
+                "rules": {
+                  "maxLength": 254,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
                 "key": "email",
                 "kind": "email",
-                "enabled": true,
                 "required": true,
-                "requiredOnlyInFirst": true,
                 "label": {
                   "en": "Email of author {n}",
                   "sr": "Imejl adresa autora {n}"
+                }
+              }
+            ]
+          },
+          {
+            "key": "agreement",
+            "label": {
+              "en": "Consent",
+              "sr": "Saglasnost"
+            },
+            "repeat": null,
+            "visibleWhen": null,
+            "fields": [
+              {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null,
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
                 },
-                "autocomplete": "email",
-                "messages": {
-                  "required": {
-                    "en": "Enter the email address of author 1, so we can send the confirmation",
-                    "sr": "Unesite imejl adresu autora 1 da bismo poslali potvrdu"
-                  }
-                },
-                "help": {
-                  "en": "We send the confirmation here",
-                  "sr": "Ovde šaljemo potvrdu"
+                "key": "consent",
+                "kind": "consent",
+                "required": true,
+                "label": {
+                  "en": "I agree",
+                  "sr": "Saglasan/na sam"
                 }
               }
             ]
@@ -145,10 +211,11 @@
       }
     },
     "spike-unlisted": {
-      "slug": "spike-unlisted",
-      "version": 1,
       "state": "open",
+      "closedReason": null,
+      "slug": "spike-unlisted",
       "deadline": null,
+      "closesAt": null,
       "conference": {
         "code": "IT",
         "name": "ITEMA 2026",
@@ -156,37 +223,195 @@
         "languages": [
           "en",
           "sr"
-        ],
-        "contactEmail": "office@example.test"
+        ]
       },
-      "frameSites": [],
+      "consentLinks": {
+        "terms": "https://www.example.test/terms",
+        "privacy": "https://www.example.test/privacy"
+      },
+      "versionNumber": 1,
       "definition": {
+        "schemaVersion": 1,
         "type": "abstract",
         "texts": {
           "title": {
             "en": "Abstract submission",
             "sr": "Prijava apstrakta"
-          }
-        },
-        "consent": {
-          "version": "2026-10",
-          "label": {
+          },
+          "intro": {
+            "en": "",
+            "sr": ""
+          },
+          "submit": {
+            "en": "Send abstract",
+            "sr": "Pošalji apstrakt"
+          },
+          "thankYou": {
+            "en": "Thank you. A confirmation with its reference is on its way to your email address.",
+            "sr": "Hvala. Potvrda sa brojem prijave stiže na Vašu adresu e-pošte."
+          },
+          "closed": {
+            "en": "Submissions for this conference are closed.",
+            "sr": "Prijave za ovu konferenciju su zatvorene."
+          },
+          "consent": {
             "en": "I accept the terms of publication",
             "sr": "Prihvatam uslove objavljivanja"
           }
         },
+        "patterns": {},
         "sections": [
           {
-            "id": "paper",
+            "key": "paper",
+            "label": {
+              "en": "The paper",
+              "sr": "Rad"
+            },
+            "repeat": null,
+            "visibleWhen": null,
             "fields": [
               {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
                 "key": "title",
                 "kind": "text",
-                "enabled": true,
                 "required": true,
                 "label": {
                   "en": "Title of the paper",
                   "sr": "Naslov rada"
+                }
+              },
+              {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null,
+                "rules": {
+                  "maxLength": 10000,
+                  "maxWords": 300,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "key": "abstract",
+                "kind": "longText",
+                "required": false,
+                "label": {
+                  "en": "Abstract",
+                  "sr": "Apstrakt"
+                }
+              }
+            ]
+          },
+          {
+            "key": "authors",
+            "label": {
+              "en": "Authors",
+              "sr": "Autori"
+            },
+            "repeat": {
+              "min": 1,
+              "max": 8,
+              "itemLabel": {
+                "en": "Author {n}",
+                "sr": "Autor {n}"
+              },
+              "addLabel": {
+                "en": "Add author",
+                "sr": "Dodaj autora"
+              },
+              "removeLabel": {
+                "en": "Remove author {n}",
+                "sr": "Ukloni autora {n}"
+              },
+              "noticeFrom": null,
+              "notice": null
+            },
+            "visibleWhen": null,
+            "fields": [
+              {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "name",
+                "rules": {
+                  "maxLength": 200,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "key": "name",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "First and last name of author {n}",
+                  "sr": "Ime i prezime autora {n}"
+                }
+              },
+              {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "email",
+                "rules": {
+                  "maxLength": 254,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "key": "email",
+                "kind": "email",
+                "required": true,
+                "label": {
+                  "en": "Email of author {n}",
+                  "sr": "Imejl adresa autora {n}"
+                }
+              }
+            ]
+          },
+          {
+            "key": "agreement",
+            "label": {
+              "en": "Consent",
+              "sr": "Saglasnost"
+            },
+            "repeat": null,
+            "visibleWhen": null,
+            "fields": [
+              {
+                "help": null,
+                "options": null,
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null,
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "key": "consent",
+                "kind": "consent",
+                "required": true,
+                "label": {
+                  "en": "I agree",
+                  "sr": "Saglasan/na sam"
                 }
               }
             ]
@@ -195,10 +420,11 @@
       }
     },
     "itema-2026-abstract": {
-      "slug": "itema-2026-abstract",
-      "version": 3,
       "state": "open",
+      "closedReason": null,
+      "slug": "itema-2026-abstract",
       "deadline": "2027-03-15",
+      "closesAt": "2027-03-15T23:00:00.000Z",
       "conference": {
         "code": "IT",
         "name": "ITEMA 2026",
@@ -206,13 +432,15 @@
         "languages": [
           "en",
           "sr"
-        ],
-        "contactEmail": "office@example.test"
+        ]
       },
-      "frameSites": [
-        "http://localhost:4000"
-      ],
+      "consentLinks": {
+        "terms": "https://www.example.test/terms",
+        "privacy": "https://www.example.test/privacy"
+      },
+      "versionNumber": 3,
       "definition": {
+        "schemaVersion": 1,
         "type": "abstract",
         "texts": {
           "title": {
@@ -220,44 +448,57 @@
             "sr": "Prijava apstrakta"
           },
           "intro": {
-            "en": "Send your abstract for ITEMA 2026. You can attend in person or online.",
-            "sr": "Pošaljite apstrakt za ITEMA 2026. Možete učestvovati uživo ili onlajn."
+            "en": "Fields marked with * are required.",
+            "sr": "Polja označena zvezdicom (*) su obavezna."
           },
           "submit": {
-            "en": "Send abstract",
-            "sr": "Pošalji apstrakt"
+            "en": "Send",
+            "sr": "Pošalji"
+          },
+          "thankYou": {
+            "en": "Thank you. Your submission has been received, and a confirmation with its reference is on its way to your email address.",
+            "sr": "Hvala. Vaša prijava je primljena, a potvrda sa brojem prijave stiže na Vašu adresu e-pošte."
+          },
+          "closed": {
+            "en": "Submissions for this conference are closed.",
+            "sr": "Prijave za ovu konferenciju su zatvorene."
+          },
+          "consent": {
+            "en": "I agree that the data in this form, mine and that of my co-authors, is processed for this conference as the [privacy notice](privacy) describes, and I accept the [terms of publication](terms).",
+            "sr": "Saglasan/na sam da se podaci iz ovog obrasca, moji i podaci mojih koautora, obrađuju za ovu konferenciju kako to opisuje [obaveštenje o privatnosti](privacy), i prihvatam [uslove objavljivanja](terms)."
           }
         },
-        "consent": {
-          "version": "2026-10-terms-1",
-          "label": {
-            "en": "I accept the [terms of publication](https://www.example.test/terms) and the [privacy notice](https://www.example.test/privacy)",
-            "sr": "Prihvatam [uslove objavljivanja](https://www.example.test/uslovi) i [obaveštenje o privatnosti](https://www.example.test/privatnost)"
-          }
+        "patterns": {
+          "orcid": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$",
+          "phone": "^\\+?[0-9][0-9 ()./-]{4,28}[0-9]$",
+          "taxNumber": "^[A-Za-z0-9][A-Za-z0-9 ./-]{2,28}[A-Za-z0-9]$",
+          "registrationNumber": "^[A-Za-z0-9][A-Za-z0-9 ./-]{2,28}[A-Za-z0-9]$"
         },
         "sections": [
           {
-            "id": "participation",
+            "key": "participation",
             "label": {
               "en": "Participation",
               "sr": "Učešće"
             },
+            "repeat": null,
+            "visibleWhen": null,
             "fields": [
               {
-                "key": "participation",
-                "kind": "radio",
-                "enabled": true,
+                "key": "participationType",
+                "kind": "choice",
                 "required": true,
                 "label": {
                   "en": "How do you take part?",
                   "sr": "Kako učestvujete?"
                 },
+                "help": null,
                 "options": [
                   {
-                    "value": "with_abstract",
+                    "value": "with_paper",
                     "label": {
-                      "en": "With an abstract or a paper",
-                      "sr": "Sa apstraktom ili radom"
+                      "en": "With an abstract and a paper",
+                      "sr": "Sa apstraktom i radom"
                     }
                   },
                   {
@@ -267,65 +508,22 @@
                       "sr": "Bez rada"
                     }
                   }
-                ]
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               }
             ]
           },
           {
-            "id": "paper",
-            "label": {
-              "en": "The paper",
-              "sr": "Rad"
-            },
-            "fields": [
-              {
-                "key": "title",
-                "kind": "text",
-                "enabled": true,
-                "required": true,
-                "label": {
-                  "en": "Title of the paper",
-                  "sr": "Naslov rada"
-                },
-                "rules": {
-                  "maxLength": 300,
-                  "noUrl": true
-                }
-              },
-              {
-                "key": "keywords",
-                "kind": "text",
-                "enabled": true,
-                "required": true,
-                "label": {
-                  "en": "Keywords",
-                  "sr": "Ključne reči"
-                },
-                "help": {
-                  "en": "Three to five, separated by commas",
-                  "sr": "Tri do pet, odvojene zarezima"
-                },
-                "rules": {
-                  "maxLength": 300
-                }
-              },
-              {
-                "key": "abstract",
-                "kind": "textarea",
-                "enabled": true,
-                "required": true,
-                "label": {
-                  "en": "Abstract",
-                  "sr": "Apstrakt"
-                },
-                "rules": {
-                  "maxWords": 500
-                }
-              }
-            ]
-          },
-          {
-            "id": "authors",
+            "key": "authors",
             "label": {
               "en": "Authors",
               "sr": "Autori"
@@ -337,143 +535,363 @@
                 "en": "Author {n}",
                 "sr": "Autor {n}"
               },
+              "addLabel": {
+                "en": "Add an author",
+                "sr": "Dodaj autora"
+              },
+              "removeLabel": {
+                "en": "Remove author {n}",
+                "sr": "Ukloni autora {n}"
+              },
               "noticeFrom": 4,
               "notice": {
-                "en": "Each co-author beyond three adds EUR 30 to the fee.",
-                "sr": "Svaki koautor preko trojice povećava kotizaciju za 30 EUR."
+                "en": "Each author beyond the third adds to the fee.",
+                "sr": "Svaki autor posle trećeg povećava kotizaciju."
               }
             },
+            "visibleWhen": null,
             "fields": [
               {
-                "key": "name",
+                "key": "firstName",
                 "kind": "text",
-                "enabled": true,
                 "required": true,
                 "label": {
-                  "en": "First and last name of author {n}",
-                  "sr": "Ime i prezime autora {n}"
+                  "en": "First name",
+                  "sr": "Ime"
                 },
-                "autocomplete": "name",
+                "help": null,
+                "options": null,
                 "rules": {
-                  "maxLength": 200,
-                  "noUrl": true
-                }
+                  "maxLength": 100,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "given-name"
+              },
+              {
+                "key": "lastName",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Last name",
+                  "sr": "Prezime"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 100,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "family-name"
               },
               {
                 "key": "institution",
                 "kind": "text",
-                "enabled": true,
                 "required": true,
                 "label": {
-                  "en": "Institution of author {n}",
-                  "sr": "Institucija autora {n}"
+                  "en": "Institution",
+                  "sr": "Institucija"
                 },
-                "autocomplete": "organization",
+                "help": null,
+                "options": null,
                 "rules": {
                   "maxLength": 300,
-                  "noUrl": true
-                }
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "organization"
               },
               {
                 "key": "institutionAddress",
                 "kind": "text",
-                "enabled": true,
                 "required": false,
                 "label": {
-                  "en": "Address of the institution of author {n}",
-                  "sr": "Adresa institucije autora {n}"
+                  "en": "Address of the institution",
+                  "sr": "Adresa institucije"
                 },
+                "help": null,
+                "options": null,
                 "rules": {
-                  "maxLength": 300
-                }
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               },
               {
                 "key": "orcid",
                 "kind": "text",
-                "enabled": true,
                 "required": false,
                 "label": {
-                  "en": "ORCID iD of author {n}",
-                  "sr": "ORCID iD autora {n}"
+                  "en": "ORCID iD",
+                  "sr": "ORCID iD"
                 },
+                "help": {
+                  "en": "For example 0000-0002-1825-0097",
+                  "sr": "Na primer 0000-0002-1825-0097"
+                },
+                "options": null,
                 "rules": {
-                  "pattern": "orcid"
-                }
+                  "maxLength": 19,
+                  "maxWords": null,
+                  "pattern": "orcid",
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               },
               {
                 "key": "email",
                 "kind": "email",
-                "enabled": true,
                 "required": true,
-                "requiredOnlyInFirst": true,
                 "label": {
-                  "en": "Email of author {n}",
-                  "sr": "Imejl adresa autora {n}"
+                  "en": "Email address",
+                  "sr": "Adresa e-pošte"
                 },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 254,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
                 "autocomplete": "email"
               },
               {
                 "key": "phone",
-                "kind": "phone",
-                "enabled": true,
+                "kind": "text",
                 "required": false,
-                "onlyFirstInRepeat": true,
                 "label": {
-                  "en": "Phone of author {n}",
-                  "sr": "Telefon autora {n}"
+                  "en": "Phone",
+                  "sr": "Telefon"
                 },
-                "autocomplete": "tel",
+                "help": null,
+                "options": null,
                 "rules": {
-                  "pattern": "phone"
-                }
+                  "maxLength": 30,
+                  "maxWords": null,
+                  "pattern": "phone",
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": true,
+                "autocomplete": "tel"
               }
             ]
           },
           {
-            "id": "files",
+            "key": "paper",
+            "label": {
+              "en": "Paper",
+              "sr": "Rad"
+            },
+            "repeat": null,
+            "visibleWhen": {
+              "field": "participationType",
+              "in": [
+                "with_paper"
+              ]
+            },
+            "fields": [
+              {
+                "key": "title",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Title",
+                  "sr": "Naslov"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "abstract",
+                "kind": "longText",
+                "required": true,
+                "label": {
+                  "en": "Abstract",
+                  "sr": "Apstrakt"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 10000,
+                  "maxWords": 500,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "keywords",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Keywords",
+                  "sr": "Ključne reči"
+                },
+                "help": {
+                  "en": "Separated by commas",
+                  "sr": "Odvojene zarezima"
+                },
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "publication",
+                "kind": "choice",
+                "required": true,
+                "label": {
+                  "en": "Where should the paper be published?",
+                  "sr": "Gde da rad bude objavljen?"
+                },
+                "help": null,
+                "options": [
+                  {
+                    "value": "proceedings",
+                    "label": {
+                      "en": "Proceedings or selected papers",
+                      "sr": "Zbornik ili izabrani radovi"
+                    }
+                  },
+                  {
+                    "value": "partner_monograph",
+                    "label": {
+                      "en": "A partner monograph",
+                      "sr": "Monografija partnera"
+                    }
+                  },
+                  {
+                    "value": "partner_journals",
+                    "label": {
+                      "en": "The partner journals",
+                      "sr": "Časopisi partnera"
+                    }
+                  },
+                  {
+                    "value": "abstract_only",
+                    "label": {
+                      "en": "The abstract only",
+                      "sr": "Samo apstrakt"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              }
+            ]
+          },
+          {
+            "key": "files",
             "label": {
               "en": "Biographies",
               "sr": "Biografije"
             },
+            "repeat": null,
+            "visibleWhen": null,
             "fields": [
               {
                 "key": "biographies",
                 "kind": "file",
-                "enabled": true,
-                "required": true,
+                "required": false,
                 "label": {
                   "en": "Biographies with photos of all authors",
                   "sr": "Biografije sa fotografijama svih autora"
                 },
+                "help": null,
+                "options": null,
                 "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
                   "file": {
                     "accept": [
-                      "doc",
+                      "pdf",
                       "docx",
-                      "pdf"
+                      "doc"
                     ],
                     "maxBytes": 20971520
                   }
-                }
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               }
             ]
           },
           {
-            "id": "attendance",
+            "key": "presence",
             "label": {
-              "en": "Attendance and publication",
-              "sr": "Prisustvo i objavljivanje"
+              "en": "Attendance",
+              "sr": "Prisustvo"
             },
+            "repeat": null,
+            "visibleWhen": null,
             "fields": [
               {
-                "key": "member",
-                "kind": "radio",
-                "enabled": true,
+                "key": "membership",
+                "kind": "yesNo",
                 "required": true,
                 "label": {
                   "en": "Are you a member of UdEkoM Balkans?",
                   "sr": "Da li ste član UdEkoM Balkans?"
                 },
+                "help": null,
                 "options": [
                   {
                     "value": "yes",
@@ -489,16 +907,29 @@
                       "sr": "Ne"
                     }
                   }
-                ]
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               },
               {
                 "key": "attendance",
-                "kind": "radio",
-                "enabled": true,
+                "kind": "choice",
                 "required": true,
                 "label": {
-                  "en": "Attendance",
-                  "sr": "Prisustvo"
+                  "en": "How will you attend?",
+                  "sr": "Kako ćete prisustvovati?"
+                },
+                "help": {
+                  "en": "Attendance is not required for publication.",
+                  "sr": "Prisustvo nije uslov za objavljivanje."
                 },
                 "options": [
                   {
@@ -512,21 +943,21 @@
                     "value": "live_online",
                     "label": {
                       "en": "Live online",
-                      "sr": "Uživo onlajn"
+                      "sr": "Onlajn, uživo"
                     }
                   },
                   {
-                    "value": "video",
+                    "value": "prerecorded_video",
                     "label": {
-                      "en": "A prerecorded video of up to 7 minutes",
-                      "sr": "Unapred snimljen video do 7 minuta"
+                      "en": "A prerecorded video (up to 7 minutes)",
+                      "sr": "Snimljen video (do 7 minuta)"
                     }
                   },
                   {
                     "value": "follow_online",
                     "label": {
                       "en": "Follow online without presenting",
-                      "sr": "Praćenje onlajn bez izlaganja"
+                      "sr": "Pratim onlajn, bez izlaganja"
                     }
                   },
                   {
@@ -536,74 +967,75 @@
                       "sr": "Ne prisustvujem"
                     }
                   }
-                ]
-              },
-              {
-                "key": "publication",
-                "kind": "radio",
-                "enabled": true,
-                "required": true,
-                "label": {
-                  "en": "Publication",
-                  "sr": "Objavljivanje"
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
                 },
-                "options": [
-                  {
-                    "value": "proceedings",
-                    "label": {
-                      "en": "Proceedings or selected papers",
-                      "sr": "Zbornik ili izabrani radovi"
-                    }
-                  },
-                  {
-                    "value": "monograph",
-                    "label": {
-                      "en": "A partner monograph",
-                      "sr": "Monografija partnera"
-                    }
-                  },
-                  {
-                    "value": "journal",
-                    "label": {
-                      "en": "A partner journal",
-                      "sr": "Časopis partnera"
-                    }
-                  },
-                  {
-                    "value": "abstract_only",
-                    "label": {
-                      "en": "The abstract only",
-                      "sr": "Samo apstrakt"
-                    }
-                  }
-                ]
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               }
             ]
           },
           {
-            "id": "billing",
+            "key": "billing",
             "label": {
               "en": "Fee and billing",
-              "sr": "Kotizacija i plaćanje"
+              "sr": "Kotizacija i račun"
             },
+            "repeat": null,
+            "visibleWhen": null,
             "fields": [
               {
-                "key": "discount",
-                "kind": "select",
-                "enabled": true,
+                "key": "discountClaim",
+                "kind": "yesNo",
                 "required": true,
                 "label": {
-                  "en": "Discount or fee waiver",
-                  "sr": "Popust ili oslobađanje od kotizacije"
+                  "en": "Do you claim a discount or a fee waiver?",
+                  "sr": "Da li tražite popust ili oslobađanje od kotizacije?"
                 },
+                "help": null,
                 "options": [
                   {
-                    "value": "none",
+                    "value": "yes",
                     "label": {
-                      "en": "None",
-                      "sr": "Nema"
+                      "en": "Yes",
+                      "sr": "Da"
                     }
                   },
+                  {
+                    "value": "no",
+                    "label": {
+                      "en": "No",
+                      "sr": "Ne"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "discountReason",
+                "kind": "choice",
+                "required": true,
+                "label": {
+                  "en": "On what grounds?",
+                  "sr": "Po kom osnovu?"
+                },
+                "help": null,
+                "options": [
                   {
                     "value": "award",
                     "label": {
@@ -612,30 +1044,45 @@
                     }
                   },
                   {
-                    "value": "reviewer",
+                    "value": "peer_reviewer",
                     "label": {
                       "en": "Peer reviewer",
                       "sr": "Recenzent"
                     }
                   },
                   {
-                    "value": "partner",
+                    "value": "partner_institution",
                     "label": {
                       "en": "A partner institution",
                       "sr": "Partnerska institucija"
                     }
                   }
-                ]
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "discountClaim",
+                  "in": [
+                    "yes"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               },
               {
                 "key": "payer",
-                "kind": "radio",
-                "enabled": true,
+                "kind": "choice",
                 "required": true,
                 "label": {
                   "en": "Who pays the fee?",
                   "sr": "Ko plaća kotizaciju?"
                 },
+                "help": null,
                 "options": [
                   {
                     "value": "individual",
@@ -651,107 +1098,189 @@
                       "sr": "Moj poslodavac"
                     }
                   }
-                ]
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               },
               {
-                "key": "payerName",
+                "key": "billingAddress",
                 "kind": "text",
-                "enabled": true,
                 "required": true,
-                "visibleWhen": {
-                  "field": "payer",
-                  "equals": "employer"
-                },
                 "label": {
-                  "en": "Name of the employer",
-                  "sr": "Naziv poslodavca"
+                  "en": "Your address for the invoice",
+                  "sr": "Vaša adresa za račun"
                 },
-                "autocomplete": "organization",
+                "help": null,
+                "options": null,
                 "rules": {
                   "maxLength": 300,
-                  "noUrl": true
-                }
-              },
-              {
-                "key": "payerAddress",
-                "kind": "text",
-                "enabled": true,
-                "required": true,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
                 "visibleWhen": {
                   "field": "payer",
-                  "equals": "employer"
+                  "in": [
+                    "individual"
+                  ]
                 },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "employerName",
+                "kind": "text",
+                "required": true,
                 "label": {
-                  "en": "Address of the employer",
-                  "sr": "Adresa poslodavca"
+                  "en": "Name of the legal entity",
+                  "sr": "Naziv pravnog lica"
                 },
+                "help": null,
+                "options": null,
                 "rules": {
-                  "maxLength": 300
-                }
-              },
-              {
-                "key": "payerTaxNumber",
-                "kind": "text",
-                "enabled": true,
-                "required": true,
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
                 "visibleWhen": {
                   "field": "payer",
-                  "equals": "employer"
+                  "in": [
+                    "employer"
+                  ]
                 },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "employerAddress",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Address of the legal entity",
+                  "sr": "Adresa pravnog lica"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "payer",
+                  "in": [
+                    "employer"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "employerTaxNumber",
+                "kind": "text",
+                "required": true,
                 "label": {
                   "en": "Tax number (PIB)",
                   "sr": "PIB"
                 },
+                "help": null,
+                "options": null,
                 "rules": {
-                  "pattern": "taxNumber"
-                }
-              },
-              {
-                "key": "payerRegistrationNumber",
-                "kind": "text",
-                "enabled": true,
-                "required": true,
+                  "maxLength": 30,
+                  "maxWords": null,
+                  "pattern": "taxNumber",
+                  "noUrl": false,
+                  "file": null
+                },
                 "visibleWhen": {
                   "field": "payer",
-                  "equals": "employer"
+                  "in": [
+                    "employer"
+                  ]
                 },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "employerRegistrationNumber",
+                "kind": "text",
+                "required": true,
                 "label": {
                   "en": "Registration number",
                   "sr": "Matični broj"
                 },
+                "help": null,
+                "options": null,
                 "rules": {
-                  "pattern": "registrationNumber"
-                }
+                  "maxLength": 30,
+                  "maxWords": null,
+                  "pattern": "registrationNumber",
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "payer",
+                  "in": [
+                    "employer"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               },
               {
                 "key": "billingEmail",
                 "kind": "email",
-                "enabled": true,
                 "required": true,
-                "visibleWhen": {
-                  "field": "payer",
-                  "equals": "employer"
-                },
                 "label": {
                   "en": "Email address for the invoice",
-                  "sr": "Imejl adresa za račun"
-                }
+                  "sr": "Adresa e-pošte za račun"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 254,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "payer",
+                  "in": [
+                    "employer"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               },
               {
                 "key": "paymentMethod",
-                "kind": "radio",
-                "enabled": true,
+                "kind": "choice",
                 "required": true,
                 "label": {
-                  "en": "Payment method",
-                  "sr": "Način plaćanja"
+                  "en": "How will you pay?",
+                  "sr": "Kako ćete platiti?"
                 },
+                "help": null,
                 "options": [
                   {
                     "value": "bank_wire",
                     "label": {
-                      "en": "Bank wire in EUR",
-                      "sr": "Bankovni transfer u evrima"
+                      "en": "Bank wire (EUR)",
+                      "sr": "Bankovni transfer (EUR)"
                     }
                   },
                   {
@@ -769,75 +1298,108 @@
                     }
                   },
                   {
-                    "value": "rsd",
+                    "value": "rsd_domestic",
                     "label": {
-                      "en": "RSD at a domestic bank",
-                      "sr": "U dinarima kod domaće banke"
+                      "en": "RSD at a bank in Serbia",
+                      "sr": "U dinarima, u banci u Srbiji"
                     }
                   }
-                ]
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               }
             ]
           },
           {
-            "id": "more",
+            "key": "other",
             "label": {
-              "en": "Anything else",
-              "sr": "Još nešto"
+              "en": "Other",
+              "sr": "Ostalo"
             },
+            "repeat": null,
+            "visibleWhen": null,
             "fields": [
               {
                 "key": "heardFrom",
-                "kind": "select",
-                "enabled": true,
+                "kind": "text",
                 "required": false,
                 "label": {
-                  "en": "How did you hear of the conference?",
-                  "sr": "Kako ste saznali za konferenciju?"
+                  "en": "Where did you hear about the conference?",
+                  "sr": "Gde ste čuli za konferenciju?"
                 },
-                "options": [
-                  {
-                    "value": "colleague",
-                    "label": {
-                      "en": "From a colleague",
-                      "sr": "Od kolege"
-                    }
-                  },
-                  {
-                    "value": "email",
-                    "label": {
-                      "en": "By email",
-                      "sr": "Imejlom"
-                    }
-                  },
-                  {
-                    "value": "web",
-                    "label": {
-                      "en": "On the web",
-                      "sr": "Na internetu"
-                    }
-                  },
-                  {
-                    "value": "earlier",
-                    "label": {
-                      "en": "I took part before",
-                      "sr": "Učestvovao/la sam ranije"
-                    }
-                  }
-                ]
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               },
               {
                 "key": "comments",
-                "kind": "textarea",
-                "enabled": true,
+                "kind": "longText",
                 "required": false,
                 "label": {
                   "en": "Comments",
                   "sr": "Napomene"
                 },
+                "help": null,
+                "options": null,
                 "rules": {
-                  "maxLength": 2000
-                }
+                  "maxLength": 2000,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              }
+            ]
+          },
+          {
+            "key": "agreement",
+            "label": {
+              "en": "Consent",
+              "sr": "Saglasnost"
+            },
+            "repeat": null,
+            "visibleWhen": null,
+            "fields": [
+              {
+                "key": "consent",
+                "kind": "consent",
+                "required": true,
+                "label": {
+                  "en": "I agree",
+                  "sr": "Saglasan/na sam"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               }
             ]
           }
@@ -845,10 +1407,11 @@
       }
     },
     "itema-2026-closed": {
-      "slug": "itema-2026-closed",
-      "version": 1,
       "state": "closed",
+      "closedReason": "deadline_passed",
+      "slug": "itema-2026-closed",
       "deadline": "2026-03-15",
+      "closesAt": "2026-03-15T23:00:00.000Z",
       "conference": {
         "code": "IT",
         "name": "ITEMA 2026",
@@ -856,45 +1419,991 @@
         "languages": [
           "en",
           "sr"
-        ],
-        "contactEmail": "office@example.test"
+        ]
       },
-      "frameSites": [
-        "http://localhost:4000"
-      ],
+      "consentLinks": {
+        "terms": "https://www.example.test/terms",
+        "privacy": "https://www.example.test/privacy"
+      },
+      "versionNumber": 1,
       "definition": {
+        "schemaVersion": 1,
         "type": "abstract",
         "texts": {
           "title": {
             "en": "Abstract submission",
             "sr": "Prijava apstrakta"
+          },
+          "intro": {
+            "en": "Fields marked with * are required.",
+            "sr": "Polja označena zvezdicom (*) su obavezna."
+          },
+          "submit": {
+            "en": "Send",
+            "sr": "Pošalji"
+          },
+          "thankYou": {
+            "en": "Thank you. Your submission has been received, and a confirmation with its reference is on its way to your email address.",
+            "sr": "Hvala. Vaša prijava je primljena, a potvrda sa brojem prijave stiže na Vašu adresu e-pošte."
+          },
+          "closed": {
+            "en": "Submissions for this conference are closed.",
+            "sr": "Prijave za ovu konferenciju su zatvorene."
+          },
+          "consent": {
+            "en": "I agree that the data in this form, mine and that of my co-authors, is processed for this conference as the [privacy notice](privacy) describes, and I accept the [terms of publication](terms).",
+            "sr": "Saglasan/na sam da se podaci iz ovog obrasca, moji i podaci mojih koautora, obrađuju za ovu konferenciju kako to opisuje [obaveštenje o privatnosti](privacy), i prihvatam [uslove objavljivanja](terms)."
           }
         },
-        "consent": {
-          "version": "2026-10",
-          "label": {
-            "en": "I accept the terms of publication",
-            "sr": "Prihvatam uslove objavljivanja"
-          }
+        "patterns": {
+          "orcid": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$",
+          "phone": "^\\+?[0-9][0-9 ()./-]{4,28}[0-9]$",
+          "taxNumber": "^[A-Za-z0-9][A-Za-z0-9 ./-]{2,28}[A-Za-z0-9]$",
+          "registrationNumber": "^[A-Za-z0-9][A-Za-z0-9 ./-]{2,28}[A-Za-z0-9]$"
         },
         "sections": [
           {
-            "id": "paper",
+            "key": "participation",
+            "label": {
+              "en": "Participation",
+              "sr": "Učešće"
+            },
+            "repeat": null,
+            "visibleWhen": null,
+            "fields": [
+              {
+                "key": "participationType",
+                "kind": "choice",
+                "required": true,
+                "label": {
+                  "en": "How do you take part?",
+                  "sr": "Kako učestvujete?"
+                },
+                "help": null,
+                "options": [
+                  {
+                    "value": "with_paper",
+                    "label": {
+                      "en": "With an abstract and a paper",
+                      "sr": "Sa apstraktom i radom"
+                    }
+                  },
+                  {
+                    "value": "without_paper",
+                    "label": {
+                      "en": "Without a paper",
+                      "sr": "Bez rada"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              }
+            ]
+          },
+          {
+            "key": "authors",
+            "label": {
+              "en": "Authors",
+              "sr": "Autori"
+            },
+            "repeat": {
+              "min": 1,
+              "max": 10,
+              "itemLabel": {
+                "en": "Author {n}",
+                "sr": "Autor {n}"
+              },
+              "addLabel": {
+                "en": "Add an author",
+                "sr": "Dodaj autora"
+              },
+              "removeLabel": {
+                "en": "Remove author {n}",
+                "sr": "Ukloni autora {n}"
+              },
+              "noticeFrom": 4,
+              "notice": {
+                "en": "Each author beyond the third adds to the fee.",
+                "sr": "Svaki autor posle trećeg povećava kotizaciju."
+              }
+            },
+            "visibleWhen": null,
+            "fields": [
+              {
+                "key": "firstName",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "First name",
+                  "sr": "Ime"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 100,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "given-name"
+              },
+              {
+                "key": "lastName",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Last name",
+                  "sr": "Prezime"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 100,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "family-name"
+              },
+              {
+                "key": "institution",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Institution",
+                  "sr": "Institucija"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "organization"
+              },
+              {
+                "key": "institutionAddress",
+                "kind": "text",
+                "required": false,
+                "label": {
+                  "en": "Address of the institution",
+                  "sr": "Adresa institucije"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "orcid",
+                "kind": "text",
+                "required": false,
+                "label": {
+                  "en": "ORCID iD",
+                  "sr": "ORCID iD"
+                },
+                "help": {
+                  "en": "For example 0000-0002-1825-0097",
+                  "sr": "Na primer 0000-0002-1825-0097"
+                },
+                "options": null,
+                "rules": {
+                  "maxLength": 19,
+                  "maxWords": null,
+                  "pattern": "orcid",
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "email",
+                "kind": "email",
+                "required": true,
+                "label": {
+                  "en": "Email address",
+                  "sr": "Adresa e-pošte"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 254,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": "email"
+              },
+              {
+                "key": "phone",
+                "kind": "text",
+                "required": false,
+                "label": {
+                  "en": "Phone",
+                  "sr": "Telefon"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 30,
+                  "maxWords": null,
+                  "pattern": "phone",
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": true,
+                "autocomplete": "tel"
+              }
+            ]
+          },
+          {
+            "key": "paper",
+            "label": {
+              "en": "Paper",
+              "sr": "Rad"
+            },
+            "repeat": null,
+            "visibleWhen": {
+              "field": "participationType",
+              "in": [
+                "with_paper"
+              ]
+            },
             "fields": [
               {
                 "key": "title",
                 "kind": "text",
-                "enabled": true,
                 "required": true,
                 "label": {
-                  "en": "Title of the paper",
-                  "sr": "Naslov rada"
-                }
+                  "en": "Title",
+                  "sr": "Naslov"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "abstract",
+                "kind": "longText",
+                "required": true,
+                "label": {
+                  "en": "Abstract",
+                  "sr": "Apstrakt"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 10000,
+                  "maxWords": 500,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "keywords",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Keywords",
+                  "sr": "Ključne reči"
+                },
+                "help": {
+                  "en": "Separated by commas",
+                  "sr": "Odvojene zarezima"
+                },
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "publication",
+                "kind": "choice",
+                "required": true,
+                "label": {
+                  "en": "Where should the paper be published?",
+                  "sr": "Gde da rad bude objavljen?"
+                },
+                "help": null,
+                "options": [
+                  {
+                    "value": "proceedings",
+                    "label": {
+                      "en": "Proceedings or selected papers",
+                      "sr": "Zbornik ili izabrani radovi"
+                    }
+                  },
+                  {
+                    "value": "partner_monograph",
+                    "label": {
+                      "en": "A partner monograph",
+                      "sr": "Monografija partnera"
+                    }
+                  },
+                  {
+                    "value": "partner_journals",
+                    "label": {
+                      "en": "The partner journals",
+                      "sr": "Časopisi partnera"
+                    }
+                  },
+                  {
+                    "value": "abstract_only",
+                    "label": {
+                      "en": "The abstract only",
+                      "sr": "Samo apstrakt"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              }
+            ]
+          },
+          {
+            "key": "files",
+            "label": {
+              "en": "Biographies",
+              "sr": "Biografije"
+            },
+            "repeat": null,
+            "visibleWhen": null,
+            "fields": [
+              {
+                "key": "biographies",
+                "kind": "file",
+                "required": false,
+                "label": {
+                  "en": "Biographies with photos of all authors",
+                  "sr": "Biografije sa fotografijama svih autora"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": {
+                    "accept": [
+                      "pdf",
+                      "docx",
+                      "doc"
+                    ],
+                    "maxBytes": 20971520
+                  }
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              }
+            ]
+          },
+          {
+            "key": "presence",
+            "label": {
+              "en": "Attendance",
+              "sr": "Prisustvo"
+            },
+            "repeat": null,
+            "visibleWhen": null,
+            "fields": [
+              {
+                "key": "membership",
+                "kind": "yesNo",
+                "required": true,
+                "label": {
+                  "en": "Are you a member of UdEkoM Balkans?",
+                  "sr": "Da li ste član UdEkoM Balkans?"
+                },
+                "help": null,
+                "options": [
+                  {
+                    "value": "yes",
+                    "label": {
+                      "en": "Yes",
+                      "sr": "Da"
+                    }
+                  },
+                  {
+                    "value": "no",
+                    "label": {
+                      "en": "No",
+                      "sr": "Ne"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "attendance",
+                "kind": "choice",
+                "required": true,
+                "label": {
+                  "en": "How will you attend?",
+                  "sr": "Kako ćete prisustvovati?"
+                },
+                "help": {
+                  "en": "Attendance is not required for publication.",
+                  "sr": "Prisustvo nije uslov za objavljivanje."
+                },
+                "options": [
+                  {
+                    "value": "in_person",
+                    "label": {
+                      "en": "In person",
+                      "sr": "Uživo"
+                    }
+                  },
+                  {
+                    "value": "live_online",
+                    "label": {
+                      "en": "Live online",
+                      "sr": "Onlajn, uživo"
+                    }
+                  },
+                  {
+                    "value": "prerecorded_video",
+                    "label": {
+                      "en": "A prerecorded video (up to 7 minutes)",
+                      "sr": "Snimljen video (do 7 minuta)"
+                    }
+                  },
+                  {
+                    "value": "follow_online",
+                    "label": {
+                      "en": "Follow online without presenting",
+                      "sr": "Pratim onlajn, bez izlaganja"
+                    }
+                  },
+                  {
+                    "value": "not_attending",
+                    "label": {
+                      "en": "Not attending",
+                      "sr": "Ne prisustvujem"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              }
+            ]
+          },
+          {
+            "key": "billing",
+            "label": {
+              "en": "Fee and billing",
+              "sr": "Kotizacija i račun"
+            },
+            "repeat": null,
+            "visibleWhen": null,
+            "fields": [
+              {
+                "key": "discountClaim",
+                "kind": "yesNo",
+                "required": true,
+                "label": {
+                  "en": "Do you claim a discount or a fee waiver?",
+                  "sr": "Da li tražite popust ili oslobađanje od kotizacije?"
+                },
+                "help": null,
+                "options": [
+                  {
+                    "value": "yes",
+                    "label": {
+                      "en": "Yes",
+                      "sr": "Da"
+                    }
+                  },
+                  {
+                    "value": "no",
+                    "label": {
+                      "en": "No",
+                      "sr": "Ne"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "discountReason",
+                "kind": "choice",
+                "required": true,
+                "label": {
+                  "en": "On what grounds?",
+                  "sr": "Po kom osnovu?"
+                },
+                "help": null,
+                "options": [
+                  {
+                    "value": "award",
+                    "label": {
+                      "en": "An award",
+                      "sr": "Nagrada"
+                    }
+                  },
+                  {
+                    "value": "peer_reviewer",
+                    "label": {
+                      "en": "Peer reviewer",
+                      "sr": "Recenzent"
+                    }
+                  },
+                  {
+                    "value": "partner_institution",
+                    "label": {
+                      "en": "A partner institution",
+                      "sr": "Partnerska institucija"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "discountClaim",
+                  "in": [
+                    "yes"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "payer",
+                "kind": "choice",
+                "required": true,
+                "label": {
+                  "en": "Who pays the fee?",
+                  "sr": "Ko plaća kotizaciju?"
+                },
+                "help": null,
+                "options": [
+                  {
+                    "value": "individual",
+                    "label": {
+                      "en": "I do",
+                      "sr": "Ja"
+                    }
+                  },
+                  {
+                    "value": "employer",
+                    "label": {
+                      "en": "My employer",
+                      "sr": "Moj poslodavac"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "billingAddress",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Your address for the invoice",
+                  "sr": "Vaša adresa za račun"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "payer",
+                  "in": [
+                    "individual"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "employerName",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Name of the legal entity",
+                  "sr": "Naziv pravnog lica"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": true,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "payer",
+                  "in": [
+                    "employer"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "employerAddress",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Address of the legal entity",
+                  "sr": "Adresa pravnog lica"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "payer",
+                  "in": [
+                    "employer"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "employerTaxNumber",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Tax number (PIB)",
+                  "sr": "PIB"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 30,
+                  "maxWords": null,
+                  "pattern": "taxNumber",
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "payer",
+                  "in": [
+                    "employer"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "employerRegistrationNumber",
+                "kind": "text",
+                "required": true,
+                "label": {
+                  "en": "Registration number",
+                  "sr": "Matični broj"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 30,
+                  "maxWords": null,
+                  "pattern": "registrationNumber",
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "payer",
+                  "in": [
+                    "employer"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "billingEmail",
+                "kind": "email",
+                "required": true,
+                "label": {
+                  "en": "Email address for the invoice",
+                  "sr": "Adresa e-pošte za račun"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 254,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": {
+                  "field": "payer",
+                  "in": [
+                    "employer"
+                  ]
+                },
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "paymentMethod",
+                "kind": "choice",
+                "required": true,
+                "label": {
+                  "en": "How will you pay?",
+                  "sr": "Kako ćete platiti?"
+                },
+                "help": null,
+                "options": [
+                  {
+                    "value": "bank_wire",
+                    "label": {
+                      "en": "Bank wire (EUR)",
+                      "sr": "Bankovni transfer (EUR)"
+                    }
+                  },
+                  {
+                    "value": "card",
+                    "label": {
+                      "en": "Card",
+                      "sr": "Platna kartica"
+                    }
+                  },
+                  {
+                    "value": "paypal",
+                    "label": {
+                      "en": "PayPal",
+                      "sr": "PayPal"
+                    }
+                  },
+                  {
+                    "value": "rsd_domestic",
+                    "label": {
+                      "en": "RSD at a bank in Serbia",
+                      "sr": "U dinarima, u banci u Srbiji"
+                    }
+                  }
+                ],
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              }
+            ]
+          },
+          {
+            "key": "other",
+            "label": {
+              "en": "Other",
+              "sr": "Ostalo"
+            },
+            "repeat": null,
+            "visibleWhen": null,
+            "fields": [
+              {
+                "key": "heardFrom",
+                "kind": "text",
+                "required": false,
+                "label": {
+                  "en": "Where did you hear about the conference?",
+                  "sr": "Gde ste čuli za konferenciju?"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 300,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              },
+              {
+                "key": "comments",
+                "kind": "longText",
+                "required": false,
+                "label": {
+                  "en": "Comments",
+                  "sr": "Napomene"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": 2000,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
+              }
+            ]
+          },
+          {
+            "key": "agreement",
+            "label": {
+              "en": "Consent",
+              "sr": "Saglasnost"
+            },
+            "repeat": null,
+            "visibleWhen": null,
+            "fields": [
+              {
+                "key": "consent",
+                "kind": "consent",
+                "required": true,
+                "label": {
+                  "en": "I agree",
+                  "sr": "Saglasan/na sam"
+                },
+                "help": null,
+                "options": null,
+                "rules": {
+                  "maxLength": null,
+                  "maxWords": null,
+                  "pattern": null,
+                  "noUrl": false,
+                  "file": null
+                },
+                "visibleWhen": null,
+                "onlyFirstInRepeat": false,
+                "autocomplete": null
               }
             ]
           }
         ]
       }
     }
+  },
+  "frameSites": {
+    "spike-abstract": [
+      "http://localhost:4000"
+    ],
+    "spike-unlisted": [],
+    "itema-2026-abstract": [
+      "http://localhost:4000"
+    ],
+    "itema-2026-closed": [
+      "http://localhost:4000"
+    ]
   }
 }

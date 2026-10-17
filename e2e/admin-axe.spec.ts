@@ -5,7 +5,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN } from './env';
-import { ADMIN, AGAINST_REAL_API, holdsSession, linkToken, NO_SESSION_IN_WEBKIT, PART_B, resetStub, signIn, STUB, STUB_ONLY, templateId } from './support/admin';
+import { ADMIN, AGAINST_REAL_API, holdsSession, linkToken, NO_SESSION_IN_WEBKIT, PART_B, PART_C, resetStub, signIn, STUB, STUB_ONLY, templateId } from './support/admin';
 import { expect, test } from './support/fixtures';
 
 test.describe.configure({ mode: 'default' });
@@ -36,6 +36,12 @@ const SCREENS: Array<[string, string, boolean?]> = [
   ['a mail log entry', `/mail-log/${PART_B.ids.hostileEntry}`, true],
   ['email templates', '/templates'],
   ['the template editor', `/templates/${templateId('security_notice', 'en')}`, true],
+  // 0.3.0: the forms, the submissions and the held emails (M3-FE-03, 05, 06, 08).
+  ['forms', '/forms'],
+  ['a form, with its snippet, configuration and preview', `/forms/${PART_C.form}`, true],
+  ['submissions', '/submissions'],
+  ['a submission', `/submissions/${PART_C.submissions[0]}`, true],
+  ['held emails', '/held-mail'],
 ];
 const OUTSIDE: Array<[string, string]> = [
   ['sign-in', '/sign-in'],

@@ -73,3 +73,6 @@ export function draftStorage(): DraftStorage {
   shared ??= createDraftStorage(() => (typeof window === 'undefined' ? undefined : window.sessionStorage));
   return shared;
 }
+
+/** A storage that keeps nothing and says nothing about it: the admin's preview of a draft. */
+export const noDraftStorage: DraftStorage = { persistent: true, get: () => null, set: () => undefined, remove: () => undefined };

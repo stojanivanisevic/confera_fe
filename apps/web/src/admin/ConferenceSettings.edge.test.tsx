@@ -89,9 +89,9 @@ describe('the settings of a conference (E2-18)', () => {
     screen = await mount(<ConferenceSettings id={ID} />);
 
     await typeInto(field(screen.container, 'venue'), 'Hotel Moskva (izmišljeno)');
-    await click(button(screen.container, 'Open the conference'));
+    await click(button(screen.container, 'Open for submissions'));
     // The question of the dialog: the second button of that name is its confirmation.
-    const confirm = Array.from(document.body.querySelectorAll<HTMLButtonElement>('button')).filter((candidate) => (candidate.textContent ?? '').trim() === 'Open the conference');
+    const confirm = Array.from(document.body.querySelectorAll<HTMLButtonElement>('button')).filter((candidate) => (candidate.textContent ?? '').trim() === 'Open for submissions');
     await click(confirm[confirm.length - 1]!);
 
     expect(fake.calls('POST', `/api/v1/conferences/${ID}/state`)).toHaveLength(1);

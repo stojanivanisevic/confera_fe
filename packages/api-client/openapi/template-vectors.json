@@ -118,6 +118,17 @@
         "serverName"
       ],
       "conditions": []
+    },
+    "submission_confirmation": {
+      "placeholders": [
+        "organisationName",
+        "conferenceName",
+        "reference",
+        "title"
+      ],
+      "conditions": [
+        "hasTitle"
+      ]
     }
   },
   "languages": [
@@ -586,7 +597,7 @@
         "children": [
           {
             "type": "text",
-            "text": "Hello x"
+            "text": "Hello\u2028x"
           }
         ]
       },
@@ -738,8 +749,8 @@
       },
       "input": {
         "values": {
-          "recipientName": "Mila\r\nBcc: x@evil.test Subject: y",
-          "organisationName": "Udruženje z"
+          "recipientName": "Mila\r\nBcc: x@evil.test\u2028Subject: y",
+          "organisationName": "Udruženje\u2029z"
         },
         "conditions": []
       },

@@ -11,7 +11,7 @@ import { useEffect, useRef } from 'react';
 
 import { FileDropzone } from '@confera/ui';
 
-import type { FileRule } from './definition';
+import type { FileRule, FileType } from './definition';
 import { fill, FORM_TEXTS, type FormLanguage } from './i18n/catalogue';
 import { formatBytes } from './i18n/format';
 import { PublicApiError, type Uploaded } from './public-api';
@@ -29,10 +29,16 @@ export interface FileState {
 
 export const extensionOf = (name: string): string => (/\.([a-z0-9]{1,8})$/i.exec(name)?.[1] ?? '').toLowerCase();
 
+/** The file-name extensions of a file type: the browser's first check; the API detects the type from the content. */
+const EXTENSIONS: Readonly<Record<FileType, readonly string[]>> = { pdf: ['pdf'], docx: ['docx'], doc: ['doc'], jpeg: ['jpg', 'jpeg'], png: ['png'] };
+export const extensionsOf = (rule: FileRule): string[] => rule.accept.flatMap((type) => EXTENSIONS[type]);
+/** The types as a person reads them: ".pdf, .docx, .doc". */
+export const typesText = (rule: FileRule): string => rule.accept.map((type) => `.${EXTENSIONS[type][0] ?? type}`).join(', ');
+
 /** The check before the upload: type by the name's extension and the size (the API checks the content). */
 export function checkFile(file: { name: string; size: number }, rule: FileRule): FileState['error'] | null {
   if (file.size === 0) return { code: 'file_empty' };
-  if (!rule.accept.includes(extensionOf(file.name))) return { code: 'file_type' };
+  if (!extensionsOf(rule).includes(extensionOf(file.name))) return { code: 'file_type' };
   if (file.size > rule.maxBytes) return { code: 'file_too_large', maxBytes: rule.maxBytes };
   return null;
 }
@@ -40,18 +46,22 @@ export function checkFile(file: { name: string; size: number }, rule: FileRule):
 /** The message of a refused file. */
 export function fileMessage(state: FileState, rule: FileRule, language: FormLanguage): string {
   const t = FORM_TEXTS[language].files;
-  const types = rule.accept.map((ext) => `.${ext}`).join(', ');
+  const types = typesText(rule);
   switch (state.error?.code) {
     case 'file_too_large':
       return fill(t.tooLarge, { name: state.name, max: formatBytes(state.error.maxBytes ?? rule.maxBytes, language) });
     case 'file_type':
-    case 'file_type_not_allowed':
+    case 'file_type_refused':
       return fill(t.wrongType, { name: state.name, types });
     case 'docx_macros':
-    case 'file_has_macros':
       return fill(t.macros, { name: state.name });
     case 'file_empty':
+    case 'upload_file_missing':
       return fill(t.empty, { name: state.name });
+    case 'too_many_uploads':
+    case 'upload_quota_reached':
+    case 'too_many_requests':
+      return t.busy;
     default:
       return fill(t.failed, { name: state.name });
   }
@@ -107,8 +117,7 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
       (reason: unknown) => {
         if (running.current !== controller || controller.signal.aborted) return;
         const code = reason instanceof PublicApiError ? reason.code : 'network';
-        const maxBytes = reason instanceof PublicApiError && typeof reason.params.maxBytes === 'number' ? reason.params.maxBytes : undefined;
-        onState({ name: file.name, size: file.size, error: { code, ...(maxBytes ? { maxBytes } : {}) } });
+        onState({ name: file.name, size: file.size, error: { code } });
       },
     );
   };
@@ -120,14 +129,14 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
   };
 
   const shown = state ? [{ name: state.name, size: state.size, ...(state.progress !== undefined ? { progress: state.progress } : {}), ...(state.error ? { error: fileMessage(state, rule, language) } : {}) }] : [];
-  const hint = fill(t.hint, { max: formatBytes(rule.maxBytes, language), types: rule.accept.map((ext) => `.${ext}`).join(', ') });
+  const hint = fill(t.hint, { max: formatBytes(rule.maxBytes, language), types: typesText(rule) });
   return (
     <div id={id} tabIndex={-1} className="ud-span-all" data-confera-file={fieldKey} data-confera-file-state={state?.uploadId ? 'uploaded' : state?.error ? 'refused' : state ? 'uploading' : 'empty'}>
       <FileDropzone
         label={label}
         required={required}
         hint={hint}
-        accept={rule.accept.map((ext) => `.${ext}`).join(',')}
+        accept={extensionsOf(rule).map((ext) => `.${ext}`).join(',')}
         files={shown}
         onFiles={take}
         onRemove={remove}

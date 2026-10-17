@@ -85,10 +85,10 @@ describe('every rule of the form is checked on Send', () => {
   it('an empty form: one item per field that needs something, each a link to its field, in the order of the fields', async () => {
     await send();
     expect(items()).toEqual([
-      'Enter the title of the paper',
-      'Enter the first and last name of author 1',
-      'Enter the email address of author 1, so we can send the confirmation',
-      'Accept the terms of publication to send your abstract',
+      'Fill in “Title of the paper”',
+      'Fill in “First and last name of author 1”',
+      'Fill in “Email of author 1”',
+      'Accept the terms to send your abstract',
     ]);
     for (const link of summary()!.querySelectorAll<HTMLAnchorElement>('li a')) expect(document.getElementById(link.hash.slice(1)), link.textContent).not.toBeNull();
     expect(api.calls.submits).toHaveLength(0);
@@ -97,8 +97,8 @@ describe('every rule of the form is checked on Send', () => {
   it('two authors without a name: one item each, naming the author', async () => {
     await click(button('Add author'));
     await send();
-    expect(items()).toContain('Enter the first and last name of author 1');
-    expect(items()).toContain('Enter the first and last name of author 2');
+    expect(items()).toContain('Fill in “First and last name of author 1”');
+    expect(items()).toContain('Fill in “First and last name of author 2”');
   });
 
   it('a wrong email address, of any author', async () => {
@@ -137,7 +137,7 @@ describe('every rule of the form is checked on Send', () => {
     expect(consent.closest('label')!.textContent).toBe('I accept the terms of publication *');
     await send();
     expect(consent.getAttribute('aria-invalid')).toBe('true');
-    expect(document.getElementById(consent.getAttribute('aria-describedby')!)!.textContent).toBe('Accept the terms of publication to send your abstract');
+    expect(document.getElementById(consent.getAttribute('aria-describedby')!)!.textContent).toBe('Accept the terms to send your abstract');
   });
 });
 
@@ -154,7 +154,7 @@ describe('where the focus goes after Send', () => {
 
   it('an item of the summary takes the focus to its field, and puts nothing in the address', async () => {
     await send();
-    const link = [...summary()!.querySelectorAll<HTMLAnchorElement>('li a')].find((a) => a.textContent.startsWith('Enter the email address'))!;
+    const link = [...summary()!.querySelectorAll<HTMLAnchorElement>('li a')].find((a) => a.textContent.startsWith('Fill in “Email'))!;
     const before = window.location.href;
     await click(link);
     expect(document.activeElement).toBe(field('authors.1.email'));
@@ -166,8 +166,9 @@ describe('where the focus goes after Send', () => {
     await send();
     const thanks = container.querySelector<HTMLElement>('[data-confera-thanks]')!;
     expect(thanks.textContent).toContain('Abstract sent');
-    expect(thanks.textContent).toContain('We emailed a confirmation with your reference number to marta@example.test.');
-    expect(thanks.textContent).toContain('Your reference: IT-2026-0042');
+    expect(thanks.textContent).toContain('Thank you. A confirmation with its reference is on its way to your email address.');
+    expect(thanks.textContent).toContain('The confirmation goes to marta@example.test.');
+    expect(thanks.textContent).toContain('Your reference: IT27-0042');
     expect(document.activeElement).toBe(thanks);
     expect(shown).toEqual([thanks]);
     // The thank-you does not keep the line about mandatory fields (UX-M1-18).

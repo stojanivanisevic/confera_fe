@@ -113,6 +113,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conferences/{id}/deadlines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listDeadlines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conferences/{id}/deadlines/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setDeadline"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conferences/{id}/forms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createForm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conferences/{id}/state": {
         parameters: {
             query?: never;
@@ -141,6 +189,154 @@ export interface paths {
         put?: never;
         /** Confirms an email change from the new address. Ends every session of the user. */
         post: operations["confirmEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listForms"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getForm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forms/{id}/breaker": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** The send breaker of the form (ADR-08, M3-BE-09). */
+        patch: operations["setFormBreaker"];
+        trace?: never;
+    };
+    "/api/v1/forms/{id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The draft: the configuration over the catalogue (contracts/form-configuration.schema.json). */
+        put: operations["saveFormDraft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forms/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publishes the draft as a new version; the public form shows it from the next load. */
+        post: operations["publishForm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forms/{id}/versions/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A published version: the definition its submissions were made with. */
+        get: operations["getFormVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/held-mail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listHeldMail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/held-mail/breaker": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["setOrganisationBreaker"];
+        trace?: never;
+    };
+    "/api/v1/held-mail/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["releaseHeldMail"];
         delete?: never;
         options?: never;
         head?: never;
@@ -456,6 +652,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSubmissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getSubmission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{id}/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadSubmissionFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users": {
         parameters: {
             query?: never;
@@ -628,7 +872,11 @@ export interface components {
             version: number;
         };
         ConferenceDto: {
-            /** @enum {string} */
+            /**
+             * @description `draft`; `open`: the forms take submissions (the action is called "Open for
+             *     submissions", D10); `closed`: they take none ("Close submissions"); `archived`: final.
+             * @enum {string}
+             */
             state: "draft" | "open" | "closed" | "archived";
             id: string;
             name: string;
@@ -644,6 +892,10 @@ export interface components {
             /** @description An IANA time zone, for example Europe/Belgrade. */
             timeZone: string;
             mailServerId: string | null;
+            /** @description The terms of publication the consent of its forms links to (D6); https, or null. */
+            publicationTermsUrl: string | null;
+            /** @description The privacy notice the consent of its forms links to (D6); https, or null. */
+            privacyNoticeUrl: string | null;
             version: number;
         };
         ConferenceListDto: {
@@ -676,6 +928,14 @@ export interface components {
             timeZone?: string;
             /** Format: uuid */
             mailServerId?: string | null;
+            /** @description An https address without a user part (the consent's "terms" link, D6). Null clears it. */
+            publicationTermsUrl?: string | null;
+            /** @description An https address without a user part (the consent's "privacy" link, D6). Null clears it. */
+            privacyNoticeUrl?: string | null;
+        };
+        CreateFormDto: {
+            /** @enum {string} */
+            type: "abstract";
         };
         CreateMailServerDto: {
             /** @enum {string} */
@@ -703,6 +963,88 @@ export interface components {
             path: string;
             /** @description Stable code of the rule that failed, for example `isEmail`. Never the value. */
             code: string;
+        };
+        FormBreakerDto: {
+            breakerPerHour: number;
+            breakerPerDay: number;
+            version: number;
+        };
+        FormDraftDto: {
+            /** @description contracts/form-configuration.schema.json. */
+            configuration: {
+                [key: string]: unknown;
+            };
+            version: number;
+        };
+        FormDto: {
+            /** @enum {string} */
+            type: "abstract";
+            /**
+             * @description What the public form shows now.
+             * @enum {string}
+             */
+            state: "open" | "closed";
+            /** @enum {string|null} */
+            closedReason: "conference_closed" | "deadline_passed" | "not_published" | null;
+            id: string;
+            conferenceId: string;
+            /** @description The form's address: /f/<slug> (hosted) and /embed/<slug> (frame). */
+            slug: string;
+            /** @description The draft: what the admin set over the catalogue (contracts/form-configuration.schema.json). */
+            configuration: {
+                [key: string]: unknown;
+            };
+            /** @description The definition the draft makes, for the preview (contracts/form-definition.schema.json). */
+            draftDefinition: {
+                [key: string]: unknown;
+            };
+            /** @description The published version the public form shows; null before the first publish. */
+            currentVersion: components["schemas"]["FormVersionSummaryDto"] | null;
+            versions: components["schemas"]["FormVersionSummaryDto"][];
+            /** @description The send breaker of this form (ADR-08): confirmations above these are held. */
+            breakerPerHour: number;
+            breakerPerDay: number;
+            updatedAt: string;
+            version: number;
+        };
+        FormListDto: {
+            items: components["schemas"]["FormSummaryDto"][];
+        };
+        FormSummaryDto: {
+            /** @enum {string} */
+            type: "abstract";
+            /** @enum {string} */
+            state: "open" | "closed";
+            /** @enum {string|null} */
+            closedReason: "conference_closed" | "deadline_passed" | "not_published" | null;
+            id: string;
+            conferenceId: string;
+            slug: string;
+            /** @description The number of the published version, null before the first publish. */
+            currentVersionNumber: number | null;
+            version: number;
+        };
+        FormVersionDto: {
+            number: number;
+            publishedAt: string;
+            publishedBy: {
+                id: string;
+                displayName: string;
+            };
+            definition: {
+                [key: string]: unknown;
+            };
+        };
+        FormVersionRefDto: {
+            version: number;
+        };
+        FormVersionSummaryDto: {
+            number: number;
+            publishedAt: string;
+            publishedBy: {
+                id: string;
+                displayName: string;
+            };
         };
         InviteUserDto: {
             /** @description The address the invitation goes to; the user signs in with it. */
@@ -822,6 +1164,7 @@ export interface components {
              */
             version: string;
         };
+        OrganisationBreakerDto: Record<string, never>;
         OrganisationDto: {
             id: string;
             /** @description The short name shown in the application. */
@@ -877,6 +1220,7 @@ export interface components {
             /** @description The refused fields, when the input was not valid. */
             errors?: components["schemas"]["FieldError"][];
         };
+        ReleaseHeldMailDto: Record<string, never>;
         ResetRequestDto: {
             /** @description The address of the account. The answer is the same whether it belongs to one or not. */
             email: string;
@@ -911,6 +1255,7 @@ export interface components {
             /** @description What the user may do (src/modules/access/permissions.ts). */
             permissions: string[];
         };
+        SetDeadlineDto: Record<string, never>;
         SetPasswordDto: {
             password: string;
             /** @description The second entry: both entries must match. */
@@ -958,6 +1303,10 @@ export interface components {
             timeZone?: string;
             /** Format: uuid */
             mailServerId?: string | null;
+            /** @description An https address without a user part (the consent's "terms" link, D6). Null clears it. */
+            publicationTermsUrl?: string | null;
+            /** @description An https address without a user part (the consent's "privacy" link, D6). Null clears it. */
+            privacyNoticeUrl?: string | null;
         };
         UpdateMailServerDto: {
             name?: string;
@@ -1099,7 +1448,7 @@ export interface operations {
     listAuditEntries: {
         parameters: {
             query?: {
-                action?: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.signed_out_everywhere" | "account.password_changed" | "account.email_change_requested" | "account.email_changed" | "password_reset.requested" | "password_reset.completed" | "invitation.queued" | "invitation.accepted" | "user.invited" | "user.updated" | "user.role_changed" | "user.deactivated" | "user.reactivated" | "user.removed" | "user.sessions_ended" | "organisation.updated" | "organisation.payment_details_changed" | "security.unknown_address_sign_ins" | "mail_server.created" | "mail_server.updated" | "mail_server.deleted" | "mail_server.tested" | "conference.created" | "conference.updated" | "conference.state_changed" | "conference.copied";
+                action?: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.signed_out_everywhere" | "account.password_changed" | "account.email_change_requested" | "account.email_changed" | "password_reset.requested" | "password_reset.completed" | "invitation.queued" | "invitation.accepted" | "user.invited" | "user.updated" | "user.role_changed" | "user.deactivated" | "user.reactivated" | "user.removed" | "user.sessions_ended" | "organisation.updated" | "organisation.payment_details_changed" | "security.unknown_address_sign_ins" | "mail_server.created" | "mail_server.updated" | "mail_server.deleted" | "mail_server.tested" | "conference.created" | "conference.updated" | "conference.state_changed" | "conference.copied" | "conference.deadline_changed" | "form.created" | "form.draft_changed" | "form.published" | "form.breaker_changed" | "held_mail.released" | "organisation.breaker_changed";
                 actorUserId?: string;
                 subjectId?: string;
                 /** @description Entries from this moment on. */
@@ -1294,6 +1643,101 @@ export interface operations {
             };
         };
     };
+    listDeadlines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    setDeadline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetDeadlineDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFormDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     changeConferenceState: {
         parameters: {
             query?: never;
@@ -1386,6 +1830,285 @@ export interface operations {
             };
         };
     };
+    listForms: {
+        parameters: {
+            query?: {
+                conferenceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormListDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    setFormBreaker: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FormBreakerDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    saveFormDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FormDraftDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    publishForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FormVersionRefDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getFormVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormVersionDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listHeldMail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    setOrganisationBreaker: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganisationBreakerDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    releaseHeldMail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReleaseHeldMailDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     openInvitation: {
         parameters: {
             query?: never;
@@ -1451,7 +2174,7 @@ export interface operations {
     listMailLog: {
         parameters: {
             query?: {
-                kind?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message";
+                kind?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message" | "submission_confirmation";
                 result?: "sent" | "failed";
                 conferenceId?: string;
                 messageId?: string;
@@ -1706,7 +2429,7 @@ export interface operations {
             query?: {
                 /** @description Only the templates of this conference; without it, only the organisation's own. */
                 conferenceId?: string;
-                type?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message";
+                type?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message" | "submission_confirmation";
                 language?: "en" | "sr";
             };
             header?: never;
@@ -2132,6 +2855,93 @@ export interface operations {
         requestBody?: never;
         responses: {
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listSubmissions: {
+        parameters: {
+            query?: {
+                conferenceId?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    downloadSubmissionFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -9,7 +9,7 @@
 import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN } from './env';
-import { answerPasswordAgain, fitsTheWidth, holdsSession, linkToken, NO_SESSION_IN_WEBKIT, resetStub, signIn, STUB } from './support/admin';
+import { answerPasswordAgain, fitsTheWidth, holdsSession, linkToken, NO_SESSION_IN_WEBKIT, resetStub, signIn, signOutFromMenu, STUB } from './support/admin';
 import { expect, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
@@ -69,7 +69,7 @@ test.describe('sign-in and the shell (M2-FE-01)', () => {
     // Signed in, the sign-in page goes on to the destination by itself.
     await page.goto(`${ADMIN_ORIGIN}/sign-in?next=%2Faudit`);
     await expect(page).toHaveURL(`${ADMIN_ORIGIN}/audit`);
-    await page.getByRole('button', { name: 'Sign out' }).click();
+    await signOutFromMenu(page);
     await expect(page).toHaveURL(`${ADMIN_ORIGIN}/sign-in`);
     await page.goto(`${ADMIN_ORIGIN}/audit`);
     await expect(page).toHaveURL(`${ADMIN_ORIGIN}/sign-in?next=%2Faudit`);
@@ -83,7 +83,7 @@ test.describe('sign-in and the shell (M2-FE-01)', () => {
       await page.getByRole('textbox', { name: 'Password', exact: true }).fill(STUB.admin.password);
       await page.getByRole('button', { name: 'Sign in' }).click();
       await expect(page, `next=${next}`).toHaveURL(`${ADMIN_ORIGIN}/`);
-      await page.getByRole('button', { name: 'Sign out' }).click();
+      await signOutFromMenu(page);
       await expect(page).toHaveURL(`${ADMIN_ORIGIN}/sign-in`);
     }
   });
@@ -95,7 +95,7 @@ test.describe('sign-in and the shell (M2-FE-01)', () => {
       if (request.url().includes('/api/v1/')) seen.push({ method: request.method(), path: new URL(request.url()).pathname, csrf: request.headers()['x-csrf-token'] ?? null, background: request.headers()['x-confera-background'] ?? null });
     });
     await page.goto(`${ADMIN_ORIGIN}/account`);
-    await page.getByRole('button', { name: 'Sign out', exact: true }).first().click();
+    await signOutFromMenu(page);
     await expect(page).toHaveURL(`${ADMIN_ORIGIN}/sign-in`);
     const signOut = seen.find((r) => r.method === 'DELETE' && r.path === '/api/v1/session');
     expect(signOut?.csrf).toMatch(/^[A-Za-z0-9]{20,}$/);

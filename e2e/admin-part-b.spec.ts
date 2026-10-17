@@ -91,23 +91,26 @@ test.describe('conferences (M2-FE-03)', () => {
     await expect(conferenceSwitch(page)).toHaveValue('');
     await page.goBack();
 
-    await page.getByRole('button', { name: 'Open the conference' }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: 'Open the conference' }).click();
-    await expect(page.locator('.ud-badge').first()).toHaveText('Open');
-    await page.getByRole('button', { name: 'Close the conference' }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: 'Close the conference' }).click();
-    await expect(page.locator('.ud-badge').first()).toHaveText('Closed');
-    await page.getByRole('button', { name: 'Archive the conference' }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: 'Archive the conference' }).click();
+    // The states and their actions as the office names them (D10); the final archive is in the menu of the conference (UXUI-M2-20, 39).
+    await page.getByRole('button', { name: 'Open for submissions' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Open for submissions' }).click();
+    await expect(page.locator('.ud-badge').first()).toHaveText('Open for submissions');
+    await page.getByRole('button', { name: 'Close submissions' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Close submissions' }).click();
+    await expect(page.locator('.ud-badge').first()).toHaveText('Submissions closed');
+    await page.getByRole('button', { name: 'Conference actions' }).click();
+    await page.getByRole('menuitem', { name: 'Archive' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Archive' }).click();
     await expect(page.getByText('This conference is archived')).toBeVisible();
     await expect(settings.getByLabel('Name')).toBeDisabled();
     await expect(settings.getByRole('button', { name: 'Save the settings' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /the conference/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /submissions|Conference actions/ })).toHaveCount(0);
   });
 
   test('a copy is a new draft without dates; a code and edition that are taken are refused', async ({ page }) => {
     await signIn(page, STUB.admin, `/conferences/${PART_B.ids.conference}`);
-    await page.getByRole('button', { name: 'Make a copy' }).click();
+    await page.getByRole('button', { name: 'Conference actions' }).click();
+    await page.getByRole('menuitem', { name: 'Make a copy' }).click();
     const dialog = page.getByRole('dialog', { name: 'Copy Konferencija za probe' });
     await expect(dialog.getByLabel('Edition (year)')).toHaveValue('2027');
     await dialog.getByLabel('Name').fill('Konferencija za probe 2027');

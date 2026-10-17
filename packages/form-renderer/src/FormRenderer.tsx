@@ -14,19 +14,21 @@
  *    their fields; a successful Send moves it to the thank-you; inside a frame the page around is
  *    asked to bring that part into view (decision D1).
  * New in 0.3.0:
- *  - the rules come from the definition and are checked by the interpreter of ./rules, which the API
- *    runs too; the API's refusals (422, path and code) come back to the same fields in the same words;
- *  - repeated blocks (the authors) with the limit of the form (D7), focus and an announcement after
- *    adding, a question before a block that holds data is removed (D4, inline: no dialog in a form,
- *    ADR-07) and a line when another author becomes the corresponding author (UX-M1-09, 10);
- *  - fields shown on a condition (the employer's data when the employer pays, FR-FORM-05);
+ *  - the fields, rules and conditions come from the definition (confera_be's schema 1) and are
+ *    checked by the interpreter of ./rules, which the API runs too; the API's refusals (422, path and
+ *    code) come back to the same fields in the same words;
+ *  - the block of authors with the limit of the form (D7), focus and an announcement after adding, a
+ *    question before a block that holds data is removed (D4, inline: no dialog in a form, ADR-07)
+ *    and a line when another author becomes the corresponding author (UX-M1-09, 10);
+ *  - fields and sections shown on a condition (the paper, the employer's data, FR-FORM-05);
  *  - files uploaded at once with their progress (./FileField);
  *  - the language opens as decided (D2), switches in place and keeps every value (FR-FORM-09);
  *  - the draft keeps every field but files and the consent, the blocks and the language (D3), and
  *    where storage is refused the tab asks before it closes (FR-FORM-18, UX-M1-13);
  *  - one submit per form instance: a single-use token fetched by the page, a proof-of-work when the
  *    API asks for one, an Idempotency-Key kept with the draft (FR-FORM-14, ADR-08);
- *  - closed and not-yet-open states, the thank-you with the reference (FR-DL-02, FR-FORM-15).
+ *  - closed and not-yet-open states, the thank-you with the reference (FR-DL-02, FR-FORM-15);
+ *  - the consent with the conference's links (D6).
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react';
 
@@ -39,79 +41,82 @@ import { createFormValueStore, useFormRef, useFormValues, type FormValues } from
 import { fill, FORM_TEXTS, plural, type FormLanguage } from './i18n/catalogue';
 import { formatDate, zoneName } from './i18n/format';
 import { blockTitle, messageFor } from './messages';
-import { browserApi, PublicApiError, solveProofOfWork, TOKEN_CODES, type FormToken, type PublicApi } from './public-api';
-import { answersToSend, countWords, holds, isRequired, isShown, pathOf, validate, type AnswerRecord, type Answers, type RuleError } from './rules';
+import { browserApi, PublicApiError, solveProofOfWork, TOKEN_CODES, type FormToken, type PublicApi, type SubmitBody } from './public-api';
+import { checkAnswers, countWords, holds, isShown, pathOf, type AnswerValue, type Answers, type RuleError } from './rules';
 import { draftStorage, type DraftStorage } from './safe-storage';
 import { SafeText } from './safe-text';
 import styles from './form.module.css';
 
 // ---- names and ids -------------------------------------------------------------------------
 
-/** The name of a field's control: its key, or `<block>.<row key>.<key>` in a repeated block. */
-export const controlName = (field: string, block?: { id: string; key: number }): string => (block ? `${block.id}.${block.key}.${field}` : field);
+/** The name of a field's control: its key, or `<section>.<row key>.<key>` in the repeating section. */
+export const controlName = (field: string, block?: { key: string; row: number }): string => (block ? `${block.key}.${block.row}.${field}` : field);
 /** The id of a field: its name, with the dots of the blocks made dashes. */
 export const fieldId = (name: string): string => `field-${name.replaceAll('.', '-')}`;
 
 type Rows = Readonly<Record<string, readonly number[]>>;
 
 const initialRows = (definition: FormDefinition): Rows =>
-  Object.fromEntries(definition.sections.filter((s) => s.repeat).map((s) => [s.id, Array.from({ length: Math.max(1, s.repeat?.min ?? 1) }, (_, i) => i + 1)]));
+  Object.fromEntries(definition.sections.filter((s) => s.repeat).map((s) => [s.key, Array.from({ length: Math.max(1, s.repeat?.min ?? 1) }, (_, i) => i + 1)]));
 
-/** The answers as the rules read them: from the controls, the blocks and the files. */
-export function answersOf(definition: FormDefinition, values: FormValues, rows: Rows, files: Readonly<Record<string, FileState | null>>): Answers {
-  const top = Object.create(null) as Record<string, string>;
-  const blocks = Object.create(null) as Record<string, AnswerRecord[]>;
-  for (const section of definition.sections) {
-    if (section.repeat) {
-      blocks[section.id] = (rows[section.id] ?? []).map((key) => {
-        const record = Object.create(null) as Record<string, string>;
-        for (const field of section.fields) record[field.key] = values[controlName(field.key, { id: section.id, key })] ?? '';
-        return record;
-      });
-    } else {
-      for (const field of section.fields) {
-        // A file on its way counts as given; Send waits for it (`upload_pending`).
-        if (field.kind === 'file') top[field.key] = files[field.key]?.uploadId ?? (isUploading(files[field.key]) ? PENDING : '');
-        else if (field.kind === 'checkbox') top[field.key] = (values[field.key] ?? '') === '' ? '' : 'yes';
-        else top[field.key] = values[field.key] ?? '';
-      }
-    }
-  }
-  return { top, blocks, consent: (values.consent ?? '') !== '' };
-}
-
-const PENDING = '(uploading)';
+/** A file on its way counts as given while the form checks itself; Send waits for it (`uploadPending`). */
+const PENDING_UPLOAD = '00000000-0000-4000-8000-000000000000';
 const isUploading = (state: FileState | null | undefined): boolean => !!state && state.progress !== undefined && !state.uploadId && !state.error;
 
-/** The place of every path of the form, in the order of its fields: errors are listed in that order. */
+/** The answers as the rules read them and the API takes them: from the controls, the blocks and the files. */
+export function answersOf(definition: FormDefinition, values: FormValues, rows: Rows, files: Readonly<Record<string, FileState | null>>): Answers {
+  const answers = Object.create(null) as Answers;
+  for (const section of definition.sections) {
+    if (section.repeat) {
+      answers[section.key] = (rows[section.key] ?? []).map((row, index) => {
+        const block = Object.create(null) as Record<string, AnswerValue>;
+        for (const field of section.fields) {
+          if (field.onlyFirstInRepeat && index > 0) continue; // no control of its own in a later block
+          block[field.key] = values[controlName(field.key, { key: section.key, row })] ?? '';
+        }
+        return block;
+      });
+      continue;
+    }
+    for (const field of section.fields) {
+      if (field.kind === 'file') answers[field.key] = files[field.key]?.uploadId ?? (isUploading(files[field.key]) ? PENDING_UPLOAD : '');
+      else if (field.kind === 'consent') answers[field.key] = (values[field.key] ?? '') !== '';
+      else answers[field.key] = values[field.key] ?? '';
+    }
+  }
+  return answers;
+}
+
+/** The name of the control an error's path names. */
+function nameOfPath(definition: FormDefinition, path: string, rows: Rows): string {
+  const block = /^([a-zA-Z]+)\[(\d+)\]\.([a-zA-Z]+)$/.exec(path);
+  if (block) {
+    const row = rows[block[1] ?? '']?.[Number(block[2])];
+    return row === undefined ? (block[1] ?? '') : controlName(block[3] ?? '', { key: block[1] ?? '', row });
+  }
+  const section = definition.sections.find((s) => s.repeat && s.key === path);
+  if (section) {
+    const row = rows[section.key]?.[0];
+    const first = section.fields[0];
+    return first && row !== undefined ? controlName(first.key, { key: section.key, row }) : path;
+  }
+  return path;
+}
+/** The id of the control an error's path names (the summary's link). */
+const idOfPath = (definition: FormDefinition, path: string, rows: Rows): string => fieldId(nameOfPath(definition, path, rows));
+
+/** The place of every path in the order of the form's fields: errors are listed in that order. */
 function pathOrder(definition: FormDefinition, rows: Rows): Map<string, number> {
   const order = new Map<string, number>();
   for (const section of definition.sections) {
     if (section.repeat) {
-      order.set(section.id, order.size);
-      (rows[section.id] ?? []).forEach((_, index) => {
-        for (const field of section.fields) order.set(pathOf(field.key, { id: section.id, index }), order.size);
+      order.set(section.key, order.size);
+      (rows[section.key] ?? []).forEach((_, index) => {
+        for (const field of section.fields) order.set(pathOf(field.key, { key: section.key, index }), order.size);
       });
     } else for (const field of section.fields) order.set(field.key, order.size);
   }
-  order.set('consent', order.size);
   return order;
-}
-
-/** The id of the control an error's path names (the summary's link). */
-function idOfPath(definition: FormDefinition, path: string, rows: Rows): string {
-  const block = /^([a-zA-Z0-9]+)\[(\d+)\]\.([a-zA-Z0-9]+)$/.exec(path);
-  if (block) {
-    const key = rows[block[1] ?? '']?.[Number(block[2])];
-    return key === undefined ? fieldId(block[1] ?? '') : fieldId(controlName(block[3] ?? '', { id: block[1] ?? '', key }));
-  }
-  const section = definition.sections.find((s) => s.repeat && s.id === path);
-  if (section) {
-    const first = section.fields.find((f) => f.enabled);
-    const key = rows[section.id]?.[0];
-    return first && key !== undefined ? fieldId(controlName(first.key, { id: section.id, key })) : fieldId(path);
-  }
-  return fieldId(path);
 }
 
 // ---- small hooks -------------------------------------------------------------------------
@@ -139,6 +144,9 @@ function focusable(element: HTMLElement | null): HTMLElement | null {
 const newKey = (): string =>
   typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : '00000000-0000-4000-8000-000000000000'.replace(/0/g, () => Math.floor(Math.random() * 16).toString(16));
 
+/** A choice of this many options or fewer is a group of radio buttons; more are a list. */
+const RADIO_LIMIT = 6;
+
 // ---- the component ---------------------------------------------------------------------------
 
 export interface FormRendererProps {
@@ -153,6 +161,8 @@ export interface FormRendererProps {
   readonly api?: PublicApi;
   /** The draft storage of this tab; tests give one of their own. */
   readonly storage?: () => DraftStorage;
+  /** The admin's preview of a draft: no heading and no title of the page of its own, and Send says that nothing is sent. */
+  readonly preview?: boolean;
 }
 
 interface SendProblem {
@@ -170,9 +180,10 @@ export function FormRenderer(props: FormRendererProps) {
 
   // The frame and the hosted page are documents of their own: their language and title follow the form.
   useEffect(() => {
+    if (props.preview) return;
     document.documentElement.lang = language;
     document.title = fill(t.page.title, { title, conference: form.conference.name });
-  }, [language, t, title, form.conference.name]);
+  }, [props.preview, language, t, title, form.conference.name]);
 
   const switcher = (
     <SegmentedTabs
@@ -190,9 +201,13 @@ export function FormRenderer(props: FormRendererProps) {
   return (
     <LabelsProvider labels={language === 'sr' ? LABELS_SR : {}}>
       <div className={styles.form} data-confera-form={form.slug} data-hydrated={hydrated ? 'true' : 'false'} lang={language}>
-        {props.embedded ? <h1 className="ud-sr">{title}</h1> : <PageHeader title={title} description={form.conference.name} />}
+        {props.preview ? null : props.embedded ? <h1 className="ud-sr">{title}</h1> : <PageHeader title={title} description={form.conference.name} />}
         {form.conference.languages.length > 1 ? <div data-confera-language="">{switcher}</div> : null}
-        {intro ? <p className={styles.intro}>{intro}</p> : null}
+        {intro ? (
+          <p className={styles.intro}>
+            <SafeText text={intro} newTab={t.consent.newTab} links={form.conference.links} />
+          </p>
+        ) : null}
         {form.state === 'open' ? (
           <FormInstance key={instance} {...props} language={language} onLanguage={setLanguage} onAgain={() => setInstance((n) => n + 1)} />
         ) : (
@@ -205,7 +220,6 @@ export function FormRenderer(props: FormRendererProps) {
 
 function Closed({ form, language }: { form: PublishedForm; language: FormLanguage }) {
   const t = FORM_TEXTS[language].states;
-  const own = textOf(form.definition.texts.closed, language);
   const contact = form.conference.contactEmail ? ` ${fill(t.contact, { email: form.conference.contactEmail })}` : '';
   if (form.state === 'not_open') {
     return (
@@ -217,11 +231,12 @@ function Closed({ form, language }: { form: PublishedForm; language: FormLanguag
       </div>
     );
   }
-  const text = own || (form.deadline ? fill(t.closedText, { date: formatDate(form.deadline, language, form.conference.timeZone) }) : t.closedTextNoDate);
+  const date = form.deadline ? ` ${fill(t.closedText, { date: formatDate(form.deadline, language, form.conference.timeZone) })}` : '';
   return (
     <div data-confera-state="closed">
       <Alert tone="info" title={t.closedTitle}>
-        {text}
+        <SafeText text={textOf(form.definition.texts.closed, language)} newTab={FORM_TEXTS[language].consent.newTab} links={form.conference.links} />
+        {date}
         {contact}
       </Alert>
     </div>
@@ -234,6 +249,7 @@ interface InstanceProps extends FormRendererProps {
 }
 
 function FormInstance({ form, language, onLanguage, onAgain, onShow, api = browserApi, storage = draftStorage }: InstanceProps) {
+  // (`preview` reaches the instance through `api` and `storage`: the admin gives ones that send and keep nothing.)
   const definition = form.definition;
   const t = FORM_TEXTS[language];
   const key = draftKey(form.slug, form.version);
@@ -253,16 +269,13 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   const [reference, setReference] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string>('');
   const [problem, setProblem] = useState<SendProblem | null>(null);
-  const [asking, setAsking] = useState<{ section: string; key: number } | null>(null);
-  /** The control that takes the focus after the next render (a block added or removed, a question answered). */
-  const focusNext = useRef<string | null>(null);
-  const setFocusTarget = (id: string | null) => {
-    focusNext.current = id;
-  };
+  const [asking, setAsking] = useState<{ section: string; row: number } | null>(null);
   const [announcement, setAnnouncement] = useState('');
   const [correspondingNote, setCorrespondingNote] = useState('');
   const [restored, setRestored] = useState<'no' | 'rows' | 'done'>('no');
   const [draftValues, setDraftValues] = useState<FormValues | null>(null);
+  /** The control that takes the focus after the next render (a block added or removed, a question answered). */
+  const focusNext = useRef<string | null>(null);
   const idempotency = useRef<string>('');
   const token = useRef<{ promise: Promise<FormToken>; proof: Promise<string | null> } | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -271,7 +284,9 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   const askRef = useRef<HTMLDivElement>(null);
 
   const answers = useMemo(() => answersOf(definition, values, rows, files), [definition, values, rows, files]);
-  const clientErrors = useMemo(() => validate(definition, answers), [definition, answers]);
+  const checkedAnswers = useMemo(() => checkAnswers(definition, answers), [definition, answers]);
+  const clientErrors = useMemo(() => (checkedAnswers.ok ? [] : checkedAnswers.errors), [checkedAnswers]);
+  const pendingFiles = useMemo(() => Object.entries(files).filter(([, state]) => isUploading(state)).map(([fieldKey]) => fieldKey), [files]);
 
   // ---- the token (ADR-08): fetched once the form is attached, so the API can measure the fill time.
   const ensureToken = useCallback((): Promise<FormToken> => {
@@ -300,8 +315,8 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
     idempotency.current = draft?.idempotencyKey ?? newKey();
     const next: Record<string, number[]> = {};
     for (const section of definition.sections) {
-      const kept = section.repeat ? draft?.rows[section.id] : undefined;
-      if (section.repeat && kept && kept.length >= section.repeat.min && kept.length <= section.repeat.max) next[section.id] = [...kept];
+      const kept = section.repeat ? draft?.rows[section.key] : undefined;
+      if (section.repeat && kept && kept.length >= section.repeat.min && kept.length <= section.repeat.max) next[section.key] = [...kept];
     }
     if (Object.keys(next).length > 0) nextRowKey.current = Math.max(nextRowKey.current, ...Object.values(next).flat()) + 1;
     let current = true;
@@ -383,43 +398,46 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   });
 
   // ---- errors ---------------------------------------------------------------------------
-  const pendingFiles = useMemo(() => Object.entries(files).filter(([, state]) => isUploading(state)).map(([fieldKey]) => fieldKey), [files]);
   const shownErrors: RuleError[] = useMemo(() => {
-    if (!checked) return clientErrors.filter((e) => e.code === 'too_many_words'); // the word limit shows at once
-    const waiting: RuleError[] = pendingFiles.map((path) => ({ path, code: 'upload_pending' }));
-    const own = [...clientErrors, ...waiting];
+    if (!checked) return clientErrors.filter((e) => e.code === 'tooManyWords'); // the word limit shows at once
+    const own = [...clientErrors, ...pendingFiles.map((path) => ({ path, code: 'uploadPending' }))];
     const paths = new Set(own.map((e) => e.path));
     const order = pathOrder(definition, rows);
     const at = (path: string) => order.get(path) ?? order.size;
     return [...own, ...serverErrors.filter((e) => !paths.has(e.path))].sort((a, b) => at(a.path) - at(b.path));
   }, [checked, clientErrors, serverErrors, pendingFiles, definition, rows]);
+  const messageOf = (error: RuleError) => messageFor(error, definition, language, values[nameOfPath(definition, error.path, rows)] ?? '');
   const errorOf = (path: string): string | undefined => {
     const error = shownErrors.find((e) => e.path === path);
-    return error ? messageFor(error, definition, language) : undefined;
+    return error ? messageOf(error) : undefined;
   };
 
   // ---- blocks -----------------------------------------------------------------------------
-  const rowHasData = (section: SectionDefinition, rowKey: number) => section.fields.some((f) => (values[controlName(f.key, { id: section.id, key: rowKey })] ?? '').trim() !== '');
-  const firstControlId = (section: SectionDefinition, rowKey: number, index: number) => {
-    const first = section.fields.find((f) => f.enabled && (!f.onlyFirstInRepeat || index === 0));
-    return first ? fieldId(controlName(first.key, { id: section.id, key: rowKey })) : null;
+  const rowHasData = (section: SectionDefinition, row: number) => section.fields.some((f) => (values[controlName(f.key, { key: section.key, row })] ?? '').trim() !== '');
+  const firstControlId = (section: SectionDefinition, row: number) => {
+    const first = section.fields[0];
+    return first ? fieldId(controlName(first.key, { key: section.key, row })) : null;
   };
-  const nameOf = (section: SectionDefinition, rowKey: number) => {
-    const first = section.fields.find((f) => f.enabled && (f.kind === 'text' || f.kind === 'email'));
-    return first ? (values[controlName(first.key, { id: section.id, key: rowKey })] ?? '').trim() : '';
+  /** The name of the person of a block, from its text fields of a name ("Ana Živković"). */
+  const nameOf = (section: SectionDefinition, row: number) => {
+    const names = section.fields.filter((f) => f.kind === 'text' && f.rules.noUrl && f.autocomplete !== 'organization').slice(0, 2);
+    return names
+      .map((f) => (values[controlName(f.key, { key: section.key, row })] ?? '').trim())
+      .filter(Boolean)
+      .join(' ');
   };
 
-  const removeRow = (section: SectionDefinition, rowKey: number) => {
-    const list = rows[section.id] ?? [];
-    const index = list.indexOf(rowKey);
+  const removeRow = (section: SectionDefinition, row: number) => {
+    const list = rows[section.key] ?? [];
+    const index = list.indexOf(row);
     if (index < 0 || !section.repeat || list.length <= section.repeat.min) return;
-    const next = list.filter((k) => k !== rowKey);
-    setRows({ ...rows, [section.id]: next });
+    const next = list.filter((k) => k !== row);
+    setRows({ ...rows, [section.key]: next });
     setAsking(null);
     setAnnouncement(fill(t.authors.removed, { n: index + 1 }));
     // The block that takes its place, or the one before it when the last one went (as the design system's Repeater does).
     const target = next[Math.min(index, next.length - 1)];
-    if (target !== undefined) setFocusTarget(firstControlId(section, target, Math.min(index, next.length - 1)));
+    if (target !== undefined) focusNext.current = firstControlId(section, target);
     if (index === 0 && next[0] !== undefined) {
       const name = nameOf(section, next[0]);
       setCorrespondingNote(name ? fill(t.authors.correspondingChanged, { name }) : '');
@@ -427,30 +445,32 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   };
 
   const changeRows = (section: SectionDefinition, items: readonly { key: number }[]) => {
-    const list = rows[section.id] ?? [];
+    const list = rows[section.key] ?? [];
     const keys = items.map((item) => item.key);
     if (keys.length > list.length) {
       const added = keys.find((k) => !list.includes(k));
-      setRows({ ...rows, [section.id]: keys });
+      setRows({ ...rows, [section.key]: keys });
       setAsking(null);
       setAnnouncement(fill(t.authors.added, { n: keys.length }));
-      if (added !== undefined) setFocusTarget(firstControlId(section, added, keys.length - 1));
+      if (added !== undefined) focusNext.current = firstControlId(section, added);
       return;
     }
     const gone = list.find((k) => !keys.includes(k));
     if (gone === undefined) return;
     // D4: a block that holds data asks first, inside the form (no dialog in a form, ADR-07).
-    if (rowHasData(section, gone)) setAsking({ section: section.id, key: gone });
+    if (rowHasData(section, gone)) setAsking({ section: section.key, row: gone });
     else removeRow(section, gone);
   };
 
   // ---- send -------------------------------------------------------------------------------
-  const firstEmail = (): string => {
+  /** Where the confirmation goes: the first email field of the form (the first author's). */
+  const firstEmail = (kept: Answers): string => {
     for (const section of definition.sections) {
-      const field = section.fields.find((f) => f.kind === 'email' && f.enabled);
+      const field = section.fields.find((f) => f.kind === 'email');
       if (!field) continue;
-      const value = section.repeat ? (answers.blocks[section.id]?.[0]?.[field.key] ?? '') : (answers.top[field.key] ?? '');
-      if (value.trim() !== '') return value.trim();
+      const blocks = kept[section.key];
+      const value = section.repeat ? (Array.isArray(blocks) ? blocks[0]?.[field.key] : undefined) : kept[field.key];
+      if (typeof value === 'string' && value !== '') return value;
     }
     return '';
   };
@@ -459,9 +479,10 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
     const p = t.problems;
     const contact = form.conference.contactEmail;
     if (error instanceof PublicApiError) {
+      if (error.code === 'preview') return { title: p.previewTitle, text: p.previewText };
       if (error.status === 0) return { title: p.networkTitle, text: p.networkText };
       if (error.status === 429) return { title: p.tooManyTitle, text: fill(p.tooManyText, { minutes: Math.max(1, Math.ceil((error.retryAfterSeconds ?? 600) / 60)) }) };
-      if (error.code === 'form_closed') return { title: p.closedTitle, text: p.closedText + (contact ? ` ${fill(t.states.contact, { email: contact })}` : '') };
+      if (error.code === 'form_closed' || error.code === 'formClosed') return { title: p.closedTitle, text: p.closedText + (contact ? ` ${fill(t.states.contact, { email: contact })}` : '') };
       const traceId = error.traceId ?? '-';
       return { title: p.unknownTitle, text: contact ? fill(p.unknownTextContact, { email: contact, traceId }) : fill(p.unknownText, { traceId }) };
     }
@@ -472,32 +493,28 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
     setChecked(true);
     setProblem(null);
     setServerErrors([]);
-    if (clientErrors.length > 0 || pendingFiles.length > 0) {
+    if (!checkedAnswers.ok || pendingFiles.length > 0) {
       setFailedSends((n) => n + 1);
       return;
     }
+    const kept = checkedAnswers.answers;
     setPhase('sending');
-    const body = (proof: string | null, challenge: string | null) => {
-      const { top, blocks } = answersToSend(definition, answers);
-      return {
-        formVersion: form.version,
-        language,
-        answers: top,
-        blocks,
-        consent: { version: definition.consent.version, accepted: true },
-        website: values.website ?? '',
-        proofOfWork: proof !== null && challenge !== null ? { challenge, nonce: proof } : null,
-      };
-    };
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
         const got = await ensureToken();
         if (got.proofOfWork) setPhase('checking');
-        const proof = await token.current!.proof;
+        const counter = await token.current!.proof;
         setPhase('sending');
-        const result = await api.submit(form.slug, got.token, idempotency.current, body(proof, got.proofOfWork?.challenge ?? null));
+        const body: SubmitBody = {
+          language,
+          answers: kept,
+          // The trap field of ADR-08: empty from a person.
+          website: values.website ?? '',
+          ...(counter !== null ? { proofOfWork: counter } : {}),
+        };
+        const result = await api.submit(form.slug, got.token, idempotency.current, body);
         storage().remove(key);
-        setSentTo(firstEmail());
+        setSentTo(firstEmail(kept));
         setReference(result.reference);
         setPhase('sent');
         return;
@@ -507,7 +524,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
           continue;
         }
         setPhase('editing');
-        if (error instanceof PublicApiError && error.status === 422 && error.errors.length > 0) {
+        if (error instanceof PublicApiError && error.code === 'validation_failed' && error.errors.length > 0) {
           setServerErrors(error.errors);
           setFailedSends((n) => n + 1);
         } else {
@@ -524,60 +541,59 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   };
 
   // ---- fields -------------------------------------------------------------------------------
-  const renderField = (field: FieldDefinition, section: SectionDefinition, block?: { key: number; index: number; record: AnswerRecord }): ReactNode => {
-    if (!field.enabled) return null;
+  const options = (field: FieldDefinition) => (field.options ?? []).map((option) => ({ value: option.value, label: textOf(option.label, language) }));
+
+  const renderField = (field: FieldDefinition, section: SectionDefinition, block?: { row: number; index: number }): ReactNode => {
     if (field.onlyFirstInRepeat && (block?.index ?? 0) !== 0) return null;
-    const name = controlName(field.key, block ? { id: section.id, key: block.key } : undefined);
+    const name = controlName(field.key, block ? { key: section.key, row: block.row } : undefined);
     const id = fieldId(name);
-    const path = block ? pathOf(field.key, { id: section.id, index: block.index }) : field.key;
-    const shown = isShown(field, section, answers, block?.record ?? null, block?.index ?? 0);
-    const required = shown && isRequired(field, answers, block?.record ?? null, block?.index ?? 0);
+    const path = block ? pathOf(field.key, { key: section.key, index: block.index }) : field.key;
+    const shown = isShown(field, answers, block?.index ?? null);
+    const required = field.required;
     // In a block a label may name its block: "Email of author {n}" (each control has a name of its own).
     const label = fill(textOf(field.label, language), { n: (block?.index ?? 0) + 1 });
     const help = fill(textOf(field.help, language), { n: (block?.index ?? 0) + 1 });
     const error = shown ? errorOf(path) : undefined;
     const status = error ? 'error' : 'default';
     // Author 1 is usually the person filling in: the phone may offer her name and address; never for the co-authors (UX-M1-23).
-    const autoComplete = block && block.index > 0 ? 'off' : field.autocomplete;
-    const wide = field.kind === 'textarea' || field.kind === 'radio' || field.kind === 'checkbox' || field.kind === 'file';
+    const autoComplete = block && block.index > 0 ? 'off' : (field.autocomplete ?? undefined);
     // In a block a screen reader hears which block the field belongs to ("Institution, Author 2").
-    const describedBy = block ? `${fieldId(`${section.id}.${block.key}`)}-title` : undefined;
+    const describedBy = block ? `${fieldId(`${section.key}.${block.row}`)}-title` : undefined;
+    const wide = field.kind === 'longText' || field.kind === 'choice' || field.kind === 'yesNo' || field.kind === 'consent' || field.kind === 'file';
     let control: ReactNode;
     switch (field.kind) {
-      case 'textarea': {
-        const max = field.rules?.maxWords;
-        const counter = max !== undefined ? fill(t.words, { count: countWords(values[name] ?? ''), max }) : undefined;
+      case 'longText': {
+        const max = field.rules.maxWords;
+        const counter = max !== null ? fill(t.words, { count: countWords(values[name] ?? ''), max }) : undefined;
         control = <Textarea id={id} label={label} name={name} rows={6} aria-describedby={describedBy} required={required} status={status} message={error ?? ([help, counter].filter(Boolean).join(' ') || undefined)} />;
         break;
       }
-      case 'select':
+      case 'choice':
+      case 'yesNo':
+        control =
+          field.kind === 'choice' && (field.options?.length ?? 0) > RADIO_LIMIT ? (
+            <Select id={id} label={label} name={name} aria-describedby={describedBy} required={required} defaultValue="" placeholder={t.choose} options={options(field)} status={status} message={error ?? (help || undefined)} />
+          ) : (
+            <div id={id} tabIndex={-1}>
+              <RadioGroup label={label} name={name} required={required} direction={field.kind === 'yesNo' ? 'row' : 'column'} options={options(field)} status={status} message={error ?? (help || undefined)} />
+            </div>
+          );
+        break;
+      case 'consent':
         control = (
-          <Select
+          <Checkbox
             id={id}
-            label={label}
             name={name}
-            aria-describedby={describedBy}
+            value="yes"
             required={required}
-            defaultValue=""
-            placeholder={t.choose}
-            options={(field.options ?? []).map((option) => ({ value: option.value, label: textOf(option.label, language) }))}
+            label={<SafeText text={textOf(definition.texts.consent, language)} newTab={t.consent.newTab} links={form.conference.links} />}
             status={status}
-            message={error ?? (help || undefined)}
+            message={error}
           />
         );
         break;
-      case 'radio':
-        control = (
-          <div id={id} tabIndex={-1}>
-            <RadioGroup label={label} name={name} required={required} options={(field.options ?? []).map((option) => ({ value: option.value, label: textOf(option.label, language) }))} status={status} message={error ?? (help || undefined)} />
-          </div>
-        );
-        break;
-      case 'checkbox':
-        control = <Checkbox id={id} name={name} value="yes" label={label} required={required} status={status} message={error ?? (help || undefined)} />;
-        break;
       case 'file': {
-        const rule = field.rules?.file;
+        const rule = field.rules.file;
         if (!rule) return null;
         control = (
           <FileField
@@ -601,12 +617,12 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
             id={id}
             label={label}
             name={name}
-            type={field.kind === 'email' ? 'email' : field.kind === 'phone' ? 'tel' : 'text'}
-            inputMode={field.kind === 'phone' ? 'tel' : field.kind === 'email' ? 'email' : undefined}
+            type={field.kind === 'email' ? 'email' : field.autocomplete === 'tel' ? 'tel' : 'text'}
+            inputMode={field.kind === 'email' ? 'email' : field.autocomplete === 'tel' ? 'tel' : undefined}
             icon={field.kind === 'email' ? 'mail' : undefined}
             autoComplete={autoComplete}
             aria-describedby={describedBy}
-            spellCheck={field.kind === 'text' ? undefined : false}
+            spellCheck={field.kind === 'email' || field.rules.pattern ? false : undefined}
             required={required}
             status={status}
             message={error ?? (help || undefined)}
@@ -623,17 +639,10 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
 
   /** A section is a card of the design system, its label the card's heading (h2 under the page's h1). */
   const renderSection = (section: SectionDefinition): ReactNode => {
-    const shown = !section.visibleWhen || holds(section.visibleWhen, answers, null);
-    const help = section.help ? (
-      <p className={`ud-span-all ${styles.note}`}>
-        <SafeText text={textOf(section.help, language)} newTab={t.consent.newTab} />
-      </p>
-    ) : null;
-    const label = textOf(section.label, language) || undefined;
+    const shown = holds(section.visibleWhen, answers);
     return (
-      <div key={section.id} hidden={!shown} data-confera-section={section.id}>
-        <FormCard title={section.repeat ? undefined : label}>
-          {help}
+      <div key={section.key} hidden={!shown} data-confera-section={section.key}>
+        <FormCard title={section.repeat ? undefined : textOf(section.label, language) || undefined}>
           {section.repeat ? renderBlocks(section) : section.fields.map((field) => renderField(field, section))}
         </FormCard>
       </div>
@@ -643,7 +652,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   const renderBlocks = (section: SectionDefinition): ReactNode => {
     const repeat = section.repeat;
     if (!repeat) return null;
-    const list = rows[section.id] ?? [];
+    const list = rows[section.key] ?? [];
     const atMax = list.length >= repeat.max;
     const contact = form.conference.contactEmail;
     const notice = repeat.noticeFrom && list.length >= repeat.noticeFrom ? textOf(repeat.notice, language) || t.authors.notice : '';
@@ -655,25 +664,26 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
     ]
       .filter(Boolean)
       .join(' ');
+    // The design system adds the number of the block to the name of its remove button ("Remove author 2").
+    const removeLabel = textOf(repeat.removeLabel, language).replace(/\s*\{n\}\s*/g, ' ').trim() || t.authors.removeLabel;
     return (
       <div className="ud-span-all">
         <Repeater<{ key: number }>
           label={textOf(section.label, language) || undefined}
-          items={list.map((rowKey) => ({ key: rowKey }))}
+          items={list.map((row) => ({ key: row }))}
           onChange={(items) => changeRows(section, items)}
           newItem={() => ({ key: nextRowKey.current++ })}
           min={repeat.min}
           max={repeat.max}
           addLabel={textOf(repeat.addLabel, language) || t.authors.add}
-          removeLabel={t.authors.removeLabel}
+          removeLabel={removeLabel}
           message={message}
           renderRow={(item, index) => {
-            const record = answers.blocks[section.id]?.[index] ?? {};
             const name = nameOf(section, item.key);
-            const isAsking = asking?.section === section.id && asking.key === item.key;
+            const isAsking = asking?.section === section.key && asking.row === item.key;
             return (
               <>
-                <p id={`${fieldId(`${section.id}.${item.key}`)}-title`} className={`ud-span-all ${styles.blockTitle}`}>
+                <p id={`${fieldId(`${section.key}.${item.key}`)}-title`} className={`ud-span-all ${styles.blockTitle}`}>
                   {blockTitle(section, index + 1, language)}
                 </p>
                 {isAsking ? (
@@ -689,7 +699,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
                           <TextButton
                             onClick={() => {
                               setAsking(null);
-                              setFocusTarget(firstControlId(section, item.key, index));
+                              focusNext.current = firstControlId(section, item.key);
                             }}
                           >
                             {t.authors.keep}
@@ -699,7 +709,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
                     />
                   </div>
                 ) : null}
-                {section.fields.map((field) => renderField(field, section, { key: item.key, index, record }))}
+                {section.fields.map((field) => renderField(field, section, { row: item.key, index }))}
               </>
             );
           }}
@@ -710,13 +720,15 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
 
   // ---- the page -------------------------------------------------------------------------------
   if (phase === 'sent') {
-    const own = textOf(definition.texts.thankYouText, language);
     return (
       <div className={styles.stack} data-confera-sent="">
         <div ref={thanksRef} tabIndex={-1} className={styles.landing} data-confera-thanks="">
-          <Alert tone="success" title={textOf(definition.texts.thankYouTitle, language) || t.states.thanksTitle[definition.type]}>
+          <Alert tone="success" title={t.states.thanksTitle[definition.type]}>
             <span className={styles.lines}>
-              <span>{own ? fill(own, { email: sentTo, reference: reference ?? '' }) : fill(t.states.thanksText, { email: sentTo })}</span>
+              <span>
+                <SafeText text={textOf(definition.texts.thankYou, language)} newTab={t.consent.newTab} links={form.conference.links} />
+              </span>
+              {sentTo ? <span>{fill(t.states.sentTo, { email: sentTo })}</span> : null}
               {reference ? <strong data-confera-reference="">{fill(t.states.reference, { reference })}</strong> : null}
             </span>
           </Alert>
@@ -733,13 +745,21 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   const summary = checked && shownErrors.length > 0;
   const busy = phase === 'sending' || phase === 'checking';
   const deadline = form.deadline ? fill(t.states.openUntil, { date: formatDate(form.deadline, language, form.conference.timeZone), zone: zoneName(form.conference.timeZone, language) }) : '';
-  const persistentNote = persistent ? t.draft.kept : t.draft.inMemory;
 
   return (
-    <form ref={formRef} method="post" action={`/f/${form.slug}/send`} noValidate onChange={saveDraft} onSubmit={(event) => {
-      event.preventDefault();
-      if (!busy) void send();
-    }} className={styles.stack} data-confera-phase={phase}>
+    <form
+      ref={formRef}
+      method="post"
+      action={`/f/${form.slug}/send`}
+      noValidate
+      onChange={saveDraft}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!busy) void send();
+      }}
+      className={styles.stack}
+      data-confera-phase={phase}
+    >
       <noscript>
         <p className={styles.note}>{t.noScript}</p>
       </noscript>
@@ -749,7 +769,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
       </p>
       {summary ? (
         <div ref={summaryRef} tabIndex={-1} className={styles.landing} data-confera-errors="" aria-describedby="confera-error-count">
-          <Alert tone="error" title={definitionErrorsTitle(definition, language)}>
+          <Alert tone="error" title={t.errorsTitle[definition.type]}>
             <span id="confera-error-count" className="ud-sr">
               {plural(t.errorCount, shownErrors.length, language)}
             </span>
@@ -759,7 +779,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
                 return (
                   <li key={`${error.path}:${error.code}`}>
                     <a className="ud-link" href={`#${id}`} onClick={goTo(id)}>
-                      {messageFor(error, definition, language)}
+                      {messageOf(error)}
                     </a>
                   </li>
                 );
@@ -783,17 +803,6 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
           </Button>
         }
       >
-        <div className="ud-span-all">
-          <Checkbox
-            id={fieldId('consent')}
-            name="consent"
-            value="yes"
-            required
-            label={<SafeText text={textOf(definition.consent.label, language)} newTab={t.consent.newTab} />}
-            status={errorOf('consent') ? 'error' : 'default'}
-            message={errorOf('consent')}
-          />
-        </div>
         {/* The trap field of ADR-08: no person sees it or reaches it; a script that fills it gets a fake success. */}
         <div className="ud-sr" aria-hidden="true">
           <label>
@@ -801,7 +810,10 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
             <input type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
           </label>
         </div>
-        <p className={`ud-span-all ${styles.note}`}>{restored === 'done' && draftValues && hasTyped(draftValues) ? `${t.draft.restored} ` : ''}{persistentNote}</p>
+        <p className={`ud-span-all ${styles.note}`}>
+          {restored === 'done' && draftValues && hasTyped(draftValues) ? `${t.draft.restored} ` : ''}
+          {persistent ? t.draft.kept : t.draft.inMemory}
+        </p>
         {busy ? (
           <div className="ud-span-all">
             <Spinner label={phase === 'checking' ? t.checking : t.sending} />
@@ -814,5 +826,3 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
     </form>
   );
 }
-
-const definitionErrorsTitle = (definition: FormDefinition, language: FormLanguage) => FORM_TEXTS[language].errorsTitle[definition.type];

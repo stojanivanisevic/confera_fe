@@ -148,12 +148,12 @@ describe('the site list is validated and fails closed (SEC-A-08)', () => {
   });
 
   // The list comes from the API's published form (0.3.0); here from a lookup of the test's own.
-  const lookup = async (slug: string): Promise<readonly string[] | null> => {
-    if (slug === 'spike-abstract') return ['http://localhost:4000'];
-    if (slug === 'spike-unlisted') return [];
-    if (slug === 'broken-api') throw new Error('the API did not answer');
-    if (slug === 'bad-entry') return ['https://itema.example.test', 'http://evil.example.test'];
-    return null;
+  const lookup = (slug: string): Promise<readonly string[] | null> => {
+    if (slug === 'spike-abstract') return Promise.resolve(['http://localhost:4000']);
+    if (slug === 'spike-unlisted') return Promise.resolve([]);
+    if (slug === 'broken-api') return Promise.reject(new Error('the API did not answer'));
+    if (slug === 'bad-entry') return Promise.resolve(['https://itema.example.test', 'http://evil.example.test']);
+    return Promise.resolve(null);
   };
 
   it('an unknown form, a form without sites, a failed lookup and a bad slug resolve to none', async () => {

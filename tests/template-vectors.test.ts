@@ -46,7 +46,8 @@ describe('the format is the vendored one', () => {
     expect(TEMPLATE_FORMAT_VERSION).toBe(1);
     expect(lock.files['template-vectors.json']?.version).toBe('1');
     expect([DOCUMENT_LIMIT_BYTES, MAX_DEPTH, SUBJECT_LIMIT]).toEqual([204_800, 8, 300]);
-    expect(TEMPLATE_TYPES).toEqual(['invitation', 'password_reset', 'email_change_confirmation', 'email_change_notice', 'security_notice', 'sign_in_brake', 'test_message']);
+    // 0.3.0 adds the confirmation of a submission (FR-FORM-15, M3-BE-06).
+    expect(TEMPLATE_TYPES).toEqual(['invitation', 'password_reset', 'email_change_confirmation', 'email_change_notice', 'security_notice', 'sign_in_brake', 'test_message', 'submission_confirmation']);
     expect(TEMPLATE_LANGUAGES).toEqual(['en', 'sr']);
   });
 
@@ -79,8 +80,8 @@ describe('a document the API renders gives the same subject, HTML and text here'
 });
 
 describe('the templates the API seeds pass the check', () => {
-  it('14 of them: seven types, English and Serbian', () => {
-    expect(seeded.templates).toHaveLength(14);
+  it('16 of them: eight types, English and Serbian', () => {
+    expect(seeded.templates).toHaveLength(16);
     expect(new Set(seeded.templates.map((template) => template.type))).toEqual(new Set(TEMPLATE_TYPES));
   });
 

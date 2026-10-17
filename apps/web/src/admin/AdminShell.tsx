@@ -9,12 +9,13 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { Alert, AppShell, Button, PageHeader, Select, SidebarNav, Spinner, TextButton, toast, ToastHost } from '@confera/ui';
+import { Alert, AppShell, Button, Menu, PageHeader, Select, SidebarNav, Spinner, TextButton, toast, ToastHost } from '@confera/ui';
 
 import { signInHref } from '@/lib/next-path';
 
 import styles from './admin.module.css';
 import { FreshPasswordProvider } from './FreshPassword';
+import { HeldMailAlert } from './HeldMail';
 import { conferenceLabel, ConferenceProvider, useConference } from './conference-context';
 import { call, callEmpty, SESSION_ENDED_EVENT } from './problems';
 import { SessionProvider, useSession } from './session';
@@ -24,6 +25,9 @@ import { fill, TEXTS } from './texts';
 const NAV = [
   { value: '/', label: TEXTS.nav.home, icon: 'home' as const, permission: null },
   { value: '/conferences', label: TEXTS.nav.conferenceList, icon: 'calendar' as const, permission: 'conferences.read' },
+  { value: '/forms', label: TEXTS.nav.forms, icon: 'file-text' as const, permission: 'forms.read' },
+  { value: '/submissions', label: TEXTS.nav.submissions, icon: 'list' as const, permission: 'submissions.read' },
+  { value: '/held-mail', label: TEXTS.nav.heldMail, icon: 'clock' as const, permission: 'held_mail.manage' },
   { value: '/templates', label: TEXTS.nav.templates, icon: 'mail' as const, permission: 'templates.read' },
   { value: '/mail-log', label: TEXTS.nav.mailLog, icon: 'inbox' as const, permission: 'mail_log.read' },
   { value: '/mail-servers', label: TEXTS.nav.mailServers, icon: 'send' as const, permission: 'mail_servers.read' },
@@ -40,7 +44,7 @@ function current(pathname: string): string {
 }
 
 /** The screens the conference switch narrows; elsewhere it is not shown (UXUI-M2-05). */
-const NARROWED = ['/mail-log', '/templates'];
+const NARROWED = ['/mail-log', '/templates', '/forms', '/submissions'];
 const narrows = (pathname: string) => NARROWED.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
 /** The conference switch: what the mail log and the templates show, kept while the person moves between screens. */
@@ -202,18 +206,27 @@ function Guarded({ children }: { children: ReactNode }) {
           <div className={styles.topbar}>
             <div className={styles.conference}>{permissions.includes('conferences.read') && narrows(pathname) ? <ConferenceSwitch /> : null}</div>
             <div className={styles.topbarEnd}>
-              <span className={`${styles.small} ${styles.wideOnly}`} data-confera-user>
-                {session.user.displayName}
-              </span>
-              <TextButton icon="log-out" onClick={() => void signOut()}>
-                {TEXTS.nav.signOut}
-              </TextButton>
+              {/* The person's menu (UXUI-M2-24): the name and two entries, one target at any width. */}
+              <Menu
+                label={TEXTS.nav.userMenu}
+                align="end"
+                trigger={
+                  <TextButton icon="user" data-confera-user>
+                    <span className={styles.userName}>{session.user.displayName}</span>
+                  </TextButton>
+                }
+                items={[
+                  { label: TEXTS.nav.account, icon: 'user', onSelect: () => router.push('/account') },
+                  { label: TEXTS.nav.signOut, icon: 'log-out', onSelect: () => void signOut() },
+                ]}
+              />
             </div>
           </div>
         }
       >
         {ended ? <SessionEnded onContinued={() => setEndedFor(null)} /> : null}
         {status === 'unreachable' ? <Unreachable /> : null}
+        {permissions.includes('held_mail.manage') && current(pathname) !== '/held-mail' ? <HeldMailAlert onOpen={() => router.push('/held-mail')} /> : null}
         <FreshPasswordProvider>{children}</FreshPasswordProvider>
       </AppShell>
     </ConferenceProvider>

@@ -4,7 +4,7 @@
 // lines of the snippet itself.
 export { clampHeight, FORM_SLUG_PATTERN, HEIGHT_MESSAGE, heightMessage, INTO_VIEW_MESSAGE, isFormSlug, MAX_FRAME_HEIGHT, MIN_FRAME_HEIGHT } from './protocol';
 export type { HeightMessage, IntoViewMessage } from './protocol';
-export { buildEmbedSnippet, EmbedSnippetError, frameId, listenerSource } from './snippet';
-export type { EmbedSnippetOptions } from './snippet';
+export { buildEmbedSnippet, EmbedSnippetError, frameId, listenerSource, SNIPPET_LANGUAGES } from './snippet';
+export type { EmbedSnippetOptions, SnippetLanguage } from './snippet';
 export { requestIntoView, startHeightReporter } from './frame';
 export type { HeightReporterOptions, IntoViewOptions } from './frame';

@@ -5,8 +5,8 @@
 //  - a failed Send moves the focus to the summary of the errors, which comes into view, and each
 //    item takes the focus to its field; a successful Send moves it to the thank-you;
 //  - inside the frame the page around is asked to bring that part into view. Chromium and Firefox
-//    scroll the site along with the focus; WebKit does not, and the snippet's lines may only do it
-//    once the product owner has decided so (decision D1): there the request itself is checked.
+//    scroll the site along with the focus; WebKit does not, and there the snippet's lines do it
+//    (decision D1, built in 0.3.0): in all three engines the part ends in the site's window.
 import type { Frame, Page, Request } from '@playwright/test';
 
 import { buildEmbedSnippet, frameId, INTO_VIEW_MESSAGE } from '../packages/embed-loader/src/index';
@@ -125,12 +125,12 @@ test.describe('on a phone, on Confera\'s page: the result of Send is where the a
     const summary = page.locator('[data-confera-errors]');
     await expect(summary).toBeFocused();
     expect(await inWindow(page, '[data-confera-errors]'), 'the summary is in the window').toBe(true);
-    await expect(summary.getByRole('link')).toHaveText(['Enter an email address like name@university.edu', 'Accept the terms of publication to send your abstract']);
+    await expect(summary.getByRole('link')).toHaveText(['Author 1: Enter an email address like name@university.edu', 'Accept the terms to send your abstract']);
     // The consent says so at the box too (UI-M1-06), and is marked as required.
     await expect(page.getByLabel('I accept the terms of publication')).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.getByLabel('I accept the terms of publication')).toHaveAccessibleDescription('Accept the terms of publication to send your abstract');
+    await expect(page.getByLabel('I accept the terms of publication')).toHaveAccessibleDescription('Accept the terms to send your abstract');
 
-    await summary.getByRole('link', { name: 'Enter an email address like name@university.edu' }).click();
+    await summary.getByRole('link', { name: 'Author 1: Enter an email address like name@university.edu' }).click();
     await expect(page.getByLabel('Email of author 1')).toBeFocused();
     expect(page.url()).toBe(FORM);
 
@@ -144,7 +144,7 @@ test.describe('on a phone, on Confera\'s page: the result of Send is where the a
     await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
     await page.getByLabel('Abstract').fill(Array.from({ length: 385 }, (_, i) => `reč${i}`).join(' '));
     await expect(page.getByLabel('Abstract')).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.getByLabel('Abstract')).toHaveAccessibleDescription('385 of 300 words. Shorten the abstract by 85 words.');
+    await expect(page.getByLabel('Abstract')).toHaveAccessibleDescription('385 of 300 words. Shorten the text by 85 words.');
   });
 
   test('a successful Send: the thank-you has the focus and is in view', async ({ page }) => {
@@ -193,9 +193,9 @@ test.describe('in the frame of a long conference page (UX-M1-01, 02)', () => {
     await send.click();
     await expect(frame.locator('[data-confera-errors]')).toBeFocused();
     await expect.poll(() => askedIntoView(page), 'the frame asked the site to show the summary').toBeGreaterThan(0);
-    // Chromium and Firefox bring the focused summary into the site's window by themselves. WebKit
-    // does not: there the snippet's lines will do it once decision D1 allows (the request is above).
-    if (browserName !== 'webkit') await expect.poll(() => inSiteWindow(page, frame, '[data-confera-errors]'), 'the summary is in the site\'s window').toBe(true);
+    // Chromium and Firefox bring the focused summary into the site's window by themselves; in WebKit
+    // the snippet's lines do it (D1). In every engine it ends in the site's window.
+    await expect.poll(() => inSiteWindow(page, frame, '[data-confera-errors]'), `the summary is in the site's window (${browserName})`).toBe(true);
 
     await frame.getByLabel('Title of the paper').fill('Održivi turizam na Balkanu');
     await frame.getByLabel('First and last name of author 1').fill('Marta Kovač');
@@ -206,6 +206,6 @@ test.describe('in the frame of a long conference page (UX-M1-01, 02)', () => {
     await send.click();
     await expect(frame.locator('[data-confera-thanks]')).toBeFocused();
     await expect.poll(() => askedIntoView(page), 'the frame asked the site to show the thank-you').toBeGreaterThan(before);
-    if (browserName !== 'webkit') await expect.poll(() => inSiteWindow(page, frame, '[data-confera-thanks]'), 'the thank-you is in the site\'s window').toBe(true);
+    await expect.poll(() => inSiteWindow(page, frame, '[data-confera-thanks]'), `the thank-you is in the site's window (${browserName})`).toBe(true);
   });
 });

@@ -34,7 +34,8 @@ async function formFrame(page: Page): Promise<Frame> {
   return frame;
 }
 
-const STYLED = ['html', 'body', 'h1', '.ud-tab.is-selected', '.ud-tab:not(.is-selected)', '.ud-form-card', '.ud-form-card__title', '.ud-field__label', '.ud-field__box', '.ud-field__control', '.ud-field__message', '.ud-check__box', '.ud-check__label', '.ud-repeater__row', '.ud-text-btn--add', '.ud-btn--primary'];
+// The page's heading is not among them: inside the frame it is for screen readers only (D5), on its own page it is the PageHeader's.
+const STYLED = ['html', 'body', '.ud-tab.is-selected', '.ud-tab:not(.is-selected)', '.ud-form-card', '.ud-form-card__title', '.ud-field__label', '.ud-field__box', '.ud-field__control', '.ud-field__message', '.ud-check__box', '.ud-check__label', '.ud-repeater__row', '.ud-text-btn--add', '.ud-btn--primary'];
 const PROPERTIES = ['display', 'boxSizing', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color', 'backgroundColor', 'borderTopColor', 'borderTopWidth', 'borderTopStyle', 'borderTopLeftRadius', 'paddingTop', 'paddingLeft', 'opacity', 'visibility'] as const;
 
 /**
@@ -93,7 +94,12 @@ for (const width of [1440, 375]) {
       await context.close();
 
       expect(Object.keys(framed).sort()).toEqual([...STYLED].sort());
-      expect(framed).toEqual(alone);
+      // Inside the frame the page around shows through: no ground of its own is painted on the site (UI-M1-18).
+      expect(framed.body!.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      expect(alone.body!.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+      expect({ ...framed, body: { ...framed.body, backgroundColor: '' } }).toEqual({ ...alone, body: { ...alone.body, backgroundColor: '' } });
+      // No heading of its own on show in the frame (D5): the site's page has one. A screen reader still finds the form's name.
+      expect(await frame.getByRole('heading', { level: 1 }).evaluate((el) => el.classList.contains('ud-sr'))).toBe(true);
 
       // And they are the design system's values, not the site's.
       expect(framed.html!.fontSize).toBe('16px'); // the site sets 62.5%
@@ -157,7 +163,7 @@ for (const width of [1440, 375]) {
 
       // An error summary makes the form taller; the frame follows, and has no scroll bar of its own.
       await frame.getByRole('button', { name: 'Send abstract' }).click();
-      await expect(frame.locator('.ud-alert--error')).toContainText('Please correct the marked fields');
+      await expect(frame.locator('.ud-alert--error')).toContainText('Check these fields to send your abstract');
       await expect(frame.locator('.ud-alert--error')).toHaveAttribute('role', 'alert');
       await expectHeightFollows(page, frame);
       expect((await frameHeights(page, frame)).element).toBeGreaterThan(start);
@@ -298,9 +304,13 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
     await expect.poll(() => seen.refusals.length, { message: 'the browser reports that it refused the frame' }).toBeGreaterThan(0);
     await page.waitForTimeout(1000);
     expect(seen.loadedByFrames).toEqual([]);
-    // The frame element stays, empty, and the link to the hosted form still works.
+    // The frame element stays, empty, and the link to the hosted form still works: above the frame, in view (D5, UX-M1-12).
     expect(await page.locator(FRAME).count()).toBe(1);
-    await expect(page.getByRole('link', { name: 'Open the form in a new page' })).toHaveAttribute('href', `${PUBLIC_ORIGIN}/f/${SLUG}`);
+    const link = page.getByRole('link', { name: 'Open the form in a new page' });
+    await expect(link).toHaveAttribute('href', `${PUBLIC_ORIGIN}/f/${SLUG}`);
+    const linkBottom = await link.evaluate((el) => el.getBoundingClientRect().bottom);
+    const frameTop = await page.locator(FRAME).evaluate((el) => el.getBoundingClientRect().top);
+    expect(linkBottom, 'the link stands above the frame').toBeLessThanOrEqual(frameTop);
   });
 
   test('the same snippet on the listed site is shown (the control of the test above)', async ({ page }) => {
@@ -343,10 +353,10 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
     await expect(frame.getByRole('heading', { level: 1 })).toHaveText('Prijava apstrakta');
     await frame.getByLabel('Naslov rada').fill('Održivi turizam na Balkanu');
     await frame.getByLabel('Ime i prezime autora 1').fill('Marta Kovač');
-    await frame.getByLabel('Imejl autora 1').fill('marta@example.test');
+    await frame.getByLabel('Imejl adresa autora 1').fill('marta@example.test');
     await frame.getByLabel('Prihvatam uslove objavljivanja').check({ force: true });
     await frame.getByRole('button', { name: 'Pošalji apstrakt' }).click();
-    await expect(frame.locator('.ud-alert--success')).toContainText('Hvala');
+    await expect(frame.locator('.ud-alert--success')).toContainText('Apstrakt je poslat');
     await expectHeightFollows(page, frame);
 
     // Confera's public surface set no cookie at all.
@@ -373,7 +383,7 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
     await frame.getByLabel('Email of author 1').fill('marta@example.test');
     await frame.getByLabel('I accept the terms of publication').check({ force: true });
     await frame.getByRole('button', { name: 'Send abstract' }).click();
-    await expect(frame.locator('.ud-alert--success')).toContainText('Thank you');
+    await expect(frame.locator('.ud-alert--success')).toContainText('Abstract sent');
     await expectHeightFollows(page, frame);
     expect(problems.messages).toEqual([]);
   });
@@ -404,5 +414,35 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
     await frame.getByLabel('First and last name of author 2').fill('Đorđe Šćepanović');
     await expect(frame.getByLabel('First and last name of author 2')).toHaveValue('Đorđe Šćepanović');
     await expect(page.getByRole('link', { name: 'Open the form in a new page' })).toBeVisible();
+  });
+});
+
+test.describe('the snippet carries the language of the site (D2)', () => {
+  test('a Serbian site gets the form in Serbian, and its link too, whatever the browser says', async ({ page }) => {
+    const serbian = buildEmbedSnippet({ publicOrigin: PUBLIC_ORIGIN, slug: SLUG, title: 'Prijava apstrakta', linkText: 'Obrazac se ne prikazuje? Otvorite ga na posebnoj stranici.', language: 'sr' });
+    await openSite(page, HARNESS_ORIGIN, serbian);
+    const frame = await (await page.locator(FRAME).elementHandle()).contentFrame();
+    await frame!.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await expect(frame!.getByRole('heading', { level: 1 })).toHaveText('Prijava apstrakta');
+    await expect(frame!.getByLabel('Naslov rada')).toBeVisible();
+    expect(await frame!.evaluate(() => document.documentElement.lang)).toBe('sr');
+    await expect(page.getByRole('link', { name: 'Obrazac se ne prikazuje? Otvorite ga na posebnoj stranici.' })).toHaveAttribute('href', `${PUBLIC_ORIGIN}/f/${SLUG}?lang=sr`);
+  });
+
+  test('without a language the browser’s decides: an English browser gets English', async ({ page }) => {
+    await openSite(page, HARNESS_ORIGIN, snippetFor(SLUG));
+    const frame = await formFrame(page);
+    expect(await frame.evaluate(() => document.documentElement.lang)).toBe('en');
+  });
+});
+
+test.describe('a browser in Serbian (D2)', () => {
+  test.use({ locale: 'sr-RS' });
+
+  test('opens a snippet without a language in Serbian', async ({ page }) => {
+    await openSite(page, HARNESS_ORIGIN, snippetFor(SLUG));
+    const frame = await (await page.locator(FRAME).elementHandle()).contentFrame();
+    await frame!.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await expect(frame!.getByRole('heading', { level: 1 })).toHaveText('Prijava apstrakta');
   });
 });

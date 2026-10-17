@@ -38,8 +38,8 @@ const ROUTES: Route[] = [
 ];
 const label = (r: Route) => `${r.origin === ADMIN_ORIGIN ? 'admin' : 'public'} ${r.path} (${r.kind})`;
 
-/** The pages of the admin surface enforce the baseline (0.2.0); the public pages still report only. */
-const ENFORCED_KINDS = ['admin', 'auth'];
+/** The pages of the admin surface enforce the baseline (0.2.0), the public pages too (0.3.0); the error and gallery pages report the rest. */
+const ENFORCED_KINDS = ['admin', 'auth', 'hosted-form', 'frame', 'secure-link'];
 const baselineOf = (response: APIResponse, kind: string) => (ENFORCED_KINDS.includes(kind) ? response.headers()['content-security-policy'] : response.headers()['content-security-policy-report-only']) ?? '';
 const nonceOf = (response: APIResponse, kind = 'hosted-form') => /script-src 'self' 'nonce-([A-Za-z0-9+/=]+)'/.exec(baselineOf(response, kind))?.[1];
 const scriptTags = (html: string) => [...html.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
@@ -71,8 +71,9 @@ test.describe('ST-12: each kind of route returns its header set', () => {
       expect(nonce, 'the response has a script nonce').toBeTruthy();
       const enforced = ENFORCED_KINDS.includes(route.kind);
       if (enforced) {
-        // The admin surface (0.2.0): the whole baseline in one enforced policy, reported to the API; no report-only header.
-        expect(headers['content-security-policy']).toMatch(new RegExp(`^frame-ancestors 'none'; .*script-src-attr 'nonce-${String(nonce).replace(/[+/=]/g, '\\$&')}'`));
+        // The admin surface (0.2.0) and the public pages (0.3.0): the whole baseline in one enforced policy, reported to the API; no report-only header.
+        expect(headers['content-security-policy']!.startsWith(`frame-ancestors ${route.sites ?? "'none'"}; `)).toBe(true);
+        expect(headers['content-security-policy']).toMatch(new RegExp(`^frame-ancestors [^;]+; .*script-src-attr 'nonce-${String(nonce).replace(/[+/=]/g, '\\$&')}'`));
         expect(headers['content-security-policy']).toContain(`report-uri ${PUBLIC_ORIGIN}/public/v1/csp-reports`);
         expect(headers['content-security-policy-report-only']).toBeUndefined();
         expect(headers['reporting-endpoints']).toBe(`csp="${PUBLIC_ORIGIN}/public/v1/csp-reports"`);
@@ -86,7 +87,7 @@ test.describe('ST-12: each kind of route returns its header set', () => {
       expect(headers['cache-control']).toContain('no-store');
       expect(headers['cache-control']).not.toMatch(/public|s-maxage|immutable/);
 
-      // The baseline: enforced on the admin surface, report-only on the public pages until 0.3.0.
+      // The baseline: enforced on the admin surface and the public pages, report-only on the error and gallery pages.
       const policy = baselineOf(response, route.kind).split('; ');
       for (const directive of ["default-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'self'", "connect-src 'self'", "font-src 'self'"]) {
         expect(policy).toContain(directive);
@@ -225,7 +226,8 @@ test.describe('ST-66 (routing part): the host separation is enforced in the appl
     const unknown = await request.get(`${PUBLIC_ORIGIN}/no-such-page`);
     const otherHost = await request.get(`${PUBLIC_ORIGIN}/sign-in`);
     expect(strip(await otherHost.text())).toBe(strip(await unknown.text()));
-    expect(await unknown.text()).toContain('Page not found');
+    expect(await unknown.text()).toContain('This page does not exist');
+    expect(await unknown.text()).toContain('Ova stranica ne postoji');
   });
 });
 
@@ -334,9 +336,9 @@ test.describe('SEC-M1-01: the methods of a page', () => {
         const policy = response.headers()['content-security-policy'] ?? '';
         expect(policy, what).toMatch(/^frame-ancestors 'none'; /);
         expect(policy, what).toMatch(/(?:^|; )script-src-attr 'nonce-/);
-        // The admin surface enforces its whole baseline (0.2.0), also on a 405; the public pages keep it report-only.
-        if (origin === ADMIN_ORIGIN) expect(policy, what).toContain("default-src 'self'");
-        else expect(response.headers()['content-security-policy-report-only'], what).toContain("default-src 'self'");
+        // The admin surface (0.2.0) and the form pages (0.3.0) enforce their whole baseline, also on a 405; the error page reports it.
+        if (path === '/no-such-page') expect(response.headers()['content-security-policy-report-only'], what).toContain("default-src 'self'");
+        else expect(policy, what).toContain("default-src 'self'");
         expect(response.headers()['x-content-type-options'], what).toBe('nosniff');
         expect(await response.text(), what).not.toContain('<html');
       }

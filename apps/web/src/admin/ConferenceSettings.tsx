@@ -10,12 +10,13 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import type { Conference as ConferenceRecord, ConferenceState, MailServer } from '@confera/api-client';
-import { Alert, Button, Card, CheckboxGroup, ConfirmDialog, DateField, Dialog, PageHeader, Select, StatusBadge, Textarea, TextButton, TextField, toast } from '@confera/ui';
+import { Alert, Button, Card, CheckboxGroup, ConfirmDialog, DateField, Dialog, Menu, PageHeader, Select, StatusBadge, Textarea, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';
 import { conferenceLabel, useConference } from './conference-context';
 import { LANGUAGES, runtimeTimeZones, stateTone, yearOf } from './Conferences';
+import { Deadlines } from './Deadlines';
 import { call, explain, fieldMessages, isApiError, type Explained } from './problems';
 import { useSession } from './session';
 import { fill, TEXTS } from './texts';
@@ -40,6 +41,8 @@ interface Form {
   timeZone: string;
   mailServerId: string;
   sites: string;
+  termsUrl: string;
+  privacyUrl: string;
 }
 
 const formOf = (conference: ConferenceRecord): Form => ({
@@ -53,6 +56,8 @@ const formOf = (conference: ConferenceRecord): Form => ({
   timeZone: conference.timeZone,
   mailServerId: conference.mailServerId ?? '',
   sites: conference.listedSites.join('\n'),
+  termsUrl: conference.publicationTermsUrl ?? '',
+  privacyUrl: conference.privacyNoticeUrl ?? '',
 });
 
 /** The refusals of the listed sites, as one message for the field: "Line 3: only the site: no path". */
@@ -145,6 +150,9 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
             timeZone: form.timeZone,
             mailServerId: form.mailServerId === '' ? null : form.mailServerId,
             listedSites: sites,
+            // D6: the consent of the forms links to these two documents.
+            publicationTermsUrl: form.termsUrl.trim() === '' ? null : form.termsUrl.trim(),
+            privacyNoticeUrl: form.privacyUrl.trim() === '' ? null : form.privacyUrl.trim(),
           },
         }),
       );
@@ -167,7 +175,7 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
       // The new state does not throw away what was typed in the settings and not yet saved (E2-18).
       setFormVersion(`${next.id}:${String(next.version)}`);
       conference.replace(next);
-      toast({ title: fill(t.stateChanged, { name: next.name, state: (t.states[next.state] ?? next.state).toLowerCase() }), tone: 'success' });
+      toast({ title: fill(t.stateChanged[next.state] ?? '{name}', { name: next.name }), tone: 'success' });
       await switcher.reload();
     } catch (error) {
       setAsked(null);
@@ -207,12 +215,22 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
     }
   };
 
+  // The commonest action is a button; the copy and the final archive are in the menu of the conference (UXUI-M2-20, 39).
+  const stateLabel = (state: ConferenceState) => (state === 'open' && record.state === 'closed' ? t.reopen : (t.to[state] ?? state));
   const stateButtons = mayManage
-    ? NEXT_STATES[record.state].map((state) => (
-        <Button key={state} variant={state === 'archived' ? 'danger' : 'dark'} onClick={() => setAsked(state)}>
-          {state === 'open' && record.state === 'closed' ? t.reopen : (t.to[state] ?? state)}
-        </Button>
-      ))
+    ? NEXT_STATES[record.state]
+        .filter((state) => state !== 'archived')
+        .map((state) => (
+          <Button key={state} variant="dark" onClick={() => setAsked(state)}>
+            {stateLabel(state)}
+          </Button>
+        ))
+    : [];
+  const menuItems = mayManage
+    ? [
+        { label: t.copy, icon: 'copy' as const, onSelect: openCopy },
+        ...(NEXT_STATES[record.state].includes('archived') ? [{ label: t.to.archived ?? 'Archive', icon: 'trash' as const, danger: true, onSelect: () => setAsked('archived') }] : []),
+      ]
     : [];
   const serverOptions = [{ value: '', label: t.mailServerDefault }, ...(servers.state.data ?? []).map((server) => ({ value: server.id, label: server.name }))];
   if (form.mailServerId !== '' && !serverOptions.some((option) => option.value === form.mailServerId)) serverOptions.push({ value: form.mailServerId, label: form.mailServerId });
@@ -227,12 +245,8 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
         actions={
           <div className={styles.actionsInline}>
             <StatusBadge tone={stateTone(record.state)}>{t.states[record.state] ?? record.state}</StatusBadge>
-            {mayManage ? (
-              <Button variant="dark" icon="copy" onClick={openCopy}>
-                {t.copy}
-              </Button>
-            ) : null}
             {stateButtons}
+            {menuItems.length > 0 ? <Menu label={t.actions} align="end" items={menuItems} /> : null}
           </div>
         }
       />
@@ -260,6 +274,11 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
             <CheckboxGroup label={t.languages} value={form.languages} disabled={readOnly} onChange={(languages) => set({ languages })} options={LANGUAGES.map((value) => ({ value, label: t.languageNames[value] ?? value }))} direction="row" status={fields.languages ? 'error' : 'default'} message={fields.languages} />
           </div>
           <div className={styles.all}>
+            <p className={styles.text}>{t.consentLinksLead}</p>
+          </div>
+          <TextField label={t.termsUrl} name="publicationTermsUrl" type="url" value={form.termsUrl} disabled={readOnly} onChange={(event) => set({ termsUrl: event.target.value })} spellCheck={false} status={fields.publicationTermsUrl ? 'error' : 'default'} message={fields.publicationTermsUrl ?? t.urlHint} />
+          <TextField label={t.privacyUrl} name="privacyNoticeUrl" type="url" value={form.privacyUrl} disabled={readOnly} onChange={(event) => set({ privacyUrl: event.target.value })} spellCheck={false} status={fields.privacyNoticeUrl ? 'error' : 'default'} message={fields.privacyNoticeUrl ?? t.urlHint} />
+          <div className={styles.all}>
             <Textarea label={t.sites} name="listedSites" rows={4} value={form.sites} disabled={readOnly} onChange={(event) => set({ sites: event.target.value })} spellCheck={false} status={sitesMessage(fields) ? 'error' : 'default'} message={sitesMessage(fields) ?? t.sitesHint} />
           </div>
           {readOnly ? null : (
@@ -271,6 +290,8 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
           )}
         </form>
       </Card>
+
+      <Deadlines conferenceId={record.id} readOnly={!mayManage} archived={archived} />
 
       <ConfirmDialog open={asked !== null} title={asked ? fill(t.stateQuestion[asked] ?? '', { name: record.name }) : ''} confirmText={asked ? (asked === 'open' && record.state === 'closed' ? t.reopen : (t.to[asked] ?? asked)) : ''} destructive={asked === 'archived'} busy={busy} onCancel={() => setAsked(null)} onConfirm={() => asked && void changeState(asked)}>
         {asked ? t.stateText[asked] : null}

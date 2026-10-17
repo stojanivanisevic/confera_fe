@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 //
-// The form renderer (M3-FE-01, M3-FE-02, M3-FE-04) on the abstract form of FR-FORM-04
-// (e2e/servers/public-forms.json): blocks of authors with the limit (D7), the question before a
-// filled block is removed (D4), the focus and the announcements (UX-M1-09, 10), the employer's
-// fields shown on a condition (FR-FORM-05), the API's refusals on the same fields, one submit per
-// form instance, the draft (D3), the warning where storage is refused (UX-M1-13), files, and the
-// closed state (FR-DL-02).
+// The form renderer (M3-FE-01, M3-FE-02, M3-FE-04) on the seeded abstract form of confera_be
+// (e2e/servers/public-forms.json, 'itema-2026-abstract'): the block of authors with the limit (D7),
+// the question before a filled block is removed (D4), the focus and the announcements (UX-M1-09,
+// 10), sections and fields shown on a condition (FR-FORM-05), the API's refusals on the same fields,
+// one submit per form instance, the draft (D3), the warning where storage is refused (UX-M1-13),
+// files, the consent links (D6) and the closed state (FR-DL-02).
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,6 +20,8 @@ Element.prototype.scrollIntoView = function scrollIntoView() {};
 
 const ABSTRACT = publishedForm('itema-2026-abstract');
 const DRAFT_KEY = 'confera:draft:itema-2026-abstract:3';
+/** The block keys of the renderer: the first block is 1, the ones added later 100, 101, … */
+const SECOND = 100;
 
 let container: HTMLElement;
 let root: Root;
@@ -46,12 +48,9 @@ const send = async () => {
 };
 const items = () => [...(container.querySelector('[data-confera-errors]')?.querySelectorAll('li a') ?? [])].map((a) => a.textContent);
 const announced = () => container.querySelector('[data-confera-announce]')!.textContent;
-const choose = async (element: HTMLInputElement | HTMLSelectElement, value?: string) => {
+const choose = async (element: HTMLInputElement) => {
   await act(async () => {
-    if (element instanceof HTMLSelectElement) {
-      element.value = value ?? '';
-      element.dispatchEvent(new Event('change', { bubbles: true }));
-    } else element.click();
+    element.click();
     await Promise.resolve();
   });
 };
@@ -70,21 +69,23 @@ const dropFile = async (key: string, chosen: File) => {
   await settle();
 };
 
-/** Everything the abstract form asks for, as an author who pays herself. */
+/** Everything the abstract form asks for, as an author with a paper who pays herself. */
 async function fillAll() {
-  await choose(radio('participation', 'with_abstract'));
-  await typeInto(field('title'), 'Održivi turizam na Balkanu');
-  await typeInto(field('keywords'), 'turizam, održivost, Balkan');
-  await typeInto(field<HTMLTextAreaElement>('abstract'), 'Kratak apstrakt o održivom turizmu.');
-  await typeInto(field('authors.1.name'), 'Marta Kovač');
+  await choose(radio('participationType', 'with_paper'));
+  await typeInto(field('authors.1.firstName'), 'Marta');
+  await typeInto(field('authors.1.lastName'), 'Kovač');
   await typeInto(field('authors.1.institution'), 'Ekonomski fakultet, Univerzitet Primer');
-  await typeInto(field('authors.1.email'), 'marta@example.test');
-  await dropFile('biographies', file('Biografije autora – Šćepanović.pdf', 1024 * 1024));
-  await choose(radio('member', 'no'));
-  await choose(radio('attendance', 'in_person'));
+  await typeInto(field('authors.1.email'), 'marta@EXAMPLE.test');
+  await typeInto(field('title'), 'Održivi turizam na Balkanu');
+  await typeInto(field<HTMLTextAreaElement>('abstract'), 'Kratak apstrakt o održivom turizmu.');
+  await typeInto(field('keywords'), 'turizam, održivost, Balkan');
   await choose(radio('publication', 'proceedings'));
-  await choose(field<HTMLSelectElement>('discount'), 'none');
+  await dropFile('biographies', file('Biografije autora – Šćepanović.pdf', 1024 * 1024));
+  await choose(radio('membership', 'no'));
+  await choose(radio('attendance', 'in_person'));
+  await choose(radio('discountClaim', 'no'));
   await choose(radio('payer', 'individual'));
+  await typeInto(field('billingAddress'), 'Izmišljena 1, Beograd');
   await choose(radio('paymentMethod', 'bank_wire'));
   await click(field('consent'));
 }
@@ -105,94 +106,125 @@ afterEach(async () => {
 describe('authors (FR-FORM-03; UX-M1-09, 10; D4, D7)', () => {
   it('after adding, the focus is in the first field of the new author, and it is announced', async () => {
     await mount();
-    await click(buttonNamed('Add author')!);
-    expect(document.activeElement).toBe(field('authors.100.name'));
+    await click(buttonNamed('Add an author')!);
+    expect(document.activeElement).toBe(field(`authors.${SECOND}.firstName`));
     expect(announced()).toBe('Author 2 added.');
-    expect(container.querySelector('label[for="field-authors-100-name"]')!.textContent).toContain('First and last name of author 2');
+    expect(container.querySelector(`#field-authors-${SECOND}-title`)!.textContent).toBe('Author 2');
+    // A screen reader hears which author a field belongs to.
+    expect(field(`authors.${SECOND}.firstName`).getAttribute('aria-describedby')).toContain(`field-authors-${SECOND}-title`);
   });
 
   it('removing an author with nothing written asks nothing', async () => {
     await mount();
-    await click(buttonNamed('Add author')!);
+    await click(buttonNamed('Add an author')!);
     await click(buttonNamed('Remove author 2')!);
-    expect(field('authors.100.name')).toBeNull();
+    expect(field(`authors.${SECOND}.firstName`)).toBeNull();
     expect(container.querySelector('[data-confera-remove-question]')).toBeNull();
     expect(announced()).toBe('Author 2 removed.');
   });
 
   it('removing an author that holds data asks first, in the form; Keep keeps everything', async () => {
     await mount();
-    await click(buttonNamed('Add author')!);
-    await typeInto(field('authors.100.name'), 'Đorđe Šćepanović');
+    await click(buttonNamed('Add an author')!);
+    await typeInto(field(`authors.${SECOND}.firstName`), 'Đorđe');
+    await typeInto(field(`authors.${SECOND}.lastName`), 'Šćepanović');
     await click(buttonNamed('Remove author 2')!);
     const question = container.querySelector<HTMLElement>('[data-confera-remove-question]')!;
     expect(question.textContent).toContain('Remove author 2, Đorđe Šćepanović? What you wrote for this author is lost.');
     expect(document.activeElement).toBe(question);
     expect(container.querySelector('[role="dialog"]')).toBeNull(); // no dialog inside a form (ADR-07)
     await click([...question.querySelectorAll('button')].find((b) => b.textContent === 'Keep')!);
-    expect(field('authors.100.name').value).toBe('Đorđe Šćepanović');
+    expect(field(`authors.${SECOND}.firstName`).value).toBe('Đorđe');
     expect(container.querySelector('[data-confera-remove-question]')).toBeNull();
-    expect(document.activeElement).toBe(field('authors.100.name'));
+    expect(document.activeElement).toBe(field(`authors.${SECOND}.firstName`));
   });
 
   it('Remove removes it, and when the first author goes the form says who now gets the emails', async () => {
     await mount();
-    await typeInto(field('authors.1.name'), 'Marta Kovač');
-    await click(buttonNamed('Add author')!);
-    await typeInto(field('authors.100.name'), 'Đorđe Šćepanović');
+    await typeInto(field('authors.1.firstName'), 'Marta');
+    await click(buttonNamed('Add an author')!);
+    await typeInto(field(`authors.${SECOND}.firstName`), 'Đorđe');
+    await typeInto(field(`authors.${SECOND}.lastName`), 'Šćepanović');
     await click(buttonNamed('Remove author 1')!);
     const question = container.querySelector<HTMLElement>('[data-confera-remove-question]')!;
     await click([...question.querySelectorAll('button')].find((b) => b.textContent === 'Remove')!);
-    expect(field('authors.1.name')).toBeNull();
-    expect(field('authors.100.name').value).toBe('Đorđe Šćepanović');
+    expect(field('authors.1.firstName')).toBeNull();
+    expect(field(`authors.${SECOND}.firstName`).value).toBe('Đorđe');
     expect(container.textContent).toContain('Đorđe Šćepanović is now the corresponding author.');
-    expect(document.activeElement).toBe(field('authors.100.name'));
+    expect(document.activeElement).toBe(field(`authors.${SECOND}.firstName`));
+    // The phone belongs to the first author: it moved to the new one.
+    expect(field(`authors.${SECOND}.phone`)).not.toBeNull();
   });
 
-  it('at the limit of the form (D7) the add button goes and a line says the limit, with the office’s address', async () => {
+  it('at the limit of the form (D7) the add button goes and a line says the limit', async () => {
     await mount();
-    for (let i = 1; i < 10; i += 1) await click(buttonNamed('Add author')!);
-    expect(buttonNamed('Add author')).toBeUndefined();
-    expect(container.textContent).toContain('You can add up to 10 authors. For more, write to office@example.test.');
+    for (let i = 1; i < 10; i += 1) await click(buttonNamed('Add an author')!);
+    expect(buttonNamed('Add an author')).toBeUndefined();
+    expect(container.textContent).toContain('You can add up to 10 authors.');
     // From the fourth author on, the notice of the form.
-    expect(container.textContent).toContain('Each co-author beyond three adds EUR 30 to the fee.');
+    expect(container.textContent).toContain('Each author beyond the third adds to the fee.');
+  });
+
+  it('with the office’s address, the limit says whom to write to', async () => {
+    await mount({ ...ABSTRACT, conference: { ...ABSTRACT.conference, contactEmail: 'office@example.test' } });
+    for (let i = 1; i < 10; i += 1) await click(buttonNamed('Add an author')!);
+    expect(container.textContent).toContain('You can add up to 10 authors. For more, write to office@example.test.');
   });
 
   it('only the first author has a phone, and autocomplete for the person filling in (UX-M1-23)', async () => {
     await mount();
-    await click(buttonNamed('Add author')!);
+    await click(buttonNamed('Add an author')!);
     expect(field('authors.1.phone')).not.toBeNull();
-    expect(field('authors.100.phone')).toBeNull();
-    expect(field('authors.1.name').getAttribute('autocomplete')).toBe('name');
+    expect(field(`authors.${SECOND}.phone`)).toBeNull();
+    expect(field('authors.1.firstName').getAttribute('autocomplete')).toBe('given-name');
     expect(field('authors.1.email').getAttribute('autocomplete')).toBe('email');
-    expect(field('authors.100.name').getAttribute('autocomplete')).toBe('off');
+    expect(field(`authors.${SECOND}.firstName`).getAttribute('autocomplete')).toBe('off');
   });
 });
 
-describe('fields on a condition (FR-FORM-05)', () => {
+describe('sections and fields on a condition (FR-FORM-05)', () => {
+  const card = (key: string) => container.querySelector<HTMLElement>(`[data-confera-section="${key}"]`)!;
+  const wrapper = (path: string) => container.querySelector<HTMLElement>(`[data-confera-field="${path}"]`)!;
+
+  it('the paper shows only for a participation with a paper', async () => {
+    await mount();
+    expect(card('paper').hidden).toBe(true);
+    await choose(radio('participationType', 'with_paper'));
+    expect(card('paper').hidden).toBe(false);
+    await choose(radio('participationType', 'without_paper'));
+    expect(card('paper').hidden).toBe(true);
+  });
+
   it('the employer’s data appear, and are required, only when the employer pays; hidden, they are not sent', async () => {
     await mount();
-    const wrapper = () => container.querySelector<HTMLElement>('[data-confera-field="payerName"]')!;
-    expect(wrapper().hidden).toBe(true);
+    await fillAll();
+    expect(wrapper('employerName').hidden).toBe(true);
     await choose(radio('payer', 'employer'));
-    expect(wrapper().hidden).toBe(false);
+    expect(wrapper('employerName').hidden).toBe(false);
+    expect(wrapper('billingAddress').hidden).toBe(true);
     await send();
-    expect(items()).toContain('Fill in “Name of the employer”');
-    expect(items()).toContain('Fill in “Tax number (PIB)”');
-    await typeInto(field('payerName'), 'Univerzitet Primer');
-    await typeInto(field('payerTaxNumber'), '1234');
-    await send();
-    expect(items()).toContain('Enter the tax number (PIB): 9 digits');
+    expect(items()).toEqual(['Fill in “Name of the legal entity”', 'Fill in “Address of the legal entity”', 'Fill in “Tax number (PIB)”', 'Fill in “Registration number”', 'Fill in “Email address for the invoice”']);
+    await typeInto(field('employerName'), 'Univerzitet Primer');
     // Back to "I pay": the typed data stay in the controls, but are neither checked nor sent.
     await choose(radio('payer', 'individual'));
-    expect(wrapper().hidden).toBe(true);
-    expect(field('payerName').value).toBe('Univerzitet Primer');
-    expect(items().some((item) => item?.includes('employer') || item?.includes('PIB'))).toBe(false);
+    expect(wrapper('employerName').hidden).toBe(true);
+    expect(field('employerName').value).toBe('Univerzitet Primer');
+    await send();
+    expect(items()).toEqual([]);
+    expect(api.calls.submits[0]!.body.answers).not.toHaveProperty('employerName');
+  });
+
+  it('a claimed discount asks for its ground', async () => {
+    await mount();
+    await fillAll();
+    await choose(radio('discountClaim', 'yes'));
+    await send();
+    expect(items()).toEqual(['Choose an answer for “On what grounds?”']);
   });
 });
 
 describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
-  it('a complete form is sent once, with the token, the idempotency key, the language, the consent and the file', async () => {
+  it('a complete form is sent once, with the token, the idempotency key, the language and the file, as the API keeps it', async () => {
     await mount();
     await fillAll();
     expect(container.querySelector('[data-confera-file="biographies"]')!.getAttribute('data-confera-file-state')).toBe('uploaded');
@@ -203,33 +235,47 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     expect(submit!.token).toBe('invented-form-token-1');
     expect(submit!.key).toMatch(/^[0-9a-f-]{36}$/);
     expect(api.calls.uploads).toEqual([{ token: 'invented-form-token-1', field: 'biographies', name: 'Biografije autora – Šćepanović.pdf' }]);
-    const body = submit!.body as { language: string; formVersion: number; answers: Record<string, string>; blocks: Record<string, Array<Record<string, string>>>; consent: unknown; website: string };
-    expect(body.language).toBe('en');
-    expect(body.formVersion).toBe(3);
-    expect(body.consent).toEqual({ version: '2026-10-terms-1', accepted: true });
-    expect(body.website).toBe('');
-    expect(body.answers.biographies).toBe('upload-1');
-    expect(body.answers.title).toBe('Održivi turizam na Balkanu');
-    expect(body.answers).not.toHaveProperty('payerName'); // hidden: not sent
-    expect(body.blocks.authors).toEqual([{ name: 'Marta Kovač', institution: 'Ekonomski fakultet, Univerzitet Primer', institutionAddress: '', orcid: '', email: 'marta@example.test', phone: '' }]);
-    expect(container.querySelector('[data-confera-reference]')!.textContent).toBe('Your reference: IT-2026-0042');
+    expect(JSON.parse(JSON.stringify(submit!.body))).toEqual({
+      language: 'en',
+      website: '',
+      answers: {
+        participationType: 'with_paper',
+        authors: [{ firstName: 'Marta', lastName: 'Kovač', institution: 'Ekonomski fakultet, Univerzitet Primer', email: 'marta@example.test' }],
+        title: 'Održivi turizam na Balkanu',
+        abstract: 'Kratak apstrakt o održivom turizmu.',
+        keywords: 'turizam, održivost, Balkan',
+        publication: 'proceedings',
+        biographies: '0e2e0000-0000-4000-8000-000000000001',
+        membership: 'no',
+        attendance: 'in_person',
+        discountClaim: 'no',
+        payer: 'individual',
+        billingAddress: 'Izmišljena 1, Beograd',
+        paymentMethod: 'bank_wire',
+        consent: true,
+      },
+    });
+    const thanks = container.querySelector('[data-confera-thanks]')!;
+    expect(thanks.textContent).toContain('Abstract sent');
+    expect(thanks.textContent).toContain('The confirmation goes to marta@example.test.');
+    expect(container.querySelector('[data-confera-reference]')!.textContent).toBe('Your reference: IT27-0042');
     expect(window.sessionStorage.getItem(DRAFT_KEY)).toBeNull(); // nothing is kept once it is sent
   });
 
-  it('the API’s refusals come back to their fields, in the form’s words', async () => {
+  it('the API’s refusals come back to their fields, in the form’s words and in the order of the form', async () => {
     await mount();
     await fillAll();
-    api.failNext(new PublicApiError(422, 'validation_failed', [{ path: 'authors[0].email', code: 'email' }, { path: 'title', code: 'no_url' }]));
+    api.failNext(new PublicApiError(400, 'validation_failed', [{ path: 'title', code: 'noUrl' }, { path: 'authors[0].email', code: 'notAnEmail' }]));
     await send();
-    expect(items()).toEqual(['Leave out web addresses here', 'Author 1: Enter an email address like name@university.edu']);
+    expect(items()).toEqual(['Author 1: Enter an email address like name@university.edu', 'Leave out web addresses here']);
     expect(field('title').getAttribute('aria-invalid')).toBe('true');
     expect(document.activeElement).toBe(container.querySelector('[data-confera-errors]'));
   });
 
-  it('an expired token: a new one, once, with the same idempotency key', async () => {
+  it('a used or refused token: a new one, once, with the same idempotency key', async () => {
     await mount();
     await fillAll();
-    api.failNext(new PublicApiError(401, 'form_token_expired'));
+    api.failNext(new PublicApiError(409, 'form_token_used'));
     await send();
     expect(api.calls.submits.map((s) => s.token)).toEqual(['invented-form-token-1', 'invented-form-token-2']);
     expect(api.calls.submits[0]!.key).toBe(api.calls.submits[1]!.key);
@@ -239,8 +285,8 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
   it.each([
     [new PublicApiError(0, 'network'), 'The form was not sent', 'Check the connection and send again. Nothing you typed is lost.'],
     [new PublicApiError(429, 'too_many_requests', [], null, 300), 'Too many forms were sent from this connection', 'Try again in 5 minutes.'],
-    [new PublicApiError(409, 'form_closed'), 'Submissions closed while you were filling in the form', 'Questions? Write to office@example.test.'],
-    [new PublicApiError(500, 'internal', [], 'trace-7f3a'), 'Something went wrong on our side', 'mention the code trace-7f3a'],
+    [new PublicApiError(409, 'form_closed'), 'Submissions closed while you were filling in the form', 'The deadline has passed'],
+    [new PublicApiError(500, 'internal', [], 'trace-7f3a'), 'Something went wrong on our side', 'Code: trace-7f3a'],
   ])('%s: the form says what happened and keeps everything', async (error, title, text) => {
     await mount();
     await fillAll();
@@ -259,11 +305,12 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     let finish: (() => void) | undefined;
     api.upload = vi.fn((_s: string, _t: string, _f: string, chosen: File, onProgress: (p: number) => void) => {
       onProgress(10);
-      return new Promise((resolve) => (finish = () => resolve({ id: 'upload-late', name: chosen.name, size: chosen.size })));
+      return new Promise<{ id: string; name: string; size: number }>((resolve) => (finish = () => resolve({ id: '0e2e0000-0000-4000-8000-0000000000ff', name: chosen.name, size: chosen.size })));
     });
     await dropFile('biographies', file('Biografije.pdf', 2048));
     await send();
     expect(api.calls.submits).toHaveLength(0);
+    expect(items()).toEqual(['Wait until the file is uploaded, then send.']);
     expect(container.querySelector('[data-confera-file="biographies"]')!.textContent).toContain('Wait until the file is uploaded, then send.');
     finish!();
     await settle();
@@ -284,11 +331,13 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
 });
 
 describe('files (M3-FE-04; FR-FORM-10)', () => {
+  const at = () => container.querySelector('[data-confera-file="biographies"]')!.textContent;
+
   it('a file of another type is refused before any upload, with the types', async () => {
     await mount();
     await dropFile('biographies', file('photo.png', 1000, 'image/png'));
     expect(api.calls.uploads).toEqual([]);
-    expect(container.querySelector('[data-confera-file="biographies"]')!.textContent).toContain('photo.png is not one of these types: .doc, .docx, .pdf.');
+    expect(at()).toContain('photo.png is not one of these types: .pdf, .docx, .doc.');
   });
 
   it('20 MB is accepted, one byte more is refused before the upload, with the limit', async () => {
@@ -297,31 +346,37 @@ describe('files (M3-FE-04; FR-FORM-10)', () => {
     expect(api.calls.uploads.map((u) => u.name)).toEqual(['exactly.pdf']);
     await dropFile('biographies', file('too-large.pdf', 20 * 1024 * 1024 + 1));
     expect(api.calls.uploads.map((u) => u.name)).toEqual(['exactly.pdf']);
-    expect(container.querySelector('[data-confera-file="biographies"]')!.textContent).toContain('too-large.pdf is larger than 20 MB. Choose a smaller file.');
+    expect(at()).toContain('too-large.pdf is larger than 20 MB. Choose a smaller file.');
   });
 
-  it('the API’s refusal of a .docx with macros says how to save it without them, in Serbian too', async () => {
-    await mount(ABSTRACT, 'sr');
-    api.upload = vi.fn(() => Promise.reject(new PublicApiError(422, 'docx_macros')));
+  it.each([
+    [new PublicApiError(422, 'docx_macros'), 'sr', 'rad.docx sadrži makroe. U Wordu izaberite Datoteka › Sačuvaj kao'],
+    [new PublicApiError(415, 'file_type_refused'), 'en', 'rad.docx is not one of these types: .pdf, .docx, .doc.'],
+    [new PublicApiError(413, 'file_too_large'), 'en', 'rad.docx is larger than 20 MB.'],
+    [new PublicApiError(503, 'upload_quota_reached'), 'en', 'Files cannot be taken just now. Try again in a few minutes.'],
+    [new PublicApiError(0, 'network'), 'sr', 'Otpremanje fajla rad.docx je prekinuto.'],
+  ] as const)('the API’s refusal %s is said at the file', async (error, language, text) => {
+    await mount(ABSTRACT, language);
+    api.upload = vi.fn(() => Promise.reject(error));
     await dropFile('biographies', file('rad.docx', 5000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
-    expect(container.querySelector('[data-confera-file="biographies"]')!.textContent).toContain('rad.docx sadrži makroe. U Wordu izaberite Datoteka › Sačuvaj kao');
+    expect(at()).toContain(text);
   });
 });
 
 describe('the draft of the tab (D3, FR-FORM-18)', () => {
   it('keeps every field but files and the consent, the authors, the language and the key', async () => {
     await mount();
-    await typeInto(field('title'), 'Šta đaci čitaju');
-    await click(buttonNamed('Add author')!);
-    await typeInto(field('authors.100.name'), 'Đorđe Šćepanović');
+    await typeInto(field('authors.1.firstName'), 'Marta');
+    await click(buttonNamed('Add an author')!);
+    await typeInto(field(`authors.${SECOND}.firstName`), 'Đorđe');
     await click([...container.querySelectorAll<HTMLElement>('[role="radio"]')].find((r) => r.textContent === 'Srpski')!);
     await click(field('consent'));
     await settle();
     const draft = JSON.parse(window.sessionStorage.getItem(DRAFT_KEY)!) as { language: string; values: Record<string, string>; rows: Record<string, number[]>; idempotencyKey: string };
     expect(draft.language).toBe('sr');
-    expect(draft.rows).toEqual({ authors: [1, 100] });
-    expect(draft.values.title).toBe('Šta đaci čitaju');
-    expect(draft.values['authors.100.name']).toBe('Đorđe Šćepanović');
+    expect(draft.rows).toEqual({ authors: [1, SECOND] });
+    expect(draft.values['authors.1.firstName']).toBe('Marta');
+    expect(draft.values[`authors.${SECOND}.firstName`]).toBe('Đorđe');
     expect(draft.values).not.toHaveProperty('consent');
     expect(Object.keys(draft.values).some((name) => name.includes('biographies'))).toBe(false);
     expect(draft.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
@@ -330,16 +385,18 @@ describe('the draft of the tab (D3, FR-FORM-18)', () => {
   it('brings everything back after a reload, in the chosen language, and the same key is sent', async () => {
     window.sessionStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({ language: 'sr', values: { title: 'Šta đaci čitaju', 'authors.100.name': 'Đorđe Šćepanović', consent: 'yes' }, rows: { authors: [1, 100] }, idempotencyKey: '11111111-2222-4333-8444-555555555555' }),
+      JSON.stringify({ language: 'sr', values: { 'authors.1.firstName': 'Marta', [`authors.${SECOND}.firstName`]: 'Đorđe', consent: 'yes' }, rows: { authors: [1, SECOND] }, idempotencyKey: '11111111-2222-4333-8444-555555555555' }),
     );
     await mount();
-    expect(field('title').value).toBe('Šta đaci čitaju');
-    expect(field('authors.100.name').value).toBe('Đorđe Šćepanović');
+    expect(field('authors.1.firstName').value).toBe('Marta');
+    expect(field(`authors.${SECOND}.firstName`).value).toBe('Đorđe');
     expect(field('consent').checked).toBe(false); // the consent is given when the form is sent
     expect(container.querySelector('[data-confera-form]')!.getAttribute('lang')).toBe('sr');
     expect(container.textContent).toContain('Vratili smo ono što ste ranije upisali u ovoj kartici. Fajlove dodajte ponovo.');
     await fillAll();
-    await typeInto(field('authors.100.institution'), 'Fakultet za turizam');
+    await typeInto(field(`authors.${SECOND}.lastName`), 'Šćepanović');
+    await typeInto(field(`authors.${SECOND}.institution`), 'Fakultet za turizam');
+    await typeInto(field(`authors.${SECOND}.email`), 'djordje@example.test');
     await send();
     expect(api.calls.submits[0]!.key).toBe('11111111-2222-4333-8444-555555555555');
   });
@@ -353,7 +410,7 @@ describe('the draft of the tab (D3, FR-FORM-18)', () => {
       return e.defaultPrevented;
     };
     expect(event()).toBe(false);
-    await typeInto(field('title'), 'Nešto');
+    await typeInto(field('authors.1.firstName'), 'Nešto');
     expect(event()).toBe(true);
     expect(container.textContent).toContain('This browser does not let the form keep a draft.');
   });
@@ -362,11 +419,12 @@ describe('the draft of the tab (D3, FR-FORM-18)', () => {
 describe('states of the form (FR-DL-02)', () => {
   it('a closed form says so, with its deadline in the language and the zone of the conference, and has no fields', async () => {
     await mount(publishedForm('itema-2026-closed'), 'sr');
-    expect(container.querySelector('[data-confera-state="closed"]')!.textContent).toContain('Ovaj obrazac je zatvoren');
-    expect(container.textContent).toContain('Rok je bio 15.03.2026.');
-    expect(container.textContent).toContain('Imate pitanje? Pišite na office@example.test.');
+    const closed = container.querySelector('[data-confera-state="closed"]')!.textContent;
+    expect(closed).toContain('Ovaj obrazac je zatvoren');
+    expect(closed).toContain('Prijave za ovu konferenciju su zatvorene.');
+    expect(closed).toContain('Rok je bio 15.03.2026.');
     expect(container.querySelector('form')).toBeNull();
-    expect(api.token).not.toHaveBeenCalled();
+    expect(api.calls.tokens).toBe(0);
   });
 
   it('an open form names its deadline and says what the star means', async () => {
@@ -380,8 +438,14 @@ describe('the consent (FR-FORM-11; D6)', () => {
     await mount();
     const links = [...field('consent').closest('label')!.querySelectorAll('a')];
     expect(links.map((a) => [a.textContent, a.getAttribute('href'), a.getAttribute('target'), a.getAttribute('rel')])).toEqual([
-      ['terms of publication (opens in a new tab)', 'https://www.example.test/terms', '_blank', 'noopener noreferrer'],
       ['privacy notice (opens in a new tab)', 'https://www.example.test/privacy', '_blank', 'noopener noreferrer'],
+      ['terms of publication (opens in a new tab)', 'https://www.example.test/terms', '_blank', 'noopener noreferrer'],
     ]);
+  });
+
+  it('without the conference’s address a named link is its words', async () => {
+    await mount({ ...ABSTRACT, conference: { ...ABSTRACT.conference, links: { terms: null, privacy: null } } });
+    expect(field('consent').closest('label')!.querySelectorAll('a')).toHaveLength(0);
+    expect(field('consent').closest('label')!.textContent).toContain('as the privacy notice describes, and I accept the terms of publication.');
   });
 });

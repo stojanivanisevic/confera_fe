@@ -3,35 +3,53 @@
   "source": {
     "repository": "confera_be",
     "directory": "openapi",
-    "commit": "91f60852c2249270004f5be0560be421aaaf15bd",
+    "commit": "c52dec1a620819155c1234bcf6e2dc604994ebc5",
     "tag": null,
-    "branch": "release/0.2.0",
+    "branch": "m3/be",
     "committed": true
   },
   "files": {
     "openapi.json": {
       "title": "Confera admin API",
       "version": "0.2.0",
-      "sha256": "ed1f0640958894671adf4a3d7e3d50ec0aca642311571334e4ac8f16ef0126e1",
-      "commit": "91f60852c2249270004f5be0560be421aaaf15bd"
+      "sha256": "a46015045b3c1e01e98faa0dbb2a2292c04b831633f1f74b3518ab4aaa04c7f6",
+      "commit": "c52dec1a620819155c1234bcf6e2dc604994ebc5"
     },
     "openapi.public.json": {
       "title": "Confera public API",
       "version": "0.2.0",
-      "sha256": "dfa115c97d9f607128f9935f3030eb759fdaf5c9058fb7c92db4d078f2337c7a",
-      "commit": "91f60852c2249270004f5be0560be421aaaf15bd"
+      "sha256": "f007cd4cd7ce8cac822da5b3129273b8013a094054d7297c3b0ea873bde427ae",
+      "commit": "c52dec1a620819155c1234bcf6e2dc604994ebc5"
     },
     "password-rules.json": {
       "title": "contracts/password-rules.json",
       "version": "1",
       "sha256": "50c24619647c9387fc01bec9ae9d0b3817f0b9a5a9da85a8d8fea279b9244004",
-      "commit": "77add5fee31d591fdf88a1fedce30466763b2daf"
+      "commit": "79803813176c9ef2ce0b1845091d6b808d0c46b8"
     },
     "template-vectors.json": {
       "title": "contracts/template-vectors.json",
       "version": "1",
-      "sha256": "156ab3042630d0dc3877430f27a8939d1e71fb4d37467721b5b4bac5a408d167",
-      "commit": "349e1e58e818b40a42ac9f52c9765564b7ccad4a"
+      "sha256": "0e17110c7f8ef5b6eef1f0561e9c1bd3ad8fdb98cae6b440f8cb3a614262aacc",
+      "commit": "c52dec1a620819155c1234bcf6e2dc604994ebc5"
+    },
+    "form-definition.schema.json": {
+      "title": "contracts/form-definition.schema.json",
+      "version": "schema",
+      "sha256": "677335ec83ac65104ea69f96b00034b903f80a650cddd57bd5d813ffd3c303e1",
+      "commit": "90ee4de077f6d15163a6322dc950e979ad107bff"
+    },
+    "form-configuration.schema.json": {
+      "title": "contracts/form-configuration.schema.json",
+      "version": "schema",
+      "sha256": "b88f9fd322e2ad3694deed8e03158e164c622bd6a1349557009ad0dc1e9773b2",
+      "commit": "90ee4de077f6d15163a6322dc950e979ad107bff"
+    },
+    "form-rule-vectors.json": {
+      "title": "contracts/form-rule-vectors.json",
+      "version": "1",
+      "sha256": "1199d5112356002049dc7f844f52ff7e0e15835893daf7bb0b5378245648ebfe",
+      "commit": "90ee4de077f6d15163a6322dc950e979ad107bff"
     }
   },
   "generator": {

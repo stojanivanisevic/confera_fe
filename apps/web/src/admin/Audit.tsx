@@ -23,6 +23,8 @@ type Action = NonNullable<AuditQuery['action']>;
 const ACTIONS = Object.keys(TEXTS.audit.actions) as Action[];
 
 const actionText = (action: string) => TEXTS.audit.actions[action] ?? action;
+/** The payment details of the organisation: the log names them as changed, with no value (D9). */
+const PAYMENT_FIELDS = new Set(['rsdAccount', 'eurIban', 'eurSwift', 'eurBankName', 'paypalPayee']);
 /** A value of the log as text: the log keeps settings, never personal values. */
 const show = (value: unknown): string => {
   if (value === null || value === undefined) return '—';
@@ -100,7 +102,12 @@ export function Audit() {
     setPage(1);
   };
 
-  const changes = (entry: AuditEntry) => Object.entries(entry.changes as Record<string, { old?: unknown; new?: unknown }>).map(([field, change]) => ({ label: fieldName(field), value: <span className={styles.break}>{`${show(change.old)} → ${show(change.new)}`}</span> }));
+  // D9 (M2-ISS-16): the log says that the payment details changed, never to what. The API sends no
+  // value for them; were one ever there, it is not shown either.
+  const changes = (entry: AuditEntry) =>
+    Object.entries(entry.changes as Record<string, { old?: unknown; new?: unknown }>)
+      .filter(([field]) => !PAYMENT_FIELDS.has(field))
+      .map(([field, change]) => ({ label: fieldName(field), value: <span className={styles.break}>{`${show(change.old)} → ${show(change.new)}`}</span> }));
 
   return (
     <div className={styles.stack}>

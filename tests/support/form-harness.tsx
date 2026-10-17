@@ -5,13 +5,13 @@ import { act } from 'react';
 import { vi } from 'vitest';
 
 import { readPublishedForm, type PublishedForm } from '../../packages/form-renderer/src/definition';
-import { PublicApiError, type PublicApi } from '../../packages/form-renderer/src/public-api';
+import { PublicApiError, type PublicApi, type SubmitBody } from '../../packages/form-renderer/src/public-api';
 import fixture from '../../e2e/servers/public-forms.json';
 
-export const publishedForm = (slug: keyof typeof fixture.forms): PublishedForm => readPublishedForm(fixture.forms[slug]);
+export const publishedForm = (slug: keyof typeof fixture.forms): PublishedForm => readPublishedForm(fixture.forms[slug], fixture.frameSites[slug]);
 
 export interface FakeApi extends PublicApi {
-  readonly calls: { tokens: number; uploads: Array<{ token: string; field: string; name: string }>; submits: Array<{ token: string; key: string; body: Record<string, unknown> }> };
+  readonly calls: { tokens: number; uploads: Array<{ token: string; field: string; name: string }>; submits: Array<{ token: string; key: string; body: SubmitBody }> };
   /** The next submit answers with this error instead of a reference. */
   failNext(error: PublicApiError): void;
 }
@@ -31,12 +31,12 @@ export function fakeApi(): FakeApi {
     upload: vi.fn((_slug: string, token: string, field: string, file: File, onProgress: (percent: number) => void) => {
       calls.uploads.push({ token, field, name: file.name });
       onProgress(50);
-      return Promise.resolve({ id: `upload-${calls.uploads.length}`, name: file.name, size: file.size });
+      return Promise.resolve({ id: `0e2e0000-0000-4000-8000-${String(calls.uploads.length).padStart(12, '0')}`, name: file.name, size: file.size });
     }),
-    submit: vi.fn((_slug: string, token: string, key: string, body: unknown) => {
-      calls.submits.push({ token, key, body: body as Record<string, unknown> });
+    submit: vi.fn((_slug: string, token: string, key: string, body: SubmitBody) => {
+      calls.submits.push({ token, key, body });
       const failure = failures.shift();
-      return failure ? Promise.reject(failure) : Promise.resolve({ reference: 'IT-2026-0042' });
+      return failure ? Promise.reject(failure) : Promise.resolve({ reference: 'IT27-0042' });
     }),
   };
 }

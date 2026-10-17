@@ -19,6 +19,8 @@ import { expect, neutraliseLocalSoftware, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
 const SLUG = 'spike-abstract';
+/** The draft of the form in the tab: by form and version (0.3.0, D3). */
+const DRAFT_KEY = `confera:draft:${SLUG}:1`;
 const FRAME = `#${frameId(SLUG)}`;
 const snippet = buildEmbedSnippet({ publicOrigin: PUBLIC_ORIGIN, slug: SLUG, title: 'Abstract submission', linkText: 'Open the form in a new page' });
 
@@ -83,7 +85,7 @@ async function fillAndSend(target: Page | Frame): Promise<void> {
   await target.getByLabel('Email of author 1').fill('zivana.dordevic@example.test');
   await accept(target);
   await target.getByRole('button', { name: 'Send abstract' }).click();
-  await expect(target.locator('.ud-alert--success')).toContainText('Thank you');
+  await expect(target.locator('.ud-alert--success')).toContainText('Abstract sent');
 }
 
 test.describe('320 px wide (WCAG 1.4.10 Reflow)', () => {
@@ -395,15 +397,16 @@ test.describe('storage that throws', () => {
     await page.getByLabel('Email of author 1').fill('zivana.dordevic@example.test');
     await accept(page);
     await page.getByRole('button', { name: 'Send abstract' }).click();
-    await expect(page.locator('.ud-alert--success')).toContainText('Thank you');
+    await expect(page.locator('.ud-alert--success')).toContainText('Abstract sent');
     expect(problems.messages).toEqual([]);
   });
 
   test('a draft that is not a draft (text another page left in the store) does not break the form', async ({ page }) => {
     const problems = watchPage(page);
-    for (const stored of ['{not json', 'null', '[]', '42', '{"title":{"a":1},"authors":"x","language":"xx"}', JSON.stringify({ title: 'x'.repeat(200_000) })]) {
-      await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-      await page.evaluate(({ key, value }) => window.sessionStorage.setItem(key, value), { key: `confera:draft:${SLUG}`, value: stored });
+    for (const stored of ['{not json', 'null', '[]', '42', '{"title":{"a":1},"authors":"x","language":"xx"}', '{"values":{"title":{"a":1},"__proto__":"x"},"rows":{"authors":"x","other":[0,-1,1.5]},"language":"xx","idempotencyKey":"<script>"}', JSON.stringify({ values: { title: 'x'.repeat(200_000) }, rows: { authors: Array.from({ length: 500 }, (_, i) => i + 1) } })]) {
+      // One load per value (the page of the value before is still open): the store of the tab is set, and the form is loaded again.
+      if (page.url() !== `${PUBLIC_ORIGIN}/f/${SLUG}`) await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
+      await page.evaluate(({ key, value }) => window.sessionStorage.setItem(key, value), { key: DRAFT_KEY, value: stored });
       await page.reload();
       await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
       await expect(page.getByRole('heading', { level: 1 }), `with ${stored.slice(0, 30)} in the store`).toBeVisible();
@@ -613,6 +616,11 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
     const removeWith = async (row: number, key: 'Enter' | 'Space') => {
       await repeater.getByRole('button', { name: `Remove author ${row}` }).focus();
       await page.keyboard.press(key);
+      // The author holds data, so the form asks first, inside the form (D4); the question takes the
+      // focus, and its first button, Remove, is one Tab away. All by keyboard.
+      await expect(repeater.locator('[data-confera-remove-question]')).toBeFocused();
+      await page.keyboard.press('Tab');
+      await page.keyboard.press(key);
     };
 
     // A row in the middle: the row after it moves up, and the focus is on its first field.
@@ -656,6 +664,10 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
     for (const [index, name] of ['Ana Anić', 'Božo Božić', 'Ćira Ćirić'].entries()) await repeater.getByLabel(`First and last name of author ${index + 1}`).fill(name);
 
     await repeater.getByRole('button', { name: 'Remove author 2' }).focus();
+    await page.keyboard.press('Enter');
+    // The author holds data: the form asks first, inside the frame too (D4), and is answered by keyboard.
+    await expect(repeater.locator('[data-confera-remove-question]')).toBeFocused();
+    await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
     await expect(repeater.locator('.ud-repeater__row')).toHaveCount(2);
     // In the frame's own document the focus is on the row that moved up ...
@@ -744,12 +756,12 @@ test.describe('a slow connection: the form is on the screen before its scripts a
     await expect(page.getByText('5 of 300 words')).toBeVisible();
     // ... the two long texts are kept as the draft of this tab ...
     await expect
-      .poll(() => page.evaluate((key) => JSON.parse(window.sessionStorage.getItem(key) ?? '{}') as unknown, `confera:draft:${SLUG}`))
-      .toEqual({ title: 'Održivi turizam na Balkanu', abstract: 'Prva druga treća četvrta peta' });
+      .poll(() => page.evaluate((key) => (JSON.parse(window.sessionStorage.getItem(key) ?? '{}') as { values?: unknown }).values, DRAFT_KEY))
+      .toMatchObject({ title: 'Održivi turizam na Balkanu', abstract: 'Prva druga treća četvrta peta' });
     // ... and the form is sent with what was entered, without touching a field again.
     await page.getByRole('button', { name: 'Send abstract' }).click();
     await expect(page.locator('.ud-alert--error')).toHaveCount(0);
-    await expect(page.locator('.ud-alert--success')).toContainText('Thank you');
+    await expect(page.locator('.ud-alert--success')).toContainText('Abstract sent');
     expect(problems.messages).toEqual([]);
   });
 
@@ -760,7 +772,7 @@ test.describe('a slow connection: the form is on the screen before its scripts a
     await page.getByLabel('Title of the paper').fill('Stari naslov');
     await page.getByLabel('Abstract').fill('Stari apstrakt od pet reči');
     await expect
-      .poll(() => page.evaluate((key) => window.sessionStorage.getItem(key), `confera:draft:${SLUG}`))
+      .poll(() => page.evaluate((key) => window.sessionStorage.getItem(key), DRAFT_KEY))
       .toContain('Stari apstrakt');
 
     // The address is opened again in the same tab, on a slow connection, and the author starts on the title at once.
@@ -780,8 +792,8 @@ test.describe('a slow connection: the form is on the screen before its scripts a
     await expect(page.getByText('5 of 300 words')).toBeVisible();
     // The draft that is kept from now on is what the author sees.
     await expect
-      .poll(() => page.evaluate((key) => JSON.parse(window.sessionStorage.getItem(key) ?? '{}') as unknown, `confera:draft:${SLUG}`))
-      .toEqual({ title: 'Novi naslov', abstract: 'Stari apstrakt od pet reči' });
+      .poll(() => page.evaluate((key) => (JSON.parse(window.sessionStorage.getItem(key) ?? '{}') as { values?: unknown }).values, DRAFT_KEY))
+      .toMatchObject({ title: 'Novi naslov', abstract: 'Stari apstrakt od pet reči' });
   });
 });
 
@@ -842,7 +854,7 @@ test.describe('nothing typed reaches an address, and the moment after Send', () 
     await accept(page);
     await page.getByRole('button', { name: 'Send abstract' }).click();
     const thanks = page.locator('.ud-alert--success');
-    await expect(thanks).toContainText('Thank you');
+    await expect(thanks).toContainText('Abstract sent');
     await expect(page.locator('[data-confera-thanks]'), 'the thank-you takes the focus').toBeFocused();
 
     expect(page.url()).toBe(`${PUBLIC_ORIGIN}/f/${SLUG}`);
@@ -857,7 +869,7 @@ test.describe('nothing typed reaches an address, and the moment after Send', () 
     await fillWithCanaries(frame);
     await accept(frame);
     await frame.getByRole('button', { name: 'Send abstract' }).click();
-    await expect(frame.locator('.ud-alert--success')).toContainText('Thank you');
+    await expect(frame.locator('.ud-alert--success')).toContainText('Abstract sent');
     await expectHeightFollows(page, frame);
     expect(page.url()).toBe(before);
     expect(frame.url()).toBe(`${PUBLIC_ORIGIN}/embed/${SLUG}`);

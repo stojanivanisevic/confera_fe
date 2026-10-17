@@ -7,7 +7,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // The API's answer for a slug (0.3.0: the forms come from the API): one form exists, every other is missing.
 vi.mock('@/server/public-forms', () => ({
-  lookUpForm: async (slug: string) => (slug === 'spike-abstract' ? { kind: 'form', form: { slug, frameSites: ['http://localhost:4000'] } } : { kind: 'missing' }),
+  lookUpForm: (slug: string) => Promise.resolve(slug === 'spike-abstract' ? { kind: 'form', form: { slug } } : { kind: 'missing' }),
+  lookUpFrameSites: (slug: string) => Promise.resolve(slug === 'spike-abstract' ? ['http://localhost:4000'] : null),
 }));
 
 let proxy: (request: NextRequest) => Promise<Response>;

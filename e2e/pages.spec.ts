@@ -49,7 +49,9 @@ for (const width of [1440, 375]) {
 
     test('"not found"', async ({ page }) => {
       await page.goto(`${PUBLIC_ORIGIN}/no-such-page`);
-      await expect(page.getByText('This address does not exist')).toBeVisible();
+      // On the public host, in both languages, with the way back (UX-M1-19).
+      await expect(page.getByText('The link may be incomplete. Open the form again from the conference website.')).toBeVisible();
+      await expect(page.getByText('Link možda nije potpun. Otvorite obrazac ponovo sa sajta konferencije.')).toBeVisible();
       expect(await scan(page), 'not found').toEqual([]);
     });
 
@@ -75,7 +77,7 @@ for (const width of [1440, 375]) {
       await sendEmpty(page);
       // Each error is tied to its field.
       await expect(page.getByLabel('Title of the paper')).toHaveAttribute('aria-invalid', 'true');
-      await expect(page.getByLabel('Title of the paper')).toHaveAccessibleDescription('Enter the title of the paper');
+      await expect(page.getByLabel('Title of the paper')).toHaveAccessibleDescription('Fill in “Title of the paper”');
       expect(await scan(page), 'form with errors').toEqual([]);
       expect(problems.messages).toEqual([]);
       expect(await fitsTheWidth(page)).toBe(true);
@@ -92,11 +94,12 @@ for (const width of [1440, 375]) {
 
       await page.getByLabel('Naslov rada').fill('Održivi turizam na Balkanu');
       await page.getByLabel('Ime i prezime autora 1').fill('Marta Kovač');
-      await page.getByLabel('Imejl autora 1').fill('marta@example.test');
+      await page.getByLabel('Imejl adresa autora 1').fill('marta@example.test');
       await page.getByLabel('Ime i prezime autora 2').fill('Đorđe Šćepanović');
+      await page.getByLabel('Imejl adresa autora 2').fill('djordje.scepanovic@example.test'); // every author's address is required (the catalogue of confera_be)
       await page.getByText('Prihvatam uslove objavljivanja').click();
       await page.getByRole('button', { name: 'Pošalji apstrakt' }).click();
-      await expect(page.locator('.ud-alert--success')).toContainText('Hvala');
+      await expect(page.locator('.ud-alert--success')).toContainText('Apstrakt je poslat');
       expect(await scan(page), 'thank-you').toEqual([]);
       expect(problems.messages).toEqual([]);
       expect(await fitsTheWidth(page)).toBe(true);

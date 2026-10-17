@@ -8,7 +8,7 @@
  * M2-ISS-21: on `prod` a loopback entry closes the frame).
  */
 import { getConfig } from '@/config/env';
-import { lookUpForm } from '@/server/public-forms';
+import { lookUpFrameSites } from '@/server/public-forms';
 
 export const MAX_FRAME_SITES = 20;
 const FORM_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
@@ -54,10 +54,8 @@ export function frameSitesFrom(entries: readonly string[] | null | undefined, al
 /** How the site list of a form is found: the API's published form. Tests give one of their own. */
 export type FrameSiteLookup = (slug: string) => Promise<readonly string[] | null>;
 
-const fromApi: FrameSiteLookup = async (slug) => {
-  const found = await lookUpForm(slug);
-  return found.kind === 'form' ? found.form.frameSites : null;
-};
+/** The list of the API: GET /public/v1/forms/{slug}/frame-sites. */
+const fromApi: FrameSiteLookup = lookUpFrameSites;
 
 /** The sites that may frame the form with this slug, or null (`'none'`). */
 export async function resolveFrameSites(slug: string, lookup: FrameSiteLookup = fromApi, allowLoopback: boolean = getConfig().stage !== 'prod'): Promise<readonly string[] | null> {
