@@ -272,6 +272,37 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     expect(document.activeElement).toBe(container.querySelector('[data-confera-errors]'));
   });
 
+  // Q3-01: the API answers a submit inside its fill time with a success that stores nothing.
+  it('a Send sooner than the fill time after the token waits it out, then sends once', async () => {
+    // The fill time ends 800 ms after the Send, however long the typing below takes on this machine.
+    let fillMs = 0;
+    Object.defineProperty(api, 'minimumFillMs', { get: () => fillMs });
+    const opened = Date.now();
+    await mount();
+    await fillAll();
+    fillMs = Date.now() - opened + 800;
+    await send();
+    expect(api.calls.submits, 'nothing sent inside the fill time').toHaveLength(0);
+    expect(container.querySelector('form')!.getAttribute('data-confera-phase')).toBe('sending');
+    for (let i = 0; i < 30 && api.calls.submits.length === 0; i += 1) {
+      await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    }
+    await settle();
+    expect(api.calls.submits).toHaveLength(1);
+    expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
+  });
+
+  it('a token that expired while the author typed is replaced before Send, presenting the old one for renewal', async () => {
+    const token = vi.spyOn(api, 'token');
+    token.mockImplementationOnce(() => Promise.resolve({ token: 'invented-form-token-old', expiresAt: '2026-01-01T06:00:00.000Z', proofOfWork: null }));
+    await mount();
+    await fillAll();
+    await send();
+    expect(token.mock.calls).toEqual([['itema-2026-abstract'], ['itema-2026-abstract', 'invented-form-token-old']]);
+    expect(api.calls.submits.map((s) => s.token)).toEqual(['invented-form-token-1']);
+    expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
+  });
+
   it('a used or refused token: a new one, once, with the same idempotency key', async () => {
     await mount();
     await fillAll();

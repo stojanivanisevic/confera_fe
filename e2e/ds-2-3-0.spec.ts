@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, PUBLIC_ORIGIN } from './env';
-import { ADMIN, holdsSession, NO_SESSION_IN_WEBKIT, resetStub, signIn } from './support/admin';
+import { ADMIN, AGAINST_REAL_API, holdsSession, NO_SESSION_IN_WEBKIT, resetStub, signIn, STUB_FORMS } from './support/admin';
 import { expect, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
@@ -75,6 +75,7 @@ test.describe('item 1: one focus ring everywhere, and a text link', () => {
   });
 
   test('the links of the form’s error summary are text links: underlined, in ink, with the blue outline', async ({ page }) => {
+    test.skip(AGAINST_REAL_API, STUB_FORMS);
     await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
     await expect(page.locator('[data-confera-form]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
     await page.getByRole('button', { name: 'Send abstract' }).click();
@@ -143,6 +144,7 @@ test.describe('item 2: targets of 44 px where the pointer is a finger', () => {
   });
 
   test('on the hosted form, with its errors shown, every control is a target of 44 x 44 px at least', async ({ browser, browserName }) => {
+    test.skip(AGAINST_REAL_API, STUB_FORMS);
     const context = await phone(browser, browserName);
     const page = await context.newPage();
     await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);

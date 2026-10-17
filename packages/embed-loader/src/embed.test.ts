@@ -45,6 +45,9 @@ describe('heights', () => {
   it('a message holds a type and a height, nothing else', () => {
     expect(heightMessage(812)).toEqual({ type: HEIGHT_MESSAGE, height: 812 });
     expect(Object.keys(heightMessage(812)!)).toEqual(['type', 'height']);
+    // With the frame's viewport (Q3-12): a number, nothing else; a viewport that is not one is left out.
+    expect(heightMessage(812, 719.6)).toEqual({ type: HEIGHT_MESSAGE, height: 812, view: 720 });
+    for (const view of [0, -5, Number.NaN, Number.POSITIVE_INFINITY]) expect(heightMessage(812, view)).toEqual({ type: HEIGHT_MESSAGE, height: 812 });
   });
 });
 
@@ -142,7 +145,7 @@ describe('the inline lines', () => {
   });
 
   it('make a frame that already shows its page one pixel taller, so that it tells its height again', () => {
-    expect(source).toContain('var f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);if(s)z(f,s+1);');
+    expect(source).toContain(',f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);if(s)z(f,s+1);');
   });
 
   it('are short', () => {
@@ -153,10 +156,10 @@ describe('the inline lines', () => {
   it('scroll only within the limits of decision D1: that frame, vertical, out of view, a clamped number, once a second', () => {
     const handler = source.slice(source.indexOf('addEventListener("message"'));
     expect(handler).toContain('if(d.type==="confera:into-view"&&N(t)&&n-w>999){');
-    expect(handler).toContain('t=r.top+Math.min(Math.max(t,0),r.height);');
+    expect(handler).toContain('t=r.top+M.min(M.max(t,0),r.height);');
     expect(handler).toContain('h=innerHeight;');
     expect(handler).toContain('if(t<0||t>h){w=n;scrollBy(0,t-h/4)}');
-    expect(source).toContain('function N(x){return typeof x=="number"&&isFinite(x)}');
+    expect(source).toContain('var N=Number.isFinite,'); // a number, and finite: never a string or an object that turns into one
     // Nothing else moves: no scrollTo, no scrollIntoView, no focus, no horizontal value.
     expect(source).not.toMatch(/scrollTo|scrollIntoView|focus\(|scrollX|pageXOffset/);
     expect(source.match(/scrollBy\(/g)).toHaveLength(1);
@@ -202,11 +205,11 @@ describe("the frame's height reporter", () => {
   it('tells the listed origins the height of the content, and nothing else', () => {
     const { parent, resize } = setup(['https://itema.example.test', 'https://eman.example.test']);
     expect(parent.postMessage.mock.calls).toEqual([
-      [{ type: HEIGHT_MESSAGE, height: 641 }, 'https://itema.example.test'],
-      [{ type: HEIGHT_MESSAGE, height: 641 }, 'https://eman.example.test'],
+      [{ type: HEIGHT_MESSAGE, height: 641, view: 900 }, 'https://itema.example.test'],
+      [{ type: HEIGHT_MESSAGE, height: 641, view: 900 }, 'https://eman.example.test'],
     ]);
     resize(900);
-    expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 900 }, 'https://eman.example.test');
+    expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 900, view: 900 }, 'https://eman.example.test');
   });
 
   it('never posts to "*"', () => {
@@ -234,7 +237,7 @@ describe("the frame's height reporter", () => {
     expect(parent.postMessage).toHaveBeenCalledTimes(1);
     frameResized(901);
     expect(parent.postMessage).toHaveBeenCalledTimes(2);
-    expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 641 }, 'https://itema.example.test');
+    expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 641, view: 901 }, 'https://itema.example.test');
   });
 
   it('once the page has followed, a size it sets is not argued with', () => {

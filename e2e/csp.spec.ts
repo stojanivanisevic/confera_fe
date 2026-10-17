@@ -5,7 +5,7 @@ import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN } from './env';
 import { buildEmbedSnippet, frameId } from '../packages/embed-loader/src/index';
-import { ADMIN, answerPasswordAgain, holdsSession, linkToken, NO_SESSION_IN_WEBKIT, resetStub, signIn } from './support/admin';
+import { ADMIN, AGAINST_REAL_API, answerPasswordAgain, holdsSession, linkToken, NO_SESSION_IN_WEBKIT, resetStub, signIn, STUB_FORMS } from './support/admin';
 import { expect, isLocalSecuritySoftware, test } from './support/fixtures';
 
 interface Violation {
@@ -68,6 +68,7 @@ const PAGES: Array<[string, string, (page: Page) => Promise<void>]> = [
 
 for (const [name, url, use] of PAGES) {
   test(`no policy violation: ${name}`, async ({ page }) => {
+    test.skip(AGAINST_REAL_API && url.includes('/f/spike-abstract'), STUB_FORMS);
     const violations = await recordViolations(page);
     await page.goto(url);
     await use(page);
@@ -107,6 +108,7 @@ test('no policy violation: the admin screens, signed in, with their dialogs', as
 });
 
 test('no policy violation: the form inside the frame of a conference site', async ({ page }) => {
+  test.skip(AGAINST_REAL_API, STUB_FORMS);
   const violations = await recordViolations(page);
   const snippet = buildEmbedSnippet({ publicOrigin: PUBLIC_ORIGIN, slug: 'spike-abstract', title: 'Abstract submission', linkText: 'Open the form' });
   await page.goto(`${HARNESS_ORIGIN}/hostile.html?paste=${Buffer.from(snippet, 'utf8').toString('base64url')}`);

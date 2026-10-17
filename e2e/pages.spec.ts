@@ -5,7 +5,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 
 import { ADMIN_ORIGIN, PUBLIC_ORIGIN } from './env';
-import { holdsSession, NO_SESSION_IN_WEBKIT, resetStub, signIn } from './support/admin';
+import { AGAINST_REAL_API, holdsSession, NO_SESSION_IN_WEBKIT, resetStub, signIn, STUB_FORMS } from './support/admin';
 import { expect, test } from './support/fixtures';
 import { watchPage } from './support/page-problems';
 
@@ -56,6 +56,7 @@ for (const width of [1440, 375]) {
     });
 
     const openForm = async (page: Page) => {
+      test.skip(AGAINST_REAL_API, STUB_FORMS);
       const problems = watchPage(page);
       await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
       await page.locator('[data-confera-form][data-hydrated="true"]').waitFor(); // typing before the form is attached would not be seen
@@ -106,6 +107,7 @@ for (const width of [1440, 375]) {
     });
 
     test('the draft stays in the tab: what was typed is there after a reload', async ({ page }) => {
+      test.skip(AGAINST_REAL_API, STUB_FORMS);
       await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
       await page.locator('[data-confera-form][data-hydrated="true"]').waitFor(); // typing before the form is attached would not be seen
       await page.getByLabel('Title of the paper').fill('Šta đaci čitaju');

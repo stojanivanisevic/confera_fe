@@ -87,10 +87,25 @@ function problemOf(status: number, body: unknown, retryAfter: string | null): Pu
   return new PublicApiError(status, typeof problem.code === 'string' ? problem.code : 'unknown', errors, typeof problem.traceId === 'string' ? problem.traceId : null, seconds);
 }
 
+/**
+ * The fill time of ADR-08 (item 7; MINIMUM_FILL_MS of confera_be's intake.service.ts): a submit that
+ * comes sooner than 3 s after its token was issued is answered with a success that stores nothing.
+ * The page never sends sooner after it received the token (Q3-01): the token was issued before it
+ * arrived, so the API always counts at least this much. A restored draft sent at once, or a Send
+ * whose token was refused and replaced, waits out the rest; the author sees "Sending…".
+ */
+export const MINIMUM_FILL_MS = 3_000;
+
 export interface PublicApi {
-  token(slug: string): Promise<FormToken>;
+  /**
+   * A new token. `refused`: the token the API refused or that expired, for the renewal of
+   * confera_be (the new token keeps the issue time of the first; Q3-01).
+   */
+  token(slug: string, refused?: string): Promise<FormToken>;
   upload(slug: string, token: string, field: string, file: File, onProgress: (percent: number) => void, signal: AbortSignal): Promise<Uploaded>;
   submit(slug: string, token: string, idempotencyKey: string, body: SubmitBody): Promise<Submitted>;
+  /** How long after a token the API takes a submit as a person's (default MINIMUM_FILL_MS). */
+  readonly minimumFillMs?: number;
 }
 
 const base = (slug: string) => `/public/v1/forms/${encodeURIComponent(slug)}`;
@@ -109,6 +124,8 @@ async function post(url: string, headers: Record<string, string>, body: unknown)
 
 /** The API of the page's own origin. */
 export const browserApi: PublicApi = {
+  // `refused` is not sent yet: the renewal of confera_be (m3/be-fixes) names its field. Until then
+  // the page waits out the fill time of the new token (MINIMUM_FILL_MS).
   async token(slug) {
     const body = (await post(`${base(slug)}/tokens`, {}, {})) as Partial<FormTokenDto> | null;
     if (!isObject(body) || typeof body.formToken !== 'string') throw new PublicApiError(502, 'unreadable');
@@ -181,18 +198,25 @@ export async function proofOfWorkHolds(challenge: string, difficulty: number, co
 }
 
 /**
- * The proof-of-work (ADR-08, item 2): the smallest counter that answers the challenge. It yields to
- * the page between rounds, so typing and the spinner stay alive, and gives up above a difficulty no
- * phone could meet.
+ * The proof-of-work (ADR-08, item 2): the smallest counter that answers the challenge, and gives up
+ * above a difficulty no phone could meet. The hashes of a round are asked for together (an engine
+ * computes them off the page's thread: WebKit took 12 s one by one, Q3-08), and the page gets its
+ * turn whenever a frame's time has passed, so typing and the spinner stay alive.
  */
+const POW_ROUND = 32;
+const POW_SLICE_MS = 12;
 export async function solveProofOfWork(challenge: string, difficulty: number, signal?: AbortSignal): Promise<string> {
   if (!Number.isInteger(difficulty) || difficulty < 0 || difficulty > 26) throw new PublicApiError(0, 'proof_of_work_unsolvable');
-  for (let counter = 0; counter < 2 ** 30; counter += 1) {
-    if (counter % 2000 === 0 && counter > 0) {
+  let slice = performance.now();
+  for (let first = 0; first < 2 ** 30; first += POW_ROUND) {
+    if (performance.now() - slice >= POW_SLICE_MS) {
       if (signal?.aborted) throw new PublicApiError(0, 'aborted');
       await new Promise((resolve) => setTimeout(resolve, 0));
+      slice = performance.now();
     }
-    if (leadingZeroBits(await sha256(`${challenge}:${counter}`)) >= difficulty) return String(counter);
+    const hashes = await Promise.all(Array.from({ length: POW_ROUND }, (_, i) => sha256(`${challenge}:${String(first + i)}`)));
+    const found = hashes.findIndex((hash) => leadingZeroBits(hash) >= difficulty);
+    if (found >= 0) return String(first + found);
   }
   throw new PublicApiError(0, 'proof_of_work_unsolvable');
 }
@@ -202,6 +226,7 @@ export async function solveProofOfWork(challenge: string, difficulty: number, si
  * a Send that is refused with `preview`, which the form says in its own words. Nothing is sent.
  */
 export const previewApi: PublicApi = {
+  minimumFillMs: 0,
   token: () => Promise.resolve({ token: 'local-only-preview', expiresAt: null, proofOfWork: null }),
   upload: (_slug, _token, _field, file, onProgress) => {
     onProgress(100);

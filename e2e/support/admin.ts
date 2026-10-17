@@ -38,6 +38,8 @@ export const STUB = FIXTURE as Fixture;
 export const AGAINST_REAL_API = REAL_API_ORIGIN !== null;
 /** Why a spec, or a test, does not run against a real API: it needs the stub's fixture (its records, tokens and reset). */
 export const STUB_ONLY = 'needs the records, link tokens and reset of the API stub, which a real confera_be does not have';
+/** A test on a form of the stub (e2e/servers/public-forms.json); the seeded form of a real API: qa-m3-real-api.spec.ts. */
+export const STUB_FORMS = 'opens a form of the API stub, which a real confera_be does not have (its seeded form: qa-m3-real-api.spec.ts)';
 /** The password of every person of confera_be's seed:e2e. */
 const SEED_E2E_PASSWORD = 'invented-Jasen-Kula-Reka-42';
 /** Who the specs sign in as, in this mode: the admin and the reviewer of organisation A. */

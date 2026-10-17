@@ -5,7 +5,7 @@
  *  - The message goes to the listed parent origins only, never to "*". The
  *    browser delivers it only if the parent really is that origin, and the
  *    frame page can only be framed by a listed site (`frame-ancestors`).
- *  - The message holds a type and a height. No form data, no reference.
+ *  - The message holds a type, a height and the frame's own viewport height. No form data, no reference.
  *  - It is sent when the height of the content changes, and again when the
  *    page around changes the size of the frame before it has ever followed a
  *    height the frame told (the snippet's lines started late).
@@ -35,7 +35,7 @@ export function startHeightReporter(options: HeightReporterOptions): () => void 
   let heard = false;
   /** `again`: tell the height also when it did not change. */
   const report = (again = false) => {
-    const message = heightMessage(Math.ceil(options.root.getBoundingClientRect().height));
+    const message = heightMessage(Math.ceil(options.root.getBoundingClientRect().height), win.innerHeight);
     if (!message || (message.height === last && !again)) return;
     last = message.height;
     if (win.innerHeight === last) heard = true;

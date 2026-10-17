@@ -89,6 +89,15 @@ function frameStyle(height: number): string {
  * The inline lines. Plain ES5 so that it runs wherever it is pasted.
  * `id` and `origin` are checked values and are written as JSON strings.
  *
+ * A site that zooms its content (CSS `zoom`): WebKit then gives the frame's page fewer pixels than
+ * the frame is tall, and a frame made as tall as its content still scrolled inside (Q3-12). The
+ * frame tells its own viewport height (`view`) with its height. A message with a viewport the lines
+ * have not seen yet gives the ratio of the frame's height on this page to the pixels its page gets
+ * (1 without zoom, and in Chromium and Firefox), and every height is multiplied by it. A message
+ * that names the viewport of the one before keeps that ratio: one sent before the frame followed a
+ * height (it crossed that height on the way) cannot make it wrong. A site that zooms later is
+ * followed from the next height the frame tells.
+ *
  * Conference sites move pasted code and frames about: speed plugins run inline scripts late,
  * consent managers hold a frame back and put a new one in later. A snippet already pasted can
  * only be repaired by pasting it again, so the lines assume nothing about when they run:
@@ -109,24 +118,24 @@ function frameStyle(height: number): string {
  */
 export function listenerSource(frameId: string, origin: string): string {
   return (
-    '(function(){' +
+    '!function(){' +
     `var o=${JSON.stringify(origin)},i=${JSON.stringify(frameId)};` +
     'function z(f,h){f.style.setProperty("height",h+"px","important")}' +
-    'function N(x){return typeof x=="number"&&isFinite(x)}' +
-    'var w=0;' +
-    'var f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);' +
+    'var N=Number.isFinite,M=Math,w=0,q=1,l,' +
+    'f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);' +
     'if(s)z(f,s+1);' +
-    'window.addEventListener("message",function(e){' +
+    'addEventListener("message",function(e){' +
     'if(e.origin!==o||!e.source)return;' +
     'for(var a=document.querySelectorAll("iframe#"+i),k=0,g;k<a.length;k++)if(a[k].contentWindow===e.source)g=a[k];' +
     'var d=g&&e.data||{},t=d.top,r,n=Date.now(),h=innerHeight;' +
-    `if(d.type===${JSON.stringify(HEIGHT_MESSAGE)}&&N(d.height))` +
-    `z(g,Math.min(${MAX_FRAME_HEIGHT},Math.max(${MIN_FRAME_HEIGHT},Math.round(d.height))));` +
+    `if(d.type===${JSON.stringify(HEIGHT_MESSAGE)}&&N(d.height)){` +
+    'if(l!=d.view)q=parseInt(g.style.height)/(l=d.view)||1;' +
+    `z(g,M.min(${MAX_FRAME_HEIGHT.toExponential().replace('+', '')},M.max(${MIN_FRAME_HEIGHT},M.ceil(d.height*q))))}` +
     `if(d.type===${JSON.stringify(INTO_VIEW_MESSAGE)}&&N(t)&&n-w>999){` +
-    'r=g.getBoundingClientRect();t=r.top+Math.min(Math.max(t,0),r.height);' +
+    'r=g.getBoundingClientRect();t=r.top+M.min(M.max(t,0),r.height);' +
     'if(t<0||t>h){w=n;scrollBy(0,t-h/4)}}' +
     '})' +
-    '})();'
+    '}()'
   );
 }
 

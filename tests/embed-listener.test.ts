@@ -103,6 +103,42 @@ describe('the inline lines of the snippet, running in a host page', () => {
     expect(height()).toBe('900px');
   });
 
+  // Q3-12: on a site with CSS zoom, WebKit gives the frame's page fewer pixels than the frame is tall.
+  it('on a zoomed site make the frame as tall as its page needs, by the ratio of the first message', () => {
+    // The frame is 900 px on the page and its page gets 720 of them: the site zooms by 1.25.
+    send({ type: HEIGHT_MESSAGE, height: 4540, view: 720 });
+    expect(height()).toBe('5675px');
+    // A message sent before that height arrived still names the old viewport: the ratio stays.
+    send({ type: HEIGHT_MESSAGE, height: 4600, view: 720 });
+    expect(height()).toBe('5750px');
+    send({ type: HEIGHT_MESSAGE, height: 1e9, view: 720 });
+    expect(height()).toBe(`${MAX_FRAME_HEIGHT}px`);
+  });
+
+  it('follow a site that starts to zoom later, from the next viewport the frame names', () => {
+    send({ type: HEIGHT_MESSAGE, height: 1000, view: 900 });
+    expect(height()).toBe('1000px');
+    // The site zooms by 1.25: the frame, 1000 px on the page, gets 800 of them.
+    send({ type: HEIGHT_MESSAGE, height: 1100, view: 800 });
+    expect(height()).toBe('1375px');
+  });
+
+  it.each([
+    ['as tall as the frame (no zoom)', 900],
+    ['missing', undefined],
+    ['not a number', 'a lot'],
+  ])('take the height as it is when the viewport is %s', (_what, view) => {
+    send({ type: HEIGHT_MESSAGE, height: 1234, view });
+    expect(height()).toBe('1234px');
+  });
+
+  it('keep the frame inside the bounds whatever viewport a message names', () => {
+    send({ type: HEIGHT_MESSAGE, height: 1234, view: 0 });
+    expect(height()).toBe(`${MAX_FRAME_HEIGHT}px`);
+    send({ type: HEIGHT_MESSAGE, height: 1234, view: -720 });
+    expect(height()).toBe(`${MIN_FRAME_HEIGHT}px`);
+  });
+
   it('change nothing but the height: no attribute, no global, no other style', () => {
     const attributes = () => [...frame.attributes].map((a) => `${a.name}=${a.name === 'style' ? '' : a.value}`).join('|');
     const before = { attributes: attributes(), globals: Object.keys(window).length, src: frame.src, style: frame.style.cssText.replace(/height:[^;]+;?/, '') };

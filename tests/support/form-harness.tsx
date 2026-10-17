@@ -22,6 +22,8 @@ export function fakeApi(): FakeApi {
   const failures: PublicApiError[] = [];
   return {
     calls,
+    // This fake has no fill-time trap: the renderer need not wait (Q3-01 has a fake that does).
+    minimumFillMs: 0,
     failNext: (error) => void failures.push(error),
     token: vi.fn(() => {
       tokens += 1;

@@ -166,7 +166,9 @@ test.describe('the flows of 0.2.0 against the real API, with their mail (M2-QA-0
     await signInAs(colleague, COLLEAGUE, COLLEAGUE_PASSWORD);
     // The link is used up.
     await colleague.goto(linkIn(invitation.text, 'invitations'));
-    await expect(colleague.locator('.ud-alert--error')).toContainText('This link does not work any more');
+    // Since 0.3.0 the page's heading says it, over the error that explains (UXUI-M2-28).
+    await expect(colleague.getByRole('heading', { level: 1 })).toHaveText('This link does not work any more');
+    await expect(colleague.locator('.ud-alert--error')).toBeVisible();
     await colleague.context().close();
   });
 

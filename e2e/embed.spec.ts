@@ -423,6 +423,33 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
   });
 });
 
+// Q3-12: on a site that zooms its content with CSS `zoom`, WebKit gives the frame's page fewer
+// pixels than the frame is tall; the frame was 1,135 px short of its form there.
+test.describe('a site that zooms its content (CSS zoom 1.25, Q3-12)', () => {
+  test.use({ viewport: { width: 375, height: 800 } });
+  for (const when of ['from the start', 'after the frame has told its height'] as const) {
+    test(`zoomed ${when}: the frame is as tall as its form, also after it grows`, async ({ page }) => {
+      if (when === 'from the start') {
+        await page.addInitScript(() => {
+          if (window.top !== window) return; // the site's page only, not the frame
+          document.addEventListener('DOMContentLoaded', () => document.body.style.setProperty('zoom', '1.25'));
+        });
+      }
+      await openSite(page, HARNESS_ORIGIN, snippetFor(SLUG));
+      const frame = await formFrame(page);
+      if (when !== 'from the start') await page.evaluate(() => document.body.style.setProperty('zoom', '1.25'));
+      expect(await page.evaluate(() => getComputedStyle(document.body).zoom)).toBe('1.25');
+      const inside = () => frame.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+      // A pointer under a zoomed ancestor lands elsewhere in Playwright's arithmetic: the buttons are pressed by the DOM.
+      for (let i = 0; i < 3; i += 1) await frame.getByRole('button', { name: 'Add author' }).evaluate((el: HTMLElement) => el.click());
+      await expect(frame.getByLabel('First and last name of author 4')).toBeVisible();
+      await expect.poll(inside, { message: 'no scrolling inside the frame' }).toBeLessThanOrEqual(1);
+      // And not much taller than its form either: no empty band under it.
+      expect(await frame.evaluate(() => window.innerHeight - document.documentElement.scrollHeight)).toBeLessThanOrEqual(2);
+    });
+  }
+});
+
 test.describe('the snippet carries the language of the site (D2)', () => {
   test('a Serbian site gets the form in Serbian, and its link too, whatever the browser says', async ({ page }) => {
     const serbian = buildEmbedSnippet({ publicOrigin: PUBLIC_ORIGIN, slug: SLUG, title: 'Prijava apstrakta', linkText: 'Obrazac se ne prikazuje? Otvorite ga na posebnoj stranici.', language: 'sr' });

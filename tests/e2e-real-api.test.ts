@@ -62,7 +62,9 @@ describe('CONFERA_E2E_API_ORIGIN', () => {
     // The three engines leave the smoke spec and the flows of 0.2.0 to that project, and, in such a run,
     // the specs that need the stub's records are left out of them by name, instead of failing.
     expect(config.match(/REAL_API_SPEC, REAL_API_FLOWS, \.\.\.STUB_ONLY_SPECS\]/g), 'the three engines leave the smoke spec, the flows and the stub-only specs alone').toHaveLength(3);
-    expect(config).toContain("const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts'];");
+    expect(config).toContain("const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts', '**/admin-intake.spec.ts', ...STUB_FORM_SPECS];");
+    // The specs on the stub's forms (Q3-09): every spec that opens one of its form addresses is named.
+    expect(config).toContain("const STUB_FORM_SPECS = ['**/public-form.spec.ts', '**/embed.spec.ts', '**/embed.edge.spec.ts', '**/form-send.spec.ts', '**/security-headers.spec.ts', '**/qa-probes.spec.ts', '**/qa-hosts.spec.ts'];");
   });
 });
 

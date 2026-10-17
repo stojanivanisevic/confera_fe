@@ -41,7 +41,7 @@ import { createFormValueStore, useFormRef, useFormValues, type FormValues } from
 import { fill, FORM_TEXTS, plural, type FormLanguage } from './i18n/catalogue';
 import { formatDate, zoneName } from './i18n/format';
 import { blockTitle, messageFor } from './messages';
-import { browserApi, PublicApiError, solveProofOfWork, TOKEN_CODES, type FormToken, type PublicApi, type SubmitBody } from './public-api';
+import { browserApi, MINIMUM_FILL_MS, PublicApiError, solveProofOfWork, TOKEN_CODES, type FormToken, type PublicApi, type SubmitBody } from './public-api';
 import { checkAnswers, countWords, holds, isShown, pathOf, type AnswerValue, type Answers, type RuleError } from './rules';
 import { draftStorage, type DraftStorage } from './safe-storage';
 import { SafeText } from './safe-text';
@@ -170,6 +170,14 @@ interface SendProblem {
   readonly text: string;
 }
 
+/** The token of this page: `got` and `receivedAt` (the page's clock) once it has arrived. */
+interface TokenEntry {
+  promise: Promise<FormToken>;
+  proof: Promise<string | null>;
+  got?: FormToken;
+  receivedAt?: number;
+}
+
 export function FormRenderer(props: FormRendererProps) {
   const [language, setLanguage] = useState<FormLanguage>(props.language);
   const [instance, setInstance] = useState(0);
@@ -277,7 +285,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   /** The control that takes the focus after the next render (a block added or removed, a question answered). */
   const focusNext = useRef<string | null>(null);
   const idempotency = useRef<string>('');
-  const token = useRef<{ promise: Promise<FormToken>; proof: Promise<string | null> } | null>(null);
+  const token = useRef<TokenEntry | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const thanksRef = useRef<HTMLDivElement>(null);
   const problemRef = useRef<HTMLDivElement>(null);
@@ -289,18 +297,27 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   const pendingFiles = useMemo(() => Object.entries(files).filter(([, state]) => isUploading(state)).map(([fieldKey]) => fieldKey), [files]);
 
   // ---- the token (ADR-08): fetched once the form is attached, so the API can measure the fill time.
-  const ensureToken = useCallback((): Promise<FormToken> => {
-    if (!token.current) {
-      const promise = api.token(form.slug);
-      const proof = promise.then((got) => (got.proofOfWork ? solveProofOfWork(got.proofOfWork.challenge, got.proofOfWork.difficulty) : null));
-      proof.catch(() => undefined);
-      token.current = { promise, proof };
-      promise.catch(() => {
-        if (token.current?.promise === promise) token.current = null;
-      });
-    }
-    return token.current.promise;
-  }, [api, form.slug]);
+  // `refused`: the token it replaces (refused by the API, or expired), for the API's renewal (Q3-01).
+  const ensureToken = useCallback(
+    (refused?: string): Promise<FormToken> => {
+      if (!token.current) {
+        const promise = refused === undefined ? api.token(form.slug) : api.token(form.slug, refused);
+        const entry: TokenEntry = { promise, proof: Promise.resolve(null) };
+        entry.proof = promise.then((got) => {
+          entry.got = got;
+          entry.receivedAt = Date.now();
+          return got.proofOfWork ? solveProofOfWork(got.proofOfWork.challenge, got.proofOfWork.difficulty) : null;
+        });
+        entry.proof.catch(() => undefined);
+        token.current = entry;
+        promise.catch(() => {
+          if (token.current === entry) token.current = null;
+        });
+      }
+      return token.current.promise;
+    },
+    [api, form.slug],
+  );
   useEffect(() => {
     ensureToken().catch(() => undefined);
   }, [ensureToken]);
@@ -499,12 +516,22 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
     }
     const kept = checkedAnswers.answers;
     setPhase('sending');
+    // A token that expired while the author typed (6 hours) is replaced before it is sent.
+    const held = token.current?.got;
+    if (held?.expiresAt && Date.parse(held.expiresAt) <= Date.now()) token.current = null;
+    let refused = held && token.current === null ? held.token : undefined;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
-        const got = await ensureToken();
-        if (got.proofOfWork) setPhase('checking');
-        const counter = await token.current!.proof;
+        const got = await ensureToken(refused);
+        const current = token.current!;
+        // The proof-of-work is mostly done while the author types; a Send that has to wait for it says so after a second (Q3-08).
+        const slow = setTimeout(() => setPhase('checking'), 1_000);
+        const counter = await current.proof.finally(() => clearTimeout(slow));
         setPhase('sending');
+        // Never sooner than the API's fill time after the token (Q3-01): a submit inside it is answered
+        // with a success that stores nothing, and the thank-you would stand for nothing.
+        const wait = (current.receivedAt ?? Date.now()) + (api.minimumFillMs ?? MINIMUM_FILL_MS) - Date.now();
+        if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
         const body: SubmitBody = {
           language,
           answers: kept,
@@ -520,7 +547,9 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
         return;
       } catch (error) {
         if (error instanceof PublicApiError && TOKEN_CODES.has(error.code) && attempt === 0) {
-          token.current = null; // a new token, and the same idempotency key: the API answers a repeat with the first result
+          // A new token, and the same idempotency key: the API answers a repeat with the first result.
+          refused = token.current?.got?.token;
+          token.current = null;
           continue;
         }
         setPhase('editing');

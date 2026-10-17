@@ -201,7 +201,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
     send: 'Send',
     sending: 'Sending…',
     choose: 'Choose',
-    checking: 'Checking the form before it is sent…',
+    checking: 'Checking that you are not a robot…',
     errorsTitle: {
       abstract: 'Check these fields to send your abstract',
       full_paper: 'Check these fields to send your paper',
@@ -315,7 +315,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
     send: 'Pošalji',
     sending: 'Šalje se…',
     choose: 'Izaberite',
-    checking: 'Proveravamo obrazac pre slanja…',
+    checking: 'Proveravamo da niste robot…',
     errorsTitle: {
       abstract: 'Proverite ova polja da biste poslali apstrakt',
       full_paper: 'Proverite ova polja da biste poslali rad',

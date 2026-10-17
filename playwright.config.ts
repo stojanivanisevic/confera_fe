@@ -20,7 +20,11 @@ const REAL_API_FLOWS = '**/qa-real-api-flows.spec.ts';
 // are left out of every project, by name, instead of failing (and of signing in with the stub's
 // passwords, which would set off the real API's brake for the seed admin). Their screens are covered
 // against the real API by admin-axe, csp, pages and the flows of qa-real-api-flows.
-const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts'];
+// Specs built on the forms of the stub (spike-abstract, spike-unlisted, itema-2026-*: e2e/servers/public-forms.json) and
+// its counters (/__stub/public/submissions): a real API has none of them. The seeded form of a real API
+// (e2eprobnaforma01, `seed:e2e` of confera_be) is tested in three engines by qa-m3-real-api.spec.ts.
+const STUB_FORM_SPECS = ['**/public-form.spec.ts', '**/embed.spec.ts', '**/embed.edge.spec.ts', '**/form-send.spec.ts', '**/security-headers.spec.ts', '**/qa-probes.spec.ts', '**/qa-hosts.spec.ts'];
+const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts', '**/admin-intake.spec.ts', ...STUB_FORM_SPECS];
 // A web application that is already running was started with another API address: it is never taken over.
 const reuseWeb = reuse && REAL_API_ORIGIN === null;
 
