@@ -129,6 +129,9 @@ scripts                  the commands above, as Node scripts
 tests                    unit tests that span packages
 e2e                      browser tests, the harness site, the API stub
 lint-fixtures            planted violations that the lint must keep catching
+Dockerfile               the production image (section 13)
+deploy                   the image build of the pipeline and the check of the image (section 13)
+.github                  the pipeline: ci, image, deploy-staging (section 13)
 ```
 
 ## 6. Browser tests
@@ -360,3 +363,52 @@ ESLint is 9.39.5, the newest that every lint plugin supports; npm marks the 9 li
 ## 12. Git
 
 `main` holds the latest release and `develop` the work in progress. Work on a branch from `develop`; a release is prepared on `release/<version>` and the lead puts it on `main` with its tag. Commit messages follow Conventional Commits.
+
+## 13. Production image and pipeline
+
+0.4.0 (M4-FE-05) adds the production image of the web application and its pipeline. Both are built and checked **without a server**: the staging server is rented only after Gate 4a, and no workflow of this repository can reach a server before then. The topology the image runs in (the compose file, the reverse proxy, the deploy script on the server) lives in `confera_be`, `deploy/` and its README section 15.
+
+### The image
+
+`Dockerfile` builds `ghcr.io/stojanivanisevic/confera-web`:
+
+- Both stages start from Node 22.23.3 (Debian bookworm, slim) **by digest**.
+- The build stage makes the production build with `CONFERA_STANDALONE=1` (`apps/web/next.config.ts`: Next's standalone output, traced across the workspace; never together with the dev pages) and then runs `verify:build` on it: the image is not made unless **the route list equals the allowlist** of `routes.json` (no gallery, no harness, no dev page), no dev-only text is in the build, no source map is public, and the framework settings of ADR-20 hold.
+- The runtime image holds the standalone server, the files it traced and the static files, and nothing else: no workspace source, no test, no development dependency, no package manager. It runs as `node` (uid 1000) on a **read-only root** (the compose file mounts `/tmp` and `.next/cache`), listens on 3000, has telemetry off, and **holds no secret and is given none** (ADR-20, ADR-26): its environment is `STAGE=prod`, the two origins and the API's address.
+- `.dockerignore` is an allowlist: a `.env`, a test build (`.next-test`) or a test file can never reach the image.
+
+```
+docker build -t confera-web .
+node --experimental-strip-types deploy/checks/image.mjs confera-web      the checks below, on that image
+```
+
+### The check of the image (ST-02, ST-12)
+
+`deploy/checks/image.mjs` (Docker; everything it makes is named `confera-m4-infra-*` and removed; log in `.artifacts/deploy-checks/image.log`):
+
+- **ST-02:** reads the build out of the image and runs `verify:build` on it (routes = allowlist, no dev text, no source map, ADR-20); the image holds no dev page, dev fixture, harness, test, workspace source, environment file, development dependency or package manager.
+- It starts the image as on a server: read-only, every capability dropped, no new privileges, `STAGE=prod`, an API that cannot be reached; the process runs as a non-root user, cannot write its root file system, and its environment holds no database address and no key.
+- **ST-12:** every kind of page (admin, auth, hosted form, frame, secure link, error, and the 405 of a page) answers with **exactly** the header set that `apps/web/src/server/security/headers.ts` defines for its kind, the nonce read from the answer; two loads carry two nonces; a screen behind sign-in without a session is a 307 to sign-in; the gallery is not found; `/api/v1` under the public host is not found; the framework's static files keep `nosniff`.
+
+`confera_be`'s `deploy/checks/topology.mjs` starts this image in the real topology (behind the proxy, on the edge network only) and proves that it cannot reach Postgres.
+
+### The pipeline: `.github/workflows/`
+
+Every third-party action is pinned by commit hash (its version in a comment), every image by digest (BuildKit v0.33.1 included). The default token is read-only.
+
+| Workflow | When it runs | What it does |
+|---|---|---|
+| `ci.yml` | every pull request to develop or main; every push to develop, main, release/** | `pnpm check` (lint, types, unit tests, the production build and `verify:build`, the supply chain). No secret, no push, no server. |
+| `image.yml` | every push to develop, every `v*` tag, or by hand | **build** (runs project code, holds no credential): the image as an OCI archive with its digest (`deploy/ci/build-image.sh`), then `deploy/checks/image.mjs` on exactly that image. **publish** (no checkout, so no project code; may write packages): copies the archive to ghcr.io with `skopeo --preserve-digests`, checks the digest, writes it into the summary. |
+| `deploy-staging.yml` | **by hand only** (`workflow_dispatch`), with a digest | Runs no project code. Needs the environment `staging` (protection rule) and refuses until its variable `STAGING_DEPLOY_ENABLED` is `true`. Checks the input is a digest and hands it over SSH to the server's forced command `confera-deploy-gate web`, which can deploy `confera-web` and nothing else. |
+
+`.github/CODEOWNERS` names Stojan for `.github/`, `deploy/`, `Dockerfile`, `.dockerignore` and `apps/web/next.config.ts`.
+
+### Gate 4a
+
+The checklist is in `confera_be`, README section 15. For this repository:
+
+- [ ] Branch protection on `develop` and `main` with **review from Code Owners required**, no bypass, automation tokens that cannot approve; Actions: read-only token by default, no approving pull requests, only actions pinned to a full commit hash.
+- [ ] The environment **`staging`** with a protection rule (Stojan approves each run), deployments from `develop` only; its secret `STAGING_DEPLOY_KEY` (the key of the server user `confera-deploy-web`, a key of its own, not `confera_be`'s) and its variables `STAGING_SSH_HOST`, `STAGING_SSH_KNOWN_HOSTS` and `STAGING_DEPLOY_ENABLED=true`.
+- [ ] The package `confera-web` private.
+- [ ] On the staging server (M4-QA-03): ST-12 through the real proxy and TLS (the proxy adds HSTS and nothing else), ST-02 on the digest staging runs, and every screen showing the staging banner (M4-OPS-02).
