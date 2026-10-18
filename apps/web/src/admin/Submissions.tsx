@@ -57,12 +57,15 @@ export function Submissions() {
   // meanwhile, also while the router has not written the address yet.
   const asked = useRef<URLSearchParams | null>(null);
   const current = params.toString();
-  // A new address (ours, or the way back) is the base again; a replace still on its way carries its own query.
+  // The address as the latest render saw it: a timer set by an older render reads it here, not in its own closure.
+  const latest = useRef(current);
   useEffect(() => {
+    latest.current = current;
+    // A new address (ours, or the way back) is the base again; a replace still on its way carries its own query.
     asked.current = null;
   }, [current]);
   const setQuery = (changes: Readonly<Record<string, string | null>>, keepPage = false) => {
-    const next = new URLSearchParams(asked.current ?? current);
+    const next = new URLSearchParams(asked.current ?? latest.current);
     for (const [key, value] of Object.entries(changes)) {
       if (value === null || value === '') next.delete(key);
       else next.set(key, value);
