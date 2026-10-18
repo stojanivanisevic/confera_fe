@@ -389,6 +389,21 @@
   scroll-margin-top: var(--gutter-l);
 }
 
+/* A note keeps its lines as written. */
+.preWrap {
+  white-space: pre-wrap;
+}
+
+/* A group of fields with its own name, without the browser's frame (an author in the edit). */
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-m);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 .stickyActions {
   position: sticky;
   bottom: var(--gutter-null);

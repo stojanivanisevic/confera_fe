@@ -24,6 +24,8 @@ export const STUB = {
     paymentDetailsChangedAt: null,
     paymentDetailsChangedBy: null,
     mailLogContent: true,
+    // How long the mail log keeps an entry (FR-SMTP-06): 24 months by default (SA-19).
+    mailLogRetentionDays: 730,
     version: 1,
   },
   users: [
