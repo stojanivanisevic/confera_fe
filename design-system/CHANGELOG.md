@@ -2,6 +2,39 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.6.0 (2026-10-18)
+
+For the admin screens of Confera 0.4.0: three icons, and the low findings of the UX and UI review of Confera 0.2.0 and the UI review of 2.3.0 that 2.4.0 left logged (M2-ISS-02 / UI-DS-02, M2-ISS-03 / UI-DS-03, UXUI-M2-34, UXUI-M2-36). No token changed its value; the new tokens are listed below. No new label.
+
+### Icons for the mail-template editor and the review of a submission
+
+- New icons (Lucide, ISC, drawn as the others: 24 grid, 2px stroke, current colour): `image` (an image in the rich-text toolbar of the mail-template editor), `message-square` (an internal note) and `rotate-ccw` (reopen). `IconName` and `ICON_NAMES` list 58 icons.
+
+### Type styles for small labels and initials (M2-ISS-02, UI-DS-02)
+
+- **Five new type styles**, so that no rule takes `caption-xs` and then sets its weight or tracking by hand: `caption-xs-upper` (12 / 1.2 / 700, +0.02em: the column headers of DataTable and PermissionMatrix, in capitals by `text-transform`), `overline` (12 / 1.2 / 700, +0.08em: the group titles of SidebarNav), `initials-sm` (12 / 1.2 / 700, untracked: the small avatar, the number of a Stepper step and of a Repeater row), and for the avatars that did the same with `caption` and `h5`, `initials` (14 / 1.2 / 700) and `initials-lg` (20 / 1.2 / 700), untracked. Each is `--text-<style>` and `--text-<style>-tracking`, as every style since 2.3.0.
+- What a person sees is the same: the five rules and the two avatars had these values written by hand. The number of a step and of a repeater row now has a tracking of 0 instead of the tracking of the text around it.
+- The usage note of `caption-xs` no longer names table headers and small avatars.
+
+### DataTable: no control in the open cell (M2-ISS-03, UI-DS-03)
+
+- **The guard the README promised.** With `onRowClick`, the cell of `openColumn` is a button (2.3.0); a `render` that returned a link or a button put a control inside it (invalid, and a screen reader heard one name for both). Now a cell whose content holds a control is drawn without the open button, and outside production (`NODE_ENV` not `production`) the console says which column, once per table. A control is a link with `href`, a button, a field, `details`, an element with a `tabIndex` of 0 or more, `contentEditable` or a control role, or a control of this system (Button, TextButton, IconButton, Checkbox, Menu, the fields, a Tag that can be removed and the others). A component of the consumer is checked once it is drawn: an open button that holds a control is drawn again without it. The row still opens by a click elsewhere in it, and with `selectable` its checkbox is unchanged.
+
+### Fields and links are targets of 44 px themselves (UXUI-M2-34)
+
+- **The input or select of a field is 44px high** where the main pointer is a finger, not only its box: it reaches over the 1px border of the box above and below, so the box stays 44px and nothing moves. The review measured the controls (277 x 42 and 261 x 42 at 375px); a test that measures the box found 44. The same for TextField, Select, NumberField, DateField, PasswordField and the input of SearchField; a Textarea and the input of a multiple Autocomplete keep theirs.
+- **A text link (`ud-link`, the links in an Alert) is 44px wide as well as high**: besides the padding above and below (2.3.0), an invisible layer of 44 x 44 px at least, as on NavLink and Breadcrumbs, so a short link ("here") is a target too. The line does not move.
+
+### Size tokens for page layouts (UXUI-M2-36)
+
+- **New size tokens**, so that a page's stylesheet writes no width of its own: `card-min` 320px (the least column of a grid of cards), `field-min` 240px (the least column of a grid of fields), both for `repeat(auto-fit, minmax(var(--…), 1fr))`, and `filter-field-min` 180px (the width a field of a filter bar or toolbar starts from, its flex basis). `filter-field-max` (320px, the widest field of a filter bar, 2.3.0) is unchanged; the review's "`--filter-field-max`" for the 180px basis is `filter-field-min`, because the name was taken.
+- FilterBar's fields start from `filter-field-min` (was 180px written in the rule).
+
+### Tests, tools and version
+
+- `tests/ds-2-6-0.test.tsx` holds each item in the DOM and in the stylesheet; `tests/ds-tokens.test.ts` lists the 22 type styles.
+- `components/bundle.js` carries `@ds-version: 2.6.0` and `Udekom.version` is `"2.6.0"`. `tokens.json` stays at version 2. The manifest is unchanged (53 components).
+
 ## 2.5.1 (2026-10-18)
 
 Fixes one finding of the UX and UI review of Confera 0.3.0 (UX3-01). No token changed; no new token, no new label.
