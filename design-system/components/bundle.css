@@ -666,7 +666,11 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
   .ud-arrow-btn--sm, .ud-icon-btn { box-sizing: border-box; width: var(--target-touch); height: var(--target-touch); }
   .ud-page-btn { box-sizing: border-box; min-width: var(--target-touch); height: var(--target-touch); }
   .ud-field__box { min-height: var(--target-touch); }
-  .ud-field__control { height: calc(var(--target-touch) - 2px); }
+  /* The control itself is 44px high (2.6.0, UXUI-M2-34): it overlaps the 1px border of its box above and below,
+     so the box stays 44px and a measure of the input, not only of its box, finds a target of 44px. */
+  .ud-field__control { height: var(--target-touch); margin-block: -1px; }
+  .ud-search__control { align-self: stretch; margin-block: -1px; }
+  .ud-field--area .ud-field__control, .ud-field--multi .ud-field__control { margin-block: 0; }
   .ud-field__action { box-sizing: border-box; justify-content: center; align-items: center; min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-s)) -1px 0; }
   .ud-search__clear { box-sizing: border-box; min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-m)) -1px 0; }
   /* A tag is as high as a small control; its remove button reaches 6px above and below it, into the gap between rows. */
@@ -678,11 +682,12 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
   .ud-switch { align-items: center; }
   .ud-table__check .ud-check, .ud-matrix__cell .ud-check { box-sizing: border-box; min-width: var(--target-touch); justify-content: center; }
   .ud-listbox__option, .ud-listbox__empty { display: flex; align-items: center; min-height: var(--target-touch); box-sizing: border-box; }
-  /* A link in a line of text: padding makes the target higher without moving the line. */
-  .ud-link, .ud-alert__body a { padding-block: max(0px, calc((var(--target-touch) - 1em) / 2)); }
+  /* A link in a line of text: padding makes the target higher without moving the line, and (2.6.0, UXUI-M2-34)
+     an invisible layer makes a short link ("here") 44px wide as well. */
+  .ud-link, .ud-alert__body a { position: relative; padding-block: max(0px, calc((var(--target-touch) - 1em) / 2)); }
   /* A link of a trail or of the site's navigation, and a sort button: the target is an invisible layer over it. */
   .ud-nav-link, .ud-breadcrumbs a { position: relative; }
-  .ud-nav-link::after, .ud-breadcrumbs a::after, .ud-table__sort::after, .ud-table__open::after {
+  .ud-nav-link::after, .ud-breadcrumbs a::after, .ud-table__sort::after, .ud-table__open::after, .ud-link::after, .ud-alert__body a::after {
     content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--target-touch)); height: max(100%, var(--target-touch)); transform: translate(-50%, -50%);
   }
 }
