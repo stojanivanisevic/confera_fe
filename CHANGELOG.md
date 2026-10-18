@@ -4,6 +4,17 @@ All notable changes to `confera_fe`. Versions follow SemVer; `confera_be` carrie
 
 ## Unreleased
 
+Release 0.4.0 in progress (`m4/fe`), against `confera_be` `m4/be`.
+
+### Added
+- **Submissions (M4-FE-01).** The table searched without diacritics, filtered by status and participation and sorted from the API's fixed list, with the query in the address; a withdrawn submission only with the status filter. A submission's status changed along the state table, the email shown first where the change carries a text for the author (FR-MAIL-08), one idempotency key per dialog; a new one taken into processing by a POST when it is opened; internal notes; the edit on the author's behalf with its kept revisions and the move back into processing; the history with message, reason and email.
+- **The template editor (M4-FE-02, M4-FE-03).** Saved; language tabs; a conference's own version and back to the organisation's; the status-email switch per conference (FR-MAIL-07); the API's catalogue; email images (upload, words asked, read behind the session, inside the message); paste rules (an image of a web page dropped and said, an image file uploaded); the server's preview in the sandboxed frame. ST-59 and ST-28 in unit and browser tests.
+- **Mail log (M4-FE-04).** Send again; how long entries are kept and whether content is kept, in a card of the mail log (UXUI-M2-31); the staging catcher's attempts named.
+- **Held emails:** discard the selected (M3-ISS-14). **Mail servers:** a failed test names its cause; the limits of test messages are explained (M2-ISS-14, M3-ISS-02).
+- **The staging banner** on every admin and public screen when the API names the instance `staging`; never in production (M4-OPS-02).
+- **Design system 2.6.0:** icons `image`, `message-square`, `rotate-ccw`; named type styles for the caption-xs overrides (M2-ISS-02); the DataTable guard for a control in the open cell (M2-ISS-03); fields and selects at the touch size (UXUI-M2-34); the layout tokens `--card-min`, `--field-min`, `--filter-field-min`, which the admin's stylesheet now uses (UXUI-M2-36).
+- **The form screen** names its parts as links (M3-ISS-22) and warns when there is no contact address; the public form shows "Uploaded" with a tick (UX3-19) and a next step when it closed while typing (UX3-21).
+
 ## 0.3.0 – 2026-10-18
 
 The web application of release 0.3.0 (forms, embed and intake), against `confera_be` 0.3.0 (`release/0.3.0`, `6521310`; the vendored contract and its lock name that commit, and the contract is the one of `93938dd` with the version 0.3.0). Design systems 2.5.0 and 2.5.1 are part of it.

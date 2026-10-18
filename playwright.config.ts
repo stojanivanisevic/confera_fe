@@ -24,7 +24,7 @@ const REAL_API_FLOWS = '**/qa-real-api-flows.spec.ts';
 // its counters (/__stub/public/submissions): a real API has none of them. The seeded form of a real API
 // (e2eprobnaforma01, `seed:e2e` of confera_be) is tested in three engines by qa-m3-real-api.spec.ts.
 const STUB_FORM_SPECS = ['**/public-form.spec.ts', '**/embed.spec.ts', '**/embed.edge.spec.ts', '**/form-send.spec.ts', '**/security-headers.spec.ts', '**/qa-probes.spec.ts', '**/qa-hosts.spec.ts'];
-const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts', '**/admin-intake.spec.ts', ...STUB_FORM_SPECS];
+const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts', '**/admin-intake.spec.ts', '**/admin-m4.spec.ts', ...STUB_FORM_SPECS];
 // A web application that is already running was started with another API address: it is never taken over.
 const reuseWeb = reuse && REAL_API_ORIGIN === null;
 

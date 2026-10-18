@@ -109,7 +109,7 @@ function inlineHtml(node, input) {
   if (node.type === 'text') return (node.marks ?? []).reduce((html, mark) => `<${TAGS[mark]}>${html}</${TAGS[mark]}>`, escape(node.text));
   if (node.type === 'hardBreak') return '<br>';
   if (node.type === 'placeholder') return escape(input.values[node.key] ?? '');
-  if (node.type === 'link') return `<a href="${escape(typeof node.href === 'string' ? node.href : 'https://forms.example.test/s/[link]')}">${node.children.map((c) => inlineHtml(c, input)).join('')}</a>`;
+  if (node.type === 'link') return `<a href="${escape(typeof node.href === 'string' ? node.href : (input.link ?? '[link]'))}">${node.children.map((c) => inlineHtml(c, input)).join('')}</a>`;
   return '';
 }
 function blockHtml(node, input) {
@@ -122,7 +122,7 @@ function blockHtml(node, input) {
   }
   if (node.type === 'conditional') return input.conditions.has(node.key) ? node.children.map((c) => blockHtml(c, input)).join('') : '';
   if (node.type === 'image') {
-    const image = input.images.find((i) => i.id === node.imageId);
+    const image = input.images.find((i) => i.id === node.fileId);
     return image ? `<p><img src="${input.inline ? `data:${image.type};base64,${image.bytes}` : `cid:${image.id}`}" alt="${escape(node.alt ?? '')}" width="${image.width}"></p>` : '';
   }
   return '';
@@ -161,7 +161,7 @@ function checkTemplate(subject, body, entry, images, refuse) {
       if (!entry.conditions.includes(node.key)) fail(`${path}.key`, 'unknown_condition');
       node.children.forEach((c, i) => block(c, `${path}.children[${i}]`));
     } else if (node.type === 'image') {
-      if (!images.some((image) => image.id === node.imageId)) fail(`${path}.imageId`, 'unknown_image');
+      if (!images.some((image) => image.id === node.fileId)) fail(`${path}.fileId`, 'unknown_image');
     } else if (node.type === 'bulletList' || node.type === 'numberedList') {
       node.items.forEach((item, i) => item.children.forEach((c, j) => inline(c, `${path}.items[${i}].children[${j}]`)));
     } else node.children.forEach((c, i) => inline(c, `${path}.children[${i}]`));
@@ -379,7 +379,7 @@ export function handlePartD(ctx) {
     const entry = entryOf(body.type);
     checkTemplate(body.subject, body.body, entry, d.images, refuse);
     const SAMPLE = { recipientName: 'Đorđe Šćepanović', authorName: 'Đorđe Šćepanović', organisationName: state.organisation.name, conferenceName: 'Konferencija za probe', reference: 'KP26-0042', title: 'Održivi turizam u Čačku i Žabalju', message: 'Please shorten the abstract to 250 words.', inviterName: 'Živana Đorđević', expiresIn: '7 days', newEmail: 'novi@a.example.test', change: 'role', actorName: 'Živana Đorđević', subjectName: 'Marta Kovač', serverName: 'Kancelarija' };
-    return { status: 200, body: render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: new Set(entry.conditions), images: d.images, inline: true }) };
+    return { status: 200, body: render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: new Set(entry.conditions), images: d.images, inline: true, link: 'https://admin.confera.example/invitations/sample' }) };
   }
   const templateRoute = /^\/api\/v1\/mail-templates\/([^/]+)$/.exec(path);
   if (templateRoute && (method === 'PUT' || method === 'DELETE')) {

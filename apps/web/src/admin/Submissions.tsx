@@ -54,7 +54,8 @@ export function Submissions() {
   const pageSize = (PAGE_SIZES as readonly number[]).includes(pageSizeParam) ? pageSizeParam : 25;
 
   const setQuery = (changes: Readonly<Record<string, string | null>>, keepPage = false) => {
-    const next = new URLSearchParams(params.toString());
+    // The address as it is now, not as this render saw it: a search that lands late keeps a filter chosen meanwhile.
+    const next = new URLSearchParams(window.location.search);
     for (const [key, value] of Object.entries(changes)) {
       if (value === null || value === '') next.delete(key);
       else next.set(key, value);

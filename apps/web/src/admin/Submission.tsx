@@ -432,9 +432,13 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
               />
               {/* The server's rendering, never in the page itself (ST-28). */}
               <SandboxedMarkupFrame className={styles.frame} title={t.emailFrame} markup={email.html} />
-              <pre className={styles.plain} aria-label={t.emailPlain} data-confera-status-email-text="">
-                {email.text}
-              </pre>
+              {/* The plain-text alternative, folded, so the dialog stays one screen high. */}
+              <details className={styles.folded}>
+                <summary>{t.emailPlain}</summary>
+                <pre className={styles.plain} data-confera-status-email-text="">
+                  {email.text}
+                </pre>
+              </details>
             </>
           ) : (
             <Alert tone="info" title={t.templateOff} />

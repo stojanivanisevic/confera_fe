@@ -44,14 +44,14 @@ test.describe('the conference switch (M2-FE-03)', () => {
     await page.getByRole('link', { name: 'Email templates' }).click();
     await expect(page.getByText('The templates of Konferencija za probe (KP 2026).')).toBeVisible();
     await expect(conferenceSwitch(page)).toHaveValue(PART_B.ids.conference);
-    // The conference has no templates of its own: the organisation's are listed, marked as such (16 since 0.3.0: the confirmation of a submission, in two languages).
-    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(16);
-    await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(16);
+    // The conference has no templates of its own: the organisation's are listed, marked as such (30 since 0.4.0: the seven status emails, in two languages, after the 16 of 0.3.0).
+    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(30);
+    await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(30);
     await page.reload();
     await expect(conferenceSwitch(page)).toHaveValue(PART_B.ids.conference);
 
     await conferenceSwitch(page).selectOption({ label: 'All conferences' });
-    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(16);
+    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(30);
     await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(0);
 
     // An empty log of one conference says which, and offers all conferences.
@@ -210,15 +210,16 @@ test.describe('the mail log (M2-FE-04, ST-28)', () => {
   });
 });
 
-test.describe('the template editor (M2-FE-05, the spike of ADR-12)', () => {
+test.describe('the template editor (M2-FE-05, M4-FE-02; ADR-12)', () => {
   const body = (page: Page) => page.locator('[data-confera-template-body] .ProseMirror');
   const chips = (page: Page) => body(page).locator('[data-placeholder]');
 
-  test('a seeded template loads; a placeholder is one object; the toolbar formats; the check and the preview agree with the server', async ({ page }) => {
+  test('a seeded template loads; a placeholder is one object; the toolbar formats; the server previews it', async ({ page }) => {
     const problems = watchPage(page);
     await signIn(page, STUB.admin, '/templates');
     await page.getByRole('table').locator('tbody tr').filter({ hasText: 'Invitation' }).filter({ hasText: 'English' }).getByRole('button').click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Invitation (English)' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Invitation' })).toBeVisible();
+    await expect(page.getByRole('radiogroup', { name: 'Language of the template' }).getByRole('radio', { name: 'English' })).toBeChecked();
     await expect(page.locator('[data-confera-template-subject] [data-placeholder="organisationName"]')).toHaveText('Organisation name');
     await expect(body(page).locator('[data-placeholder="recipientName"]')).toHaveText('Recipient’s name');
     await expect(body(page).locator('a[data-secure-link="true"]')).toHaveText('Set your password');
@@ -245,12 +246,11 @@ test.describe('the template editor (M2-FE-05, the spike of ADR-12)', () => {
     await expect(body(page).locator('strong')).toHaveText(' {{recipientName}}');
     await expect(page.getByRole('toolbar', { name: 'Formatting' }).getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'true');
 
-    // The check passes, and the preview renders the made-up values in the sandboxed frame.
-    await page.getByRole('button', { name: 'Check the template' }).click();
-    await expect(page.locator('[data-confera-template-check="valid"]')).toContainText('The template is valid');
-    await expect(page.locator('[data-confera-preview-subject]')).toHaveText('Your account at Udruženje za probe');
+    // The server's preview renders the made-up values in the sandboxed frame.
+    await expect(page.locator('[data-confera-template-preview="ready"]')).toBeVisible();
+    await expect(page.locator('[data-confera-preview-subject]')).toHaveText('Your account at Udruženje za probe A (izmišljeno)');
     const preview = page.frameLocator('iframe[title="Preview of the message"]');
-    await expect(preview.getByText('Dear Mila Primer, {{recipientName}}')).toBeVisible();
+    await expect(preview.getByText('Dear Đorđe Šćepanović, {{recipientName}}')).toBeVisible();
     await expect(preview.locator('strong')).toHaveText(' {{recipientName}}');
     await expect(preview.getByRole('link', { name: 'Set your password' })).toHaveAttribute('href', 'https://admin.confera.example/invitations/sample');
     expect(problems.messages).toEqual([]);
@@ -287,8 +287,6 @@ test.describe('the template editor (M2-FE-05, the spike of ADR-12)', () => {
     await expect(body(page).locator('ul + p')).toHaveText('After the list');
     await page.getByRole('toolbar', { name: 'Formatting' }).getByLabel('Paragraph style').selectOption('heading2');
     await expect(body(page).locator('h2')).toHaveText('After the list');
-    await page.getByRole('button', { name: 'Check the template' }).click();
-    await expect(page.locator('[data-confera-template-check="valid"]')).toBeVisible();
     const preview = page.frameLocator('iframe[title="Preview of the message"]');
     await expect(preview.locator('ul li')).toHaveText(['Help', 'Second']);
     await expect(preview.locator('h2')).toHaveText('After the list');

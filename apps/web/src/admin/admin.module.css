@@ -389,6 +389,14 @@
   scroll-margin-top: var(--gutter-l);
 }
 
+/* A part shown on request (the plain text of an email in a dialog). */
+.folded summary {
+  min-height: var(--target-touch);
+  padding-block: var(--gutter-s);
+  cursor: pointer;
+  font: var(--text-body-sm);
+}
+
 /* A note keeps its lines as written. */
 .preWrap {
   white-space: pre-wrap;
