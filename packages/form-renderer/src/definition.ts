@@ -314,8 +314,8 @@ export function readPublishedForm(value: unknown, frameSites: readonly string[] 
       name: c.name,
       timeZone: c.timeZone,
       languages: languages.length > 0 ? languages : [...FORM_LANGUAGES],
-      // Not in the public form of 0.3.0: the lines that name the office's address are left out without it.
-      contactEmail: typeof c.contactEmail === 'string' && c.contactEmail !== '' ? c.contactEmail : null,
+      // The organisation's contact (D8), on the form since confera_be m3/be-fixes; the lines that name it are left out without it.
+      contactEmail: typeof value.contactEmail === 'string' && value.contactEmail !== '' ? value.contactEmail : typeof c.contactEmail === 'string' && c.contactEmail !== '' ? c.contactEmail : null,
       links: { terms: httpsOrNull(links.terms), privacy: httpsOrNull(links.privacy) },
     },
     frameSites: frameSites.filter((site): site is string => typeof site === 'string'),

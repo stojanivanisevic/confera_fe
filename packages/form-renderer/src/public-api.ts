@@ -18,6 +18,10 @@ export interface FormTokenDto {
   expiresAt: string;
   proofOfWork: { challenge: string; difficulty: number } | null;
 }
+export interface FormTokenRequestDto {
+  /** The refused token of this form, issued within the last 24 hours (Q3-01). */
+  previousFormToken?: string;
+}
 export interface UploadedFileDto {
   type: 'pdf' | 'docx' | 'doc' | 'jpeg' | 'png';
   fileId: string;
@@ -124,10 +128,13 @@ async function post(url: string, headers: Record<string, string>, body: unknown)
 
 /** The API of the page's own origin. */
 export const browserApi: PublicApi = {
-  // `refused` is not sent yet: the renewal of confera_be (m3/be-fixes) names its field. Until then
-  // the page waits out the fill time of the new token (MINIMUM_FILL_MS).
-  async token(slug) {
-    const body = (await post(`${base(slug)}/tokens`, {}, {})) as Partial<FormTokenDto> | null;
+  // The renewal of confera_be (Q3-01): the refused token is presented, and the new one keeps its
+  // fill start and its uploaded files. The page still waits out the fill time of a token it has
+  // just received (MINIMUM_FILL_MS): an API that could not renew would answer inside it with a
+  // success that stores nothing.
+  async token(slug, refused) {
+    const request: FormTokenRequestDto = refused === undefined ? {} : { previousFormToken: refused };
+    const body = (await post(`${base(slug)}/tokens`, {}, request)) as Partial<FormTokenDto> | null;
     if (!isObject(body) || typeof body.formToken !== 'string') throw new PublicApiError(502, 'unreadable');
     const pow = isObject(body.proofOfWork) && typeof body.proofOfWork.challenge === 'string' && typeof body.proofOfWork.difficulty === 'number' ? { challenge: body.proofOfWork.challenge, difficulty: body.proofOfWork.difficulty } : null;
     return { token: body.formToken, expiresAt: typeof body.expiresAt === 'string' ? body.expiresAt : null, proofOfWork: pow };
@@ -172,8 +179,13 @@ export const browserApi: PublicApi = {
   },
 };
 
-/** The token codes after which a new token is fetched and the request sent once more (the same idempotency key). */
-export const TOKEN_CODES = new Set(['form_token_invalid', 'form_token_used']);
+/**
+ * The codes after which the token is renewed (`previousFormToken`) and the submit sent once more,
+ * with the same idempotency key: a token expired or used, and a proof-of-work the API asks for only
+ * at submit (a busy form, or a token without a challenge: the renewed one carries it, and it is solved).
+ * Once per Send, never in a loop.
+ */
+export const TOKEN_CODES = new Set(['form_token_invalid', 'form_token_used', 'proof_of_work_failed']);
 
 const COUNTER = /^(?:0|[1-9][0-9]{0,11})$/;
 

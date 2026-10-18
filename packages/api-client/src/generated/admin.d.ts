@@ -137,6 +137,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /** Sets or extends a deadline (FR-DL-03): the form opens again at once; the history keeps both days. */
         put: operations["setDeadline"];
         post?: never;
         delete?: never;
@@ -302,6 +303,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** The held emails, oldest first, with why each waits, and the breaker of the organisation. */
         get: operations["listHeldMail"];
         put?: never;
         post?: never;
@@ -324,6 +326,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** The send breaker of the organisation (ADR-08; P: 30 an hour, 200 a day). */
         patch: operations["setOrganisationBreaker"];
         trace?: never;
     };
@@ -336,6 +339,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Releases held emails: they are queued and go out at the send rate of their server. */
         post: operations["releaseHeldMail"];
         delete?: never;
         options?: never;
@@ -659,6 +663,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** The submissions of the organisation, newest first, a page at a time (FR-SUB-02). */
         get: operations["listSubmissions"];
         put?: never;
         post?: never;
@@ -675,6 +680,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** One submission with its data, files, status history and emails (FR-SUB-04). */
         get: operations["getSubmission"];
         put?: never;
         post?: never;
@@ -691,6 +697,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * A file of the submission, as an attachment with a safe name (ADR-10, ST-39). 409
+         *     `scan_pending` until the virus scan is clean, `file_not_clean` when it is not.
+         */
         get: operations["downloadSubmissionFile"];
         put?: never;
         post?: never;
@@ -854,6 +864,25 @@ export interface components {
             page: number;
             pageSize: number;
         };
+        CatalogueFieldDto: {
+            /** @enum {string} */
+            kind: "text" | "longText" | "email" | "choice" | "yesNo" | "file" | "consent";
+            /** @description The field's key, as in the configuration's `fields`. */
+            field: string;
+            section: string;
+            mandatory: boolean;
+            /** @description Required unless the admin says otherwise (a mandatory field: always as here). */
+            requiredByDefault: boolean;
+            enabledByDefault: boolean;
+            /** @description The values of its options, whose labels an admin may change; null without options. */
+            options: string[] | null;
+            /** @description The most characters an admin may allow; null when the field has no such limit. */
+            maxLengthCap: number | null;
+            /** @description The most words an admin may allow; null when the field counts no words. */
+            maxWordsCap: number | null;
+            /** @description The file types an admin may let a file field take; null for another field. */
+            fileTypes: string[] | null;
+        };
         ChangeEmailDto: {
             /** @description The current password: an email change needs it (ADR-03). */
             password: string;
@@ -953,6 +982,34 @@ export interface components {
             enabled?: boolean;
             sendRatePerMinute?: number;
         };
+        DeadlineChangeDto: {
+            /** @enum {string} */
+            kind: "abstract_submission" | "fee_payment" | "full_paper";
+            oldEndsOn: string | null;
+            newEndsOn: string;
+            changedAt: string;
+            changedBy: {
+                id: string;
+                displayName: string;
+            };
+        };
+        DeadlineDto: {
+            /** @enum {string} */
+            kind: "abstract_submission" | "fee_payment" | "full_paper";
+            /** @description The last day, YYYY-MM-DD, in the conference's time zone. */
+            endsOn: string;
+            /** @description The instant it ends: the start of the next day in the conference's time zone. */
+            endsAt: string;
+            /** @description Whether it has passed now. */
+            passed: boolean;
+            version: number;
+        };
+        DeadlinesDto: {
+            timeZone: string;
+            items: components["schemas"]["DeadlineDto"][];
+            /** @description Newest first. */
+            history: components["schemas"]["DeadlineChangeDto"][];
+        };
         EmailChangeLinkDto: {
             /** @description The address the account will have once the change is confirmed. */
             newEmail: string;
@@ -1004,6 +1061,8 @@ export interface components {
             /** @description The send breaker of this form (ADR-08): confirmations above these are held. */
             breakerPerHour: number;
             breakerPerDay: number;
+            /** @description The catalogue of its type: what the configuration may change (M3-ISS-05). */
+            catalogue: components["schemas"]["CatalogueFieldDto"][];
             updatedAt: string;
             version: number;
         };
@@ -1044,6 +1103,35 @@ export interface components {
             publishedBy: {
                 id: string;
                 displayName: string;
+            };
+        };
+        HeldMailDto: {
+            /** @enum {string} */
+            heldReason: "send_breaker_form" | "send_breaker_organisation" | "recipient_domain";
+            id: string;
+            kind: string;
+            recipient: string;
+            conference: {
+                id: string;
+                code: string;
+                name: string;
+            };
+            formId: string | null;
+            submission: {
+                id: string;
+                reference: string;
+            };
+            createdAt: string;
+        };
+        HeldMailPageDto: {
+            items: components["schemas"]["HeldMailDto"][];
+            total: number;
+            page: number;
+            pageSize: number;
+            breaker: {
+                perHour: number;
+                perDay: number;
+                version: number;
             };
         };
         InviteUserDto: {
@@ -1164,7 +1252,12 @@ export interface components {
              */
             version: string;
         };
-        OrganisationBreakerDto: Record<string, never>;
+        OrganisationBreakerDto: {
+            perHour: number;
+            perDay: number;
+            /** @description The version of the organisation profile. */
+            version: number;
+        };
         OrganisationDto: {
             id: string;
             /** @description The short name shown in the application. */
@@ -1220,7 +1313,15 @@ export interface components {
             /** @description The refused fields, when the input was not valid. */
             errors?: components["schemas"]["FieldError"][];
         };
-        ReleaseHeldMailDto: Record<string, never>;
+        ReleaseHeldMailDto: {
+            ids?: string[];
+            all?: boolean;
+            /** Format: uuid */
+            formId?: string;
+        };
+        ReleasedDto: {
+            released: number;
+        };
         ResetRequestDto: {
             /** @description The address of the account. The answer is the same whether it belongs to one or not. */
             email: string;
@@ -1255,7 +1356,10 @@ export interface components {
             /** @description What the user may do (src/modules/access/permissions.ts). */
             permissions: string[];
         };
-        SetDeadlineDto: Record<string, never>;
+        SetDeadlineDto: {
+            endsOn: string;
+            version?: number;
+        };
         SetPasswordDto: {
             password: string;
             /** @description The second entry: both entries must match. */
@@ -1266,6 +1370,124 @@ export interface components {
             email: string;
             /** @description The password of the account. */
             password: string;
+        };
+        SubmissionAuthorDto: {
+            position: number;
+            firstName: string;
+            lastName: string;
+            institution: string | null;
+            institutionAddress: string | null;
+            orcid: string | null;
+            email: string;
+            phone: string | null;
+            isCorresponding: boolean;
+        };
+        SubmissionDetailDto: {
+            id: string;
+            reference: string;
+            conference: {
+                id: string;
+                code: string;
+                name: string;
+                editionYear: number | null;
+            };
+            title: string | null;
+            firstAuthor: string;
+            institution: string | null;
+            participationType: string | null;
+            status: string;
+            /** @description Not matched yet (0.8.0). */
+            memberMatch: string | null;
+            /** @description No proforma yet (0.6.0). */
+            billingStatus: string | null;
+            language: string;
+            authorCount: number;
+            receivedAt: string;
+            form: {
+                id: string;
+                slug: string;
+                versionNumber: number;
+            };
+            /** @description The answers by field key, as checked (contracts/form-rule-vectors.json). */
+            answers: {
+                [key: string]: unknown;
+            };
+            authors: components["schemas"]["SubmissionAuthorDto"][];
+            files: components["schemas"]["SubmissionFileDto"][];
+            consent: {
+                text: string;
+                links: {
+                    [key: string]: unknown;
+                };
+                version: string;
+                consentedAt: string;
+            };
+            statusHistory: components["schemas"]["SubmissionStatusDto"][];
+            emails: components["schemas"]["SubmissionEmailDto"][];
+        };
+        SubmissionEmailDto: {
+            id: string;
+            kind: string;
+            recipient: string;
+            /** @description queued, sending, sent, failed, held, stuck or waiting_for_server. */
+            status: string;
+            heldReason: string | null;
+            lastErrorCode: string | null;
+            createdAt: string;
+            sentAt: string | null;
+        };
+        SubmissionFileDto: {
+            /** @enum {string} */
+            type: "pdf" | "docx" | "doc" | "jpeg" | "png";
+            /** @enum {string} */
+            scanState: "pending" | "clean" | "infected" | "not_clean";
+            id: string;
+            /** @description The file field of the form it was uploaded for. */
+            field: string | null;
+            name: string;
+            sizeBytes: number;
+            /** @description `macros`: an old .doc with macros, accepted and flagged for the office (G2-22). */
+            scanFlag: string | null;
+            /** @description When the scan ended, or since when it waits. */
+            scannedAt: string | null;
+            pendingSince: string | null;
+            sha256: string;
+        };
+        SubmissionPageDto: {
+            items: components["schemas"]["SubmissionSummaryDto"][];
+            total: number;
+            page: number;
+            pageSize: number;
+        };
+        SubmissionStatusDto: {
+            status: string;
+            changedAt: string;
+            actor: {
+                id: string;
+                displayName: string;
+            };
+        };
+        SubmissionSummaryDto: {
+            id: string;
+            reference: string;
+            conference: {
+                id: string;
+                code: string;
+                name: string;
+                editionYear: number | null;
+            };
+            title: string | null;
+            firstAuthor: string;
+            institution: string | null;
+            participationType: string | null;
+            status: string;
+            /** @description Not matched yet (0.8.0). */
+            memberMatch: string | null;
+            /** @description No proforma yet (0.6.0). */
+            billingStatus: string | null;
+            language: string;
+            authorCount: number;
+            receivedAt: string;
         };
         TemplateCatalogueDto: {
             types: components["schemas"]["TemplateTypeDto"][];
@@ -1658,7 +1880,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DeadlinesDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {
@@ -1691,7 +1915,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DeadlinesDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {
@@ -2025,7 +2251,11 @@ export interface operations {
     };
     listHeldMail: {
         parameters: {
-            query?: never;
+            query?: {
+                formId?: string;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2036,7 +2266,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HeldMailPageDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {
@@ -2066,7 +2298,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HeldMailPageDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {
@@ -2096,7 +2330,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReleasedDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {
@@ -2888,7 +3124,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubmissionPageDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {
@@ -2916,7 +3154,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubmissionDetailDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {

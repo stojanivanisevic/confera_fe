@@ -45,9 +45,6 @@ describe('heights', () => {
   it('a message holds a type and a height, nothing else', () => {
     expect(heightMessage(812)).toEqual({ type: HEIGHT_MESSAGE, height: 812 });
     expect(Object.keys(heightMessage(812)!)).toEqual(['type', 'height']);
-    // With the frame's viewport (Q3-12): a number, nothing else; a viewport that is not one is left out.
-    expect(heightMessage(812, 719.6)).toEqual({ type: HEIGHT_MESSAGE, height: 812, view: 720 });
-    for (const view of [0, -5, Number.NaN, Number.POSITIVE_INFINITY]) expect(heightMessage(812, view)).toEqual({ type: HEIGHT_MESSAGE, height: 812 });
   });
 });
 
@@ -145,7 +142,7 @@ describe('the inline lines', () => {
   });
 
   it('make a frame that already shows its page one pixel taller, so that it tells its height again', () => {
-    expect(source).toContain(',f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);if(s)z(f,s+1);');
+    expect(source).toContain('var f=document.getElementById(i),s=f&&!f.contentDocument&&parseInt(f.style.height);if(s)z(f,s+1);');
   });
 
   it('are short', () => {
@@ -156,10 +153,10 @@ describe('the inline lines', () => {
   it('scroll only within the limits of decision D1: that frame, vertical, out of view, a clamped number, once a second', () => {
     const handler = source.slice(source.indexOf('addEventListener("message"'));
     expect(handler).toContain('if(d.type==="confera:into-view"&&N(t)&&n-w>999){');
-    expect(handler).toContain('t=r.top+M.min(M.max(t,0),r.height);');
+    expect(handler).toContain('t=r.top+Math.min(Math.max(t,0),r.height);');
     expect(handler).toContain('h=innerHeight;');
     expect(handler).toContain('if(t<0||t>h){w=n;scrollBy(0,t-h/4)}');
-    expect(source).toContain('var N=Number.isFinite,'); // a number, and finite: never a string or an object that turns into one
+    expect(source).toContain('function N(x){return typeof x=="number"&&isFinite(x)}');
     // Nothing else moves: no scrollTo, no scrollIntoView, no focus, no horizontal value.
     expect(source).not.toMatch(/scrollTo|scrollIntoView|focus\(|scrollX|pageXOffset/);
     expect(source.match(/scrollBy\(/g)).toHaveLength(1);
@@ -205,11 +202,11 @@ describe("the frame's height reporter", () => {
   it('tells the listed origins the height of the content, and nothing else', () => {
     const { parent, resize } = setup(['https://itema.example.test', 'https://eman.example.test']);
     expect(parent.postMessage.mock.calls).toEqual([
-      [{ type: HEIGHT_MESSAGE, height: 641, view: 900 }, 'https://itema.example.test'],
-      [{ type: HEIGHT_MESSAGE, height: 641, view: 900 }, 'https://eman.example.test'],
+      [{ type: HEIGHT_MESSAGE, height: 641 }, 'https://itema.example.test'],
+      [{ type: HEIGHT_MESSAGE, height: 641 }, 'https://eman.example.test'],
     ]);
     resize(900);
-    expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 900, view: 900 }, 'https://eman.example.test');
+    expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 900 }, 'https://eman.example.test');
   });
 
   it('never posts to "*"', () => {
@@ -237,7 +234,7 @@ describe("the frame's height reporter", () => {
     expect(parent.postMessage).toHaveBeenCalledTimes(1);
     frameResized(901);
     expect(parent.postMessage).toHaveBeenCalledTimes(2);
-    expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 641, view: 901 }, 'https://itema.example.test');
+    expect(parent.postMessage).toHaveBeenLastCalledWith({ type: HEIGHT_MESSAGE, height: 641 }, 'https://itema.example.test');
   });
 
   it('once the page has followed, a size it sets is not argued with', () => {
@@ -257,6 +254,73 @@ describe("the frame's height reporter", () => {
     expect(parent.postMessage).toHaveBeenCalledTimes(2);
     frameResized(901);
     expect(parent.postMessage).toHaveBeenCalledTimes(2);
+  });
+
+  // Q3-12: WebKit on a site with CSS zoom lays the frame's page out in zoomed pixels and measures the
+  // form in unzoomed ones; the root element's height is the zoomed viewport (measured in WebKit:
+  // 25,000 for an innerHeight of 20,000 at zoom 1.25). The fake below is that engine.
+  const zoomed = (initialZoom: number, initial = 1201) => {
+    vi.stubGlobal('ResizeObserver', FakeObserver);
+    let height = initial;
+    let zoom = initialZoom;
+    const root = { getBoundingClientRect: () => ({ height }) } as unknown as Element;
+    const parent = { postMessage: vi.fn() };
+    const listeners = new Map<string, () => void>();
+    const win = {
+      innerHeight: 900,
+      document: { documentElement: { get clientHeight() { return Math.round(win.innerHeight * zoom); } } },
+      addEventListener: vi.fn((type: string, listener: () => void) => listeners.set(type, listener)),
+      removeEventListener: vi.fn(),
+    } as { parent?: unknown; innerHeight: number; document: unknown; addEventListener: unknown; removeEventListener: unknown };
+    win.parent = parent;
+    startHeightReporter({ root, parentOrigins: ['https://itema.example.test'], win: win as unknown as Window });
+    const told = () => parent.postMessage.mock.calls.map((call) => (call[0] as { height: number }).height);
+    return {
+      told,
+      /** The listener makes the frame as tall as the frame said last. */
+      follow: () => {
+        win.innerHeight = told().at(-1)!;
+        listeners.get('resize')?.();
+      },
+      frameResized: (viewport: number) => {
+        win.innerHeight = viewport;
+        listeners.get('resize')?.();
+      },
+      zoomTo: (next: number) => {
+        zoom = next;
+        listeners.get('resize')?.();
+      },
+      resize: (next: number) => ((height = next), FakeObserver.last?.callback()),
+    };
+  };
+
+  it('on a zoomed page tells the height the page takes', () => {
+    const page = zoomed(1.25);
+    // 1,201 measured, 1,501.25 of the page.
+    expect(page.told()).toEqual([1502]);
+    page.follow();
+    page.resize(800);
+    // 800 × 1878 / 1502: the factor is read from whole pixels, and a pixel more is never too short.
+    expect(page.told()).toEqual([1502, 1001]);
+    page.follow();
+    // Followed: a size the site sets is its own business, as without zoom.
+    page.frameResized(300);
+    page.frameResized(5000);
+    expect(page.told()).toEqual([1502, 1001]);
+  });
+
+  it('a site that starts zooming later: the height is told again with the factor', () => {
+    const page = zoomed(1);
+    expect(page.told()).toEqual([1201]);
+    page.follow();
+    page.zoomTo(1.25);
+    expect(page.told()).toEqual([1201, 1502]);
+  });
+
+  it('without zoom, or with a scroll bar\'s worth of difference, the height is the measured one', () => {
+    expect(zoomed(1).told()).toEqual([1201]);
+    expect(zoomed(0.98).told()).toEqual([1201]);
+    expect(zoomed(0.8).told()).toEqual([961]);
   });
 
   it('stops when asked', () => {

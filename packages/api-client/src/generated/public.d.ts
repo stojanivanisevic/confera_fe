@@ -94,7 +94,8 @@ export interface paths {
         put?: never;
         /**
          * A single-use form token (ADR-08). Under load it asks for a proof-of-work. JSON only:
-         *     the body is `{}`. 409 `form_closed` when the form takes no submissions.
+         *     `{}`, or `{ "previousFormToken": "..." }` to renew a refused token (Q3-01). 409
+         *     `form_closed` when the form takes no submissions.
          */
         post: operations["issueFormToken"];
         delete?: never;
@@ -139,6 +140,10 @@ export interface components {
             expiresAt: string;
             proofOfWork: components["schemas"]["ProofOfWorkDto"] | null;
         };
+        FormTokenRequestDto: {
+            /** @description The refused token of this form, issued within the last 24 hours. */
+            previousFormToken?: string;
+        };
         FrameSitesDto: {
             sites: string[];
         };
@@ -179,6 +184,8 @@ export interface components {
                 terms: string | null;
                 privacy: string | null;
             };
+            /** @description Whom an author writes to (D8): the contact email of the organisation profile, or null. */
+            contactEmail: string | null;
             /** @description The number of the version: a submission keeps it. */
             versionNumber: number;
             /** @description contracts/form-definition.schema.json. */
@@ -354,7 +361,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FormTokenRequestDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {

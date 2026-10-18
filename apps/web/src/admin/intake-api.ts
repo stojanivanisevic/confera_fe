@@ -144,7 +144,7 @@ export const intake = {
 
   deadlines: async (client: SessionClient, conferenceId: string) => as<Deadlines>(await call(client.GET('/api/v1/conferences/{id}/deadlines', { params: { path: { id: conferenceId } } }))),
   setDeadline: async (client: SessionClient, conferenceId: string, kind: DeadlineKind, endsOn: string, version?: number) =>
-    as<Deadlines>(await call(client.PUT('/api/v1/conferences/{id}/deadlines/{kind}', { params: { path: { id: conferenceId, kind } }, body: as<Record<string, never>>({ endsOn, ...(version === undefined ? {} : { version }) }) }))),
+    as<Deadlines>(await call(client.PUT('/api/v1/conferences/{id}/deadlines/{kind}', { params: { path: { id: conferenceId, kind } }, body: { endsOn, ...(version === undefined ? {} : { version }) } }))),
 
   submissions: async (client: SessionClient, query: { conferenceId?: string; page: number; pageSize: number }) =>
     as<SubmissionPage>(await call(client.GET('/api/v1/submissions', { params: { query: { ...(query.conferenceId ? { conferenceId: query.conferenceId } : {}), page: query.page, pageSize: query.pageSize } } }))),
@@ -156,5 +156,5 @@ export const intake = {
     // The contract names no query of this route yet: the query goes as the DTO class reads it.
     as<HeldMailPage>(await call(client.GET('/api/v1/held-mail', as<never>({ params: { query } })))),
   release: async (client: SessionClient, body: { ids?: readonly string[]; all?: boolean; formId?: string }) => as<{ released: number }>(await call(client.POST('/api/v1/held-mail/release', { body: as<Record<string, never>>(body) }))),
-  setOrganisationBreaker: async (client: SessionClient, perHour: number, perDay: number, version: number) => call(client.PATCH('/api/v1/held-mail/breaker', { body: as<Record<string, never>>({ perHour, perDay, version }) })),
+  setOrganisationBreaker: async (client: SessionClient, perHour: number, perDay: number, version: number) => call(client.PATCH('/api/v1/held-mail/breaker', { body: { perHour, perDay, version } })),
 };

@@ -5,13 +5,18 @@
  *  - The message goes to the listed parent origins only, never to "*". The
  *    browser delivers it only if the parent really is that origin, and the
  *    frame page can only be framed by a listed site (`frame-ancestors`).
- *  - The message holds a type, a height and the frame's own viewport height. No form data, no reference.
+ *  - The message holds a type and a height. No form data, no reference.
  *  - It is sent when the height of the content changes, and again when the
  *    page around changes the size of the frame before it has ever followed a
  *    height the frame told (the snippet's lines started late).
  *  - After Send it may ask the page to bring a part of the form into view
  *    (requestIntoView below): a type and a number, to the same origins.
  *  - The frame reads no message from its parent at all.
+ *  - On a site that zooms its content with CSS `zoom`, WebKit lays the frame's page out in zoomed
+ *    pixels but measures the form in unzoomed ones (Q3-12: a form of 1,201 px took 1,501 px, and
+ *    the frame scrolled inside). Its viewport shows the factor: the root element's height is the
+ *    zoomed one and `innerHeight` the frame's own (25,000 and 20,000 at zoom 1.25). The frame tells
+ *    heights multiplied by it. It is 1 in Chromium and Firefox, and wherever nothing is zoomed.
  */
 import { heightMessage, INTO_VIEW_MESSAGE, type IntoViewMessage } from './protocol';
 
@@ -31,11 +36,19 @@ export function startHeightReporter(options: HeightReporterOptions): () => void 
   if (parent === win || options.parentOrigins.length === 0) return () => undefined;
 
   let last = -1;
+  /** Page pixels per measured pixel of the form (above); 1 within 3 % (a scroll bar), and without a document. */
+  const zoomOf = (): number => {
+    const viewport = win.document?.documentElement.clientHeight ?? 0;
+    const ratio = win.innerHeight > 0 && viewport > 0 ? viewport / win.innerHeight : 1;
+    return Math.abs(ratio - 1) < 0.03 ? 1 : ratio;
+  };
+  let zoom = 1;
   // Whether the frame has been as tall as it said: then the page around listens (or needs nothing).
   let heard = false;
   /** `again`: tell the height also when it did not change. */
   const report = (again = false) => {
-    const message = heightMessage(Math.ceil(options.root.getBoundingClientRect().height), win.innerHeight);
+    zoom = zoomOf();
+    const message = heightMessage(Math.ceil(options.root.getBoundingClientRect().height * zoom));
     if (!message || (message.height === last && !again)) return;
     last = message.height;
     if (win.innerHeight === last) heard = true;
@@ -48,8 +61,10 @@ export function startHeightReporter(options: HeightReporterOptions): () => void 
   // as the frame said, its inline lines may not have been listening: a site that runs them late
   // makes the frame one pixel taller when they start, and the height is told again. Once the page
   // has followed, a size it sets is its own business: the frame does not argue with it.
+  // A site that starts (or stops) zooming changes the factor: the height is told again.
   const onResize = () => {
-    if (win.innerHeight === last) heard = true;
+    if (Math.abs(zoomOf() - zoom) >= 0.01) report(true);
+    else if (win.innerHeight === last) heard = true;
     else if (!heard) report(true);
   };
   win.addEventListener('resize', onResize);

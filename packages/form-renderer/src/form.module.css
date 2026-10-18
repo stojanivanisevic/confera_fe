@@ -88,7 +88,10 @@
   padding: var(--gutter-xs);
 }
 
-/* Inside a frame the page around shows through: no beige ground painted on the site (UI-M1-18). */
+/* Inside a frame the page around shows through: no beige ground painted on the site (UI-M1-18).
+   The page is as tall as its form, never the height of the frame: on a site with CSS zoom WebKit
+   zooms a viewport height (100vh) of the frame's page, which then scrolled inside (Q3-12). */
 :global(body):has(.embedded) {
   background: transparent;
+  min-height: 0;
 }

@@ -26,6 +26,12 @@ Milestone 0.3.0 (forms, embed and intake), against `confera_be` `m3/be` (the ven
 - The spike form of 0.1.0 is gone; its browser tests run on the spike's form written as a definition, served by the stub.
 - The inline lines of the snippet may be up to 800 characters (600 held the height alone; the scroll of D1 takes the rest).
 
+### Fixed (the Test engineer's findings of 0.3.0)
+- **Q3-01:** the page never sends sooner than the API's fill time (3 s) after it received its token, so a thank-you always stands for a stored submission: a restored draft sent at once, or a Send whose token was refused or had expired, waits out the rest ("Sending…"). A refused token (403 `form_token_invalid`, 409 `form_token_used`, 403 `proof_of_work_failed`) is renewed with `previousFormToken` (`confera_be` m3/be-fixes: the renewal keeps the fill start and the uploaded files), its challenge solved, and the submit sent once more: once per Send. The contract lock names `confera_be` `b400696`; the public form carries the organisation's contact email.
+- **Q3-08:** the proof-of-work asks for its hashes a round at a time and leaves the page its turn every 12 ms; a Send that still waits for it says "Checking that you are not a robot…" ("Proveravamo da niste robot…") after a second, and the fields stay editable.
+- **Q3-12:** on a site that zooms its content with CSS `zoom`, the whole form is inside the frame in WebKit too (it was 1,135 px short): WebKit lays the frame's page out in zoomed pixels but measures it in unzoomed ones, so the frame reads the factor from its viewport and tells heights multiplied by it. The snippet is unchanged; a snippet already pasted needs nothing. The embedded page is as tall as its form (no `min-height: 100vh`). **Not fixable here:** WebKit zooms the frame's layout viewport as well, so there the frame keeps a quarter of blank room to scroll below the form and clips its right fifth.
+- **Q3-09:** against a real API the specs on the stub's forms are left out by name (`STUB_FORM_SPECS`), and the form tests of `csp`, `pages` and `ds-2-3-0` are skipped.
+
 ## 0.2.0 (2026-10-16): the admin, conferences, mail and the template-editor spike
 
 The web application of release 0.2.0, against `confera_be` 0.2.0 (`release/0.2.0`, `91f6085`; the vendored contract and its lock name that commit). Design systems 2.3.0, 2.4.0 and 2.4.1 are part of it.

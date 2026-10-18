@@ -21,8 +21,6 @@ export const MAX_FRAME_HEIGHT = 20000;
 export interface HeightMessage {
   readonly type: typeof HEIGHT_MESSAGE;
   readonly height: number;
-  /** The frame's own viewport height (`innerHeight`), which lets the snippet see a zoomed site (Q3-12). */
-  readonly view?: number;
 }
 
 /** A finite height, rounded and kept inside the bounds; null when the value is not a finite number. */
@@ -31,10 +29,9 @@ export function clampHeight(value: unknown): number | null {
   return Math.min(MAX_FRAME_HEIGHT, Math.max(MIN_FRAME_HEIGHT, Math.round(value)));
 }
 
-export function heightMessage(height: number, view?: number): HeightMessage | null {
+export function heightMessage(height: number): HeightMessage | null {
   const clamped = clampHeight(height);
-  if (clamped === null) return null;
-  return view !== undefined && Number.isFinite(view) && view > 0 ? { type: HEIGHT_MESSAGE, height: clamped, view: Math.round(view) } : { type: HEIGHT_MESSAGE, height: clamped };
+  return clamped === null ? null : { type: HEIGHT_MESSAGE, height: clamped };
 }
 
 /**

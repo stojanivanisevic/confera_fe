@@ -303,6 +303,34 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
   });
 
+  it('a proof-of-work asked for only at submit: the token is renewed with its challenge, solved, and sent once more', async () => {
+    const token = vi.spyOn(api, 'token');
+    await mount();
+    await fillAll();
+    // The renewal carries a challenge of 4 bits: quick to solve here.
+    token.mockImplementationOnce(() => Promise.resolve({ token: 'invented-form-token-renewed', expiresAt: null, proofOfWork: { challenge: 'invented-challenge', difficulty: 4 } }));
+    api.failNext(new PublicApiError(403, 'proof_of_work_failed'));
+    await send();
+    for (let i = 0; i < 20 && api.calls.submits.length < 2; i += 1) await settle();
+    expect(token.mock.calls).toEqual([['itema-2026-abstract'], ['itema-2026-abstract', 'invented-form-token-1']]);
+    expect(api.calls.submits.map((s) => s.token)).toEqual(['invented-form-token-1', 'invented-form-token-renewed']);
+    expect(api.calls.submits[1]!.body.proofOfWork).toMatch(/^[0-9]+$/);
+    expect(api.calls.submits[0]!.key).toBe(api.calls.submits[1]!.key);
+    expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
+  });
+
+  it('a second refusal of the renewed token is not renewed again: the form says what happened', async () => {
+    await mount();
+    await fillAll();
+    api.failNext(new PublicApiError(409, 'form_token_used'));
+    api.failNext(new PublicApiError(403, 'form_token_invalid'));
+    await send();
+    expect(api.calls.tokens).toBe(2);
+    expect(api.calls.submits).toHaveLength(2);
+    expect(container.querySelector('[data-confera-problem]')).not.toBeNull();
+    expect(container.querySelector('[data-confera-thanks]')).toBeNull();
+  });
+
   it('a used or refused token: a new one, once, with the same idempotency key', async () => {
     await mount();
     await fillAll();
