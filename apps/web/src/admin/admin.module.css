@@ -9,14 +9,14 @@
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--card-min), 100%), 1fr));
   gap: var(--gutter-2xl);
   align-items: start;
 }
 
 .fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--field-min), 100%), 1fr));
   gap: var(--gutter-l) var(--gutter-2xl);
 }
 
@@ -121,7 +121,7 @@
 }
 
 .toolbar > * {
-  flex: 1 1 180px;
+  flex: 1 1 var(--filter-field-min);
   max-width: var(--filter-field-max);
 }
 
