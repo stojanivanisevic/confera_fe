@@ -368,6 +368,27 @@
 
 /* Save and Publish of a form, with the state of its draft: in view at the foot of the window wherever the long
    page is scrolled (UX3-09). */
+/* The parts of a long screen, each a link to its card (M3-ISS-22). */
+.anchors ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gutter-xs) var(--gutter-l);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.anchors a {
+  display: inline-block;
+  min-height: var(--target-touch);
+  padding-block: var(--gutter-xs);
+}
+
+/* A card a link leads to keeps its heading clear of the top of the window. */
+.anchored {
+  scroll-margin-top: var(--gutter-l);
+}
+
 .stickyActions {
   position: sticky;
   bottom: var(--gutter-null);

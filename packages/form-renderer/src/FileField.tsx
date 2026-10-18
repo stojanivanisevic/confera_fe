@@ -9,9 +9,10 @@
  */
 import { useEffect, useRef } from 'react';
 
-import { FileDropzone } from '@confera/ui';
+import { FileDropzone, Icon } from '@confera/ui';
 
 import type { FileRule, FileType } from './definition';
+import styles from './form.module.css';
 import { fill, FORM_TEXTS, type FormLanguage } from './i18n/catalogue';
 import { formatBytes } from './i18n/format';
 import { PublicApiError, type Uploaded } from './public-api';
@@ -152,6 +153,13 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
         status={error ? 'error' : 'default'}
         message={error}
       />
+      {/* A file on the server says so in words and with a tick, not only by the absence of a bar (UX3-19). */}
+      {state?.uploadId ? (
+        <p className={styles.fileDone} data-confera-file-done="">
+          <Icon name="check-circle-2" size={16} />
+          <span>{`${t.done}: ${state.name}`}</span>
+        </p>
+      ) : null}
     </div>
   );
 }

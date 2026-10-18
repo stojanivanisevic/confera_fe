@@ -530,7 +530,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
       if (error.code === 'preview') return { title: p.previewTitle, text: p.previewText };
       if (error.status === 0) return { title: p.networkTitle, text: p.networkText };
       if (error.status === 429) return { title: p.tooManyTitle, text: fill(p.tooManyText, { minutes: Math.max(1, Math.ceil((error.retryAfterSeconds ?? 600) / 60)) }) };
-      if (error.code === 'form_closed' || error.code === 'formClosed') return { title: p.closedTitle, text: p.closedText + (contact ? ` ${fill(t.states.contact, { email: contact })}` : '') };
+      if (error.code === 'form_closed' || error.code === 'formClosed') return { title: p.closedTitle, text: `${p.closedText} ${p.closedNext}${contact ? ` ${fill(t.states.contact, { email: contact })}` : ''}` };
       const traceId = error.traceId ?? '-';
       return { title: p.unknownTitle, text: contact ? fill(p.unknownTextContact, { email: contact, traceId }) : fill(p.unknownText, { traceId }) };
     }

@@ -703,6 +703,13 @@ export const TEXTS = {
     empty: 'No forms yet',
     emptyText: 'Choose a conference at the top and create its abstract form.',
     back: 'Forms',
+    /** The parts of the long form screen, each a link to its card (M3-ISS-22). */
+    sectionsLabel: 'Parts of this form',
+    /** The organisation has no contact address (UX3-17, UX3-21). */
+    noContact: 'No contact address: authors cannot ask a question',
+    noContactText: 'An author who needs more than the most authors, or who finds the form closed, is told to write to the contact address of the organisation profile. It is empty, so that line is left out.',
+    noContactAction: 'Add it in the organisation profile',
+    sections: { snippet: 'Snippet', texts: 'Texts', authors: 'Authors', fields: 'Fields', preview: 'Preview', versions: 'Versions', breaker: 'Send breaker' },
     // The snippet (M3-FE-03; D1, D2, D5).
     embedTitle: 'On a conference website',
     embedLead: 'Paste this into the page of the conference site, in a Custom HTML block (WordPress) or a code module. It shows the form in a frame that follows its height, with a link to the form on its own page above it.',

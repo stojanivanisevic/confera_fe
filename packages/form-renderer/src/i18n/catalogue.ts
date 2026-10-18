@@ -102,6 +102,8 @@ export interface FormCatalogue {
     uploading: string;
     /** {name} */
     uploaded: string;
+    /** Beside a file that is on the server, with a tick (UX3-19). */
+    done: string;
     /** Send was pressed while a file is still on its way. */
     wait: string;
     /** A file must be uploaded again: the draft keeps no files (D3). */
@@ -175,6 +177,8 @@ export interface FormCatalogue {
     tooManyText: string;
     closedTitle: string;
     closedText: string;
+    /** What the author can still do after the form closed while they typed (UX3-21). */
+    closedNext: string;
     unknownTitle: string;
     /** {traceId} */
     unknownText: string;
@@ -262,6 +266,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       busy: 'Files cannot be taken just now. Try again in a few minutes.',
       uploading: 'Uploading {name}: {percent} %',
       uploaded: '{name} is uploaded.',
+      done: 'Uploaded',
       wait: 'Wait until the file is uploaded, then send.',
       notKept: 'Files are not kept in the draft: add them again.',
     },
@@ -307,6 +312,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       tooManyText: 'Try again in {minutes} minutes. Nothing you typed is lost.',
       closedTitle: 'Submissions closed while you were filling in the form',
       closedText: 'The deadline has passed, so the form could not be sent.',
+      closedNext: 'Your answers stay on this page. If the organisers extend the deadline, you can send the form from here.',
       unknownTitle: 'Something went wrong on our side',
       unknownText: 'Your answers are still here. Try again in a few minutes. Code: {traceId}',
       unknownTextContact: 'Your answers are still here. Try again in a few minutes. If it keeps happening, write to {email} and mention the code {traceId}.',
@@ -382,6 +388,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       busy: 'Fajlovi trenutno ne mogu da se prime. Pokušajte ponovo za nekoliko minuta.',
       uploading: 'Otprema se {name}: {percent} %',
       uploaded: '{name} je otpremljen.',
+      done: 'Otpremljeno',
       wait: 'Sačekajte da se fajl otpremi, pa pošaljite.',
       notKept: 'Fajlovi se ne čuvaju u nacrtu: dodajte ih ponovo.',
     },
@@ -427,6 +434,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       tooManyText: 'Pokušajte ponovo za {minutes} min. Ništa od upisanog nije izgubljeno.',
       closedTitle: 'Prijave su zatvorene dok ste popunjavali obrazac',
       closedText: 'Rok je istekao, pa obrazac nije mogao da bude poslat.',
+      closedNext: 'Vaši odgovori ostaju na ovoj stranici. Ako organizatori produže rok, obrazac možete da pošaljete odavde.',
       unknownTitle: 'Nešto nije u redu kod nas',
       unknownText: 'Vaši odgovori su i dalje ovde. Pokušajte ponovo za nekoliko minuta. Kôd: {traceId}',
       unknownTextContact: 'Vaši odgovori su i dalje ovde. Pokušajte ponovo za nekoliko minuta. Ako se ponovi, pišite na {email} i navedite kôd {traceId}.',

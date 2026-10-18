@@ -81,6 +81,10 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
   const form = useLoad<FormRecord>((c) => intake.form(c, id), [id]);
   const record = form.state.data;
   const conference = useLoad<Conference | null>((c) => (record ? call(c.GET('/api/v1/conferences/{id}', { params: { path: { id: record.conferenceId } } })) : Promise.resolve(null)), [record?.conferenceId]);
+  // Authors at the most authors, and a closed form, name the organisation's contact address; without one they have nobody to write to (UX3-17, UX3-21).
+  const mayReadOrganisation = session?.user.permissions.includes('organisation.read') ?? false;
+  const organisation = useLoad<{ contactEmail?: string | null } | null>((c) => (mayReadOrganisation ? call(c.GET('/api/v1/organisation')) : Promise.resolve(null)), [mayReadOrganisation]);
+  const noContact = organisation.state.phase === 'ready' && organisation.state.data !== null && !organisation.state.data.contactEmail;
 
   // The configuration being edited follows the record: a new version from the server replaces it.
   const [configuration, setConfiguration] = useState<Configuration>({});
@@ -180,6 +184,23 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
         breadcrumbs={[{ label: t.back, href: '/forms', onClick: () => router.push('/forms') }, { label: t.types[record.type] ?? record.type }]}
         actions={<StatusBadge tone={record.state === 'open' ? 'success' : 'neutral'}>{formStateText(record.state, record.closedReason)}</StatusBadge>}
       />
+      {/* The screen is long (UX3-09, M3-ISS-22): its parts are named here, each a link to its card. */}
+      <nav aria-label={t.sectionsLabel} className={styles.anchors} data-confera-form-sections="">
+        <ul>
+          {(['snippet', 'texts', 'authors', 'fields', ...(definition && conference.state.data ? (['preview'] as const) : []), 'versions', 'breaker'] as const).map((part) => (
+            <li key={part}>
+              <a className="ud-link" href={`#form-${part}`}>
+                {t.sections[part]}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      {noContact ? (
+        <Alert tone="warning" title={t.noContact} action={<TextButton onClick={() => router.push('/organisation')}>{t.noContactAction}</TextButton>}>
+          {t.noContactText}
+        </Alert>
+      ) : null}
       {dirty ? (
         <Alert tone="info" title={t.unsaved}>
           {t.publishSaveFirst}
@@ -209,7 +230,7 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
 
       {definition && conference.state.data ? <PreviewCard record={record} definition={definition} conference={conference.state.data} /> : null}
 
-      <Card title={t.versions} headingLevel={2}>
+      <Card title={t.versions} headingLevel={2} id="form-versions" className={styles.anchored}>
         <div className={styles.stack}>
           <p className={styles.text}>{t.versionsLead}</p>
           <DataTable
@@ -300,7 +321,7 @@ function EmbedCard({ record, conference, publicOrigin }: { record: FormRecord; c
   const sites = conference?.listedSites ?? [];
   const hosted = `${publicOrigin}/f/${record.slug}${language === 'browser' ? '' : `?lang=${language}`}`;
   return (
-    <Card title={t.embedTitle} headingLevel={2} data-confera-embed-card="">
+    <Card title={t.embedTitle} headingLevel={2} id="form-snippet" className={styles.anchored} data-confera-embed-card="">
       <div className={styles.stack}>
         <p className={styles.text}>{t.embedLead}</p>
         {record.currentVersion === null ? (
@@ -351,7 +372,7 @@ function TextsCard({ configuration, definition, readOnly, onChange }: EditProps)
   const value = (key: string): Localised => configuration.texts?.[key] ?? localised(definition?.texts[key as keyof FormDefinition['texts']]);
   const set = (key: string, language: 'en' | 'sr', text: string) => onChange({ ...configuration, texts: { ...configuration.texts, [key]: { ...value(key), [language]: text } } });
   return (
-    <Card title={t.texts} headingLevel={2}>
+    <Card title={t.texts} headingLevel={2} id="form-texts" className={styles.anchored}>
       <div className={styles.stack}>
         <p className={styles.text}>{t.textsLead}</p>
         <div className={styles.fields}>
@@ -391,7 +412,7 @@ function AuthorsCard({ configuration, definition, readOnly, onChange }: EditProp
   const notice = configuration.authorNotice !== undefined && configuration.authorNotice !== null ? configuration.authorNotice : localised(repeat?.notice);
   const number = (text: string): number | null => (/^\d{1,3}$/.test(text.trim()) ? Number(text.trim()) : null);
   return (
-    <Card title={t.authors} headingLevel={2}>
+    <Card title={t.authors} headingLevel={2} id="form-authors" className={styles.anchored}>
       <div className={styles.fields}>
         <NumberField label={t.maxAuthors} name="maxAuthors" inputMode="numeric" value={String(max)} disabled={readOnly} onChange={(event) => onChange({ ...configuration, maxAuthors: number(event.target.value) ?? max })} message={t.maxAuthorsHint} />
         <NumberField label={t.noticeFrom} name="authorNoticeFrom" inputMode="numeric" value={from === null ? '' : String(from)} disabled={readOnly} onChange={(event) => onChange({ ...configuration, authorNoticeFrom: number(event.target.value) })} message={t.noticeFromHint} />
@@ -438,7 +459,7 @@ function FieldsCard({ configuration, definition, onEdit }: { configuration: Conf
     };
   });
   return (
-    <Card title={t.fields} headingLevel={2}>
+    <Card title={t.fields} headingLevel={2} id="form-fields" className={styles.anchored}>
       <div className={styles.stack}>
         <p className={styles.text}>{t.fieldsLead}</p>
         <DataTable
@@ -560,7 +581,7 @@ function PreviewCard({ record, definition, conference }: { record: FormRecord; d
     definition,
   };
   return (
-    <Card title={t.preview} headingLevel={2} data-confera-form-preview="">
+    <Card title={t.preview} headingLevel={2} id="form-preview" className={styles.anchored} data-confera-form-preview="">
       <div className={styles.stack}>
         <p className={styles.text}>{t.previewLead}</p>
         <div className={styles.fields}>
@@ -594,7 +615,7 @@ function BreakerCard({ record, readOnly, onSaved, onRefused }: { record: FormRec
     }
   };
   return (
-    <Card title={t.breaker} headingLevel={2}>
+    <Card title={t.breaker} headingLevel={2} id="form-breaker" className={styles.anchored}>
       <form className={styles.stack} onSubmit={(event) => void save(event)} noValidate>
         <p className={styles.text}>{t.breakerLead}</p>
         <div className={styles.fields}>

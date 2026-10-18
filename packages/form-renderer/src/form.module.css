@@ -95,3 +95,13 @@
   background: transparent;
   min-height: 0;
 }
+
+/* A file on the server: a tick and "Uploaded" (UX3-19), in the success colour of text. */
+.fileDone {
+  display: flex;
+  align-items: center;
+  gap: var(--gutter-xs);
+  margin: var(--gutter-xs) 0 0;
+  font: var(--text-body-sm);
+  color: var(--success-strong);
+}
