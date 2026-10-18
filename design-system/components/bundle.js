@@ -701,6 +701,40 @@
     return st[0];
   }
 
+  /* The open cell of a DataTable holds no control (2.6.0, M2-ISS-03, UI-DS-03). The cell of `openColumn` is
+     a button; a link, a button or a field inside it would be a control inside a control (invalid, and a
+     screen reader hears one name for both). A cell whose content holds a control is drawn without the open
+     button (the row still opens by a click elsewhere), and outside production the console says why.
+     Two checks: the rendered elements (host controls and the controls of this system), and, for
+     components of the consumer, the drawn button after each render. */
+  var DEV = !(typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production");
+  var CONTROL_TAGS = ["a", "button", "input", "select", "textarea", "details", "iframe", "audio", "video"];
+  var CONTROL_ROLES = ["button", "link", "checkbox", "radio", "switch", "textbox", "combobox", "searchbox", "menuitem", "tab", "slider", "spinbutton", "option"];
+  var CONTROL_IN_DOM = "a[href], button, input, select, textarea, details, iframe, audio[controls], video[controls], [tabindex], [contenteditable]";
+  function controlComponents() {
+    return [Button, CircleButton, ArrowButton, NavLink, SegmentedTabs, TextField, Select, Textarea, Checkbox, Radio, FileButton,
+      NumberField, DateField, PasswordField, SearchField, Switch, ScaleField, Autocomplete, Menu, TextButton, IconButton];
+  }
+  function holdsControl(node, known) {
+    if (node == null || typeof node !== "object") return false;
+    if (Array.isArray(node)) { for (var i = 0; i < node.length; i++) { if (holdsControl(node[i], known)) return true; } return false; }
+    var p = node.props;
+    if (!p || !("type" in node)) return false;
+    var type = node.type;
+    if (typeof type === "string") {
+      if (CONTROL_TAGS.indexOf(type) >= 0 && (type !== "a" || p.href != null)) return true;
+      if (p.tabIndex != null && Number(p.tabIndex) >= 0) return true;
+      if (p.contentEditable === true || p.contentEditable === "true") return true;
+      if (p.role && CONTROL_ROLES.indexOf(p.role) >= 0) return true;
+    } else if (known.indexOf(type) >= 0 || (type === Tag && p.onRemove)) {
+      return true;
+    }
+    return holdsControl(p.children, known);
+  }
+  function warnOpenCell(key) {
+    if (DEV && typeof console !== "undefined") console.error("[Udekom] DataTable: the cell of openColumn \"" + key + "\" holds a control (a link, a button, a field), so it is drawn without its open button: a control inside a control is invalid. Give that column no onRowClick action (openColumn: another column), or move the control to another column.");
+  }
+
   function DataTable(props) {
     var columns = props.columns || [], rows = props.rows || [];
     var scrollRef = useRef(null);
@@ -710,6 +744,9 @@
     var sel = useControllable(props.selected, [], props.onSelectionChange);
     var sort = sortSt[0];
     var rowKey = props.rowKey || "id";
+    /* Rows whose open cell was found to hold a control once drawn (a component of the consumer, 2.6.0). */
+    var nestedSt = useState({}), nested = nestedSt[0];
+    var warned = useRef(false);
     var view = rows;
     if (sort && !props.manualSort) {
       view = rows.slice().sort(function (a, b) {
@@ -747,18 +784,35 @@
          (the first by default) is a button that opens the row, so Tab reaches it and Enter or Space
          opens it. A click anywhere else in the row still opens it too. */
       var openKey = props.onRowClick ? props.openColumn || (columns[0] && columns[0].key) : null;
+      var known = controlComponents();
       body = view.map(function (r) {
         var id = r[rowKey], on = sel[0].indexOf(id) >= 0;
         return h("tr", { key: id, role: "row", className: cx(on ? "is-selected" : null, props.onRowClick ? "is-clickable" : null), onClick: props.onRowClick ? function () { props.onRowClick(r); } : undefined },
           props.selectable ? h("td", { className: "ud-table__check", role: "cell", onClick: function (e) { e.stopPropagation(); } }, h(Checkbox, { "aria-label": t("selectRow"), checked: on, onChange: function () { toggle(id); } })) : null,
           columns.map(function (c, ci) {
             var content = c.render ? c.render(r) : r[c.key];
-            if (c.key === openKey) content = h("button", { type: "button", className: "ud-table__open", onClick: function (e) { e.stopPropagation(); props.onRowClick(r); } }, content);
+            if (c.key === openKey) {
+              if (nested[String(id)] || holdsControl(content, known)) {
+                if (!warned.current) { warned.current = true; warnOpenCell(c.key); }
+              } else {
+                content = h("button", { type: "button", className: "ud-table__open", "data-open-row": String(id), onClick: function (e) { e.stopPropagation(); props.onRowClick(r); } }, content);
+              }
+            }
             /* The first column is the row's title in the narrow layout; the others carry their header as a label (2.4.0). */
             return h("td", { key: c.key, role: "cell", className: ci === 0 ? "ud-table__lead" : null, "data-label": labelOf(c), style: { textAlign: c.align } }, content);
           }));
       });
     }
+    /* A drawn open button that holds a control (a component the elements do not tell) is drawn again without it (2.6.0). */
+    useEffect(function () {
+      var area = scrollRef.current;
+      if (!area || !props.onRowClick) return;
+      var found = {}, any = false;
+      area.querySelectorAll(".ud-table__open").forEach(function (b) {
+        if (b.querySelector(CONTROL_IN_DOM)) { found[b.getAttribute("data-open-row")] = true; any = true; }
+      });
+      if (any) nestedSt[1](function (was) { return Object.assign({}, was, found); });
+    });
     /* Loading is announced: the table is busy, and a status line (always there, so that a screen
        reader hears it change) says so (2.3.0). */
     return h("div", { className: cx("ud-table-wrap", props.className) },

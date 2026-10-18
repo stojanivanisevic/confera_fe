@@ -149,7 +149,7 @@ export interface DataTableProps<T = any> extends WithLabels {
   /** Filters or a search are set: no rows means "No results for these filters", with a button that calls `onClearFilters` (2.3.0). */
   filtered?: boolean; onClearFilters?: () => void;
   toolbar?: React.ReactNode; footer?: React.ReactNode;
-  /** A row that opens something. The cell of `openColumn` (the first column by default) becomes a button, so the row is reached by Tab and opened by Enter or Space (2.3.0); that cell must hold no other control. */
+  /** A row that opens something. The cell of `openColumn` (the first column by default) becomes a button, so the row is reached by Tab and opened by Enter or Space (2.3.0); that cell must hold no other control: one that does is drawn without the open button, and outside production the console says so (2.6.0). */
   onRowClick?: (row: T) => void; openColumn?: string;
 }
 export interface PaginationProps extends WithLabels { className?: string; page: number; pageSize: number; total: number; onPageChange?: (page: number) => void; pageSizeOptions?: number[]; onPageSizeChange?: (size: number) => void; }
