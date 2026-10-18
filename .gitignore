@@ -19,3 +19,6 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 *.log
+
+# The snippet saved by hand in README section 10, "Try the embedded form".
+snippet.html
