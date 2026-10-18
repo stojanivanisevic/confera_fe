@@ -4,7 +4,7 @@ All notable changes to `confera_fe`. Versions follow SemVer; `confera_be` carrie
 
 ## Unreleased
 
-Release 0.4.0 in progress (`m4/fe`), against `confera_be` `m4/be`.
+Release 0.4.0 in progress (`m4/fe`), against `confera_be` `m4/be` (`3fd01e3`; the vendored contract and its lock name that commit). Design systems 2.6.0 and 2.6.1 are part of it.
 
 ### Added
 - **Submissions (M4-FE-01).** The table searched without diacritics, filtered by status and participation and sorted from the API's fixed list, with the query in the address; a withdrawn submission only with the status filter. A submission's status changed along the state table, the email shown first where the change carries a text for the author (FR-MAIL-08), the version making a double click one change; a new one taken into processing by a POST when it is opened; internal notes; the edit on the author's behalf with its kept revisions and the move back into processing; the history with message, reason and email.
@@ -12,6 +12,8 @@ Release 0.4.0 in progress (`m4/fe`), against `confera_be` `m4/be`.
 - **Mail log (M4-FE-04).** Send again; how long entries are kept and whether content is kept, in a card of the mail log (UXUI-M2-31); the staging catcher's attempts named.
 - **Held emails:** discard the selected (M3-ISS-14). **Mail servers:** a failed test names its cause; the limits of test messages are explained (M2-ISS-14, M3-ISS-02).
 - **The staging banner** on every admin and public screen when the API names the instance `staging`; never in production (M4-OPS-02).
+- **The template format of the browser is the API's of 0.4.0** (images by file id, at most 5; the admin's message keeps its lines; the allowlist pass on the rendered HTML); every shared vector passes. The seeded templates are the API's 30 (`e2e/servers/default-templates.json`).
+- **Design system 2.6.1:** the hidden header row of a narrow DataTable no longer widens the page at 375 px.
 - **Design system 2.6.0:** icons `image`, `message-square`, `rotate-ccw`; named type styles for the caption-xs overrides (M2-ISS-02); the DataTable guard for a control in the open cell (M2-ISS-03); fields and selects at the touch size (UXUI-M2-34); the layout tokens `--card-min`, `--field-min`, `--filter-field-min`, which the admin's stylesheet now uses (UXUI-M2-36).
 - **The form screen** names its parts as links (M3-ISS-22) and warns when there is no contact address; the public form shows "Uploaded" with a tick (UX3-19) and a next step when it closed while typing (UX3-21).
 
