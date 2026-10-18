@@ -29,7 +29,7 @@ beforeEach(() => {
 
 describe('the staging banner', () => {
   it('shows on a staging instance, in both languages, with nothing to close', async () => {
-    answer.value = { status: 200, text: JSON.stringify({ name: 'confera-api', version: '0.4.0', stage: 'staging' }) };
+    answer.value = { status: 200, text: JSON.stringify({ name: 'confera-api', version: '0.4.0', instance: 'staging' }) };
     const html = await render();
     expect(html).toContain('<aside class="confera-staging" aria-label="Staging"');
     expect(html).toContain('<strong lang="en">Staging — test data only</strong>');
@@ -43,7 +43,10 @@ describe('the staging banner', () => {
   });
 
   it.each([
-    ['production', JSON.stringify({ name: 'confera-api', version: '1.0.0', stage: 'prod' })],
+    ['production', JSON.stringify({ name: 'confera-api', version: '1.0.0', instance: 'production' })],
+    ['production that also names a stage', JSON.stringify({ instance: 'production', stage: 'staging' })],
+    ['a developer machine', JSON.stringify({ name: 'confera-api', version: '0.4.0', instance: null })],
+    ['a stage of prod', JSON.stringify({ stage: 'prod' })],
     ['production, spelled out', JSON.stringify({ stage: 'production' })],
     ['an API without a stage', JSON.stringify({ name: 'confera-api', version: '0.3.0' })],
     ['another casing', JSON.stringify({ stage: 'Staging' })],

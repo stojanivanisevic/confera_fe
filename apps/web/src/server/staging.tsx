@@ -1,7 +1,7 @@
 /**
  * The staging banner (M4-OPS-02: every screen of the staging instance says that it is one). The
- * API names its stage in GET /api/v1/meta (`stage`); only the exact value `staging` shows the
- * banner. Production names another stage, so there the banner never renders, and so does every
+ * API names its instance in GET /api/v1/meta (`instance`: `staging`, `production` or null on a
+ * developer machine; `stage` is read too); only the exact value `staging` shows the banner. Production names another stage, so there the banner never renders, and so does every
  * answer that is missing, late or cannot be read (tests/staging-banner.test.tsx). The web
  * application's own STAGE does not decide it: the staging server runs the production build.
  *
@@ -20,7 +20,9 @@ let kept: { readonly at: number; readonly staging: boolean } | null = null;
 
 /** Whether an answer of GET /api/v1/meta names the staging stage. Anything else is not staging. */
 export function namesStaging(meta: unknown): boolean {
-  return typeof meta === 'object' && meta !== null && (meta as { stage?: unknown }).stage === 'staging';
+  if (typeof meta !== 'object' || meta === null) return false;
+  const { instance, stage } = meta as { instance?: unknown; stage?: unknown };
+  return instance === 'staging' || (instance === undefined && stage === 'staging');
 }
 
 async function askApi(): Promise<boolean> {
