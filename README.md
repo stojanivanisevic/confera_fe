@@ -2,7 +2,7 @@
 
 The web application of **Confera**, the conference and membership application of UdEkoM Balkans: the admin application, and the public forms that are shown as pages of their own or inside the association's conference sites. The API is in the sibling repository `confera_be`.
 
-This is the work of milestone **0.3.0** (forms, embed and intake) on top of release 0.2.0: the public abstract form from the API, hosted and in the frame of a conference site, in English and Serbian; the snippet; the configuration of the forms, the deadlines, the submissions and the held emails in the admin.
+This is release **0.3.0** (forms, embed and intake), on top of release 0.2.0 and against `confera_be` 0.3.0: the public abstract form from the API, hosted and in the frame of a conference site, in English and Serbian; the snippet; the configuration of the forms, the deadlines, the submissions and the held emails in the admin (section 2b). What it does not do yet is in the changelog, "Known gaps".
 
 Everything here runs on Windows, macOS and Linux. Commands are written for PowerShell or any other shell.
 
@@ -44,7 +44,7 @@ corepack pnpm dev
 
 | Address | What you see |
 |---|---|
-| http://localhost:3000/ | the admin: it asks for a session and sends you to sign-in. The screens of 0.2.0 part A are behind it (section 2a) |
+| http://localhost:3000/ | the admin: it asks for a session and sends you to sign-in. The screens of 0.2.0 and 0.3.0 are behind it (sections 2a and 2b) |
 | http://localhost:3000/sign-in | sign-in; from there "Forgot your password?" |
 | http://127.0.0.1:3000/f/<form> | a hosted form, read from the API (`confera_be` with `seed:e2e` has the seeded abstract form of a conference) |
 | http://127.0.0.1:3000/dev/gallery | the component gallery of the design system |
@@ -71,11 +71,11 @@ What holds everywhere (ADR-03, ADR-20):
 
 ### 2b. Forms, deadlines, submissions and held emails (0.3.0)
 
-- **Forms** (`/forms`, narrowed by the conference switch): the forms of a conference, a new abstract form with a click; a form (`/forms/<id>`) has its **snippet** for the conference sites (section 10), its **texts** in both languages, the **authors** (the most a form takes, 10 unless changed, D7, and the notice from a later author on), **every field of the catalogue** in a drawer (shown, required, label, help, limits, file types and size, options), the **preview** of the draft through the renderer the sites use (it sends nothing), the **versions** and **Publish**, and the form's **send breaker**. What is configured is `contracts/form-configuration.schema.json` of `confera_be`: over the catalogue in code, never a free builder.
+- **Forms** (`/forms`, narrowed by the conference switch): the forms of a conference, a new abstract form with a click; a form (`/forms/<id>`) has its **snippet** for the conference sites (section 10), its **texts** in both languages, the **authors** (the most a form takes, 10 unless changed, D7, and the notice from a later author on), **every field of the catalogue** in a drawer (shown, required, label, help, limits, file types and size, options), the **preview** of the draft through the renderer the sites use (it sends nothing), the **versions** and **Publish**, and the form's **send breaker**. "Save the draft" and "Publish the draft" sit in a bar that stays in view, with the state of the draft; Publish is offered only when the saved draft differs from the published version. What is configured is `contracts/form-configuration.schema.json` of `confera_be`: over the catalogue in code, never a free builder.
 - **Deadlines**: a card in the settings of a conference: the abstract submission, the fee payment and the full paper, each a last day that ends at the end of that day in the conference's zone; moving it later opens the form at once; the history keeps every change. The settings also hold the **consent links** of the conference's forms (terms of publication, privacy notice; D6).
-- **Submissions** (`/submissions`): the table, a page at a time, newest first, narrowed by the conference switch; a submission (`/submissions/<id>`): its data under the labels of its form version, the authors, the files with their scan state (downloaded only when clean), the consent, the history and the emails.
-- **Held emails** (`/held-mail`): the confirmation emails the send breaker holds, why each waits, their release (selected or all) and the breaker of the organisation. While any is held, the shell says so to every admin who may release them.
-- The states of a conference are named as the office names them: **Open for submissions**, **Close submissions** (D10); the copy and the archive are in its menu. The person's menu in the top bar holds My account and Sign out.
+- **Submissions** (`/submissions`): the table, a page at a time, newest first, narrowed by the conference switch; a submission (`/submissions/<id>`): its data under the labels of its form version, the authors, the files with their scan state (downloaded only when clean; a file that cannot be downloaded yet says why; a flagged file in the list too), a long answer such as the abstract on a row of its own, the consent with its links as words, the history and the emails.
+- **Held emails** (`/held-mail`): the confirmation emails the send breaker holds, why each waits and by which numbers, their release (selected or all; a held email cannot be discarded yet) and the breaker of the organisation. While any is held, the shell says so to every admin who may release them.
+- The states of a conference are named as the office names them: **Open for submissions**, **Close submissions** (D10); the copy and the archive are in its menu, and a copy takes the conference's forms as unpublished drafts. The person's menu in the top bar holds My account and Sign out.
 
 `corepack pnpm build` and `corepack pnpm start` run the production build. It does not contain the gallery (section 9).
 
