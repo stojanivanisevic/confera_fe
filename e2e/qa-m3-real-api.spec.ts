@@ -103,7 +103,7 @@ for (const width of [1440, 375]) {
     test.use({ viewport: { width, height: 900 } });
 
     test('filled in, the language switched, a Serbian file name, Send pressed twice: one submission and one email', async ({ page, browserName }) => {
-        test.setTimeout(150_000);
+        test.setTimeout(240_000); // the mail may take up to 120 s (below)
       const problems = watchPage(page);
       const id = run();
       const email = `qa3.${id}@autori.example.test`;
@@ -136,8 +136,11 @@ for (const width of [1440, 375]) {
       const reference = (await frame.locator('[data-confera-reference]').innerText()).replace(/^.*: /, '');
       expect(reference).toMatch(/^PK27-\d{4}$/);
 
-      // One confirmation, with the reference, however many presses (FR-FORM-14, FR-FORM-15).
-      await expect.poll(async () => (await mailsTo(email)).length, { timeout: 45_000, intervals: [1_000] }).toBe(1);
+      // One confirmation, with the reference, however many presses (FR-FORM-14, FR-FORM-15). The outbox worker of
+      // confera_be runs every MAIL_WORKER_INTERVAL_SECONDS (5 s) and sends at most the server's sendRatePerMinute (30) a
+      // minute; in a full run the sign-in notices of every new browser can queue up before the confirmation (56 s seen in the
+      // Blank-slate run 2), so the wait is 120 s.
+      await expect.poll(async () => (await mailsTo(email)).length, { timeout: 120_000, intervals: [1_000] }).toBe(1);
       const [mail] = await mailsTo(email);
       const message = (await (await fetch(`${MAILPIT}/api/v1/message/${mail!.ID}`)).json()) as { Text: string; Subject: string };
       expect(`${message.Subject}\n${message.Text}`).toContain(reference);

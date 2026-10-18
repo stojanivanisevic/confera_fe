@@ -14,6 +14,8 @@ test.describe('at 375 px', () => {
   test.use({ viewport: { width: 375, height: 800 } });
 
   test('every table is a card per row: each value with its label, nothing cut off at the side', async ({ page }) => {
+    // Five screens after one sign-in: 43 s in Firefox against the real API on a quiet machine, past 60 s in a full run.
+    test.setTimeout(150_000);
     await signIn(page, undefined, '/users');
     for (const path of ['/users', '/audit', '/mail-log', '/mail-servers', '/conferences']) {
       await page.goto(`${ADMIN_ORIGIN}${path}`);
