@@ -93,13 +93,13 @@ test.describe('the abstract form on its own page', () => {
     expect(uploads).toEqual([]);
   });
 
-  test('choosing, refusing and uploading a file are said in the live region; a refusal is an alert (UX3-01)', async ({ page }) => {
+  test('a chosen and an uploaded file are said in the live region; a refusal is said once, as an alert (UX3-01)', async ({ page }) => {
     await open(page);
     const input = page.locator('[data-confera-file="biographies"] input[type="file"]');
     const announced = page.locator('[data-confera-announce]');
     await input.setInputFiles({ name: 'slika.png', mimeType: 'image/png', buffer: Buffer.from('png') });
-    await expect(announced).toHaveText('slika.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
     await expect(page.locator('[data-confera-file="biographies"]').getByRole('alert')).toHaveText('slika.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
+    await expect(announced).toHaveText('');
     await input.setInputFiles({ name: 'rad.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF\n') });
     await expect(page.locator('[data-confera-file="biographies"]')).toHaveAttribute('data-confera-file-state', 'uploaded');
     await expect(announced).toHaveText('rad.pdf is uploaded.');

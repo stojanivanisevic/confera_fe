@@ -445,15 +445,13 @@ describe('files (M3-FE-04; FR-FORM-10)', () => {
     expect(at()).toContain('photo.png is not one of these types: .pdf, .docx, .doc.');
   });
 
-  it('choosing, refusing and uploading are each said in the live region; a refusal is an alert at the file (UX3-01)', async () => {
+  it('a chosen and an uploaded file are said in the live region; a refusal is said once, as the alert at the file (UX3-01)', async () => {
     await mount();
     const zone = () => container.querySelector('[data-confera-file="biographies"]')!;
     await dropFile('biographies', file('photo.png', 1000, 'image/png'));
-    expect(announced()).toBe('photo.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
-    expect(zone().querySelector('[role="alert"]')!.textContent).toBe(announced());
-    // The same refusal twice is said twice.
-    await dropFile('biographies', file('photo.png', 1000, 'image/png'));
-    expect(announced().trim()).toBe('photo.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
+    expect(zone().querySelector('[role="alert"]')!.textContent).toBe('photo.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
+    // Not in the polite region as well: a screen reader would hear it twice.
+    expect(announced()).toBe('');
     let finish: (value: { id: string; name: string; size: number }) => void = () => undefined;
     api.upload = vi.fn(() => new Promise<{ id: string; name: string; size: number }>((resolve) => (finish = resolve)));
     await dropFile('biographies', file('rad.pdf', 5000));
@@ -467,8 +465,8 @@ describe('files (M3-FE-04; FR-FORM-10)', () => {
     expect(announced()).toBe('rad.pdf is uploaded.');
     api.upload = vi.fn(() => Promise.reject(new PublicApiError(0, 'network')));
     await dropFile('biographies', file('drugi.pdf', 5000));
-    expect(announced()).toBe('The upload of drugi.pdf stopped. Check the connection and add the file again.');
-    expect(zone().querySelector('[role="alert"]')!.textContent).toBe(announced());
+    expect(zone().querySelector('[role="alert"]')!.textContent).toBe('The upload of drugi.pdf stopped. Check the connection and add the file again.');
+    expect(announced()).not.toContain('stopped');
   });
 
   it('the drop area of a one-file field says “a file” (UX3-18)', async () => {

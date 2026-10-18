@@ -80,7 +80,10 @@ export interface FileFieldProps {
   readonly upload: (file: File, onProgress: (percent: number) => void, signal: AbortSignal) => Promise<Uploaded>;
   /** The error of the field after Send (a required file that is missing). */
   readonly error?: string;
-  /** Says an outcome in the form's polite live region (UX3-01): the upload began, the file is uploaded, or it was refused or stopped. */
+  /**
+   * Says an outcome in the form's polite live region (UX3-01): the upload began, or the file is uploaded. A refusal
+   * or a stopped upload is not said here: its reason is an alert at the file, and is heard once, from there.
+   */
   readonly announce?: (text: string) => void;
 }
 
@@ -100,9 +103,7 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
     running.current?.abort();
     const refused = checkFile(file, rule);
     if (refused) {
-      const next = { name: file.name, size: file.size, error: refused };
-      onState(next);
-      announce?.(fileMessage(next, rule, language));
+      onState({ name: file.name, size: file.size, error: refused });
       return;
     }
     const controller = new AbortController();
@@ -124,9 +125,7 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
       (reason: unknown) => {
         if (running.current !== controller || controller.signal.aborted) return;
         const code = reason instanceof PublicApiError ? reason.code : 'network';
-        const next = { name: file.name, size: file.size, error: { code } };
-        onState(next);
-        announce?.(fileMessage(next, rule, language));
+        onState({ name: file.name, size: file.size, error: { code } });
       },
     );
   };
