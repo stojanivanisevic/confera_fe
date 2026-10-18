@@ -7,7 +7,8 @@ export type IconName =
   | "search" | "eye" | "eye-off" | "calendar" | "chevron-up" | "chevron-left" | "chevron-right" | "chevrons-up-down" | "plus" | "trash" | "more" | "file"
   | "alert-triangle" | "menu" | "users" | "home" | "settings" | "inbox" | "send" | "refresh" | "filter" | "minus"
   | "download" | "copy" | "external-link" | "edit" | "globe" | "log-out" | "user" | "lock" | "clock" | "file-text" | "credit-card" | "link"
-  | "bold" | "italic" | "underline" | "list" | "list-ordered" | "undo" | "redo" | "corner-down-left" | "braces" | "circle";
+  | "bold" | "italic" | "underline" | "list" | "list-ordered" | "undo" | "redo" | "corner-down-left" | "braces" | "circle"
+  | "image" | "message-square" | "rotate-ccw";
 export type FieldStatus = "default" | "error" | "success";
 
 /**

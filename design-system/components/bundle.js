@@ -354,7 +354,11 @@
     "redo": [["path", { d: "m15 14 5-5-5-5" }], ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13" }]],
     "corner-down-left": [["path", { d: "M20 4v7a4 4 0 0 1-4 4H4" }], ["path", { d: "m9 10-5 5 5 5" }]],
     "braces": [["path", { d: "M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1" }], ["path", { d: "M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1" }]],
-    "circle": [["circle", { cx: 12, cy: 12, r: 10 }]]
+    "circle": [["circle", { cx: 12, cy: 12, r: 10 }]],
+    /* Added in 2.6.0 (Lucide, ISC licence): an image in the toolbar of the mail-template editor, an internal note, reopen. */
+    "image": [["rect", { width: 18, height: 18, x: 3, y: 3, rx: 2, ry: 2 }], ["circle", { cx: 9, cy: 9, r: 2 }], ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" }]],
+    "message-square": [["path", { d: "M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" }]],
+    "rotate-ccw": [["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" }], ["path", { d: "M3 3v5h5" }]]
   };
   for (var k2 in ICONS2) { ICONS[k2] = ICONS2[k2]; }
 
