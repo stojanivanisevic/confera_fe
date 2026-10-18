@@ -181,6 +181,8 @@ export const m4 = {
   /** The address of an email image: the browser reads it with the session (no public address, ADR-12). */
   imageHref: (id: string) => `/api/v1/mail-images/${encodeURIComponent(id)}`,
 
+  /** What the mail log keeps and for how long (FR-SMTP-06): two settings of the organisation. */
+  mailLogSettings: (client: SessionClient, body: { mailLogContent: boolean; mailLogRetentionDays: number; version: number }) => as<{ mailLogContent: boolean; mailLogRetentionDays?: number; version: number }>(loose(client).PATCH('/api/v1/organisation', { body })),
   resend: (client: SessionClient, id: string) => as<{ messageId: string; mode: 'stored' | 'rendered' }>(loose(client).POST(`/api/v1/mail-log/${at(id)}/resend`, { body: {} })),
   discardHeld: (client: SessionClient, body: { ids?: readonly string[]; all?: boolean }) => as<{ discarded: number }>(loose(client).POST('/api/v1/held-mail/discard', { body })),
 };

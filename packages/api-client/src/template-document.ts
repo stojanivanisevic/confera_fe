@@ -54,7 +54,16 @@ export interface ConditionalNode {
   readonly key: string;
   readonly children: readonly BlockNode[];
 }
-export type BlockNode = ParagraphNode | HeadingNode | ListNode | ConditionalNode;
+/**
+ * An image of the message (ADR-12, M4-FE-03): a private email image of the organisation, by its
+ * id, with the words that stand for it. It travels inside the message; there is no address.
+ */
+export interface ImageNode {
+  readonly type: 'image';
+  readonly fileId: string;
+  readonly alt: string;
+}
+export type BlockNode = ParagraphNode | HeadingNode | ListNode | ConditionalNode | ImageNode;
 
 export interface DocNode {
   readonly type: 'doc';
@@ -77,7 +86,8 @@ export type DocumentErrorCode =
   | 'link_scheme'
   | 'link_placeholder'
   | 'text_control_character'
-  | 'subject_too_long';
+  | 'subject_too_long'
+  | 'too_many_images';
 
 /** What a check refuses, with the code the API gives and where. */
 export class DocumentError extends Error {
@@ -95,7 +105,19 @@ export class DocumentError extends Error {
 export interface Catalogue {
   readonly placeholders: ReadonlySet<string>;
   readonly conditions: ReadonlySet<string>;
+  /**
+   * Whether the body may hold images (0.4.0, ADR-12). The vendored vectors of 0.3.0 still refuse an
+   * image ("an image, until 0.4.0"), so a catalogue from them says no; the editor's catalogue, from
+   * the API of 0.4.0, says yes.
+   */
+  readonly images?: boolean;
 }
+
+/** At most this many images in one template (ADR-12). */
+export const MAX_IMAGES = 5;
+/** The words of an image: one line, at most this long. */
+export const ALT_LIMIT = 300;
+const FILE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface TypeEntry {
   readonly placeholders: readonly string[];
@@ -222,10 +244,20 @@ function checkBlock(node: unknown, path: string, catalogue: Catalogue, depth: nu
       const key = checkKey(node.key, `${path}.key`, catalogue.conditions, 'unknown_condition');
       return { type: 'conditional', key, children: checkBlocks(node.children, `${path}.children`, catalogue, depth) };
     }
+    case 'image': {
+      if (catalogue.images !== true) throw new DocumentError('unknown_node', path);
+      attributes(node, path, ['type', 'fileId', 'alt']);
+      if (typeof node.fileId !== 'string' || !FILE_ID.test(node.fileId)) throw new DocumentError('wrong_attribute', `${path}.fileId`);
+      if (typeof node.alt !== 'string' || node.alt.length > ALT_LIMIT) throw new DocumentError('wrong_attribute', `${path}.alt`);
+      if (/[\r\n\t]/.test(node.alt) || CONTROL.test(node.alt)) throw new DocumentError('text_control_character', `${path}.alt`);
+      return { type: 'image', fileId: node.fileId, alt: node.alt };
+    }
     default:
       throw new DocumentError('unknown_node', path);
   }
 }
+
+const countImages = (blocks: readonly BlockNode[]): number => blocks.reduce((sum, block) => sum + (block.type === 'image' ? 1 : block.type === 'conditional' ? countImages(block.children) : 0), 0);
 
 function checkBlocks(value: unknown, path: string, catalogue: Catalogue, depth: number): BlockNode[] {
   if (!Array.isArray(value)) throw new DocumentError('wrong_attribute', path);
@@ -239,7 +271,9 @@ export function checkBody(value: unknown, catalogue: Catalogue): DocNode {
   if (typeof value === 'string' || !isRecord(value) || value.type !== 'doc') throw new DocumentError('not_a_document', '$');
   if (utf8Bytes(JSON.stringify(value)) > DOCUMENT_LIMIT_BYTES) throw new DocumentError('too_large', '$');
   attributes(value, '$', ['type', 'children']);
-  return { type: 'doc', children: checkBlocks(value.children, '$.children', catalogue, 1) };
+  const children = checkBlocks(value.children, '$.children', catalogue, 1);
+  if (countImages(children) > MAX_IMAGES) throw new DocumentError('too_many_images', '$');
+  return { type: 'doc', children };
 }
 
 /** Checks a subject: one line of text and placeholders, without any line or control character. */
@@ -348,6 +382,9 @@ function blockHtml(node: BlockNode, input: RenderInput): string {
     }
     case 'conditional':
       return input.conditions.has(node.key) ? node.children.map((child) => blockHtml(child, input)).join('') : '';
+    case 'image':
+      // The server puts the image in as an inline part of the message; the client's rendering names it only.
+      return `<p><img src="cid:${escapeHtml(node.fileId)}" alt="${escapeHtml(node.alt)}"></p>`;
   }
 }
 
@@ -366,6 +403,8 @@ function blockText(node: BlockNode, input: RenderInput): string {
             .filter((part) => part !== '')
             .join('\n\n')
         : '';
+    case 'image':
+      return node.alt === '' ? '' : `[${node.alt}]`;
   }
 }
 

@@ -1,19 +1,22 @@
 'use client';
 
 /**
- * The mail log (M2-FE-04; FR-SMTP-04): every attempt to send a message, newest first, a page
- * at a time, with filters by message and result; the conference of the switch narrows it.
+ * The mail log (M2-FE-04, M4-FE-04; FR-SMTP-04, FR-SMTP-06): every attempt to send a message,
+ * newest first, a page at a time, with filters by message and result; the conference of the switch
+ * narrows it. Its settings are in a card of their own here (UXUI-M2-31): whether the content of a
+ * message is kept, and for how many days an entry is kept (24 months unless changed).
  */
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 
-import { TEMPLATE_TYPES, type AdminPaths, type MailLogPage, type MailLogSummary } from '@confera/api-client';
-import { Alert, DataTable, EmptyState, FilterBar, PageHeader, Pagination, Select, StatusBadge, TextButton } from '@confera/ui';
+import { TEMPLATE_TYPES, type AdminPaths, type MailLogPage, type MailLogSummary, type Organisation } from '@confera/api-client';
+import { Alert, Button, Card, DataTable, EmptyState, FilterBar, NumberField, PageHeader, Pagination, Select, StatusBadge, Switch, TextButton, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';
 import { formatDateTime } from './format';
-import { call } from './problems';
+import { m4 } from './m4-api';
+import { call, explain, fieldMessages, type Explained } from './problems';
 import { useSession } from './session';
 import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
@@ -53,6 +56,7 @@ export function MailLog() {
           {log.state.problem.text}
         </Alert>
       ) : null}
+      {session?.user.permissions.includes('organisation.read') ? <MailLogSettings mayManage={session.user.permissions.includes('organisation.manage')} /> : null}
       {/* While the list failed it shows no empty state that would contradict the alert (UXUI-M2-15). */}
       {log.state.phase === 'failed' && !log.state.data ? null : (
       <DataTable<MailLogSummary>
@@ -94,6 +98,8 @@ export function MailLog() {
           { key: 'sentAt', header: t.sentAt, render: (row) => formatDateTime(row.sentAt) },
           { key: 'recipient', header: t.recipient },
           { key: 'kind', header: t.kind, render: (row) => TEXTS.templates.types[row.kind] ?? row.kind },
+          // The subject, once the API gives it in the list (M2-ISS-14).
+          ...(log.state.data?.items.some((row) => typeof (row as { subject?: unknown }).subject === 'string') ? [{ key: 'subject', header: t.subject, render: (row: MailLogSummary) => <span className={styles.break}>{(row as { subject?: string | null }).subject ?? ''}</span> }] : []),
           { key: 'language', header: t.language, render: (row) => TEXTS.conferences.languageNames[row.language] ?? row.language },
           { key: 'serverName', header: t.server, render: (row) => row.serverName ?? '' },
           { key: 'attempt', header: t.attempt, align: 'right' },
@@ -138,5 +144,69 @@ export function MailLog() {
       />
       )}
     </div>
+  );
+}
+
+type Settings = Organisation & { readonly mailLogRetentionDays?: number };
+const DEFAULT_DAYS = 730;
+
+/** What the mail log keeps and how long (FR-SMTP-06; UXUI-M2-31): settings of the organisation. */
+function MailLogSettings({ mayManage }: { mayManage: boolean }) {
+  const { client, contact } = useSession();
+  const t = TEXTS.mailLog;
+  const profile = useLoad<Settings>((c) => call(c.GET('/api/v1/organisation')), []);
+  const record = profile.state.data;
+  const [days, setDays] = useState('');
+  const [content, setContent] = useState(true);
+  const [held, setHeld] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<Explained | null>(null);
+  const [fields, setFields] = useState<Readonly<Record<string, string>>>({});
+  if (record && record.version !== held) {
+    setHeld(record.version);
+    setDays(String(record.mailLogRetentionDays ?? DEFAULT_DAYS));
+    setContent(record.mailLogContent);
+  }
+  if (!record) return null;
+  const save = async (event: FormEvent) => {
+    event.preventDefault();
+    const value = Number(days);
+    if (!Number.isInteger(value) || value < 30 || value > 3650) {
+      setFields({ mailLogRetentionDays: t.retentionHint });
+      return;
+    }
+    setBusy(true);
+    setProblem(null);
+    setFields({});
+    try {
+      const next = await m4.mailLogSettings(client, { mailLogContent: content, mailLogRetentionDays: value, version: record.version });
+      profile.replace({ ...record, ...next });
+      toast({ title: fill(t.retentionSaved, { days: next.mailLogRetentionDays ?? value }), tone: 'success' });
+    } catch (error) {
+      setFields(fieldMessages(error));
+      setProblem(explain(error, contact));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const kept = record.mailLogRetentionDays ?? DEFAULT_DAYS;
+  return (
+    <Card title={t.settings} subtitle={fill(t.retentionNow, { days: kept, months: Math.round(kept / 30.4) })} headingLevel={2} id="mail-log-settings" data-confera-mail-log-settings="">
+      <form className={styles.form} onSubmit={(event) => void save(event)} noValidate>
+        <p className={styles.text}>{t.settingsLead}</p>
+        {problem && Object.keys(fields).length === 0 ? <Alert tone="error" title={problem.title}>{problem.text}</Alert> : null}
+        <div className={styles.fields}>
+          <NumberField label={t.retention} unit={t.retentionUnit} name="mailLogRetentionDays" min={30} max={3650} step={1} value={days} disabled={!mayManage} onChange={(event) => setDays(event.target.value)} status={fields.mailLogRetentionDays ? 'error' : 'default'} message={fields.mailLogRetentionDays ?? t.retentionHint} />
+        </div>
+        <Switch label={t.content} description={t.contentHint} checked={content} disabled={!mayManage} onChange={(event) => setContent(event.target.checked)} />
+        {mayManage ? (
+          <div className={styles.actionsInline}>
+            <Button type="submit" variant="dark" disabled={busy}>
+              {busy ? TEXTS.common.loading : t.retentionSave}
+            </Button>
+          </div>
+        ) : null}
+      </form>
+    </Card>
   );
 }

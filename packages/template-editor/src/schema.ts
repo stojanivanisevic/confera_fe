@@ -13,6 +13,10 @@
 //   hardBreak          hardBreak
 //   placeholder        placeholder { key }     ONE indivisible object: an atom, no text inside,
 //                                              no mark, deleted and moved as a whole
+//   image              image { fileId, alt }   an email image of the organisation (0.4.0): an atom
+//                                              block. Only an image this editor put on the clipboard
+//                                              is read back from a paste; any other <img>, a remote
+//                                              address or an embedded data: image, is dropped (ADR-12)
 // The subject is one line of text and placeholders, without marks.
 import { Schema, type DOMOutputSpec, type MarkSpec, type NodeSpec } from 'prosemirror-model';
 
@@ -20,6 +24,9 @@ import { isTypedLink } from '@confera/api-client';
 
 /** The address a link mark carries for the secure link of the message (`{ placeholder: 'link' }` in the format). */
 export const SECURE_LINK = 'confera:secure-link';
+
+/** The id of an email image, as the format has it. */
+export const IMAGE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const placeholder: NodeSpec = {
   group: 'inline',
@@ -66,6 +73,16 @@ export const bodySchema = new Schema({
     text,
     hardBreak: { group: 'inline', inline: true, selectable: false, marks: '', toDOM: () => ['br'], parseDOM: [{ tag: 'br' }] },
     placeholder,
+    image: {
+      group: 'block',
+      atom: true,
+      selectable: true,
+      draggable: true,
+      attrs: { fileId: { validate: 'string' }, alt: { default: '', validate: 'string' } },
+      // On the clipboard it is named by its id only, with no address: a paste elsewhere shows nothing to load.
+      toDOM: (node): DOMOutputSpec => ['figure', { 'data-confera-image': node.attrs.fileId as string, 'data-alt': node.attrs.alt as string }],
+      parseDOM: [{ tag: 'figure[data-confera-image]', getAttrs: (dom) => (IMAGE_ID.test(dom.dataset.conferaImage ?? '') ? { fileId: dom.dataset.conferaImage, alt: dom.dataset.alt ?? '' } : false) }],
+    },
   },
   marks: {
     // The order here is the order of the marks in a saved text node: bold, italic, underline.

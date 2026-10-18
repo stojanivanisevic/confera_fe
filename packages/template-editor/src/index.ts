@@ -2,10 +2,11 @@
 // ProseMirror with a schema that is the closed format of confera_be and nothing else; the
 // toolbar is built in the page from design-system components. What the editor gives is a
 // document of the format, checked by @confera/api-client as the API checks it.
-export { bodySchema, subjectSchema, SECURE_LINK } from './schema';
+export { bodySchema, IMAGE_ID, subjectSchema, SECURE_LINK } from './schema';
 export { bodyFromEditor, bodyToEditor, normaliseBody, normaliseSubject, subjectFromEditor, subjectToEditor } from './convert';
 export {
   insertHardBreak,
+  insertImage,
   insertPlaceholder,
   liftOutOfCondition,
   redo,

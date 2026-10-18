@@ -5,7 +5,7 @@ import { baseKeymap, chainCommands, setBlockType, splitBlock, toggleMark, wrapIn
 import { history, redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import type { MarkType, Node as EditorNode, NodeType, Schema } from 'prosemirror-model';
-import { TextSelection, type Command, type EditorState, type Plugin } from 'prosemirror-state';
+import { NodeSelection, TextSelection, type Command, type EditorState, type Plugin } from 'prosemirror-state';
 
 import { bodySchema, SECURE_LINK, subjectSchema } from './schema';
 
@@ -100,6 +100,24 @@ export const insertPlaceholder =
     const { $from } = state.selection;
     if (!$from.parent.canReplaceWith($from.index(), $from.index(), type)) return false;
     if (dispatch) dispatch(state.tr.replaceSelectionWith(type.create({ key }), false).scrollIntoView());
+    return true;
+  };
+
+/** An email image as a block of its own, after the block of the cursor (ADR-12). */
+export const insertImage =
+  (fileId: string, alt: string): Command =>
+  (state, dispatch) => {
+    const type = nodes.image;
+    const { $from } = state.selection;
+    // After the block of the cursor that sits in the body or in a condition (never inside a list).
+    let depth = $from.depth;
+    while (depth > 1 && $from.node(depth - 1).type !== nodes.conditional) depth--;
+    const at = $from.depth === 0 ? $from.pos : $from.after(depth);
+    if (dispatch) {
+      const tr = state.tr.insert(at, type.create({ fileId, alt }));
+      tr.setSelection(NodeSelection.create(tr.doc, at));
+      dispatch(tr.scrollIntoView());
+    }
     return true;
   };
 
