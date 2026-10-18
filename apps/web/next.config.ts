@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import type { NextConfig } from 'next';
 
 // A test build (`--dev-pages`, see scripts/next.mjs) carries the component
@@ -6,6 +8,11 @@ import type { NextConfig } from 'next';
 // treats as a page, and the fixture module is swapped for an empty one
 // (ADR-20, ADR-24: dev tools are absent, not switched off).
 const devPages = process.env.CONFERA_DEV_PAGES === '1';
+
+// The container image (Dockerfile, M4-FE-05) is built with CONFERA_STANDALONE=1: the server and only
+// the files it needs, traced across the workspace, in .next/standalone. Never with the dev pages.
+const standalone = process.env.CONFERA_STANDALONE === '1';
+if (standalone && devPages) throw new Error('A standalone (image) build never carries the dev pages (ADR-24).');
 
 // `next dev` serves its own resources only to the host names listed here (and to "localhost").
 // Both surfaces must work in development, so both configured host names are listed.
@@ -21,6 +28,9 @@ const devHosts = [hostnameOf(process.env.CONFERA_PUBLIC_ORIGIN), hostnameOf(proc
 const nextConfig: NextConfig = {
   // The two builds never share an output directory.
   distDir: devPages ? '.next-test' : '.next',
+
+  // The image build: `next build` runs in apps/web (scripts/next.mjs), the workspace root is two up.
+  ...(standalone ? { output: 'standalone' as const, outputFileTracingRoot: resolve(process.cwd(), '..', '..') } : {}),
 
   // ---- Framework settings of ADR-20 ---------------------------------------
   poweredByHeader: false, // no version header
