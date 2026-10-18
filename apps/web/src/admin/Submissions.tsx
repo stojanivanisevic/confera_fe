@@ -12,7 +12,7 @@
  * once a row has a value (0.6.0, 0.8.0; UX3-22).
  */
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Alert, DataTable, EmptyState, FilterBar, PageHeader, Pagination, SearchField, Select, StatusBadge, TextButton } from '@confera/ui';
 
@@ -53,14 +53,22 @@ export function Submissions() {
   const pageSizeParam = Number(params.get('size'));
   const pageSize = (PAGE_SIZES as readonly number[]).includes(pageSizeParam) ? pageSizeParam : 25;
 
+  // The query last asked for, until the address has it: a search that lands late keeps a filter chosen
+  // meanwhile, also while the router has not written the address yet.
+  const asked = useRef<URLSearchParams | null>(null);
+  const current = params.toString();
+  // A new address (ours, or the way back) is the base again; a replace still on its way carries its own query.
+  useEffect(() => {
+    asked.current = null;
+  }, [current]);
   const setQuery = (changes: Readonly<Record<string, string | null>>, keepPage = false) => {
-    // The address as it is now, not as this render saw it: a search that lands late keeps a filter chosen meanwhile.
-    const next = new URLSearchParams(window.location.search);
+    const next = new URLSearchParams(asked.current ?? current);
     for (const [key, value] of Object.entries(changes)) {
       if (value === null || value === '') next.delete(key);
       else next.set(key, value);
     }
     if (!keepPage) next.delete('page');
+    asked.current = next;
     const text = next.toString();
     router.replace(text ? `${pathname}?${text}` : pathname, { scroll: false });
   };
