@@ -36,7 +36,7 @@ Copy-Item .env.example .env        # PowerShell;  cp .env.example .env  elsewher
 corepack pnpm check
 ```
 
-`check` takes four to six minutes and ends with `✓ pnpm check passed`. Now start the application:
+`check` takes four to six minutes on a quiet machine, and 11 to 13 minutes on a loaded one (the clean-machine verification of 0.3.0 measured 661 s and 772 s). It ends with `✓ pnpm check passed`. Now start the application:
 
 ```
 corepack pnpm dev
@@ -138,7 +138,7 @@ corepack pnpm e2e:install
 corepack pnpm e2e
 ```
 
-The full run takes about 22 minutes on the development machine (a busy machine takes longer), and needs the ports **3000, 3100, 3101, 4000 and 4001** free (stop `pnpm dev` first). It builds a test build, starts it, starts the application once more in development mode, a harness "conference site" and an API stub, and stops them all at the end.
+The full run takes about 22 minutes on a quiet development machine, and about 52 minutes on a loaded one (the clean-machine verification of 0.3.0, against the real API). It needs the ports **3000, 3100, 3101, 4000 and 4001** free (stop `pnpm dev` first). It builds a test build, starts it, starts the application once more in development mode, a harness "conference site" and an API stub, and stops them all at the end.
 
 - **Three engines**, each with third-party cookies blocked; one test proves the blocking is in effect.
 - **Tests that are skipped or left out, each for a stated reason** (and only these):
@@ -195,6 +195,7 @@ What the variable changes:
 - **The web application under test forwards to the real API.** Every spec that does not need the stub runs as before. The specs sign in only through `signIn` of `e2e/support/admin.ts`, as the admin or reviewer of `seed:e2e` (same names and addresses as the stub's, the seed's password); a person the seed does not have is refused before anything is typed, so no spec causes a failed sign-in there (the API's brake would slow the seed admin down for everyone). `resetStub` does nothing.
 - **Two specs are left out of every project, by name**: `admin.spec.ts` and `admin-part-b.spec.ts` (`STUB_ONLY_SPECS` in `playwright.config.ts`). They change and reset the stub's records and open its link tokens, which a real API does not have. In `admin-axe.spec.ts` the screens of one record of the stub (a user, a conference, a mail server, a mail-log entry, a template) are skipped with that reason; the lists, the forms and the dialogs are scanned against the real API.
 - **The flows of 0.2.0 through the real API** (`e2e/qa-real-api-flows.spec.ts`, M2-QA-02) run in the project `real-api` too: a mail server and its test message, an invitation, a reset, the bank details, the audit log, the five draft conferences, each mail read back from the mail catcher.
+- **The tests that wait for an email need a mail server** of organisation A that sends to the mail catcher; a fresh `seed:e2e` has none, and the outbox then waits with `waiting_for_server`. The specs add their own before their first test (`ensureMailServer` in `e2e/support/mail-server.ts`: 127.0.0.1, `CONFERA_E2E_MAILPIT_SMTP_PORT`, no TLS, default; nothing when a matching one is there), so `qa-m3-real-api.spec.ts` and `qa-real-api-flows.spec.ts` run in any order, alone or as a rerun of the failed tests. Set `CONFERA_E2E_MAILPIT_ORIGIN` and `CONFERA_E2E_MAILPIT_SMTP_PORT` for a second checkout.
 - **One more project runs, `real-api`** (`e2e/real-api.spec.ts`), with what only the real API can answer: its database is ready, its trace id and its security headers arrive through the forward, an error arrives as its problem document, the version it gives is the version of the vendored contract, every `GET` route of the vendored contract exists, it reads the surface from the `Host` header, and no other site is given access. Without the variable this file belongs to no project, so a normal run skips nothing.
 - **The short form**: add `--project=real-api`. It runs only those two files (HTTP requests, one signed-in page and the flows, in Chromium).
 - **Before a browser starts**, the run asks `http://127.0.0.1:3001/health/ready`. If the API is not there or its database does not answer, the run stops with one message that names the six commands above.
@@ -202,7 +203,7 @@ What the variable changes:
 - **A web application that is already running on port 3000 or 3100 is not taken over** in such a run (it was started with another API address): the run stops and says that the port is in use. Stop that process first.
 - The stub still runs on port 3101 in such a run: one test uses that address as a third-party page, and the tests that ask the stub directly still ask the stub.
 
-In 0.2.0 the admin routes want a session, and the pages of the links answer an unknown token with 404 `link_invalid`; `real-api.spec.ts` expects both. Stop the API with Ctrl+C and the stack with `corepack pnpm stack:down` when you are done.
+The admin routes want a session, and the pages of the links answer an unknown token with 404 `link_invalid`; `real-api.spec.ts` expects both. Stop the API with Ctrl+C and the stack with `corepack pnpm stack:down` when you are done.
 
 ## 7. Design system
 
@@ -264,6 +265,25 @@ Because a pasted snippet can only be repaired by pasting it again, the inline li
 ```
 
 On a site that zooms its content with CSS `zoom`, WebKit lays the frame's page out in zoomed pixels but measures the form in unzoomed ones (Q3-12). The frame reads the factor from its viewport (the root element's height against `innerHeight`) and tells heights multiplied by it, so the whole form is inside the frame; the snippet is unchanged. WebKit zooms the frame's layout viewport too, which leaves blank room to scroll below the form and clips the right fifth of it there: an engine behaviour the frame and the snippet cannot change (logged in the changelog).
+
+### Try the embedded form
+
+To see the seeded form `e2eprobnaforma01` in a conference site's frame by hand, against a real `confera_be`:
+
+1. In `..\confera_be`, start the stack and the API with the six commands of section 6, "Against the real API" (`stack:up` to `start`; `seed:e2e` publishes the form, and its conference lists the harness site `http://localhost:4000`).
+2. Here, with `.env` a copy of `.env.example` (`CONFERA_API_ORIGIN=http://127.0.0.1:3001`), start the web application: `corepack pnpm dev`. It serves both surfaces on port 3000: the admin on `http://localhost:3000`, the form and its frame on `http://127.0.0.1:3000`.
+3. In another terminal start the harness: `node e2e/servers/harness.mjs` (the sites on 4000 and 4001; it also starts the stub on 3101, which this needs nothing of).
+4. Sign in to the admin as the admin of organisation A of `seed:e2e` (`zivana.djordjevic@a.example.test`, the seed's invented password, `confera_be` README) and copy the snippet from the screen of the form (Forms, the form, "On a conference website"). Save it as `snippet.html`.
+5. The hostile page takes a snippet as `?paste=<the snippet, base64url>` and inserts it:
+
+   ```
+   node -e "console.log('http://localhost:4000/hostile.html?paste=' + Buffer.from(require('fs').readFileSync('snippet.html', 'utf8')).toString('base64url'))"
+   ```
+
+   Open the address it prints in your browser.
+6. After Send, the submission is in the admin under **Submissions** (`/submissions`), and the confirmation in the mail catcher of that checkout (`http://127.0.0.1:8025`, or its `CONFERA_MAIL_WEB_PORT`). The mail needs a default mail server of organisation A that sends to the catcher: on a fresh seed add one under **Mail servers** (host `127.0.0.1`, port `1025` or its `CONFERA_MAIL_SMTP_PORT`, encryption none, default); until then the confirmation waits in the outbox as `waiting_for_server`.
+
+Stop the harness and `pnpm dev` with Ctrl+C.
 
 **The form inside the frame is the form of the hosted page** (`@confera/form-renderer`): the published definition of the API, read on the server and rendered with the design system. Its fields are plain controls: the server sends the whole form as markup, and the scripts that attach it can take seconds on a phone; an author who starts typing in that time must not lose the text. So a field never takes its text from component state (no `value=`, no `checked=`): it is a control with a `name`, the browser holds what is typed, and the page reads the controls through a store (`createFormValueStore`, `useFormValues` and `useFormRef`). While the form is being attached the store answers with the initial values, so the markup matches; right after, with what is really in the controls. A draft kept in the tab is written only into controls the author has not touched (`tests/form-typed-before-attach.test.tsx`).
 
