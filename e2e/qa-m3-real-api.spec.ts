@@ -10,7 +10,7 @@
 //
 // Skipped without CONFERA_E2E_API_ORIGIN (the stub has no such form). Needs, from that checkout:
 //   CONFERA_E2E_MAILPIT_ORIGIN  the web address of its mail catcher
-// and a default mail server of organisation A that sends to it (qa-real-api-flows.spec.ts adds one).
+// and a default mail server of organisation A that sends to it: the setup below adds one when there is none.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
@@ -20,6 +20,7 @@ import { buildEmbedSnippet, frameId } from '../packages/embed-loader/src/index';
 import { ADMIN_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGIN } from './env';
 import { ADMIN, AGAINST_REAL_API, signIn } from './support/admin';
 import { expect, test } from './support/fixtures';
+import { ensureMailServer } from './support/mail-server';
 import { watchPage } from './support/page-problems';
 
 const SLUG = 'e2eprobnaforma01';
@@ -35,6 +36,10 @@ const sql = (statement: string): string => {
 const SNIPPET = buildEmbedSnippet({ publicOrigin: PUBLIC_ORIGIN, slug: SLUG, title: 'Abstract submission', linkText: 'Form not showing? Open it on its own page.' });
 
 test.skip(!AGAINST_REAL_API, 'only against a real confera_be with seed:e2e');
+// The confirmations need a default mail server; this file adds its own, whatever ran before (no ordering dependency).
+test.beforeAll(async () => {
+  await ensureMailServer();
+});
 
 const siteUrl = (paste: string) => `${HARNESS_ORIGIN}/hostile.html?paste=${Buffer.from(paste, 'utf8').toString('base64url')}`;
 

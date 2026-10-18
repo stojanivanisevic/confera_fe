@@ -55,7 +55,9 @@ describe('lint: planted violations (M1-FE-01)', () => {
     process.env.CONFERA_LINT_FIXTURES = '1';
     const eslint = new ESLint({ cwd: root });
     results = await eslint.lintFiles(['lint-fixtures/**/*.{ts,tsx}']);
-  });
+    // The typed lint builds a TypeScript program of the project first: a minute on a quiet machine, past
+    // two on a loaded one (the Blank-slate run timed out at 120 s twice). The limit is the hook's own.
+  }, 300_000);
 
   const messagesOf = (file: string) => {
     const result = results.find((r) => r.filePath === join(fixtures, file));

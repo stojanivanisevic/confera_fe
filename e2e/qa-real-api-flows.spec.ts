@@ -22,9 +22,15 @@ import type { Browser, Page } from '@playwright/test';
 import { ADMIN_ORIGIN } from './env';
 import { answerPasswordAgain } from './support/admin';
 import { expect, test } from './support/fixtures';
+import { ensureMailServer } from './support/mail-server';
 import { watchPage } from './support/page-problems';
 
 test.describe.configure({ mode: 'serial' });
+// The mail of every flow needs a default mail server. The first test adds one through the screens; this one, added
+// before any test, lets a later test run alone (a rerun of the failed tests) on a fresh seed:e2e too.
+test.beforeAll(async () => {
+  await ensureMailServer();
+});
 
 const MAILPIT = process.env.CONFERA_E2E_MAILPIT_ORIGIN ?? 'http://127.0.0.1:8025';
 const MAILPIT_SMTP = process.env.CONFERA_E2E_MAILPIT_SMTP_PORT ?? '1025';

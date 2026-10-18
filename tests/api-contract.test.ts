@@ -46,7 +46,11 @@ beforeAll(() => {
 });
 afterAll(() => rmSync(work, { recursive: true, force: true }));
 
-describe('pnpm api:check', () => {
+// A check runs openapi-typescript (memoised per document in scripts/api-lib.mjs, so once per distinct text):
+// seconds alone, past a minute on a loaded machine (the Blank-slate run hit the 60 s default twice).
+const SLOW = { timeout: 180_000 };
+
+describe('pnpm api:check', SLOW, () => {
   it('passes on the contract as vendored', () => {
     expect((checkContract({ backendDir: null }) as Result).problems).toEqual([]);
   });
@@ -101,7 +105,7 @@ describe('pnpm api:check', () => {
   });
 });
 
-describe('pnpm api:sync', () => {
+describe('pnpm api:sync', SLOW, () => {
   it('vendors both documents, writes a lock with commit and checksums, and generates the types', () => {
     const dir = join(work, 'synced');
     mkdirSync(dir, { recursive: true });

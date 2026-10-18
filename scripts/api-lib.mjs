@@ -49,8 +49,25 @@ const generatorVersions = () => {
   return { 'openapi-typescript': version('openapi-typescript'), typescript };
 };
 
+/**
+ * The type files generated in this process, by the checksum of their document: the output is a
+ * function of the document's text and the generator, which does not change while a process runs. A
+ * check runs the generator once per document; the unit tests, which check many copies of the same
+ * documents, run it once per distinct text instead of twice per test (it takes seconds under load).
+ */
+const generatedByChecksum = new Map();
+
 /** Generates the TypeScript types of one document. Returns the text of the type file. */
 export function generateTypes(documentPath) {
+  const key = checksum(readFileSync(documentPath, 'utf8'));
+  const known = generatedByChecksum.get(key);
+  if (known !== undefined) return known;
+  const text = runGenerator(documentPath);
+  generatedByChecksum.set(key, text);
+  return text;
+}
+
+function runGenerator(documentPath) {
   const work = mkdtempSync(join(tmpdir(), 'confera-api-types-'));
   try {
     const out = join(work, 'types.d.ts');
