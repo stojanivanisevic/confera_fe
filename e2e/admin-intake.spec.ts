@@ -116,7 +116,8 @@ test.describe('deadlines (M3-FE-06; FR-DL-03)', () => {
     const abstract = card.locator('[data-confera-deadline="abstract_submission"]');
     // The last day as set, inclusive (UX3-08); the Save of each deadline has a name of its own (UX3-11).
     await expect(abstract).toContainText('Open until the end of 15 Mar 2027 (Europe/Belgrade)');
-    await abstract.getByLabel('Abstract submission').fill('2027-03-31');
+    // Exact: the Save's name holds the field's name as part of what it does ("Save the abstract submission deadline").
+    await abstract.getByLabel('Abstract submission', { exact: true }).fill('2027-03-31');
     await abstract.getByRole('button', { name: 'Save the abstract submission deadline' }).click();
     await expect(toast(page)).toContainText('Abstract submission: the last day is now 31 Mar 2027');
     await expect(card.getByRole('table', { name: 'Changes' })).toContainText('Abstract submission: 15 Mar 2027 → 31 Mar 2027');

@@ -26,11 +26,22 @@ function get(path: string, host: string): Promise<{ status: number; headers: Rec
 }
 
 const ADMIN_PATHS = ['/', '/sign-in', '/api/v1/meta'];
+// `/` is the admin home, a screen behind sign-in: without a session cookie it answers 307 to sign-in
+// (decided in 0.2.0, UXUI-M2-14, commit 5a2e87d; README, "A screen behind sign-in without any session cookie").
+const SIGN_IN_FIRST = new Set(['/']);
 const PUBLIC_PATHS = ['/f/spike-abstract', '/embed/spike-abstract'];
 
 test.describe('ST-66: odd Host headers', () => {
   test('the control: each surface answers under its own host, in any case of the letters', async () => {
-    for (const path of ADMIN_PATHS) expect((await get(path, ADMIN_HOST)).status, `${path} under ${ADMIN_HOST}`).toBe(200);
+    for (const path of ADMIN_PATHS) {
+      const answer = await get(path, ADMIN_HOST);
+      if (!SIGN_IN_FIRST.has(path)) {
+        expect(answer.status, `${path} under ${ADMIN_HOST}`).toBe(200);
+        continue;
+      }
+      expect(answer.status, `${path} under ${ADMIN_HOST}`).toBe(307);
+      expect(answer.headers.location, `${path} under ${ADMIN_HOST}`).toBe('/sign-in');
+    }
     for (const path of PUBLIC_PATHS) expect((await get(path, PUBLIC_HOST)).status, `${path} under ${PUBLIC_HOST}`).toBe(200);
     expect((await get('/sign-in', ADMIN_HOST.toUpperCase())).status).toBe(200);
   });
