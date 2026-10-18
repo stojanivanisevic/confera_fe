@@ -13,8 +13,11 @@ import {
   catalogueOf,
   checkBody,
   checkSubject,
+  ALT_LIMIT,
   DOCUMENT_LIMIT_BYTES,
   DocumentError,
+  MAX_IMAGES,
+  RENDERED_LIMIT_BYTES,
   MAX_DEPTH,
   renderBody,
   renderSubject,
@@ -46,8 +49,26 @@ describe('the format is the vendored one', () => {
     expect(TEMPLATE_FORMAT_VERSION).toBe(1);
     expect(lock.files['template-vectors.json']?.version).toBe('1');
     expect([DOCUMENT_LIMIT_BYTES, MAX_DEPTH, SUBJECT_LIMIT]).toEqual([204_800, 8, 300]);
-    // 0.3.0 adds the confirmation of a submission (FR-FORM-15, M3-BE-06).
-    expect(TEMPLATE_TYPES).toEqual(['invitation', 'password_reset', 'email_change_confirmation', 'email_change_notice', 'security_notice', 'sign_in_brake', 'test_message', 'submission_confirmation']);
+    // 0.3.0 adds the confirmation of a submission (FR-FORM-15, M3-BE-06); 0.4.0 the seven status emails (FR-MAIL-03).
+    expect(TEMPLATE_TYPES).toEqual([
+      'invitation',
+      'password_reset',
+      'email_change_confirmation',
+      'email_change_notice',
+      'security_notice',
+      'sign_in_brake',
+      'test_message',
+      'submission_confirmation',
+      'submission_opened',
+      'submission_returned',
+      'submission_resumed',
+      'submission_accepted',
+      'submission_rejected',
+      'submission_withdrawn',
+      'submission_reopened',
+    ]);
+    // 0.4.0: images, their words, the rendered body (ADR-12).
+    expect([MAX_IMAGES, ALT_LIMIT, RENDERED_LIMIT_BYTES]).toEqual([5, 300, 102_400]);
     expect(TEMPLATE_LANGUAGES).toEqual(['en', 'sr']);
   });
 
@@ -73,15 +94,15 @@ describe('a document the API refuses is refused here with the same code', () => 
 describe('a document the API renders gives the same subject, HTML and text here', () => {
   it.each(TEMPLATE_RENDERED_VECTORS.map((vector) => [vector.name, vector] as const))('%s', (_name, vector) => {
     const catalogue = catalogueOf(vector.type);
-    const input = { values: vector.input.values, conditions: new Set(vector.input.conditions), link: vector.input.link };
+    const input = { values: vector.input.values, conditions: new Set(vector.input.conditions), link: vector.input.link, images: new Map(Object.entries(vector.input.images ?? {})) };
     expect(renderSubject(checkSubject(vector.subject, catalogue), input)).toBe(vector.expected.subject);
     expect(renderBody(checkBody(vector.body, catalogue), input)).toEqual({ html: vector.expected.html, text: vector.expected.text });
   });
 });
 
 describe('the templates the API seeds pass the check', () => {
-  it('16 of them: eight types, English and Serbian', () => {
-    expect(seeded.templates).toHaveLength(16);
+  it('30 of them: fifteen types, English and Serbian', () => {
+    expect(seeded.templates).toHaveLength(30);
     expect(new Set(seeded.templates.map((template) => template.type))).toEqual(new Set(TEMPLATE_TYPES));
   });
 

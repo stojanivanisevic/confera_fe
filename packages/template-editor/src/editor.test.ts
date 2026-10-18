@@ -59,7 +59,7 @@ describe('loading and saving does not change a document', () => {
     const catalogue = catalogueOf(vector.type);
     const body = bodyFromEditor(bodyToEditor(checkBody(vector.body, catalogue)));
     const subject = subjectFromEditor(subjectToEditor(checkSubject(vector.subject, catalogue)));
-    const input = { values: vector.input.values, conditions: new Set(vector.input.conditions), link: vector.input.link };
+    const input = { values: vector.input.values, conditions: new Set(vector.input.conditions), link: vector.input.link, images: new Map(Object.entries(vector.input.images ?? {})) };
     expect(renderSubject(checkSubject(subject, catalogue), input)).toBe(vector.expected.subject);
     expect(renderBody(checkBody(body, catalogue), input)).toEqual({ html: vector.expected.html, text: vector.expected.text });
   });

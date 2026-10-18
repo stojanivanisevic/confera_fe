@@ -26,7 +26,7 @@ import styles from './admin.module.css';
 import { formatDateTime } from './format';
 import { heldWhy } from './HeldMail';
 import { intake, type HeldMail, type SubmissionFile } from './intake-api';
-import { ACTION_RULES, actionsOf, m4, type Action, type ManagedSubmission, type Revision, type StatusEmailPreview } from './m4-api';
+import { ACTION_OF_TRANSITION, ACTION_RULES, actionsOf, m4, type Action, type ManagedSubmission, type Revision, type StatusEmailPreview } from './m4-api';
 import { ProblemAlert } from './ProblemAlert';
 import { explain, fieldMessages, isApiError, type Explained } from './problems';
 import { useSession } from './session';
@@ -78,9 +78,9 @@ export function Submission({ id }: { id: string }) {
   // Transition 2: the first admin who opens a new submission takes it into processing, by a POST of this page.
   const opening = useRef(false);
   useEffect(() => {
-    if (!record || !mayManage || opening.current || !actionsOf(record).includes('open') || record.version === undefined) return;
+    if (!record || !mayManage || opening.current || !actionsOf(record).includes('open')) return;
     opening.current = true;
-    m4.changeStatus(client, record.id, { action: 'open', version: record.version }, `open:${record.id}`).then(
+    m4.changeStatus(client, record.id, { action: 'open', version: record.version }).then(
       (next) => {
         detail.replace(next);
         const off = next.statusHistory.at(-1)?.email === 'template_off';
@@ -224,7 +224,7 @@ export function Submission({ id }: { id: string }) {
           </p>
         </div>
       </Card>
-      {mayManage || (record.notes?.length ?? 0) > 0 ? <NotesCard record={record} mayManage={mayManage} onSaved={detail.replace} /> : null}
+      {mayManage || record.notes.length > 0 ? <NotesCard record={record} mayManage={mayManage} onSaved={detail.replace} /> : null}
       <Card title={t.history} headingLevel={2}>
         <DataTable
           caption={t.history}
@@ -232,7 +232,7 @@ export function Submission({ id }: { id: string }) {
           rowKey="key"
           columns={[
             { key: 'status', header: t.status, render: (row) => statusText(row.status) },
-            { key: 'action', header: t.historyAction, render: (row) => (row.action ? (t.actions[row.action] ?? row.action) : t.none) },
+            { key: 'action', header: t.historyAction, render: (row) => { const action = ACTION_OF_TRANSITION[row.transition]; return action ? (t.actions[action] ?? action) : row.transition === 1 ? t.receivedFromForm : t.none; } },
             {
               key: 'detail',
               header: t.historyDetail,
@@ -252,7 +252,7 @@ export function Submission({ id }: { id: string }) {
           ]}
         />
       </Card>
-      <RevisionsCard revisions={record.revisions ?? []} labelOf={labelOf} />
+      <RevisionsCard revisions={record.revisions} labelOf={labelOf} />
       <Card title={t.emails} headingLevel={2}>
         {record.emails.length === 0 ? (
           <p className={styles.text}>{t.noEmails}</p>
@@ -358,7 +358,7 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
     setBusy(true);
     setProblem(null);
     try {
-      setPreview(await m4.previewStatus(client, record.id, { action, message: withMessage ? message.trim() : undefined }));
+      setPreview(await m4.previewStatus(client, record.id, { action, message: withMessage ? message.trim() : undefined, reason: rule.reason ? reason.trim() : undefined }));
     } catch (error) {
       refused(error);
     } finally {
@@ -366,15 +366,14 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
     }
   };
   const change = async () => {
-    if (!checked() || record.version === undefined) return;
+    if (!checked()) return;
     setBusy(true);
     setProblem(null);
     try {
       const next = await m4.changeStatus(
         client,
         record.id,
-        { action, version: record.version, ...(withMessage ? { message: message.trim() } : {}), ...(rule.reason ? { reason: reason.trim() } : {}), ...(preview?.email?.digest ? { digest: preview.email.digest } : {}) },
-        key,
+        { action, version: record.version, ...(withMessage ? { message: message.trim() } : {}), ...(rule.reason ? { reason: reason.trim() } : {}), ...(preview?.previewDigest ? { previewDigest: preview.previewDigest } : {}) },
       );
       onChanged(next);
     } catch (error) {
@@ -385,7 +384,7 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
   };
 
   const title = t.actions[action] ?? action;
-  const email = preview?.email ?? null;
+  const email = preview?.sends && preview.html !== null ? preview : null;
   return (
     <Dialog
       open
@@ -425,13 +424,13 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
               <p className="ud-dialog__text">{t.emailLead}</p>
               <DescriptionList
                 items={[
-                  { label: t.emailTo, value: <span className={styles.break}>{email.recipient}</span> },
-                  { label: t.emailLanguage, value: t.languages[email.language] ?? email.language },
+                  { label: t.emailTo, value: <span className={styles.break}>{email.to ?? t.none}</span> },
+                  { label: t.emailLanguage, value: email.language ? (t.languages[email.language] ?? email.language) : t.none },
                   { label: t.emailSubject, value: <strong className={styles.break} data-confera-status-email-subject="">{email.subject}</strong> },
                 ]}
               />
               {/* The server's rendering, never in the page itself (ST-28). */}
-              <SandboxedMarkupFrame className={styles.frame} title={t.emailFrame} markup={email.html} />
+              <SandboxedMarkupFrame className={styles.frame} title={t.emailFrame} markup={email.html ?? ''} />
               {/* The plain-text alternative, folded, so the dialog stays one screen high. */}
               <details className={styles.folded}>
                 <summary>{t.emailPlain}</summary>
@@ -464,13 +463,15 @@ function NotesCard({ record, mayManage, onSaved }: { record: ManagedSubmission; 
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  const notes = record.notes ?? [];
+  // Newest first.
+  const notes = [...record.notes].reverse();
   const add = async () => {
     if (text.trim() === '') return;
     setBusy(true);
     setProblem(null);
     try {
-      onSaved(await m4.addNote(client, record.id, text.trim()));
+      const note = await m4.addNote(client, record.id, text.trim());
+      onSaved({ ...record, notes: [...record.notes, note] });
       setText('');
       toast({ title: t.noteAdded, tone: 'success' });
     } catch (error) {
@@ -488,7 +489,7 @@ function NotesCard({ record, mayManage, onSaved }: { record: ManagedSubmission; 
           <ul className={styles.plainList}>
             {notes.map((note) => (
               <li key={note.id} className={styles.stackTight}>
-                <span className={`${styles.text} ${styles.break} ${styles.preWrap}`}>{note.text}</span>
+                <span className={`${styles.text} ${styles.break} ${styles.preWrap}`}>{note.body}</span>
                 <span className={styles.small}>{fill(t.noteBy, { name: note.author?.displayName ?? t.none, when: formatDateTime(note.createdAt) })}</span>
               </li>
             ))}
@@ -527,12 +528,12 @@ function RevisionsCard({ revisions, labelOf }: { revisions: readonly Revision[];
         <p className={styles.text}>{t.noRevisions}</p>
       ) : (
         <ul className={styles.plainList}>
-          {revisions.map((revision) => (
+          {[...revisions].reverse().map((revision) => (
             <li key={revision.number} className={styles.stackTight}>
               <strong>{fill(t.revisionBy, { when: formatDateTime(revision.changedAt), name: revision.changedBy?.displayName ?? t.none })}</strong>
-              {revision.changes.map((change) => (
-                <span key={change.field} className={`${styles.small} ${styles.break}`}>
-                  {change.field === 'authors' ? fill(t.revisionAuthors, { before: authorNames(change.before), after: authorNames(change.after) }) : fill(t.revisionField, { field: labelOf(change.field), before: shown(change.before), after: shown(change.after) })}
+              {revision.fields.map((field) => (
+                <span key={field} className={`${styles.small} ${styles.break}`}>
+                  {field === 'authors' ? fill(t.revisionAuthors, { before: authorNames(revision.before[field]), after: authorNames(revision.after[field]) }) : fill(t.revisionField, { field: labelOf(field), before: shown(revision.before[field]), after: shown(revision.after[field]) })}
                 </span>
               ))}
             </li>
@@ -543,15 +544,21 @@ function RevisionsCard({ revisions, labelOf }: { revisions: readonly Revision[];
   );
 }
 
-type AuthorDraft = ManagedSubmission['authors'][number];
+/** An author as the answers hold it: the fields of the block of authors (firstName, lastName, institution, email, …). */
+type AuthorDraft = Record<string, unknown> & { firstName?: string; lastName?: string; institution?: string | null; email?: string };
+const text = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 /** The edit on the author's behalf (FR-SUB-06): the texts and choices of the form and the authors; files stay as sent. */
 function EditDrawer({ record, definition, onClose, onSaved, onStale }: { record: ManagedSubmission; definition: FormDefinition | null; onClose: () => void; onSaved: (next: ManagedSubmission) => void; onStale: () => void }) {
   const { client, contact } = useSession();
   const t = TEXTS.submissions;
-  const editable = (definition?.sections.filter((s) => !s.repeat).flatMap((s) => s.fields) ?? []).filter((f) => EDITABLE.includes(f.kind) && (Object.hasOwn(record.answers, f.key) || f.key === 'title'));
-  const [answers, setAnswers] = useState<Record<string, string>>(() => Object.fromEntries(editable.map((f) => [f.key, typeof record.answers[f.key] === 'string' ? (record.answers[f.key] as string) : f.key === 'title' ? (record.title ?? '') : ''])));
-  const [authors, setAuthors] = useState<AuthorDraft[]>(() => record.authors.map((a) => ({ ...a })));
+  const editable = (definition?.sections.filter((s) => !s.repeat).flatMap((s) => s.fields) ?? []).filter((f) => EDITABLE.includes(f.kind) && Object.hasOwn(record.answers, f.key));
+  const [answers, setAnswers] = useState<Record<string, string>>(() => Object.fromEntries(editable.map((f) => [f.key, text(record.answers[f.key])])));
+  // The authors are an answer of the form: the API checks a correction of them like a submit.
+  const stored: AuthorDraft[] = Array.isArray(record.answers.authors)
+    ? (record.answers.authors as AuthorDraft[])
+    : record.authors.map((a) => ({ firstName: a.firstName, lastName: a.lastName, institution: a.institution, email: a.email }));
+  const [authors, setAuthors] = useState<AuthorDraft[]>(() => stored.map((a) => ({ ...a })));
   const [resume, setResume] = useState(record.status === 'returned_for_revision');
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
   const [problem, setProblem] = useState<Explained | null>(null);
@@ -559,18 +566,16 @@ function EditDrawer({ record, definition, onClose, onSaved, onStale }: { record:
   const canResume = actionsOf(record).includes('resume');
 
   const save = async () => {
-    if (record.version === undefined) return;
-    const changed = Object.fromEntries(Object.entries(answers).filter(([key, value]) => value !== (typeof record.answers[key] === 'string' ? record.answers[key] : key === 'title' ? (record.title ?? '') : '')));
-    const authorsChanged = JSON.stringify(authors) !== JSON.stringify(record.authors);
+    const changed: Record<string, unknown> = Object.fromEntries(Object.entries(answers).filter(([key, value]) => value !== text(record.answers[key])));
+    if (JSON.stringify(authors) !== JSON.stringify(stored)) changed.authors = authors;
     setBusy(true);
     setProblem(null);
     setErrors({});
     try {
       let next = record;
-      if (Object.keys(changed).length > 0 || authorsChanged) {
-        next = await m4.edit(client, record.id, { version: record.version, ...(Object.keys(changed).length > 0 ? { answers: changed } : {}), ...(authorsChanged ? { authors } : {}) });
-      }
-      if (canResume && resume && next.version !== undefined) next = await m4.changeStatus(client, record.id, { action: 'resume', version: next.version }, `resume:${record.id}:${String(next.version)}`);
+      if (Object.keys(changed).length > 0) next = await m4.edit(client, record.id, { version: record.version, answers: changed });
+      // The corrections of a returned submission take it back into processing: transition 5, with its own email.
+      if (canResume && resume) next = await m4.changeStatus(client, record.id, { action: 'resume', version: next.version });
       toast({ title: next === record ? t.editNothing : t.editSaved, tone: next === record ? 'info' : 'success' });
       onSaved(next);
     } catch (error) {
@@ -583,7 +588,7 @@ function EditDrawer({ record, definition, onClose, onSaved, onStale }: { record:
     }
   };
   const setAuthor = (index: number, patch: Partial<AuthorDraft>) => setAuthors((list) => list.map((a, i) => (i === index ? { ...a, ...patch } : a)));
-  const fieldError = (path: string) => errors[path];
+  const fieldError = (path: string) => errors[`answers.${path}`] ?? errors[path];
 
   return (
     <Drawer
@@ -621,12 +626,23 @@ function EditDrawer({ record, definition, onClose, onSaved, onStale }: { record:
           return <TextField key={field.key} {...common} type={field.kind === 'email' ? 'email' : 'text'} onChange={(event) => setAnswers({ ...answers, [field.key]: event.target.value })} />;
         })}
         {authors.map((author, index) => (
-          <fieldset key={author.position} className={styles.fieldset}>
-            <legend className={styles.editorLabel}>{fill(t.editAuthor, { n: author.position })}</legend>
-            <TextField label={t.firstName} name={`authors.${String(index)}.firstName`} value={author.firstName} onChange={(event) => setAuthor(index, { firstName: event.target.value })} status={fieldError(`authors[${String(index)}].firstName`) ? 'error' : 'default'} {...(fieldError(`authors[${String(index)}].firstName`) ? { message: fieldError(`authors[${String(index)}].firstName`) } : {})} />
-            <TextField label={t.lastName} name={`authors.${String(index)}.lastName`} value={author.lastName} onChange={(event) => setAuthor(index, { lastName: event.target.value })} />
-            <TextField label={t.institution} name={`authors.${String(index)}.institution`} value={author.institution ?? ''} onChange={(event) => setAuthor(index, { institution: event.target.value === '' ? null : event.target.value })} />
-            <TextField label={t.email} type="email" name={`authors.${String(index)}.email`} value={author.email} onChange={(event) => setAuthor(index, { email: event.target.value })} status={fieldError(`authors[${String(index)}].email`) ? 'error' : 'default'} {...(fieldError(`authors[${String(index)}].email`) ? { message: fieldError(`authors[${String(index)}].email`) } : {})} />
+          <fieldset key={index} className={styles.fieldset}>
+            <legend className={styles.editorLabel}>{fill(t.editAuthor, { n: index + 1 })}</legend>
+            {(['firstName', 'lastName', 'institution', 'email'] as const).map((key) => {
+              const message = fieldError(`authors[${String(index)}].${key}`);
+              return (
+                <TextField
+                  key={key}
+                  label={key === 'firstName' ? t.firstName : key === 'lastName' ? t.lastName : key === 'institution' ? t.institution : t.email}
+                  type={key === 'email' ? 'email' : 'text'}
+                  name={`authors.${String(index)}.${key}`}
+                  value={text(author[key])}
+                  onChange={(event) => setAuthor(index, { [key]: key === 'institution' && event.target.value === '' ? null : event.target.value })}
+                  status={message ? 'error' : 'default'}
+                  {...(message ? { message } : {})}
+                />
+              );
+            })}
           </fieldset>
         ))}
         {canResume ? <Checkbox label={t.editResume} checked={resume} onChange={(event) => setResume(event.target.checked)} /> : null}

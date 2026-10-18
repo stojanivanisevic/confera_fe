@@ -2,7 +2,7 @@
 // M4-FE-01: a submission's status, changed from its screen (FR-SUB-05, FR-SUB-07, FR-MAIL-05, FR-MAIL-08).
 //   - opening a new submission takes it into processing by a POST of the page, once; reading it is a GET only;
 //   - "Return for revision" shows the server's email first, in the sandboxed frame; Cancel sends nothing;
-//     Send changes the status with the text shown, its digest and one Idempotency-Key, also on a second press;
+//     Send changes the status with the text shown, its digest and the version the screen holds;
 //   - a change without a text for the author (Accept) is one confirmation, no preview;
 //   - a withdrawal asks for its internal reason; a note is added.
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +18,8 @@ vi.mock('next/navigation', () => ({
 const ID = '0e2e5000-0000-4000-8000-0000000000b1';
 const PERMISSIONS = [...ADMIN_PERMISSIONS, 'submissions.read', 'submissions.manage'];
 
+const ACTIONS: Record<string, string[]> = { new: ['open', 'withdraw'], open: ['return', 'accept', 'reject', 'withdraw'], returned_for_revision: ['resume', 'accept', 'reject', 'withdraw'], accepted: ['withdraw', 'reopen'], withdrawn: [] };
+const TRANSITION: Record<string, number> = { open: 2, return: 4, resume: 5, accept: 6, reject: 7, withdraw: 8, reopen: 9 };
 const record = (status: string, version: number, extra: Record<string, unknown> = {}) => ({
   id: ID,
   reference: 'KP26-0002',
@@ -27,6 +29,7 @@ const record = (status: string, version: number, extra: Record<string, unknown> 
   institution: null,
   participationType: 'with_paper',
   status,
+  actions: ACTIONS[status] ?? [],
   memberMatch: null,
   billingStatus: null,
   language: 'sr',
@@ -37,7 +40,7 @@ const record = (status: string, version: number, extra: Record<string, unknown> 
   authors: [{ position: 1, firstName: 'Živana', lastName: 'Đorđević', institution: null, institutionAddress: null, orcid: null, email: 'zivana@a.example.test', phone: null, isCorresponding: true }],
   files: [],
   consent: { text: 'I agree.', links: {}, version: 'v1', consentedAt: '2026-10-16T14:56:00.000Z' },
-  statusHistory: [{ status: 'new', changedAt: '2026-10-16T14:56:00.000Z', actor: null }],
+  statusHistory: [{ status: 'new', fromStatus: null, transition: 1, changedAt: '2026-10-16T14:56:00.000Z', actor: null, reason: null, message: null, email: 'none', emailId: null }],
   emails: [],
   notes: [],
   revisions: [],
@@ -60,19 +63,18 @@ function fakeOf(start: string) {
   fake.route = (seen: Seen) => {
     if (seen.method === 'GET' && seen.path === `/api/v1/submissions/${ID}`) return { status: 200, body: current };
     if (seen.method === 'GET' && seen.path.startsWith('/api/v1/forms/')) return { status: 404, body: { code: 'not_found' } };
-    if (seen.method === 'POST' && seen.path === `/api/v1/submissions/${ID}/status-preview`) {
+    if (seen.method === 'POST' && seen.path === `/api/v1/submissions/${ID}/status/preview`) {
       const message = (seen.body as { message?: string }).message ?? '';
-      return { status: 200, body: { email: { recipient: 'zivana@a.example.test', language: 'sr', subject: 'Prijava KP26-0002 je vraćena na doradu', html: `<p>${message}</p><script>parent.document.body.dataset.pwned = 1</script>`, text: `${message}\n`, digest: 'd1' }, templateOff: false } };
+      return { status: 200, body: { sends: true, to: 'zivana@a.example.test', language: 'sr', subject: 'Prijava KP26-0002 je vraćena na doradu', html: `<p>${message}</p><script>parent.document.body.dataset.pwned = 1</script>`, text: `${message}\n`, previewDigest: 'd1' } };
     }
     if (seen.method === 'POST' && seen.path === `/api/v1/submissions/${ID}/status`) {
       const body = seen.body as { action: string; reason?: string; message?: string };
       const to = { open: 'open', return: 'returned_for_revision', accept: 'accepted', withdraw: 'withdrawn' }[body.action] ?? current.status;
-      current = record(to, current.version + 1, { statusHistory: [...current.statusHistory, { status: to, changedAt: '2026-10-18T10:00:00.000Z', actor: null, action: body.action, reason: body.reason ?? null, message: body.message ?? null, email: 'queued' }] });
+      current = record(to, current.version + 1, { statusHistory: [...current.statusHistory, { status: to, fromStatus: current.status, transition: TRANSITION[body.action] ?? 0, changedAt: '2026-10-18T10:00:00.000Z', actor: null, reason: body.reason ?? null, message: body.message ?? null, email: 'queued', emailId: null }] });
       return { status: 200, body: current };
     }
     if (seen.method === 'POST' && seen.path === `/api/v1/submissions/${ID}/notes`) {
-      current = record(current.status, current.version, { notes: [{ id: 'n1', text: (seen.body as { text: string }).text, createdAt: '2026-10-18T10:00:00.000Z', author: { id: 'u', displayName: 'Ana Admin' } }] });
-      return { status: 201, body: current };
+      return { status: 201, body: { id: 'n1', body: (seen.body as { body: string }).body, createdAt: '2026-10-18T10:00:00.000Z', author: { id: 'u', displayName: 'Ana Admin' } } };
     }
     return undefined;
   };
@@ -95,7 +97,6 @@ describe('the status of a submission (M4-FE-01)', () => {
     await settle();
     expect(statusPosts(fake)).toHaveLength(1);
     expect(statusPosts(fake)[0]!.body).toEqual({ action: 'open', version: 1 });
-    expect(statusPosts(fake)[0]!.headers.get('idempotency-key')).toBe(`open:${ID}`);
     expect(screen.container.querySelector('[data-confera-submission-status]')?.getAttribute('data-confera-submission-status')).toBe('open');
     await screen.rerender(<Submission id={ID} />);
     await settle();
@@ -110,10 +111,10 @@ describe('the status of a submission (M4-FE-01)', () => {
     // The message is required: without it there is no preview.
     await click([...dialog()!.querySelectorAll('button')].find((b) => b.textContent === 'Show the email')!);
     expect(dialog()!.textContent).toContain('Write what the author should correct.');
-    expect(fake.calls('POST', `/api/v1/submissions/${ID}/status-preview`)).toHaveLength(0);
+    expect(fake.calls('POST', `/api/v1/submissions/${ID}/status/preview`)).toHaveLength(0);
     await typeInto(dialog()!.querySelector('textarea[name="message"]')!, 'Skratite apstrakt na 250 reči.');
     await click([...dialog()!.querySelectorAll('button')].find((b) => b.textContent === 'Show the email')!);
-    expect(fake.calls('POST', `/api/v1/submissions/${ID}/status-preview`)[0]!.body).toEqual({ action: 'return', message: 'Skratite apstrakt na 250 reči.' });
+    expect(fake.calls('POST', `/api/v1/submissions/${ID}/status/preview`)[0]!.body).toEqual({ action: 'return', message: 'Skratite apstrakt na 250 reči.' });
     // The server's rendering, only in the frame without any sandbox token (ST-28).
     const frame = dialog()!.querySelector<HTMLIFrameElement>('iframe')!;
     expect(frame.getAttribute('sandbox')).toBe('');
@@ -130,8 +131,7 @@ describe('the status of a submission (M4-FE-01)', () => {
     const send = [...dialog()!.querySelectorAll('button')].find((b) => b.textContent === 'Send the email and change the status')!;
     await click(send);
     expect(statusPosts(fake)).toHaveLength(1);
-    expect(statusPosts(fake)[0]!.body).toEqual({ action: 'return', version: 1, message: 'Skratite apstrakt.', digest: 'd1' });
-    expect(statusPosts(fake)[0]!.headers.get('idempotency-key')).toMatch(/^[0-9a-f-]{36}$/);
+    expect(statusPosts(fake)[0]!.body).toEqual({ action: 'return', version: 1, message: 'Skratite apstrakt.', previewDigest: 'd1' });
     expect(screen.container.querySelector('[data-confera-submission-status]')?.getAttribute('data-confera-submission-status')).toBe('returned_for_revision');
     expect(screen.container.textContent).toContain('Message: Skratite apstrakt.');
   });
@@ -143,7 +143,7 @@ describe('the status of a submission (M4-FE-01)', () => {
     await choose('Accept');
     expect(dialog()!.querySelector('textarea')).toBeNull();
     await click([...dialog()!.querySelectorAll('button')].find((b) => b.textContent === 'Change the status')!);
-    expect(fake.calls('POST', `/api/v1/submissions/${ID}/status-preview`)).toHaveLength(0);
+    expect(fake.calls('POST', `/api/v1/submissions/${ID}/status/preview`)).toHaveLength(0);
     expect(statusPosts(fake)[0]!.body).toEqual({ action: 'accept', version: 1 });
 
     await choose('Withdraw');
@@ -163,7 +163,7 @@ describe('the status of a submission (M4-FE-01)', () => {
     expect(notes.textContent).toContain('Only admins see notes');
     await typeInto(notes.querySelector('textarea')!, 'Pozvati autora telefonom.');
     await click(button(notes, 'Add the note'));
-    expect(fake.calls('POST', `/api/v1/submissions/${ID}/notes`)[0]!.body).toEqual({ text: 'Pozvati autora telefonom.' });
+    expect(fake.calls('POST', `/api/v1/submissions/${ID}/notes`)[0]!.body).toEqual({ body: 'Pozvati autora telefonom.' });
     expect(screen.container.querySelector('[data-confera-notes]')!.textContent).toContain('Pozvati autora telefonom.');
   });
 });

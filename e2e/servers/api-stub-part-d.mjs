@@ -1,5 +1,6 @@
-// The stand-in for confera_be's admin API of 0.4.0, for the browser tests (ADR-24), written before the
-// backend's contract of 0.4.0 and in the direction of the plan (M4-BE-01 to 06): the statuses of a
+// The stand-in for confera_be's admin API of 0.4.0, for the browser tests (ADR-24), after the vendored
+// contract of m4/be (796338e) where it has a route, and in the direction of the plan where it has none
+// yet (the email images of M4-BE-06, the resend and the retention of M4-BE-05): the statuses of a
 // submission with their emails, the preview before a status email goes out (FR-MAIL-08), notes, the
 // edit on the author's behalf with its kept revisions, search, filters and sort without diacritics
 // (FR-SUB-03); the templates saved, a conference's own version and its fallback, the switch of a
@@ -16,60 +17,31 @@ import { STUB_PART_B } from './stub-fixture.mjs';
 export const STATUSES = ['new', 'open', 'returned_for_revision', 'accepted', 'rejected', 'withdrawn'];
 /** Each action: from which statuses, to which, its template, whether it carries a message for the author and an internal reason. */
 export const ACTIONS = {
-  open: { from: ['new'], to: 'open', type: 'submission_opened', message: 'none', reason: false },
-  return: { from: ['open'], to: 'returned_for_revision', type: 'submission_returned', message: 'required', reason: false },
-  resume: { from: ['returned_for_revision'], to: 'open', type: 'submission_resumed', message: 'none', reason: false },
-  accept: { from: ['open', 'returned_for_revision'], to: 'accepted', type: 'submission_accepted', message: 'none', reason: false },
-  reject: { from: ['open', 'returned_for_revision'], to: 'rejected', type: 'submission_rejected', message: 'optional', reason: false },
-  withdraw: { from: ['new', 'open', 'returned_for_revision', 'accepted'], to: 'withdrawn', type: 'submission_withdrawn', message: 'optional', reason: true },
-  reopen: { from: ['accepted', 'rejected'], to: 'open', type: 'submission_reopened', message: 'optional', reason: true },
+  open: { from: ['new'], to: 'open', type: 'submission_opened', message: 'none', reason: false, transition: 2 },
+  return: { from: ['open'], to: 'returned_for_revision', type: 'submission_returned', message: 'required', reason: false, transition: 4 },
+  resume: { from: ['returned_for_revision'], to: 'open', type: 'submission_resumed', message: 'none', reason: false, transition: 5 },
+  accept: { from: ['open', 'returned_for_revision'], to: 'accepted', type: 'submission_accepted', message: 'none', reason: false, transition: 6 },
+  reject: { from: ['open', 'returned_for_revision'], to: 'rejected', type: 'submission_rejected', message: 'optional', reason: false, transition: 7 },
+  withdraw: { from: ['new', 'open', 'returned_for_revision', 'accepted'], to: 'withdrawn', type: 'submission_withdrawn', message: 'optional', reason: true, transition: 8 },
+  reopen: { from: ['accepted', 'rejected'], to: 'open', type: 'submission_reopened', message: 'optional', reason: true, transition: 9 },
 };
 export const STATUS_TYPES = Object.values(ACTIONS).map((action) => action.type);
-const STATUS_PLACEHOLDERS = ['organisationName', 'conferenceName', 'reference', 'title', 'authorName', 'message'];
-const STATUS_CONDITIONS = ['hasTitle', 'hasMessage'];
 
-const text = (value, marks) => (marks ? { type: 'text', text: value, marks } : { type: 'text', text: value });
-const ph = (key) => ({ type: 'placeholder', key });
+const text = (value) => ({ type: 'text', text: value });
 const para = (...children) => ({ type: 'paragraph', children });
-const WORDS = {
-  submission_opened: { en: ['is taken into processing', 'The office has started to work on your submission.'], sr: ['je uzeta u obradu', 'Kancelarija je počela da radi na vašoj prijavi.'] },
-  submission_returned: { en: ['is returned for revision', 'Please correct your submission as follows and send the corrections by email.'], sr: ['je vraćena na doradu', 'Molimo vas da prijavu ispravite ovako i ispravke pošaljete imejlom.'] },
-  submission_resumed: { en: ['is back in processing', 'Thank you for the corrections. The office works on your submission again.'], sr: ['je ponovo u obradi', 'Hvala na ispravkama. Kancelarija ponovo radi na vašoj prijavi.'] },
-  submission_accepted: { en: ['is accepted', 'We are glad to tell you that your submission is accepted.'], sr: ['je prihvaćena', 'Sa zadovoljstvom vam javljamo da je vaša prijava prihvaćena.'] },
-  submission_rejected: { en: ['is not accepted', 'We are sorry to tell you that your submission is not accepted.'], sr: ['nije prihvaćena', 'Žao nam je što vam javljamo da vaša prijava nije prihvaćena.'] },
-  submission_withdrawn: { en: ['is withdrawn', 'Your submission is withdrawn.'], sr: ['je povučena', 'Vaša prijava je povučena.'] },
-  submission_reopened: { en: ['is open again', 'The office works on your submission again.'], sr: ['je ponovo otvorena', 'Kancelarija ponovo radi na vašoj prijavi.'] },
-};
-const statusTemplate = (type, language, index) => {
-  const [subject, line] = WORDS[type][language];
-  const dear = language === 'sr' ? 'Poštovani/a ' : 'Dear ';
-  const children = [
-    para(text(dear), ph('authorName'), text(',')),
-    para(text(line)),
-    { type: 'conditional', key: 'hasMessage', children: [para(ph('message'))] },
-    para(text(language === 'sr' ? 'Prijava: ' : 'Submission: ', ['bold']), ph('reference'), text(' · '), ph('conferenceName')),
-    para(ph('organisationName')),
-  ];
-  // A stored document with hostile strings (ST-59): every one is text, and runs nothing in the editor, the preview or the mail log.
-  if (type === 'submission_rejected' && language === 'en') children.push(para(text('<script>parent.document.body.dataset.pwned="editor"</script><img src=x onerror="parent.document.body.dataset.pwned=1"> {{constructor}} javascript:alert(1)')));
-  return {
-    id: `0e2e7100-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
-    conferenceId: null,
-    type,
-    language,
-    subject: { type: 'subject', children: [text(language === 'sr' ? 'Prijava ' : 'Submission '), ph('reference'), text(` ${subject}`)] },
-    body: { type: 'doc', children },
-    mailServerId: null,
-    updatedAt: '2026-10-18T08:00:00.000Z',
-    version: 1,
-  };
-};
+/** A stored document with hostile strings (ST-59): every one is text, and runs nothing in the editor, the preview or the mail log. */
+const HOSTILE = '<script>parent.document.body.dataset.pwned="editor"</script><img src=x onerror="parent.document.body.dataset.pwned=1"> {{constructor}} javascript:alert(1)';
 
 // ---- the state of part D, added to a universe on its first request --------------------------------
 function ensure(state) {
   if (state.partD) return state.partD;
-  STATUS_TYPES.forEach((type, i) => state.templates.push(statusTemplate(type, 'en', i * 2), statusTemplate(type, 'sr', i * 2 + 1)));
-  for (const submission of state.submissions) Object.assign(submission, { version: submission.version ?? 1, notes: [], revisions: [] });
+  // The seeded templates of the status emails are the API's (default-templates.json); one of them carries hostile strings.
+  const rejected = state.templates.find((t) => t.conferenceId === null && t.type === 'submission_rejected' && t.language === 'en');
+  if (rejected) rejected.body = { ...rejected.body, children: [...rejected.body.children, para(text(HOSTILE))] };
+  for (const submission of state.submissions) {
+    Object.assign(submission, { version: submission.version ?? 1, notes: [], revisions: [] });
+    submission.statusHistory = submission.statusHistory.map((entry) => ({ fromStatus: null, transition: 1, reason: null, message: null, email: 'none', emailId: null, ...entry }));
+  }
   // A third submission, withdrawn: out of the default view, found with the status filter (FR-SUB-08).
   const third = JSON.parse(JSON.stringify(state.submissions[1]));
   Object.assign(third, {
@@ -80,14 +52,14 @@ function ensure(state) {
     status: 'withdrawn',
     receivedAt: '2026-10-15T09:00:00.000Z',
     statusHistory: [
-      { status: 'new', changedAt: '2026-10-15T09:00:00.000Z', actor: null },
-      { status: 'withdrawn', changedAt: '2026-10-15T12:00:00.000Z', actor: null, action: 'withdraw', reason: 'Double submission', message: null, email: 'queued' },
+      { status: 'new', fromStatus: null, transition: 1, changedAt: '2026-10-15T09:00:00.000Z', actor: null, reason: null, message: null, email: 'none', emailId: null },
+      { status: 'withdrawn', fromStatus: 'new', transition: 8, changedAt: '2026-10-15T12:00:00.000Z', actor: null, reason: 'Double submission', message: null, email: 'queued', emailId: null },
     ],
     authors: [{ ...third.authors[0], firstName: 'Đorđe', lastName: 'Šćepanović', email: 'djordje@a.example.test' }],
     emails: [],
   });
   state.submissions.push(third);
-  state.partD = { switches: {}, images: [], keys: new Map() };
+  state.partD = { switches: {}, switchVersions: {}, images: [] };
   return state.partD;
 }
 
@@ -206,7 +178,7 @@ export function handlePartD(ctx) {
   const d = ensure(state);
   const actor = { id: me.id, displayName: me.displayName };
   const catalogue = () => ({
-    types: [...STUB_PART_B.catalogue.types, ...STATUS_TYPES.map((type) => ({ type, placeholders: STATUS_PLACEHOLDERS, conditions: STATUS_CONDITIONS, carriesLink: false, statusEmail: true }))],
+    types: STUB_PART_B.catalogue.types.map((entry) => ({ ...entry, statusEmail: STATUS_TYPES.includes(entry.type) })),
     languages: STUB_PART_B.catalogue.languages,
   });
   const entryOf = (type) => catalogue().types.find((t) => t.type === type) ?? refuse(400, 'validation_failed', [{ path: 'type', code: 'unknown_type' }]);
@@ -231,9 +203,9 @@ export function handlePartD(ctx) {
     const page = Math.max(1, Number(q.get('page') ?? 1));
     const pageSize = Math.min(100, Number(q.get('pageSize') ?? 25));
     const statuses = (q.get('status') ?? '').split(',').filter(Boolean);
-    const search = fold(q.get('search') ?? '').trim();
+    const search = fold(q.get('q') ?? '').trim();
     const sortKey = Object.hasOwn(SORTS, q.get('sort') ?? '') ? q.get('sort') : 'receivedAt';
-    const direction = q.get('direction') === 'asc' ? 1 : -1;
+    const direction = (q.get('order') ?? (sortKey === 'receivedAt' ? 'desc' : 'asc')) === 'asc' ? 1 : -1;
     const all = state.submissions
       .filter((s) => !q.get('conferenceId') || s.conference.id === q.get('conferenceId'))
       // A withdrawn submission leaves the default view and is found with the status filter (FR-SUB-08).
@@ -250,10 +222,10 @@ export function handlePartD(ctx) {
     return { status: 200, body: { items: all.slice((page - 1) * pageSize, page * pageSize).map(summary), total: all.length, page, pageSize } };
   }
 
-  const sub = /^\/api\/v1\/submissions\/([^/]+)(?:\/(status|status-preview|notes))?$/.exec(path);
+  const sub = /^\/api\/v1\/submissions\/([^/]+)(?:\/(status|status\/preview|notes))?$/.exec(path);
   if (sub) {
     const submission = state.submissions.find((s) => s.id === sub[1]);
-    const detail = () => ({ ...submission, allowedActions: Object.entries(ACTIONS).filter(([, a]) => a.from.includes(submission.status)).map(([name]) => name) });
+    const detail = () => ({ ...submission, actions: Object.entries(ACTIONS).filter(([, a]) => a.from.includes(submission.status)).map(([name]) => name) });
     if (!sub[2] && method === 'GET') {
       need('submissions.read');
       if (!submission) refuse(404, 'not_found');
@@ -283,17 +255,16 @@ export function handlePartD(ctx) {
     };
 
     // The email as it will go out (FR-MAIL-08): its subject and body for this submission, or that none goes.
-    if (sub[2] === 'status-preview' && method === 'POST') {
+    if (sub[2] === 'status/preview' && method === 'POST') {
       const { action, message } = asked();
-      if (!enabled(submission.conference.id, action.type)) return { status: 200, body: { email: null, templateOff: true } };
+      if (!enabled(submission.conference.id, action.type)) return { status: 200, body: { sends: false, to: null, language: null, subject: null, html: null, text: null, previewDigest: null } };
       const { rendered } = emailOf(action, message);
-      return { status: 200, body: { email: { recipient: submission.authors.find((a) => a.isCorresponding)?.email ?? submission.authors[0].email, language, subject: rendered.subject, html: rendered.html, text: rendered.text, digest: sha(rendered.html + rendered.subject) }, templateOff: false } };
+      return { status: 200, body: { sends: true, to: submission.authors.find((a) => a.isCorresponding)?.email ?? submission.authors[0].email, language, subject: rendered.subject, html: rendered.html, text: rendered.text, previewDigest: sha(rendered.html + rendered.subject) } };
     }
 
     // A change of status: one row of history, one email, exactly once for one key (FR-MAIL-05).
     if (sub[2] === 'status' && method === 'POST') {
-      const key = req.headers['idempotency-key'];
-      if (key && d.keys.has(`${submission.id}:${key}`)) return { status: 200, body: d.keys.get(`${submission.id}:${key}`) };
+      // A repeated request carries a version that is no longer the submission's: 409, and no second email.
       versionOf(body.version, submission);
       const { action, message, reason } = asked();
       const off = !enabled(submission.conference.id, action.type);
@@ -301,60 +272,59 @@ export function handlePartD(ctx) {
       if (!off) {
         const { rendered } = emailOf(action, message);
         // What was shown is what goes (FR-MAIL-08): a preview of another text is refused.
-        if (body.digest !== undefined && body.digest !== sha(rendered.html + rendered.subject)) refuse(409, 'preview_outdated');
+        if (body.previewDigest !== undefined && body.previewDigest !== sha(rendered.html + rendered.subject)) refuse(409, 'preview_outdated');
         const messageId = randomUUID();
         submission.emails.push({ id: messageId, kind: action.type, recipient, status: 'sent', heldReason: null, lastErrorCode: null, createdAt: nowIso(), sentAt: nowIso() });
         state.mailLog.unshift({ id: randomUUID(), messageId, recipient, kind: action.type, language, conferenceId: submission.conference.id, mailServerId: STUB_PART_B.ids.server, serverName: 'Kancelarija', attempt: 1, result: 'sent', errorCode: null, sentAt: nowIso(), subject: rendered.subject, bodyHtml: render(emailOf(action, message).template, { values: values(message), conditions: new Set([...(submission.title ? ['hasTitle'] : []), ...(message ? ['hasMessage'] : [])]), images: d.images, inline: false }).html, bodyText: rendered.text, diverted: false, resentFrom: null });
       }
+      submission.statusHistory.push({ status: action.to, fromStatus: submission.status, transition: action.transition, changedAt: nowIso(), actor, reason, message, email: off ? 'template_off' : 'queued', emailId: off ? null : (submission.emails.at(-1)?.id ?? null) });
       submission.status = action.to;
       submission.version += 1;
-      submission.statusHistory.push({ status: action.to, changedAt: nowIso(), actor, action: body.action, reason, message, email: off ? 'template_off' : 'queued' });
       record(me.id, 'submission.status_changed', 'submission', submission.id);
-      const answer = detail();
-      if (key) d.keys.set(`${submission.id}:${key}`, answer);
-      return { status: 200, body: answer };
+      return { status: 200, body: detail() };
     }
 
     if (sub[2] === 'notes' && method === 'POST') {
-      const note = String(body.text ?? '').trim();
-      if (note === '') refuse(400, 'validation_failed', [{ path: 'text', code: 'isNotEmpty' }]);
-      if (note.length > 5000) refuse(400, 'validation_failed', [{ path: 'text', code: 'maxLength' }]);
-      submission.notes.unshift({ id: randomUUID(), text: note, createdAt: nowIso(), author: actor });
+      const note = String(body.body ?? '').trim();
+      if (note === '') refuse(400, 'validation_failed', [{ path: 'body', code: 'isNotEmpty' }]);
+      if (note.length > 5000) refuse(400, 'validation_failed', [{ path: 'body', code: 'maxLength' }]);
+      const added = { id: randomUUID(), body: note, createdAt: nowIso(), author: actor };
+      submission.notes.push(added);
       record(me.id, 'submission.note_added', 'submission', submission.id);
-      return { status: 201, body: detail() };
+      return { status: 201, body: added };
     }
 
-    // The data corrected on the author's behalf (FR-SUB-06): the old values are kept as a revision.
-    if (!sub[2] && method === 'PATCH') {
+    // The data corrected on the author's behalf (FR-SUB-06): the answers that change, the authors among them; the old values are kept as a revision.
+    if (!sub[2] && method === 'PUT') {
       versionOf(body.version, submission);
-      const changes = [];
+      const given = body.answers;
+      if (typeof given !== 'object' || given === null) refuse(400, 'validation_failed', [{ path: 'answers', code: 'isObject' }]);
       const errors = [];
-      if ('title' in body) {
-        if (typeof body.title !== 'string' || body.title.trim() === '') errors.push({ path: 'title', code: 'isNotEmpty' });
-        else if (body.title.trim() !== submission.title) changes.push({ field: 'title', before: submission.title, after: body.title.trim() });
-      }
-      for (const [key, value] of Object.entries(body.answers ?? {})) {
-        if (typeof value !== 'string') errors.push({ path: `answers.${key}`, code: 'isString' });
-        else if (value !== submission.answers[key]) changes.push({ field: `answers.${key}`, before: submission.answers[key] ?? null, after: value });
-      }
-      if (Array.isArray(body.authors)) {
-        body.authors.forEach((author, i) => {
-          if (!String(author.firstName ?? '').trim()) errors.push({ path: `authors[${i}].firstName`, code: 'isNotEmpty' });
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(author.email ?? ''))) errors.push({ path: `authors[${i}].email`, code: 'isMailAddress' });
-        });
-        if (JSON.stringify(body.authors) !== JSON.stringify(submission.authors)) changes.push({ field: 'authors', before: submission.authors, after: body.authors });
+      const current = { ...submission.answers, authors: submission.answers.authors ?? submission.authors.map((a) => ({ firstName: a.firstName, lastName: a.lastName, institution: a.institution, email: a.email })) };
+      for (const [key, value] of Object.entries(given)) {
+        if (submission.files.some((file) => file.field === key)) errors.push({ path: `answers.${key}`, code: 'fileNotEditable' });
+        if (key === 'title' && (typeof value !== 'string' || value.trim() === '')) errors.push({ path: 'answers.title', code: 'required' });
+        if (key === 'authors') {
+          if (!Array.isArray(value) || value.length === 0) errors.push({ path: 'answers.authors', code: 'required' });
+          else
+            value.forEach((author, i) => {
+              if (!String(author.firstName ?? '').trim()) errors.push({ path: `answers.authors[${i}].firstName`, code: 'required' });
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(author.email ?? ''))) errors.push({ path: `answers.authors[${i}].email`, code: 'isMailAddress' });
+            });
+        }
       }
       if (errors.length > 0) refuse(400, 'validation_failed', errors);
-      if (changes.length === 0) return { status: 200, body: detail() };
-      for (const change of changes) {
-        if (change.field === 'title') submission.title = change.after;
-        else if (change.field === 'authors') {
-          submission.authors = change.after;
-          submission.firstAuthor = `${change.after[0].firstName} ${change.after[0].lastName}`;
-        } else submission.answers[change.field.slice('answers.'.length)] = change.after;
-        if (change.field === 'answers.title') submission.title = change.after;
+      const fields = Object.keys(given).filter((key) => JSON.stringify(given[key]) !== JSON.stringify(current[key]));
+      if (fields.length === 0) return { status: 200, body: detail() };
+      const before = Object.fromEntries(fields.map((key) => [key, current[key] ?? null]));
+      const after = Object.fromEntries(fields.map((key) => [key, given[key]]));
+      submission.answers = { ...current, ...after };
+      if (fields.includes('title')) submission.title = given.title;
+      if (fields.includes('authors')) {
+        submission.authors = given.authors.map((a, i) => ({ position: i + 1, firstName: a.firstName, lastName: a.lastName, institution: a.institution ?? null, institutionAddress: null, orcid: null, email: a.email, phone: null, isCorresponding: i === 0 }));
+        submission.firstAuthor = `${given.authors[0].firstName} ${given.authors[0].lastName}`;
       }
-      submission.revisions.unshift({ number: submission.revisions.length + 2, changedAt: nowIso(), changedBy: actor, changes });
+      submission.revisions.push({ number: submission.revisions.length + 1, changedAt: nowIso(), changedBy: actor, fields, before, after });
       submission.version += 1;
       record(me.id, 'submission.edited', 'submission', submission.id);
       return { status: 200, body: detail() };
@@ -379,14 +349,14 @@ export function handlePartD(ctx) {
     const entry = entryOf(body.type);
     checkTemplate(body.subject, body.body, entry, d.images, refuse);
     const SAMPLE = { recipientName: 'Đorđe Šćepanović', authorName: 'Đorđe Šćepanović', organisationName: state.organisation.name, conferenceName: 'Konferencija za probe', reference: 'KP26-0042', title: 'Održivi turizam u Čačku i Žabalju', message: 'Please shorten the abstract to 250 words.', inviterName: 'Živana Đorđević', expiresIn: '7 days', newEmail: 'novi@a.example.test', change: 'role', actorName: 'Živana Đorđević', subjectName: 'Marta Kovač', serverName: 'Kancelarija' };
-    return { status: 200, body: render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: new Set(entry.conditions), images: d.images, inline: true, link: 'https://admin.confera.example/invitations/sample' }) };
+    return { status: 200, body: { ...render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: new Set(entry.conditions), images: d.images, inline: true, link: 'https://admin.confera.example/invitations/sample' }), imagesPending: [] } };
   }
   const templateRoute = /^\/api\/v1\/mail-templates\/([^/]+)$/.exec(path);
   if (templateRoute && (method === 'PUT' || method === 'DELETE')) {
     need('templates.manage');
     const template = state.templates.find((t) => t.id === templateRoute[1]);
     if (!template) refuse(404, 'not_found');
-    versionOf(body.version ?? Number(url.searchParams.get('version')), template);
+    if (method === 'PUT') versionOf(body.version, template);
     if (method === 'DELETE') {
       // Only a conference's own version goes; the conference then uses the organisation's again.
       if (template.conferenceId === null) refuse(409, 'organisation_template');
@@ -401,21 +371,22 @@ export function handlePartD(ctx) {
   }
 
   // ---- the status emails of a conference, each on or off (FR-MAIL-07) ---------------------------------
-  const switches = /^\/api\/v1\/conferences\/([^/]+)\/status-emails(?:\/([a-z_]+))?$/.exec(path);
+  const switches = /^\/api\/v1\/conferences\/([^/]+)\/status-emails$/.exec(path);
   if (switches) {
     const conference = state.conferences.find((c) => c.id === switches[1]);
     if (!conference) refuse(404, 'not_found');
-    const list = () => ({ items: STATUS_TYPES.map((type) => ({ type, enabled: enabled(conference.id, type) })) });
-    if (!switches[2] && method === 'GET') {
+    const list = () => ({ conferenceId: conference.id, types: STATUS_TYPES.map((type) => ({ type, enabled: enabled(conference.id, type) })), version: d.switchVersions[conference.id] ?? 1 });
+    if (method === 'GET') {
       need('templates.read');
       return { status: 200, body: list() };
     }
-    if (switches[2] && method === 'PUT') {
+    if (method === 'PUT') {
       need('templates.manage');
-      if (!STATUS_TYPES.includes(switches[2])) refuse(404, 'not_found');
-      if (typeof body.enabled !== 'boolean') refuse(400, 'validation_failed', [{ path: 'enabled', code: 'isBoolean' }]);
-      (d.switches[conference.id] ??= {})[switches[2]] = body.enabled;
-      record(me.id, 'template.switched', 'conference', conference.id);
+      if (body.version !== (d.switchVersions[conference.id] ?? 1)) refuse(409, 'version_conflict');
+      if (!Array.isArray(body.types) || body.types.some((item) => !STATUS_TYPES.includes(item.type) || typeof item.enabled !== 'boolean')) refuse(400, 'validation_failed', [{ path: 'types', code: 'isIn' }]);
+      for (const item of body.types) (d.switches[conference.id] ??= {})[item.type] = item.enabled;
+      d.switchVersions[conference.id] = (d.switchVersions[conference.id] ?? 1) + 1;
+      record(me.id, 'conference.status_emails_changed', 'conference', conference.id);
       return { status: 200, body: list() };
     }
   }

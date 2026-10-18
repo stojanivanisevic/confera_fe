@@ -178,6 +178,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conferences/{id}/status-emails": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getStatusEmails"];
+        /**
+         * Switches status emails of the conference off or on. A change of status whose email is
+         *     off sends nothing; its history says "no email: template off".
+         */
+        put: operations["setStatusEmails"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/email-changes/{token}": {
         parameters: {
             query?: never;
@@ -477,7 +497,8 @@ export interface paths {
         };
         get: operations["listMailTemplates"];
         put?: never;
-        post?: never;
+        /** A language version of the organisation, or the override of a conference. */
+        post: operations["createMailTemplate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -501,6 +522,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mail-templates/effective": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Which template every type and language uses for a conference (or for the organisation),
+         *     by the fallback of ADR-12: conference and language, conference in English, organisation
+         *     and language, organisation in English.
+         */
+        get: operations["listEffectiveTemplates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-templates/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The sample render of a template as the editor holds it (FR-MAIL-02). Nothing is saved. */
+        post: operations["previewMailTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/mail-templates/{id}": {
         parameters: {
             query?: never;
@@ -509,9 +568,14 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getMailTemplate"];
-        put?: never;
+        /** A change of a template, checked like a new one; 409 `version_conflict` on a stale version. */
+        put: operations["updateMailTemplate"];
         post?: never;
-        delete?: never;
+        /**
+         * Removes the override of a conference: its emails use the organisation's again. The
+         *     organisation's own templates are never removed (409 `organisation_template`).
+         */
+        delete: operations["deleteMailTemplate"];
         options?: never;
         head?: never;
         patch?: never;
@@ -683,7 +747,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The submissions of the organisation, newest first, a page at a time (FR-SUB-02). */
+        /**
+         * The submissions of the organisation, a page at a time (FR-SUB-02, FR-SUB-03): searched
+         *     without diacritics, filtered, in one of the fixed orders. Withdrawn ones only on request.
+         */
         get: operations["listSubmissions"];
         put?: never;
         post?: never;
@@ -700,9 +767,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One submission with its data, files, status history and emails (FR-SUB-04). */
+        /** One submission with everything about it (FR-SUB-04). Changes nothing. */
         get: operations["getSubmission"];
-        put?: never;
+        /**
+         * A correction of the data on the author's behalf (FR-SUB-06): the answers that change,
+         *     checked like a submit; the old values are kept as a revision. Sends no email: the
+         *     return to processing after a revision is the status change `resume`.
+         */
+        put: operations["editSubmission"];
         post?: never;
         delete?: never;
         options?: never;
@@ -724,6 +796,65 @@ export interface paths {
         get: operations["downloadSubmissionFile"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A note of an admin (FR-SUB-07): never shown to authors or reviewers. */
+        post: operations["addSubmissionNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A change of status by the state table of Spec section 5 (FR-SUB-05): 409
+         *     `transition_refused` for a change the table does not have, `version_conflict` for a
+         *     stale or repeated request, `preview_outdated` when the email is no longer the one shown.
+         *     Its email is queued in the same transaction, unless the conference switched it off.
+         */
+        post: operations["changeSubmissionStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{id}/status/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The email a change of status would send (FR-MAIL-08), rendered by the server with the
+         *     images embedded, and its hash. Nothing changes and nothing is queued.
+         */
+        post: operations["previewStatusEmail"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1002,6 +1133,24 @@ export interface components {
             enabled?: boolean;
             sendRatePerMinute?: number;
         };
+        CreateMailTemplateDto: {
+            /** @enum {string} */
+            type: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message" | "submission_confirmation" | "submission_opened" | "submission_returned" | "submission_resumed" | "submission_accepted" | "submission_rejected" | "submission_withdrawn" | "submission_reopened";
+            /** @enum {string} */
+            language: "en" | "sr";
+            /** @description A subject document (contracts/template-vectors.json); markup in its place is refused. */
+            subject: {
+                [key: string]: unknown;
+            };
+            /** @description A body document (contracts/template-vectors.json); markup in its place is refused. */
+            body: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            conferenceId?: string | null;
+            /** Format: uuid */
+            mailServerId?: string | null;
+        };
         DeadlineChangeDto: {
             /** @enum {string} */
             kind: "abstract_submission" | "fee_payment" | "full_paper";
@@ -1045,6 +1194,19 @@ export interface components {
         };
         DiscardedDto: {
             discarded: number;
+        };
+        EffectiveTemplateDto: {
+            /**
+             * @description `conference`, `conference_en` (its English one), `organisation`, `organisation_en`, or `none`.
+             * @enum {string}
+             */
+            source: "conference" | "conference_en" | "organisation" | "organisation_en" | "none";
+            type: string;
+            language: string;
+            templateId: string | null;
+        };
+        EffectiveTemplateListDto: {
+            items: components["schemas"]["EffectiveTemplateDto"][];
         };
         EmailChangeLinkDto: {
             /** @description The address the account will have once the change is confirmed. */
@@ -1316,6 +1478,9 @@ export interface components {
              */
             version: string;
         };
+        NoteDto: {
+            body: string;
+        };
         OrganisationBreakerDto: {
             perHour: number;
             perDay: number;
@@ -1364,6 +1529,10 @@ export interface components {
             eurBankName: string | null;
             paypalPayee: string | null;
             version: number;
+        };
+        PersonDto: {
+            id: string;
+            displayName: string;
         };
         Problem: {
             /** @description Stable, machine-readable code, for example `not_found` or `validation_failed`. */
@@ -1435,6 +1604,58 @@ export interface components {
             /** @description The password of the account. */
             password: string;
         };
+        StatusChangeDto: {
+            /** @enum {string} */
+            action: "open" | "return" | "resume" | "accept" | "reject" | "withdraw" | "reopen";
+            /** @description The internal reason: required to withdraw and to reopen, refused otherwise; never sent. */
+            reason?: string;
+            /**
+             * @description The text for the author, carried by the email word for word: required to return for
+             *     revision, allowed to reject, withdraw and reopen, refused otherwise.
+             */
+            message?: string;
+            version: number;
+            previewDigest?: string;
+        };
+        StatusEmailPreviewDto: {
+            /** @description False when the conference switched this email off (FR-MAIL-07): nothing will be sent. */
+            sends: boolean;
+            to: string | null;
+            language: string | null;
+            subject: string | null;
+            /** @description The HTML with its images embedded: show it in a sandboxed frame only (ST-28). */
+            html: string | null;
+            text: string | null;
+            /** @description Send it back with the change when it carries a `message`. */
+            previewDigest: string | null;
+        };
+        StatusEmailSwitchDto: {
+            /** @enum {string} */
+            type: "submission_opened" | "submission_returned" | "submission_resumed" | "submission_accepted" | "submission_rejected" | "submission_withdrawn" | "submission_reopened";
+            enabled: boolean;
+        };
+        StatusEmailsDto: {
+            conferenceId: string;
+            types: components["schemas"]["StatusEmailSwitchDto"][];
+            /** @description The version of the conference. */
+            version: number;
+        };
+        StatusEmailsUpdateDto: {
+            types: components["schemas"]["StatusEmailSwitchDto"][];
+            /** @description The version of the conference. */
+            version: number;
+        };
+        StatusTextsDto: {
+            /** @enum {string} */
+            action: "open" | "return" | "resume" | "accept" | "reject" | "withdraw" | "reopen";
+            /** @description The internal reason: required to withdraw and to reopen, refused otherwise; never sent. */
+            reason?: string;
+            /**
+             * @description The text for the author, carried by the email word for word: required to return for
+             *     revision, allowed to reject, withdraw and reopen, refused otherwise.
+             */
+            message?: string;
+        };
         SubmissionAuthorDto: {
             position: number;
             firstName: string;
@@ -1447,27 +1668,13 @@ export interface components {
             isCorresponding: boolean;
         };
         SubmissionDetailDto: {
-            id: string;
-            reference: string;
-            conference: {
-                id: string;
-                code: string;
-                name: string;
-                editionYear: number | null;
-            };
-            title: string | null;
-            firstAuthor: string;
-            institution: string | null;
-            participationType: string | null;
-            status: string;
-            /** @description Not matched yet (0.8.0). */
-            memberMatch: string | null;
-            /** @description No proforma yet (0.6.0). */
-            billingStatus: string | null;
-            language: string;
-            authorCount: number;
-            receivedAt: string;
-            fileSigns: components["schemas"]["SubmissionFileSignsDto"];
+            /**
+             * @description The status of Spec section 5.
+             * @enum {string}
+             */
+            status: "new" | "open" | "returned_for_revision" | "accepted" | "rejected" | "withdrawn";
+            /** @description The changes of status an admin may make now, in the order of the state table. */
+            actions: ("open" | "return" | "resume" | "accept" | "reject" | "withdraw" | "reopen")[];
             form: {
                 id: string;
                 slug: string;
@@ -1489,12 +1696,42 @@ export interface components {
             };
             statusHistory: components["schemas"]["SubmissionStatusDto"][];
             emails: components["schemas"]["SubmissionEmailDto"][];
+            notes: components["schemas"]["SubmissionNoteDto"][];
+            revisions: components["schemas"]["SubmissionRevisionDto"][];
+            id: string;
+            reference: string;
+            conference: {
+                id: string;
+                code: string;
+                name: string;
+                editionYear: number | null;
+            };
+            title: string | null;
+            firstAuthor: string;
+            institution: string | null;
+            participationType: string | null;
+            /** @description Not matched yet (0.8.0). */
+            memberMatch: string | null;
+            /** @description No proforma yet (0.6.0). */
+            billingStatus: string | null;
+            language: string;
+            authorCount: number;
+            receivedAt: string;
+            fileSigns: components["schemas"]["SubmissionFileSignsDto"];
+            /** @description Raised by every change of status or data: send it with the next change (409 otherwise). */
+            version: number;
+        };
+        SubmissionEditDto: {
+            version: number;
+            answers: {
+                [key: string]: unknown;
+            };
         };
         SubmissionEmailDto: {
             id: string;
             kind: string;
             recipient: string;
-            /** @description queued, sending, sent, failed, held, stuck or waiting_for_server. */
+            /** @description queued, sending, sent, failed, held, stuck, waiting_for_server or discarded. */
             status: string;
             heldReason: string | null;
             /** @description The numbers of the hold, as in the held emails (UX3-06); null when not held or unknown. */
@@ -1537,21 +1774,60 @@ export interface components {
             /** @description Whether a file still waits for its virus scan. */
             scanPending: boolean;
         };
+        SubmissionNoteDto: {
+            id: string;
+            body: string;
+            author: components["schemas"]["PersonDto"];
+            createdAt: string;
+        };
         SubmissionPageDto: {
             items: components["schemas"]["SubmissionSummaryDto"][];
+            /** @description All rows that match the search and the filters, on every page. */
             total: number;
             page: number;
             pageSize: number;
         };
-        SubmissionStatusDto: {
-            status: string;
+        SubmissionRevisionDto: {
+            number: number;
             changedAt: string;
-            actor: {
-                id: string;
-                displayName: string;
+            changedBy: components["schemas"]["PersonDto"];
+            /** @description The answer keys that changed. */
+            fields: string[];
+            /** @description The values of those keys before and after; the first revision's `before` is the original. */
+            before: {
+                [key: string]: unknown;
+            };
+            after: {
+                [key: string]: unknown;
             };
         };
+        SubmissionStatusDto: {
+            /** @enum {string} */
+            status: "new" | "open" | "returned_for_revision" | "accepted" | "rejected" | "withdrawn";
+            /** @enum {string|null} */
+            fromStatus: "new" | "open" | "returned_for_revision" | "accepted" | "rejected" | "withdrawn" | null;
+            /**
+             * @description `queued`: the email is `emailId`; `template_off`: no email, switched off (FR-MAIL-07); `none`.
+             * @enum {string}
+             */
+            email: "queued" | "template_off" | "none";
+            /** @description The row of the state table: 1 (the form), 2, 4 to 9. */
+            transition: number;
+            changedAt: string;
+            /** @description Null for the author's own submit (transition 1). */
+            actor: components["schemas"]["PersonDto"] | null;
+            /** @description The internal reason of a withdrawal or a reopening: for the admins only, never sent. */
+            reason: string | null;
+            /** @description The text for the author that the email carried (FR-MAIL-08). */
+            message: string | null;
+            emailId: string | null;
+        };
         SubmissionSummaryDto: {
+            /**
+             * @description The status of Spec section 5.
+             * @enum {string}
+             */
+            status: "new" | "open" | "returned_for_revision" | "accepted" | "rejected" | "withdrawn";
             id: string;
             reference: string;
             conference: {
@@ -1564,7 +1840,6 @@ export interface components {
             firstAuthor: string;
             institution: string | null;
             participationType: string | null;
-            status: string;
             /** @description Not matched yet (0.8.0). */
             memberMatch: string | null;
             /** @description No proforma yet (0.6.0). */
@@ -1573,13 +1848,41 @@ export interface components {
             authorCount: number;
             receivedAt: string;
             fileSigns: components["schemas"]["SubmissionFileSignsDto"];
+            /** @description Raised by every change of status or data: send it with the next change (409 otherwise). */
+            version: number;
         };
         TemplateCatalogueDto: {
             types: components["schemas"]["TemplateTypeDto"][];
             languages: string[];
         };
+        TemplatePreviewDto: {
+            subject: string;
+            html: string;
+            text: string;
+            /** @description Images of the body not shown yet: their virus scan is not clean (yet). */
+            imagesPending: string[];
+        };
+        TemplatePreviewRequestDto: {
+            /** @enum {string} */
+            type: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message" | "submission_confirmation" | "submission_opened" | "submission_returned" | "submission_resumed" | "submission_accepted" | "submission_rejected" | "submission_withdrawn" | "submission_reopened";
+            /** @enum {string} */
+            language: "en" | "sr";
+            subject: {
+                [key: string]: unknown;
+            };
+            body: {
+                [key: string]: unknown;
+            };
+            /**
+             * Format: uuid
+             * @description The conference whose name the sample shows; the organisation's otherwise.
+             */
+            conferenceId?: string;
+        };
         TemplateTypeDto: {
             type: string;
+            /** @description A status email (FR-MAIL-03): one per change of status; it can be switched off per conference. */
+            statusEmail: boolean;
             placeholders: string[];
             conditions: string[];
             /** @description Whether a message of this type carries a secure link: the address of a link node. */
@@ -1636,6 +1939,20 @@ export interface components {
             isFallback?: boolean;
             enabled?: boolean;
             sendRatePerMinute?: number;
+            version: number;
+        };
+        UpdateMailTemplateDto: {
+            subject: {
+                [key: string]: unknown;
+            };
+            body: {
+                [key: string]: unknown;
+            };
+            /**
+             * Format: uuid
+             * @description Null removes the template's own server; left out, it stays.
+             */
+            mailServerId?: string | null;
             version: number;
         };
         UpdateOrganisationDto: {
@@ -1762,7 +2079,7 @@ export interface operations {
     listAuditEntries: {
         parameters: {
             query?: {
-                action?: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.signed_out_everywhere" | "account.password_changed" | "account.email_change_requested" | "account.email_changed" | "password_reset.requested" | "password_reset.completed" | "invitation.queued" | "invitation.accepted" | "user.invited" | "user.updated" | "user.role_changed" | "user.deactivated" | "user.reactivated" | "user.removed" | "user.sessions_ended" | "organisation.updated" | "organisation.payment_details_changed" | "security.unknown_address_sign_ins" | "mail_server.created" | "mail_server.updated" | "mail_server.deleted" | "mail_server.tested" | "conference.created" | "conference.updated" | "conference.state_changed" | "conference.copied" | "conference.deadline_changed" | "form.created" | "form.draft_changed" | "form.published" | "form.breaker_changed" | "held_mail.released" | "held_mail.discarded" | "organisation.breaker_changed";
+                action?: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.signed_out_everywhere" | "account.password_changed" | "account.email_change_requested" | "account.email_changed" | "password_reset.requested" | "password_reset.completed" | "invitation.queued" | "invitation.accepted" | "user.invited" | "user.updated" | "user.role_changed" | "user.deactivated" | "user.reactivated" | "user.removed" | "user.sessions_ended" | "organisation.updated" | "organisation.payment_details_changed" | "security.unknown_address_sign_ins" | "mail_server.created" | "mail_server.updated" | "mail_server.deleted" | "mail_server.tested" | "conference.created" | "conference.updated" | "conference.state_changed" | "conference.copied" | "conference.deadline_changed" | "form.created" | "form.draft_changed" | "form.published" | "form.breaker_changed" | "held_mail.released" | "held_mail.discarded" | "organisation.breaker_changed" | "submission.status_changed" | "submission.note_added" | "submission.edited" | "template.created" | "template.updated" | "template.deleted" | "conference.status_emails_changed" | "mail_image.uploaded" | "mail.resent" | "mail_log.retention_changed" | "mail_log.purged";
                 actorUserId?: string;
                 subjectId?: string;
                 /** @description Entries from this moment on. */
@@ -2077,6 +2394,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConferenceDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getStatusEmails: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusEmailsDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    setStatusEmails: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusEmailsUpdateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusEmailsDto"];
                 };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
@@ -2534,7 +2915,7 @@ export interface operations {
     listMailLog: {
         parameters: {
             query?: {
-                kind?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message" | "submission_confirmation";
+                kind?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message" | "submission_confirmation" | "submission_opened" | "submission_returned" | "submission_resumed" | "submission_accepted" | "submission_rejected" | "submission_withdrawn" | "submission_reopened";
                 result?: "sent" | "failed";
                 conferenceId?: string;
                 messageId?: string;
@@ -2789,7 +3170,7 @@ export interface operations {
             query?: {
                 /** @description Only the templates of this conference; without it, only the organisation's own. */
                 conferenceId?: string;
-                type?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message" | "submission_confirmation";
+                type?: "invitation" | "password_reset" | "email_change_confirmation" | "email_change_notice" | "security_notice" | "sign_in_brake" | "test_message" | "submission_confirmation" | "submission_opened" | "submission_returned" | "submission_resumed" | "submission_accepted" | "submission_rejected" | "submission_withdrawn" | "submission_reopened";
                 language?: "en" | "sr";
             };
             header?: never;
@@ -2804,6 +3185,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MailTemplateListDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createMailTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMailTemplateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailTemplateDto"];
                 };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
@@ -2845,6 +3258,69 @@ export interface operations {
             };
         };
     };
+    listEffectiveTemplates: {
+        parameters: {
+            query?: {
+                /** @description Without it, the organisation's own. */
+                conferenceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EffectiveTemplateListDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    previewMailTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplatePreviewRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplatePreviewDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     getMailTemplate: {
         parameters: {
             query?: never;
@@ -2863,6 +3339,68 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MailTemplateDto"];
                 };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateMailTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMailTemplateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailTemplateDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteMailTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {
@@ -3234,6 +3772,19 @@ export interface operations {
     listSubmissions: {
         parameters: {
             query?: {
+                /** @description One status or several, comma-separated: `status=new,open`. */
+                status?: ("new" | "open" | "returned_for_revision" | "accepted" | "rejected" | "withdrawn")[];
+                /** @description One participation type or several, comma-separated (the options of the form's field). */
+                participationType?: string[];
+                sort?: "receivedAt" | "reference" | "title" | "firstAuthor" | "institution" | "participationType" | "status" | "conference";
+                /** @description Default: newest first for `receivedAt`, A to Z for the rest. */
+                order?: "asc" | "desc";
+                /**
+                 * @description Searched in reference, title, the authors' names, emails and institutions, without
+                 *     diacritics both ways ("Zivkovic" finds "Živković", "Djordje" finds "Đorđe", Serbian
+                 *     Cyrillic finds the Latin spelling). Every word must occur.
+                 */
+                q?: string;
                 conferenceId?: string;
                 page?: number;
                 pageSize?: number;
@@ -3293,6 +3844,40 @@ export interface operations {
             };
         };
     };
+    editSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionEditDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionDetailDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     downloadSubmissionFile: {
         parameters: {
             query?: never;
@@ -3310,6 +3895,108 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    addSubmissionNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionNoteDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    changeSubmissionStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusChangeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionDetailDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    previewStatusEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusTextsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusEmailPreviewDto"];
+                };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
             default: {

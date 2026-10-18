@@ -13,7 +13,7 @@ import { catalogueOf, checkBody, DocumentError, renderBody, type Catalogue, type
 import { bodyFromEditor, bodySchema, bodyToEditor, insertImage, mountBodyEditor, normaliseBody } from './index';
 
 const ID = '0e2e9000-0000-4000-8000-000000000001';
-const catalogue: Catalogue = { placeholders: new Set(['authorName']), conditions: new Set(['hasMessage']), images: true };
+const catalogue: Catalogue = { placeholders: new Set(['authorName']), conditions: new Set(['hasMessage']) };
 const withImage: DocNode = { type: 'doc', children: [{ type: 'paragraph', children: [{ type: 'text', text: 'Dobrodošli' }] }, { type: 'image', fileId: ID, alt: 'Logo konferencije' }] };
 
 const parseHtml = (html: string) => {
@@ -27,12 +27,12 @@ afterEach(() => {
 });
 
 describe('an email image in the format (ADR-12)', () => {
-  it('loads into the editor and saves as the same document, which the check takes with a catalogue of 0.4.0', () => {
+  it('loads into the editor and saves as the same document, which the check takes', () => {
     expect(bodyFromEditor(bodyToEditor(withImage))).toEqual(normaliseBody(withImage));
     expect(checkBody(withImage, catalogue)).toEqual(withImage);
   });
 
-  it('is refused by the vendored catalogue of 0.3.0, and beyond 5, with a bad id or words on two lines', () => {
+  it('is refused beyond 5, with an id that is not a file id, with words on two lines or with an address', () => {
     const code = (doc: unknown, with_: Catalogue = catalogue) => {
       try {
         checkBody(doc, with_);
@@ -41,8 +41,9 @@ describe('an email image in the format (ADR-12)', () => {
         return error instanceof DocumentError ? error.code : 'other';
       }
     };
-    expect(code(withImage, catalogueOf('invitation'))).toBe('unknown_node');
-    expect(code({ type: 'doc', children: Array.from({ length: 6 }, () => ({ type: 'image', fileId: ID, alt: 'x' })) })).toBe('too_many_images');
+    expect(code(withImage, catalogueOf('invitation'))).toBe('taken');
+    expect(code({ type: 'doc', children: [{ type: 'paragraph', children: [{ type: 'image', fileId: ID, alt: 'x' }] }] })).toBe('unknown_node');
+    expect(code({ type: 'doc', children: Array.from({ length: 6 }, (_, i) => ({ type: 'image', fileId: `0e2e9000-0000-4000-8000-00000000000${String(i)}`, alt: 'x' })) })).toBe('too_many_images');
     expect(code({ type: 'doc', children: [{ type: 'image', fileId: 'https://evil.test/x.png', alt: 'x' }] })).toBe('wrong_attribute');
     expect(code({ type: 'doc', children: [{ type: 'image', fileId: ID, alt: 'a\nb' }] })).toBe('text_control_character');
     expect(code({ type: 'doc', children: [{ type: 'image', fileId: ID, alt: 'x', src: 'https://evil.test' }] })).toBe('unknown_attribute');
@@ -64,10 +65,12 @@ describe('an email image in the format (ADR-12)', () => {
     handle.destroy();
   });
 
-  it('the client renders it by its id only (the server puts it into the message)', () => {
-    const { html, text } = renderBody(withImage, { values: {}, conditions: new Set() });
-    expect(html).toContain(`<img src="cid:${ID}" alt="Logo konferencije">`);
-    expect(text).toContain('[Logo konferencije]');
+  it('renders as an inline part when it is clean, and only its words in the text when it is not yet', () => {
+    const clean = renderBody(withImage, { values: {}, conditions: new Set(), images: new Map([[ID, { src: `cid:${ID}@confera`, width: 600, height: 120 }]]) });
+    expect(clean.html).toContain(`<img src="cid:${ID}@confera" alt="Logo konferencije" width="600" height="120">`);
+    const pending = renderBody(withImage, { values: {}, conditions: new Set() });
+    expect(pending.html).not.toContain('<img');
+    expect(pending.text).toContain('[Logo konferencije]');
   });
 });
 

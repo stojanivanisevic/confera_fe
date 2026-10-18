@@ -77,8 +77,8 @@ function ToolButton({ pressed, onPress, disabled, icon, children }: { pressed?: 
   );
 }
 
-/** The catalogue of a type as the editor checks it: the API's entry, with images (0.4.0). */
-const catalogueFrom = (entry: CatalogueType | undefined): Catalogue => ({ placeholders: new Set(entry?.placeholders ?? []), conditions: new Set(entry?.conditions ?? []), images: true });
+/** The catalogue of a type as the editor checks it: the API's entry. */
+const catalogueFrom = (entry: CatalogueType | undefined): Catalogue => ({ placeholders: new Set(entry?.placeholders ?? []), conditions: new Set(entry?.conditions ?? []) });
 
 /** A refusal of the server, by the path it names (`body.children[2].key`), in words. */
 function refusalOf(error: unknown): CheckResult | null {
@@ -313,7 +313,7 @@ export function TemplateEditor({ id }: { id: string }) {
     setBusy(true);
     setProblem(null);
     try {
-      await m4.deleteOverride(client, record.id, record.version);
+      await m4.deleteOverride(client, record.id);
       setDropping(false);
       toast({ title: fill(t.droppedOwn, { conference: conferenceName }), tone: 'success' });
       const fallback = organisationsOf(record.language);
@@ -326,9 +326,10 @@ export function TemplateEditor({ id }: { id: string }) {
     }
   };
   const setSwitch = async (enabled: boolean) => {
-    if (!selected) return;
+    const current = switches.state.data;
+    if (!selected || !current) return;
     try {
-      switches.replace(await m4.setStatusSwitch(client, selected.id, record.type, enabled));
+      switches.replace(await m4.setStatusSwitch(client, selected.id, current, record.type, enabled));
       toast({ title: fill(enabled ? t.switchSaved : t.switchSavedOff, { conference: conferenceName }), tone: 'success' });
     } catch (error) {
       setProblem(explain(error, contact));
@@ -368,7 +369,7 @@ export function TemplateEditor({ id }: { id: string }) {
       setImageBusy(false);
     }
   };
-  const enabled = switches.state.data?.items.find((item) => item.type === record.type)?.enabled ?? true;
+  const enabled = switches.state.data?.types.find((item) => item.type === record.type)?.enabled ?? true;
   const shown = preview.data;
 
   return (
@@ -514,6 +515,7 @@ export function TemplateEditor({ id }: { id: string }) {
                   {t.previewSubject}: <strong data-confera-preview-subject>{shown.subject}</strong>
                 </p>
                 {/* The server's rendering, only in the sandboxed frame (ST-28). */}
+                {shown.imagesPending.length > 0 ? <Alert tone="info" title={t.imagesPending} /> : null}
                 <SandboxedMarkupFrame className={styles.frame} title={t.previewFrame} markup={shown.html} />
                 <pre className={styles.plain} aria-label={t.previewPlain}>
                   {shown.text}

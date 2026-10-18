@@ -20,7 +20,7 @@ import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';
 import { formatDateTime } from './format';
 import type { SubmissionPage, SubmissionSummary } from './intake-api';
-import { m4, SORT_KEYS, STATUSES, type SortKey } from './m4-api';
+import { m4, SORT_KEYS, STATUSES, type SortKey, type Status } from './m4-api';
 import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
 
@@ -90,7 +90,7 @@ export function Submissions() {
 
   const filtered = search !== '' || status !== '' || participation !== '';
   const list = useLoad<SubmissionPage>(
-    (c) => m4.submissions(c, { conferenceId, search: search || undefined, status: status ? [status] : undefined, participationType: participation || undefined, sort: sort ?? undefined, direction, page, pageSize }),
+    (c) => m4.submissions(c, { conferenceId, search: search || undefined, status: (STATUSES as readonly string[]).includes(status) ? [status as Status] : undefined, participationType: participation || undefined, sort: sort ?? undefined, direction, page, pageSize }),
     [conferenceId, search, status, participation, sort, direction, page, pageSize],
   );
   const none = (value: string | null) => (value === null || value === '' ? t.none : value);
