@@ -371,13 +371,13 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-badge--danger { background: var(--danger-surface); color: var(--danger-strong); }
 .ud-badge--info { background: var(--info-surface); color: var(--info-strong); }
 
-/* Avatar: initials in bold, without the tracking of running text */
+/* Avatar: initials in bold, without the tracking of running text (the initials styles, 2.6.0) */
 .ud-avatar {
   display: inline-flex; align-items: center; justify-content: center; flex: none; width: var(--avatar); height: var(--avatar); border-radius: 50%; overflow: hidden;
-  background: var(--surface-2); color: var(--ink); font: var(--text-caption); font-weight: 700; letter-spacing: 0;
+  background: var(--surface-2); color: var(--ink); font: var(--text-initials); letter-spacing: var(--text-initials-tracking);
 }
-.ud-avatar--sm { width: var(--avatar-sm); height: var(--avatar-sm); font: var(--text-caption-xs); font-weight: 700; }
-.ud-avatar--lg { width: var(--avatar-lg); height: var(--avatar-lg); font: var(--text-h5); }
+.ud-avatar--sm { width: var(--avatar-sm); height: var(--avatar-sm); font: var(--text-initials-sm); letter-spacing: var(--text-initials-sm-tracking); }
+.ud-avatar--lg { width: var(--avatar-lg); height: var(--avatar-lg); font: var(--text-initials-lg); letter-spacing: var(--text-initials-lg-tracking); }
 .ud-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 /* Card, description list, empty state */
@@ -433,7 +433,7 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-table__scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .ud-table { width: 100%; border-collapse: collapse; font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking); color: var(--ink); }
 .ud-table th { padding: var(--gutter-m) var(--gutter-l); text-align: left; white-space: nowrap; background: var(--background-2); border-bottom: 1px solid var(--neutral-300);
-  font: var(--text-caption-xs); font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-secondary); }
+  font: var(--text-caption-xs-upper); letter-spacing: var(--text-caption-xs-upper-tracking); text-transform: uppercase; color: var(--text-secondary); }
 .ud-table td { padding: var(--gutter-m) var(--gutter-l); border-bottom: 1px solid var(--neutral-300); vertical-align: middle; line-height: 1.4; }
 /* The last row has no line under it, also under a row header (PermissionMatrix; it cut the card's corner, 2.3.0). */
 .ud-table tbody tr:last-child td, .ud-table tbody tr:last-child th { border-bottom: 0; }
@@ -553,7 +553,7 @@ button.ud-stepper__btn { cursor: pointer; border-radius: var(--radius-sm); }
 button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ud-stepper__dot {
   position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; flex: none; width: var(--control-sm); height: var(--control-sm); border-radius: 50%;
-  border: 2px solid var(--neutral-300); background: var(--surface-1); font: var(--text-caption-xs); font-weight: 700; color: var(--text-secondary); box-sizing: border-box;
+  border: 2px solid var(--neutral-300); background: var(--surface-1); font: var(--text-initials-sm); letter-spacing: var(--text-initials-sm-tracking); color: var(--text-secondary); box-sizing: border-box;
 }
 .is-current .ud-stepper__dot { border-color: var(--brand-orange); color: var(--brand-orange-strong); box-shadow: 0 0 0 4px var(--brand-orange-halo); }
 .is-done .ud-stepper__dot { border-color: var(--brand-orange); background: var(--brand-orange); color: var(--on-brand); }
@@ -615,7 +615,7 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
   .ud-shell__top, .ud-shell__content { padding-left: var(--gutter-l); padding-right: var(--gutter-l); }
 }
 .ud-sidenav { display: flex; flex-direction: column; gap: var(--gutter-l); }
-.ud-sidenav__title { margin: 0 0 var(--gutter-s); padding: 0 var(--gutter-m); font: var(--text-caption-xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--on-dark-subtle); }
+.ud-sidenav__title { margin: 0 0 var(--gutter-s); padding: 0 var(--gutter-m); font: var(--text-overline); letter-spacing: var(--text-overline-tracking); text-transform: uppercase; color: var(--on-dark-subtle); }
 .ud-sidenav ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
 .ud-sidenav__link { display: flex; align-items: center; gap: var(--gutter-s); padding: var(--gutter-m); border-radius: var(--radius-field); color: var(--on-dark-muted); text-decoration: none; font: var(--text-body-sm); font-weight: 500; letter-spacing: var(--text-body-sm-tracking); }
 .ud-sidenav__link:hover { background: var(--on-dark-hover); color: var(--text-on-dark); }
@@ -633,11 +633,11 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
 .ud-page-head__actions { display: flex; flex-wrap: wrap; gap: var(--gutter-s); }
 .ud-filterbar { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--gutter-m); }
 .ud-filterbar__fields { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--gutter-m); flex: 1; min-width: 0; }
-.ud-filterbar__fields > * { flex: 1 1 180px; max-width: var(--filter-field-max); }
+.ud-filterbar__fields > * { flex: 1 1 var(--filter-field-min); max-width: var(--filter-field-max); }
 .ud-filterbar__actions { display: flex; gap: var(--gutter-s); margin-left: auto; }
 .ud-repeater { display: flex; flex-direction: column; gap: var(--gutter-m); }
 .ud-repeater__row { display: grid; grid-template-columns: var(--avatar-sm) 1fr auto; gap: var(--gutter-m); align-items: start; padding: var(--gutter-m); border: 1px solid var(--neutral-300); border-radius: var(--radius-field); background: var(--background-2); }
-.ud-repeater__index { display: inline-flex; align-items: center; justify-content: center; width: var(--avatar-sm); height: var(--avatar-sm); border-radius: 50%; background: var(--surface-2); font: var(--text-caption-xs); font-weight: 700; color: var(--ink); }
+.ud-repeater__index { display: inline-flex; align-items: center; justify-content: center; width: var(--avatar-sm); height: var(--avatar-sm); border-radius: 50%; background: var(--surface-2); font: var(--text-initials-sm); letter-spacing: var(--text-initials-sm-tracking); color: var(--ink); }
 .ud-repeater__fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--gutter-m); min-width: 0; }
 .ud-text-btn--add { align-self: flex-start; }
 .ud-matrix th[scope="row"] { text-transform: none; font: var(--text-caption); letter-spacing: var(--text-caption-tracking); color: var(--ink); background: transparent; white-space: normal; }
@@ -666,7 +666,11 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
   .ud-arrow-btn--sm, .ud-icon-btn { box-sizing: border-box; width: var(--target-touch); height: var(--target-touch); }
   .ud-page-btn { box-sizing: border-box; min-width: var(--target-touch); height: var(--target-touch); }
   .ud-field__box { min-height: var(--target-touch); }
-  .ud-field__control { height: calc(var(--target-touch) - 2px); }
+  /* The control itself is 44px high (2.6.0, UXUI-M2-34): it overlaps the 1px border of its box above and below,
+     so the box stays 44px and a measure of the input, not only of its box, finds a target of 44px. */
+  .ud-field__control { height: var(--target-touch); margin-block: -1px; }
+  .ud-search__control { align-self: stretch; margin-block: -1px; }
+  .ud-field--area .ud-field__control, .ud-field--multi .ud-field__control { margin-block: 0; }
   .ud-field__action { box-sizing: border-box; justify-content: center; align-items: center; min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-s)) -1px 0; }
   .ud-search__clear { box-sizing: border-box; min-width: var(--target-touch); min-height: var(--target-touch); margin: -1px calc(-1 * var(--gutter-m)) -1px 0; }
   /* A tag is as high as a small control; its remove button reaches 6px above and below it, into the gap between rows. */
@@ -678,11 +682,12 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
   .ud-switch { align-items: center; }
   .ud-table__check .ud-check, .ud-matrix__cell .ud-check { box-sizing: border-box; min-width: var(--target-touch); justify-content: center; }
   .ud-listbox__option, .ud-listbox__empty { display: flex; align-items: center; min-height: var(--target-touch); box-sizing: border-box; }
-  /* A link in a line of text: padding makes the target higher without moving the line. */
-  .ud-link, .ud-alert__body a { padding-block: max(0px, calc((var(--target-touch) - 1em) / 2)); }
+  /* A link in a line of text: padding makes the target higher without moving the line, and (2.6.0, UXUI-M2-34)
+     an invisible layer makes a short link ("here") 44px wide as well. */
+  .ud-link, .ud-alert__body a { position: relative; padding-block: max(0px, calc((var(--target-touch) - 1em) / 2)); }
   /* A link of a trail or of the site's navigation, and a sort button: the target is an invisible layer over it. */
   .ud-nav-link, .ud-breadcrumbs a { position: relative; }
-  .ud-nav-link::after, .ud-breadcrumbs a::after, .ud-table__sort::after, .ud-table__open::after {
+  .ud-nav-link::after, .ud-breadcrumbs a::after, .ud-table__sort::after, .ud-table__open::after, .ud-link::after, .ud-alert__body a::after {
     content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--target-touch)); height: max(100%, var(--target-touch)); transform: translate(-50%, -50%);
   }
 }

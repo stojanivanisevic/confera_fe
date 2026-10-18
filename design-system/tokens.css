@@ -84,6 +84,16 @@
   --text-body-xs-tracking: -0.01em;
   --text-caption-xs: 600 12px/1.2 var(--font-sans);
   --text-caption-xs-tracking: -0.01em;
+  --text-caption-xs-upper: 700 12px/1.2 var(--font-sans);
+  --text-caption-xs-upper-tracking: 0.02em;
+  --text-overline: 700 12px/1.2 var(--font-sans);
+  --text-overline-tracking: 0.08em;
+  --text-initials-sm: 700 12px/1.2 var(--font-sans);
+  --text-initials-sm-tracking: 0;
+  --text-initials: 700 14px/1.2 var(--font-sans);
+  --text-initials-tracking: 0;
+  --text-initials-lg: 700 20px/1.2 var(--font-sans);
+  --text-initials-lg-tracking: 0;
   --text-button-lg: 600 20px/1.2 var(--font-sans);
   --text-button-lg-tracking: -0.03em;
   --text-button-md: 600 14px/1.2 var(--font-sans);
@@ -145,6 +155,9 @@
   --textarea-min: 88px;
   --control-min-width: 120px;
   --filter-field-max: 320px;
+  --filter-field-min: 180px;
+  --field-min: 240px;
+  --card-min: 320px;
   --menu-min: 180px;
   --listbox-max: 260px;
   --tooltip-max: 240px;

@@ -35,10 +35,11 @@ const value = (name: string) => all.find((t) => t.name === name)?.value;
 describe('type styles (two custom properties each)', () => {
   const styles = tokens.type.groups.flatMap((g) => g.styles.map((s) => ({ ...s, family: g.family })));
 
-  it('the 15 styles of the Figma file and the two Confera additions', () => {
+  it('the 15 styles of the Figma file, the two Confera additions of 2.3.0 and the five of 2.6.0', () => {
     expect(styles.map((s) => s.name)).toEqual([
       'h1', 'h2', 'metrics', 'h4', 'h5', 'h6',
       'body-lg', 'body-md', 'body-sm', 'caption', 'link', 'body-xs', 'caption-xs',
+      'caption-xs-upper', 'overline', 'initials-sm', 'initials', 'initials-lg',
       'button-lg', 'button-md',
       'field-label', 'field-message',
     ]);
