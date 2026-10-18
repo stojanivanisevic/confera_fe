@@ -103,7 +103,11 @@ export function TemplateEditor({ id }: { id: string }) {
   const record = template.state.data;
   const catalogues = useLoad((c) => m4.catalogue(c), []);
   const entry = catalogues.state.data?.types.find((item) => item.type === record?.type);
-  const catalogue = useMemo(() => (entry ? catalogueFrom(entry) : null), [entry]);
+  // The editor is made again only for another template, another saved version or another catalogue, never because
+  // an answer of the same arrived again (a refetch after the session's contact came would wipe what is typed).
+  const entryKey = entry ? JSON.stringify(entry) : '';
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the entry, by its content
+  const catalogue = useMemo(() => (entry ? catalogueFrom(entry) : null), [entryKey]);
   // The organisation's templates and the conference's own: for the language tabs and the fallback.
   const conferenceId = selected?.id ?? null;
   const scope = useLoad<readonly TemplateRecord[]>(async (c) => [...(await m4.templates(c)), ...(conferenceId ? await m4.templates(c, conferenceId) : [])], [conferenceId, record?.id]);
@@ -118,7 +122,8 @@ export function TemplateEditor({ id }: { id: string }) {
     } catch (error) {
       return error instanceof DocumentError ? error : null;
     }
-  }, [record, catalogue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the record, by its id and version
+  }, [record?.id, record?.version, catalogue]);
 
   const subjectElement = useRef<HTMLDivElement>(null);
   const bodyElement = useRef<HTMLDivElement>(null);
@@ -186,7 +191,8 @@ export function TemplateEditor({ id }: { id: string }) {
       body.destroy();
       editors.current = null;
     };
-  }, [record, loaded, catalogue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- made again for another document (`loaded` follows the id and version), not for a record that arrived again
+  }, [loaded, catalogue]);
 
   // The server's preview, a moment after the last change (ADR-12): the same rendering that is sent.
   useEffect(() => {

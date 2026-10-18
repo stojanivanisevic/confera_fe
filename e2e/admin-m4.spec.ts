@@ -102,7 +102,7 @@ test.describe('submissions (M4-FE-01)', () => {
     await expect(dialog.locator('[data-confera-status-step="email"]')).toBeVisible();
     await expect(dialog.locator('iframe[title="The email to the author"]')).toHaveAttribute('sandbox', '');
     await expect(dialog.frameLocator('iframe[title="The email to the author"]').getByText('Please shorten the abstract to 250 words.')).toBeVisible();
-    await expect(dialog.locator('[data-confera-status-email-subject]')).toHaveText('Submission KP26-0001 is returned for revision');
+    await expect(dialog.locator('[data-confera-status-email-subject]')).toHaveText('Your submission KP26-0001 needs changes');
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
 
