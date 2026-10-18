@@ -313,7 +313,8 @@ function EmbedCard({ record, conference, publicOrigin }: { record: FormRecord; c
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(snippet);
-      toast({ title: t.copied, tone: 'success' });
+      // A short word that does not stay over the drawer's buttons when it is pressed twice (UX3-22).
+      toast({ title: t.copied, tone: 'success', duration: 2500 });
     } catch {
       toast({ title: t.copyFailed, tone: 'warning' });
     }
