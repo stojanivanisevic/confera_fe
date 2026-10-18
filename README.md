@@ -399,10 +399,12 @@ Every third-party action is pinned by commit hash (its version in a comment), ev
 | Workflow | When it runs | What it does |
 |---|---|---|
 | `ci.yml` | every pull request to develop or main; every push to develop, main, release/** | `pnpm check` (lint, types, unit tests, the production build and `verify:build`, the supply chain). No secret, no push, no server. |
-| `image.yml` | every push to develop, every `v*` tag, or by hand | **build** (runs project code, holds no credential): the image as an OCI archive with its digest (`deploy/ci/build-image.sh`), then `deploy/checks/image.mjs` on exactly that image. **publish** (no checkout, so no project code; may write packages): copies the archive to ghcr.io with `skopeo --preserve-digests`, checks the digest, writes it into the summary. |
+| `image.yml` | every push to develop, every `v*` tag, or by hand | **build** (runs project code, holds no credential): the image as an OCI archive with its digest (`deploy/ci/build-image.sh`), then `deploy/checks/image.mjs` on exactly that image. **publish** (only once the repository variable `IMAGE_PUBLISH_ENABLED` is `true`, set at Gate 4a; no checkout, so no project code; may write packages): copies the archive to ghcr.io with `skopeo --preserve-digests`, checks the digest, writes it into the summary. |
 | `deploy-staging.yml` | **by hand only** (`workflow_dispatch`), with a digest | Runs no project code. Needs the environment `staging` (protection rule) and refuses until its variable `STAGING_DEPLOY_ENABLED` is `true`. Checks the input is a digest and hands it over SSH to the server's forced command `confera-deploy-gate web`, which can deploy `confera-web` and nothing else. |
 
 `.github/CODEOWNERS` names Stojan for `.github/`, `deploy/`, `Dockerfile`, `.dockerignore` and `apps/web/next.config.ts`.
+
+**Actions minutes** (a private repository has a monthly allowance; rough estimates, not yet measured on GitHub): one `ci` run costs about 12 runner minutes (`pnpm check`, measured at 4 to 13 minutes on developer machines); one `image` run about 10 (build and check about 8, publish about 2).
 
 ### Gate 4a
 
@@ -410,5 +412,6 @@ The checklist is in `confera_be`, README section 15. For this repository:
 
 - [ ] Branch protection on `develop` and `main` with **review from Code Owners required**, no bypass, automation tokens that cannot approve; Actions: read-only token by default, no approving pull requests, only actions pinned to a full commit hash.
 - [ ] The environment **`staging`** with a protection rule (Stojan approves each run), deployments from `develop` only; its secret `STAGING_DEPLOY_KEY` (the key of the server user `confera-deploy-web`, a key of its own, not `confera_be`'s) and its variables `STAGING_SSH_HOST`, `STAGING_SSH_KNOWN_HOSTS` and `STAGING_DEPLOY_ENABLED=true`.
+- [ ] The repository variable `IMAGE_PUBLISH_ENABLED=true`: until then `image.yml` builds and checks the image but publishes nothing.
 - [ ] The package `confera-web` private.
 - [ ] On the staging server (M4-QA-03): ST-12 through the real proxy and TLS (the proxy adds HSTS and nothing else), ST-02 on the digest staging runs, and every screen showing the staging banner (M4-OPS-02).
