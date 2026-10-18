@@ -371,13 +371,13 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-badge--danger { background: var(--danger-surface); color: var(--danger-strong); }
 .ud-badge--info { background: var(--info-surface); color: var(--info-strong); }
 
-/* Avatar: initials in bold, without the tracking of running text */
+/* Avatar: initials in bold, without the tracking of running text (the initials styles, 2.6.0) */
 .ud-avatar {
   display: inline-flex; align-items: center; justify-content: center; flex: none; width: var(--avatar); height: var(--avatar); border-radius: 50%; overflow: hidden;
-  background: var(--surface-2); color: var(--ink); font: var(--text-caption); font-weight: 700; letter-spacing: 0;
+  background: var(--surface-2); color: var(--ink); font: var(--text-initials); letter-spacing: var(--text-initials-tracking);
 }
-.ud-avatar--sm { width: var(--avatar-sm); height: var(--avatar-sm); font: var(--text-caption-xs); font-weight: 700; }
-.ud-avatar--lg { width: var(--avatar-lg); height: var(--avatar-lg); font: var(--text-h5); }
+.ud-avatar--sm { width: var(--avatar-sm); height: var(--avatar-sm); font: var(--text-initials-sm); letter-spacing: var(--text-initials-sm-tracking); }
+.ud-avatar--lg { width: var(--avatar-lg); height: var(--avatar-lg); font: var(--text-initials-lg); letter-spacing: var(--text-initials-lg-tracking); }
 .ud-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 /* Card, description list, empty state */
@@ -433,7 +433,7 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-table__scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .ud-table { width: 100%; border-collapse: collapse; font: var(--text-body-sm); letter-spacing: var(--text-body-sm-tracking); color: var(--ink); }
 .ud-table th { padding: var(--gutter-m) var(--gutter-l); text-align: left; white-space: nowrap; background: var(--background-2); border-bottom: 1px solid var(--neutral-300);
-  font: var(--text-caption-xs); font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-secondary); }
+  font: var(--text-caption-xs-upper); letter-spacing: var(--text-caption-xs-upper-tracking); text-transform: uppercase; color: var(--text-secondary); }
 .ud-table td { padding: var(--gutter-m) var(--gutter-l); border-bottom: 1px solid var(--neutral-300); vertical-align: middle; line-height: 1.4; }
 /* The last row has no line under it, also under a row header (PermissionMatrix; it cut the card's corner, 2.3.0). */
 .ud-table tbody tr:last-child td, .ud-table tbody tr:last-child th { border-bottom: 0; }
@@ -553,7 +553,7 @@ button.ud-stepper__btn { cursor: pointer; border-radius: var(--radius-sm); }
 button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ud-stepper__dot {
   position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; flex: none; width: var(--control-sm); height: var(--control-sm); border-radius: 50%;
-  border: 2px solid var(--neutral-300); background: var(--surface-1); font: var(--text-caption-xs); font-weight: 700; color: var(--text-secondary); box-sizing: border-box;
+  border: 2px solid var(--neutral-300); background: var(--surface-1); font: var(--text-initials-sm); letter-spacing: var(--text-initials-sm-tracking); color: var(--text-secondary); box-sizing: border-box;
 }
 .is-current .ud-stepper__dot { border-color: var(--brand-orange); color: var(--brand-orange-strong); box-shadow: 0 0 0 4px var(--brand-orange-halo); }
 .is-done .ud-stepper__dot { border-color: var(--brand-orange); background: var(--brand-orange); color: var(--on-brand); }
@@ -615,7 +615,7 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
   .ud-shell__top, .ud-shell__content { padding-left: var(--gutter-l); padding-right: var(--gutter-l); }
 }
 .ud-sidenav { display: flex; flex-direction: column; gap: var(--gutter-l); }
-.ud-sidenav__title { margin: 0 0 var(--gutter-s); padding: 0 var(--gutter-m); font: var(--text-caption-xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--on-dark-subtle); }
+.ud-sidenav__title { margin: 0 0 var(--gutter-s); padding: 0 var(--gutter-m); font: var(--text-overline); letter-spacing: var(--text-overline-tracking); text-transform: uppercase; color: var(--on-dark-subtle); }
 .ud-sidenav ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
 .ud-sidenav__link { display: flex; align-items: center; gap: var(--gutter-s); padding: var(--gutter-m); border-radius: var(--radius-field); color: var(--on-dark-muted); text-decoration: none; font: var(--text-body-sm); font-weight: 500; letter-spacing: var(--text-body-sm-tracking); }
 .ud-sidenav__link:hover { background: var(--on-dark-hover); color: var(--text-on-dark); }
@@ -637,7 +637,7 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
 .ud-filterbar__actions { display: flex; gap: var(--gutter-s); margin-left: auto; }
 .ud-repeater { display: flex; flex-direction: column; gap: var(--gutter-m); }
 .ud-repeater__row { display: grid; grid-template-columns: var(--avatar-sm) 1fr auto; gap: var(--gutter-m); align-items: start; padding: var(--gutter-m); border: 1px solid var(--neutral-300); border-radius: var(--radius-field); background: var(--background-2); }
-.ud-repeater__index { display: inline-flex; align-items: center; justify-content: center; width: var(--avatar-sm); height: var(--avatar-sm); border-radius: 50%; background: var(--surface-2); font: var(--text-caption-xs); font-weight: 700; color: var(--ink); }
+.ud-repeater__index { display: inline-flex; align-items: center; justify-content: center; width: var(--avatar-sm); height: var(--avatar-sm); border-radius: 50%; background: var(--surface-2); font: var(--text-initials-sm); letter-spacing: var(--text-initials-sm-tracking); color: var(--ink); }
 .ud-repeater__fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--gutter-m); min-width: 0; }
 .ud-text-btn--add { align-self: flex-start; }
 .ud-matrix th[scope="row"] { text-transform: none; font: var(--text-caption); letter-spacing: var(--text-caption-tracking); color: var(--ink); background: transparent; white-space: normal; }
