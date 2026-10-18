@@ -199,11 +199,6 @@ export interface components {
         SubmitDto: {
             /** @enum {string} */
             language: "en" | "sr";
-            /**
-             * @deprecated
-             * @description The trap under its 0.3.0 name, read until the page sends `confera_hp`; then removed.
-             */
-            website?: string;
             answers: {
                 [key: string]: unknown;
             };

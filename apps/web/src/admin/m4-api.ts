@@ -184,7 +184,8 @@ export const m4 = {
   /** What the mail log keeps and for how long (FR-SMTP-06): two settings of the organisation. */
   mailLogSettings: (client: SessionClient, body: { mailLogContent: boolean; mailLogRetentionDays: number; version: number }) => as<{ mailLogContent: boolean; mailLogRetentionDays?: number; version: number }>(loose(client).PATCH('/api/v1/organisation', { body })),
   resend: (client: SessionClient, id: string) => as<{ messageId: string; mode: 'stored' | 'rendered' }>(loose(client).POST(`/api/v1/mail-log/${at(id)}/resend`, { body: {} })),
-  discardHeld: (client: SessionClient, body: { ids?: readonly string[]; all?: boolean }) => as<{ discarded: number }>(loose(client).POST('/api/v1/held-mail/discard', { body })),
+  /** In the contract since confera_be 85e01d1 (M3-ISS-14). */
+  discardHeld: (client: SessionClient, body: { ids?: string[]; all?: boolean }) => call(client.POST('/api/v1/held-mail/discard', { body })),
 };
 
 /**

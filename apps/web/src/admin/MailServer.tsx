@@ -277,7 +277,10 @@ export function MailServer({ id }: { id: string }) {
             </div>
             {testResult ? (
               <div className={styles.all} data-confera-test-result={testResult.result}>
-                <Alert tone={testResult.result === 'sent' ? 'success' : 'error'} title={fill(t.testResult[testResult.result] ?? '', { to: testResult.to, reason: testResult.reason ? (t.reasons[testResult.reason] ?? t.reasonFallback) : t.reasonFallback })} />
+                <Alert tone={testResult.result === 'sent' ? 'success' : 'error'} title={fill(t.testResult[testResult.result] ?? '', { to: testResult.to, reason: testResult.reason ? (t.reasons[testResult.reason] ?? t.reasonFallback) : t.reasonFallback })}>
+                  {/* What kind of failure it was, in the office's words (M2-ISS-14, UXUI-M2-11). */}
+                  {testResult.result === 'failed' && testResult.cause ? <span data-confera-test-cause={testResult.cause}>{t.causes[testResult.cause] ?? ''}</span> : null}
+                </Alert>
               </div>
             ) : null}
             {testProblem ? (

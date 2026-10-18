@@ -106,6 +106,11 @@ export function explain(error: unknown, contact: string | null = null): Explaine
       return { ...base, title: TEXTS.problems.outOfStep, text: TEXTS.problems.outOfStepText };
     case 'too_many_requests':
       return { ...base, title: TEXTS.problems.tooMany, text: TEXTS.problems.tooManyText };
+    // A test message is capped per organisation and counts against its server's send rate (M3-ISS-02).
+    case 'test_message_limit':
+      return { ...base, title: TEXTS.mailServers.testLimit, text: TEXTS.mailServers.testLimitText };
+    case 'send_rate_reached':
+      return { ...base, title: TEXTS.mailServers.rateReached, text: TEXTS.mailServers.rateReachedText };
     case 'version_conflict':
       return { ...base, title: TEXTS.organisation.conflict, text: TEXTS.organisation.conflictText };
     case 'email_taken':

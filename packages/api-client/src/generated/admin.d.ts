@@ -330,6 +330,26 @@ export interface paths {
         patch: operations["setOrganisationBreaker"];
         trace?: never;
     };
+    "/api/v1/held-mail/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Discards held emails (M3-ISS-14): they are never sent. The web application asks for a
+         *     confirmation first. Only `held` emails are touched; the count says how many.
+         */
+        post: operations["discardHeldMail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/held-mail/release": {
         parameters: {
             query?: never;
@@ -504,7 +524,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Name and version of the API. */
+        /** Name and version of the API, and which instance it is (the staging banner, ADR-27). */
         get: operations["getMeta"];
         put?: never;
         post?: never;
@@ -1017,6 +1037,15 @@ export interface components {
             /** @description Newest first. */
             history: components["schemas"]["DeadlineChangeDto"][];
         };
+        DiscardHeldMailDto: {
+            ids?: string[];
+            all?: boolean;
+            /** Format: uuid */
+            formId?: string;
+        };
+        DiscardedDto: {
+            discarded: number;
+        };
         EmailChangeLinkDto: {
             /** @description The address the account will have once the change is confirmed. */
             newEmail: string;
@@ -1183,6 +1212,11 @@ export interface components {
             attempt: number;
             /** @description A code, never the server's words. */
             errorCode: string | null;
+            /**
+             * @description True when the attempt went to the mail catcher of the staging server and not to the
+             *     configured server (ADR-27, ST-50); `recipient` is still the original recipient.
+             */
+            diverted: boolean;
             sentAt: string;
             subject: string | null;
             bodyHtml: string | null;
@@ -1210,6 +1244,11 @@ export interface components {
             attempt: number;
             /** @description A code, never the server's words. */
             errorCode: string | null;
+            /**
+             * @description True when the attempt went to the mail catcher of the staging server and not to the
+             *     configured server (ADR-27, ST-50); `recipient` is still the original recipient.
+             */
+            diverted: boolean;
             sentAt: string;
         };
         MailServerDto: {
@@ -1263,6 +1302,12 @@ export interface components {
             items: components["schemas"]["MailTemplateDto"][];
         };
         Meta: {
+            /**
+             * @description `staging` on the staging server (every screen shows the staging banner, ADR-27),
+             *     `production` on production, null on a developer machine.
+             * @enum {string|null}
+             */
+            instance: "production" | "staging" | null;
             /** @description Name of the service. */
             name: string;
             /**
@@ -1548,6 +1593,13 @@ export interface components {
         TestMessageResultDto: {
             /** @enum {string} */
             result: "sent" | "failed" | "refused";
+            /**
+             * @description With `failed`, what kind of failure it was (M2-ISS-14, UXUI-M2-11), as a code and never
+             *     the server's words: `connection_failed` (no connection, or none in time),
+             *     `certificate_refused`, `authentication_failed`, `recipient_refused` or `send_failed`.
+             * @enum {string|null}
+             */
+            cause: "connection_failed" | "certificate_refused" | "authentication_failed" | "recipient_refused" | "send_failed" | null;
             /** @description With `refused`: tls_required, port_not_allowed or address_not_allowed. */
             reason: string | null;
         };
@@ -1710,7 +1762,7 @@ export interface operations {
     listAuditEntries: {
         parameters: {
             query?: {
-                action?: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.signed_out_everywhere" | "account.password_changed" | "account.email_change_requested" | "account.email_changed" | "password_reset.requested" | "password_reset.completed" | "invitation.queued" | "invitation.accepted" | "user.invited" | "user.updated" | "user.role_changed" | "user.deactivated" | "user.reactivated" | "user.removed" | "user.sessions_ended" | "organisation.updated" | "organisation.payment_details_changed" | "security.unknown_address_sign_ins" | "mail_server.created" | "mail_server.updated" | "mail_server.deleted" | "mail_server.tested" | "conference.created" | "conference.updated" | "conference.state_changed" | "conference.copied" | "conference.deadline_changed" | "form.created" | "form.draft_changed" | "form.published" | "form.breaker_changed" | "held_mail.released" | "organisation.breaker_changed";
+                action?: "session.signed_in" | "session.sign_in_failed" | "session.signed_out" | "session.signed_out_everywhere" | "account.password_changed" | "account.email_change_requested" | "account.email_changed" | "password_reset.requested" | "password_reset.completed" | "invitation.queued" | "invitation.accepted" | "user.invited" | "user.updated" | "user.role_changed" | "user.deactivated" | "user.reactivated" | "user.removed" | "user.sessions_ended" | "organisation.updated" | "organisation.payment_details_changed" | "security.unknown_address_sign_ins" | "mail_server.created" | "mail_server.updated" | "mail_server.deleted" | "mail_server.tested" | "conference.created" | "conference.updated" | "conference.state_changed" | "conference.copied" | "conference.deadline_changed" | "form.created" | "form.draft_changed" | "form.published" | "form.breaker_changed" | "held_mail.released" | "held_mail.discarded" | "organisation.breaker_changed";
                 actorUserId?: string;
                 subjectId?: string;
                 /** @description Entries from this moment on. */
@@ -2340,6 +2392,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HeldMailPageDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    discardHeldMail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscardHeldMailDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscardedDto"];
                 };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */

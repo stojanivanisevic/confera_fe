@@ -465,7 +465,7 @@ export const TEXTS = {
     testSaveFirst: 'Save the server before you test it.',
     testResult: {
       sent: 'Test message sent to {to}. Check that mailbox.',
-      failed: 'The server did not take the message. Check the host, port, encryption, user name and password.',
+      failed: 'The server did not take the message.',
       refused: 'Confera did not send the message: {reason}',
     } as Record<string, string>,
     reasons: {
@@ -474,6 +474,18 @@ export const TEXTS = {
       address_not_allowed: 'the host is an address of this network, which is not allowed.',
     } as Record<string, string>,
     reasonFallback: 'the server is not allowed.',
+    /** Why a test message failed (M2-ISS-14): the API's code, never the server's words. */
+    causes: {
+      connection_failed: 'No connection to the server, or none in time. Check the host and the port, and whether the server takes connections from Confera.',
+      certificate_refused: 'The server’s certificate was not accepted. Check the host name: it must be the name in the certificate.',
+      authentication_failed: 'The server refused the user name or the password.',
+      recipient_refused: 'The server refused the recipient’s address.',
+      send_failed: 'The server took the connection but not the message.',
+    } as Record<string, string>,
+    testLimit: 'Ten test messages an hour at most',
+    testLimitText: 'The organisation has sent ten test messages in the last hour. Try again later.',
+    rateReached: 'The server’s send rate is reached',
+    rateReachedText: 'This server has sent as many messages this minute as its send rate allows. Try the test again in a minute.',
   },
   mailLog: {
     title: 'Mail log',
