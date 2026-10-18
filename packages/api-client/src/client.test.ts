@@ -19,7 +19,7 @@ describe('the typed call to /api/v1/meta', () => {
   });
 
   it('is typed by the generated types', () => {
-    expectTypeOf<Meta>().toEqualTypeOf<{ name: string; version: string }>();
+    expectTypeOf<Meta>().toEqualTypeOf<{ name: string; version: string; instance: 'production' | 'staging' | null }>();
     expectTypeOf(getMeta).returns.resolves.toEqualTypeOf<Meta>();
     expectTypeOf<AdminPaths>().toHaveProperty('/api/v1/meta');
     expectTypeOf<Problem>().toHaveProperty('code').toBeString();

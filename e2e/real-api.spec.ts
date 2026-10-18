@@ -114,7 +114,7 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
     const answer = await throughWeb('/api/v1/meta', ADMIN_HOST);
     expect(answer.status).toBe(200);
     expect(String(answer.headers['content-type'])).toMatch(/^application\/json/);
-    expect(answer.json()).toEqual({ name: 'confera-api', version: ADMIN_CONTRACT.info.version });
+    expect(answer.json()).toEqual({ name: 'confera-api', version: ADMIN_CONTRACT.info.version, instance: null });
     expect(String(answer.headers['x-trace-id']), 'the trace id of the API reaches the browser').toMatch(UUID);
     expectApiHeaders(answer, 'the forwarded answer');
     expect(answer.headers['set-cookie']).toBeUndefined();

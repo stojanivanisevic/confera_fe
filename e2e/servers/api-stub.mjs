@@ -183,7 +183,7 @@ export async function handleAdmin(req, url) {
   const changing = method !== 'GET' && method !== 'HEAD';
   const publicRoute = /^\/api\/v1\/(meta|session$|password-resets|invitations\/|email-changes\/)/.test(path) && !(path === '/api/v1/session' && method !== 'POST');
 
-  if (path === '/api/v1/meta' && method === 'GET') return { status: 200, body: { name: 'confera-api', version } };
+  if (path === '/api/v1/meta' && method === 'GET') return { status: 200, body: { name: 'confera-api', version, instance: null } };
   enter(req);
   if (path === '/__stub/reset' && method === 'POST') {
     reset(req);
