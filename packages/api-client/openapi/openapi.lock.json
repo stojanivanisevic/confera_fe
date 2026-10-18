@@ -3,17 +3,17 @@
   "source": {
     "repository": "confera_be",
     "directory": "openapi",
-    "commit": "3fd01e3a944026624dc5fac5a5dd40eef304f89f",
+    "commit": "ae29288dc4ae8dbeeb925d2ff9a6cf22208e2318",
     "tag": null,
-    "branch": "HEAD",
+    "branch": "m4/integrate",
     "committed": true
   },
   "files": {
     "openapi.json": {
       "title": "Confera admin API",
       "version": "0.3.0",
-      "sha256": "ee16b4186430e0160f3d0ebebf370c277477a562966ac717e8446ce8fbff58f0",
-      "commit": "a398837b9c500abe4df2cf22e90688f53d05e9e5"
+      "sha256": "78166e54c7af88c5ce07b5e23230a881bbf8531aeedb518051d0d1474f8d3698",
+      "commit": "23b4ceb22d3882ee4450d3e97c4241e908b29aac"
     },
     "openapi.public.json": {
       "title": "Confera public API",
