@@ -17,6 +17,7 @@ import styles from './admin.module.css';
 import { FreshPasswordProvider } from './FreshPassword';
 import { HeldMailAlert } from './HeldMail';
 import { conferenceLabel, ConferenceProvider, useConference } from './conference-context';
+import { DRAWER_EVENT } from './drawer-event';
 import { call, callEmpty, SESSION_ENDED_EVENT } from './problems';
 import { SessionProvider, useSession } from './session';
 import { fill, TEXTS } from './texts';
@@ -233,10 +234,21 @@ function Guarded({ children }: { children: ReactNode }) {
   );
 }
 
+/** Toasts go to the top while a drawer is open, so that they never cover its footer and its buttons (UX3-22). */
+function Toasts() {
+  const [drawer, setDrawer] = useState(false);
+  useEffect(() => {
+    const onDrawer = (event: Event) => setDrawer((event as CustomEvent<boolean>).detail);
+    window.addEventListener(DRAWER_EVENT, onDrawer);
+    return () => window.removeEventListener(DRAWER_EVENT, onDrawer);
+  }, []);
+  return <ToastHost position={drawer ? 'top' : 'bottom'} />;
+}
+
 export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
-      <ToastHost />
+      <Toasts />
       <Guarded>{children}</Guarded>
     </SessionProvider>
   );

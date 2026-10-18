@@ -9,12 +9,13 @@
  */
 import { useRouter } from 'next/navigation';
 
-import { readDefinition, textOf, type FormDefinition } from '@confera/form-renderer';
+import { countWords, parseSafeText, readDefinition, textOf, type FieldKind, type FormDefinition } from '@confera/form-renderer';
 import { Alert, Card, DataTable, DescriptionList, PageHeader, StatusBadge, TextButton } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { formatDateTime } from './format';
-import { intake, type SubmissionDetail, type SubmissionFile } from './intake-api';
+import { heldWhy } from './HeldMail';
+import { intake, type HeldMail, type SubmissionDetail, type SubmissionFile } from './intake-api';
 import { statusText } from './Submissions';
 import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
@@ -31,6 +32,15 @@ function answerText(definition: FormDefinition | null, key: string, value: unkno
   const option = field?.options?.find((o) => o.value === value);
   return option ? textOf(option.label, 'en') : value;
 }
+
+/** An answer that needs a row of its own (UX3-02): a long text, or any text too long for a column of the grid. */
+const LONG_ANSWER = 80;
+
+/** The consent as the author read it: its links as their words, not the link syntax of the stored text (UX3-05). */
+const consentWords = (text: string): string => parseSafeText(text).map((segment) => segment.text).join('');
+/** A text version that is a checksum is shown by its first 8 characters, the whole in its title (UX3-05: no sideways scroll at 375 px). */
+const shortVersion = (version: string): string => (version.length > 12 ? version.slice(0, 8) : version);
+const isLong = (kind: FieldKind | null, text: string): boolean => kind === 'longText' || text.length > LONG_ANSWER;
 
 export function Submission({ id }: { id: string }) {
   const router = useRouter();
@@ -57,9 +67,13 @@ export function Submission({ id }: { id: string }) {
 
   // The data in the order of the form version, the authors and the files on their own.
   const fields = definition ? definition.sections.filter((s) => !s.repeat).flatMap((s) => s.fields).filter((f) => f.kind !== 'file' && f.kind !== 'consent') : [];
-  const rows = (definition ? fields.filter((f) => Object.hasOwn(record.answers, f.key)).map((f) => ({ label: textOf(f.label, 'en'), key: f.key })) : Object.keys(record.answers).filter((key) => typeof record.answers[key] !== 'object').map((key) => ({ label: key, key }))).map(
-    (row) => ({ label: row.label, value: <span className={styles.break}>{answerText(definition, row.key, record.answers[row.key])}</span> }),
-  );
+  const named: Array<{ label: string; key: string; kind: FieldKind | null }> = definition
+    ? fields.filter((f) => Object.hasOwn(record.answers, f.key)).map((f) => ({ label: textOf(f.label, 'en'), key: f.key, kind: f.kind }))
+    : Object.keys(record.answers).filter((key) => typeof record.answers[key] !== 'object').map((key) => ({ label: key, key, kind: null }));
+  const answered = named.map((row) => ({ ...row, text: answerText(definition, row.key, record.answers[row.key]) }));
+  // Short answers in the grid; a long text (the abstract) under it, the width of the card, with its paragraphs (UX3-02).
+  const rows = answered.filter((row) => !isLong(row.kind, row.text)).map((row) => ({ label: row.label, value: <span className={styles.break}>{row.text}</span> }));
+  const long = answered.filter((row) => isLong(row.kind, row.text));
 
   const scan = (file: SubmissionFile) => {
     const tone = file.scanState === 'clean' ? 'success' : file.scanState === 'pending' ? 'info' : 'danger';
@@ -86,6 +100,12 @@ export function Submission({ id }: { id: string }) {
             ...rows,
           ]}
         />
+        {long.map((row) => (
+          <section key={row.key} className={styles.longAnswer} data-confera-long-answer={row.key}>
+            <h3 className={styles.longAnswerLabel}>{row.kind === 'longText' ? fill(t.longAnswer, { label: row.label, n: countWords(row.text) }) : row.label}</h3>
+            <p className={styles.longAnswerText}>{row.text}</p>
+          </section>
+        ))}
       </Card>
       <Card title={t.authors} headingLevel={2}>
         <DataTable
@@ -110,7 +130,7 @@ export function Submission({ id }: { id: string }) {
             {record.files.map((file) => (
               <li key={file.id} className={styles.fileRow} data-confera-file-scan={file.scanState}>
                 {/* Served only once the scan is clean (FR-FILE-02); the name keeps its letters (FR-FILE-03). */}
-                {file.scanState === 'clean' ? (
+                {file.scanState === 'clean' && !file.downloadBlocked ? (
                   <a className="ud-link" href={intake.fileHref(record.id, file.id)} download>
                     {fill(t.download, { name: file.name })}
                   </a>
@@ -120,6 +140,12 @@ export function Submission({ id }: { id: string }) {
                 <span className={styles.small}>{`${file.type.toUpperCase()}, ${size(file.sizeBytes)}`}</span>
                 {scan(file)}
                 {file.scanFlag && t.scanFlags[file.scanFlag] ? <StatusBadge tone="warning">{t.scanFlags[file.scanFlag]}</StatusBadge> : null}
+                {/* Why it cannot be opened yet, or ever (UX3-07). */}
+                {file.downloadBlocked ? (
+                  <span className={`${styles.small} ${styles.fullLine}`} data-confera-file-blocked={file.downloadBlocked}>
+                    {fill(t.blocked[file.downloadBlocked] ?? '', { when: file.nextScanAt ? formatDateTime(file.nextScanAt) : t.none })}
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -127,8 +153,10 @@ export function Submission({ id }: { id: string }) {
       </Card>
       <Card title={t.consent} headingLevel={2}>
         <div className={styles.stack}>
-          <p className={styles.text}>{record.consent.text}</p>
-          <p className={styles.small}>{fill(t.consentAt, { when: formatDateTime(record.consent.consentedAt), version: record.consent.version })}</p>
+          <p className={`${styles.text} ${styles.break}`}>{consentWords(record.consent.text)}</p>
+          <p className={`${styles.small} ${styles.break}`} title={record.consent.version}>
+            {fill(t.consentAt, { when: formatDateTime(record.consent.consentedAt), version: shortVersion(record.consent.version) })}
+          </p>
         </div>
       </Card>
       <Card title={t.history} headingLevel={2}>
@@ -154,7 +182,17 @@ export function Submission({ id }: { id: string }) {
             columns={[
               { key: 'kind', header: t.emailColumn, render: (row) => t.emailKinds[row.kind] ?? row.kind },
               { key: 'recipient', header: t.to, render: (row) => row.recipient },
-              { key: 'status', header: t.status, render: (row) => <StatusBadge tone={row.status === 'sent' ? 'success' : row.status === 'held' ? 'warning' : row.status === 'failed' ? 'danger' : 'info'}>{t.emailStatus[row.status] ?? row.status}</StatusBadge> },
+              {
+                key: 'status',
+                header: t.status,
+                render: (row) => (
+                  <span className={styles.stackTight}>
+                    <StatusBadge tone={row.status === 'sent' ? 'success' : row.status === 'held' ? 'warning' : row.status === 'failed' ? 'danger' : 'info'}>{t.emailStatus[row.status] ?? row.status}</StatusBadge>
+                    {/* The numbers that held it (UX3-06). */}
+                    {row.status === 'held' && row.heldReason ? <span className={styles.small}>{heldWhy({ heldReason: row.heldReason as HeldMail['heldReason'], heldBy: row.heldBy ?? null })}</span> : null}
+                  </span>
+                ),
+              },
               { key: 'createdAt', header: t.queuedAt, render: (row) => formatDateTime(row.createdAt) },
               { key: 'sentAt', header: t.sentAt, render: (row) => (row.sentAt ? formatDateTime(row.sentAt) : t.none) },
             ]}

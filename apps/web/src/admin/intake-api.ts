@@ -19,6 +19,15 @@ export type FormVersion = Schemas['FormVersionDto'];
 export const DEADLINE_KINDS = ['abstract_submission', 'fee_payment', 'full_paper'] as const;
 export type DeadlineKind = (typeof DEADLINE_KINDS)[number];
 
+/** The flags a kept file may carry (G2-22, SEC-M3-06). */
+export type ScanFlag = 'macros' | 'external_links';
+/** Why an email is held, in numbers (UX3-06). */
+export interface HeldNumbers {
+  readonly windowHours: 1 | 24;
+  readonly count: number;
+  readonly limit: number;
+}
+
 export interface Deadline {
   readonly kind: DeadlineKind;
   /** The last day, YYYY-MM-DD, in the conference's time zone. */
@@ -58,6 +67,8 @@ export interface SubmissionSummary {
   readonly language: string;
   readonly authorCount: number;
   readonly receivedAt: string;
+  /** For the list (UX3-07): the flags its files carry, each once, and whether a file still waits for its scan. */
+  readonly fileSigns?: { readonly flags: readonly ScanFlag[]; readonly scanPending: boolean };
 }
 export interface SubmissionPage {
   readonly items: readonly SubmissionSummary[];
@@ -77,7 +88,11 @@ export interface SubmissionFile {
    * `macros`: an old .doc with macros, accepted and flagged for the office (G2-22);
    * `external_links`: a .docx with a remote template, frame or object, or a UNC path (SEC-M3-06).
    */
-  readonly scanFlag: string | null;
+  readonly scanFlag: ScanFlag | null;
+  /** Null: it may be downloaded; otherwise why not, yet or ever (UX3-07). */
+  readonly downloadBlocked?: 'scan_pending' | 'scan_retrying' | 'file_not_clean' | null;
+  /** Pending: when the next scan is due. */
+  readonly nextScanAt?: string | null;
   readonly scannedAt: string | null;
   readonly pendingSince: string | null;
   readonly sha256: string;
@@ -106,6 +121,8 @@ export interface SubmissionDetail extends SubmissionSummary {
     /** queued, sending, sent, failed, held, stuck or waiting_for_server. */
     readonly status: string;
     readonly heldReason: string | null;
+    /** The numbers of the hold (UX3-06); null when not held, or held before the numbers were kept. */
+    readonly heldBy?: HeldNumbers | null;
     readonly lastErrorCode: string | null;
     readonly createdAt: string;
     readonly sentAt: string | null;
@@ -118,6 +135,8 @@ export interface HeldMail {
   readonly kind: string;
   readonly recipient: string;
   readonly heldReason: (typeof HELD_REASONS)[number];
+  /** The numbers of the hold (UX3-06): `count` in the last `windowHours` hours above `limit`; null for one held before they were kept. */
+  readonly heldBy?: HeldNumbers | null;
   readonly conference: { readonly id: string; readonly code: string; readonly name: string } | null;
   readonly formId: string | null;
   readonly submission: { readonly id: string; readonly reference: string } | null;

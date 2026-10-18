@@ -19,9 +19,6 @@ import { useSession } from './session';
 import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
 
-/** The end of a deadline as the office reads it: in the conference's zone ("15 Mar 2027, 00:00" is the start of the next day). */
-const endsAtText = (iso: string, timeZone: string) => new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(Date.parse(iso));
-
 export function Deadlines({ conferenceId, readOnly, archived }: { conferenceId: string; readOnly: boolean; archived: boolean }) {
   const { client, contact } = useSession();
   const t = TEXTS.deadlines;
@@ -92,12 +89,13 @@ export function Deadlines({ conferenceId, readOnly, archived }: { conferenceId: 
                 disabled={readOnly || archived}
                 onChange={(event) => setDays((current) => ({ ...current, [kind]: event.target.value }))}
                 status={fields[kind] ? 'error' : 'default'}
-                message={fields[kind] ?? (deadline ? fill(t.endsAt, { when: endsAtText(deadline.endsAt, record.timeZone) }) : t.notSet)}
+                // The last day as the admin set it, inclusive; the exclusive end (`endsAt`) is for the server's clock (UX3-08).
+                message={fields[kind] ?? (deadline ? fill(t.openUntil, { date: formatDate(`${deadline.endsOn}T12:00:00Z`), zone: record.timeZone }) : t.notSet)}
               />
               <div className={styles.actionsInline}>
                 {deadline ? <StatusBadge tone={deadline.passed ? 'warning' : 'success'}>{deadline.passed ? t.passed : t.ahead}</StatusBadge> : null}
                 {readOnly || archived ? null : (
-                  <Button type="submit" variant="dark" disabled={busy !== null || value === (deadline?.endsOn ?? '')}>
+                  <Button type="submit" variant="dark" aria-label={fill(t.saveKind, { kind: (t.kinds[kind] ?? kind).toLowerCase() })} disabled={busy !== null || value === (deadline?.endsOn ?? '')}>
                     {busy === kind ? TEXTS.common.loading : t.save}
                   </Button>
                 )}
@@ -119,7 +117,7 @@ export function Deadlines({ conferenceId, readOnly, archived }: { conferenceId: 
                   ? fill(t.change, { kind: t.kinds[row.kind] ?? row.kind, old: formatDate(`${row.oldEndsOn}T12:00:00Z`), new: formatDate(`${row.newEndsOn}T12:00:00Z`) })
                   : fill(t.changeFirst, { kind: t.kinds[row.kind] ?? row.kind, new: formatDate(`${row.newEndsOn}T12:00:00Z`) }),
             },
-            { key: 'changedAt', header: TEXTS.submissions.when, render: (row) => fill(t.by, { who: row.changedBy?.displayName ?? '—', when: formatDateTime(row.changedAt) }) },
+            { key: 'changedAt', header: t.byAndWhen, render: (row) => fill(t.by, { who: row.changedBy?.displayName ?? '—', when: formatDateTime(row.changedAt) }) },
           ]}
         />
       </div>

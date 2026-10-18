@@ -38,7 +38,9 @@ test("the seeded form's screen shows its snippet; copied and pasted into the har
   await card.getByRole('button', { name: 'Copy the snippet' }).click();
   if (browserName === 'chromium') {
     await expect(page.locator('.ud-toast').last()).toContainText('Snippet copied');
-    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    // The clipboard of Windows gives the lines back with CR LF; the copy itself is the field's text (Blank-slate run 2b:
+    // the toast above was shown, and the two lines that differed differed only by their line end).
+    const copied = (await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n');
     expect(copied).toBe(snippet);
     snippet = copied;
   }

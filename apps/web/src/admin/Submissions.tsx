@@ -54,6 +54,24 @@ export function Submissions() {
             { key: 'institution', header: t.institution, render: (row) => none(row.institution) },
             { key: 'participationType', header: t.participation, render: (row) => (row.participationType ? (t.participations[row.participationType] ?? row.participationType) : t.none) },
             { key: 'status', header: t.status, render: (row) => <StatusBadge tone="info">{statusText(row.status)}</StatusBadge> },
+            // A flagged or waiting file shows in the list, so the office need not open every submission to find one (UX3-07).
+            {
+              key: 'files',
+              header: t.filesColumn,
+              render: (row) =>
+                row.fileSigns && (row.fileSigns.flags.length > 0 || row.fileSigns.scanPending) ? (
+                  <span className={styles.signs}>
+                    {row.fileSigns.flags.length > 0 ? (
+                      <span title={row.fileSigns.flags.map((flag) => t.scanFlags[flag] ?? flag).join('; ')}>
+                        <StatusBadge tone="warning">{t.signFlagged}</StatusBadge>
+                      </span>
+                    ) : null}
+                    {row.fileSigns.scanPending ? <StatusBadge tone="info">{t.signPending}</StatusBadge> : null}
+                  </span>
+                ) : (
+                  t.none
+                ),
+            },
             { key: 'memberMatch', header: t.memberMatch, render: (row) => none(row.memberMatch) },
             { key: 'billingStatus', header: t.billing, render: (row) => none(row.billingStatus) },
             { key: 'receivedAt', header: t.received, render: (row) => formatDateTime(row.receivedAt) },

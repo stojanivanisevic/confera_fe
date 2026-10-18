@@ -13,16 +13,17 @@
  * Every change is made on the version of the form the screen holds; the server refuses a stale one.
  */
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import type { Conference } from '@confera/api-client';
 import { FORM_CONFIGURATION } from '@confera/api-client';
 import { buildEmbedSnippet, type SnippetLanguage } from '@confera/embed-loader';
-import { FORM_TEXTS, FormRenderer, noDraftStorage, previewApi, readDefinition, textOf, type FormDefinition, type PublishedForm } from '@confera/form-renderer';
+import { FORM_TEXTS, FormRenderer, noDraftStorage, previewApi, readDefinition, textOf, type Condition, type FormDefinition, type PublishedForm } from '@confera/form-renderer';
 import { Alert, Button, Card, Checkbox, CheckboxGroup, ConfirmDialog, DataTable, Drawer, NumberField, PageHeader, Select, StatusBadge, Switch, Textarea, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel } from './conference-context';
+import { drawerOpened } from './drawer-event';
 import { formatDateTime } from './format';
 import { formStateText } from './Forms';
 import { intake, type FormRecord } from './intake-api';
@@ -107,6 +108,12 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
       return null;
     }
   }, [record]);
+  // The published version, to tell whether the saved draft differs from it (UX3-09).
+  const published = useLoad<{ definition: unknown } | null>(
+    (c) => (record?.currentVersion ? intake.version(c, record.id, record.currentVersion.number).catch(() => null) : Promise.resolve(null)),
+    [record?.id, record?.currentVersion?.number],
+  );
+  const publishedDefinition = published.state.data?.definition;
 
   if (form.state.phase === 'failed' && !record) {
     return (
@@ -158,6 +165,12 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
 
   const name = conference.state.data ? conferenceLabel(conference.state.data) : '';
   const nextNumber = (record.versions.reduce((most, version) => Math.max(most, version.number), 0) || 0) + 1;
+  // What the draft is now (UX3-09): never published, changed and not saved, saved but not published, or the same.
+  const current = record.currentVersion;
+  const changed = current === null || publishedDefinition === undefined || canonical(record.draftDefinition) !== canonical(publishedDefinition);
+  const draftState = current === null ? 'unpublished' : dirty ? 'unsaved' : changed ? 'changed' : 'same';
+  const stateTone = draftState === 'same' ? 'success' : draftState === 'unpublished' ? 'neutral' : 'warning';
+  const stateText = fill(t.draftState[draftState], { n: current?.number ?? '' });
 
   return (
     <div className={styles.stack}>
@@ -165,16 +178,7 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
         title={<span className={styles.break}>{`${t.types[record.type] ?? record.type}${name ? ` · ${name}` : ''}`}</span>}
         description={`/f/${record.slug}`}
         breadcrumbs={[{ label: t.back, href: '/forms', onClick: () => router.push('/forms') }, { label: t.types[record.type] ?? record.type }]}
-        actions={
-          <div className={styles.actionsInline}>
-            <StatusBadge tone={record.state === 'open' ? 'success' : 'neutral'}>{formStateText(record.state, record.closedReason)}</StatusBadge>
-            {mayManage ? (
-              <Button variant="dark" disabled={busy || dirty} onClick={() => setAsking(true)}>
-                {t.publish}
-              </Button>
-            ) : null}
-          </div>
-        }
+        actions={<StatusBadge tone={record.state === 'open' ? 'success' : 'neutral'}>{formStateText(record.state, record.closedReason)}</StatusBadge>}
       />
       {dirty ? (
         <Alert tone="info" title={t.unsaved}>
@@ -201,13 +205,6 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
         <TextsCard configuration={configuration} definition={definition} readOnly={!mayManage} onChange={change} />
         <AuthorsCard configuration={configuration} definition={definition} readOnly={!mayManage} onChange={change} />
         <FieldsCard configuration={configuration} definition={definition} onEdit={setEditing} />
-        {mayManage ? (
-          <div>
-            <Button type="submit" disabled={busy || !dirty}>
-              {busy ? TEXTS.common.loading : t.save}
-            </Button>
-          </div>
-        ) : null}
       </form>
 
       {definition && conference.state.data ? <PreviewCard record={record} definition={definition} conference={conference.state.data} /> : null}
@@ -245,6 +242,24 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
         />
       ) : null}
 
+      {/* Save and Publish together, with the state of the draft, in view wherever the page is scrolled (UX3-09). */}
+      <div className={styles.stickyActions} role="region" aria-label={t.actionsLabel} data-confera-form-actions="">
+        <span data-confera-draft-state={draftState}>
+          <StatusBadge tone={stateTone}>{stateText}</StatusBadge>
+        </span>
+        {mayManage ? (
+          <div className={styles.actionsInline}>
+            <Button disabled={busy || !dirty} onClick={() => void save()}>
+              {busy ? TEXTS.common.loading : t.save}
+            </Button>
+            {/* Publishing takes the saved draft: with unsaved changes, save first; with none to publish, nothing to do. */}
+            <Button variant="dark" disabled={busy || dirty || !changed} onClick={() => setAsking(true)}>
+              {t.publish}
+            </Button>
+          </div>
+        ) : null}
+      </div>
+
       <ConfirmDialog open={asking} title={fill(t.publishQuestion, { n: nextNumber })} confirmText={t.publish} busy={busy} onCancel={() => setAsking(false)} onConfirm={() => void publish()}>
         {t.publishText}
       </ConfirmDialog>
@@ -255,7 +270,8 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
 /** The snippet of the form, for the site's language (M3-FE-03). */
 function EmbedCard({ record, conference, publicOrigin }: { record: FormRecord; conference: Conference | null; publicOrigin: string }) {
   const t = TEXTS.forms;
-  const [language, setLanguage] = useState<SnippetLanguage | 'browser'>('en');
+  // The visitor's browser decides until the admin names the site's language (UX3-12, D2): a snippet copied at once is right on any site.
+  const [language, setLanguage] = useState<SnippetLanguage | 'browser'>('browser');
   const definition = (() => {
     try {
       return readDefinition(record.draftDefinition);
@@ -386,6 +402,21 @@ function AuthorsCard({ configuration, definition, readOnly, onChange }: EditProp
   );
 }
 
+/** Two values of a definition as the same JSON whatever the order of their keys (a stored definition comes back reordered). */
+function canonical(value: unknown): string {
+  const sort = (v: unknown): unknown => (Array.isArray(v) ? v.map(sort) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, x]) => [k, sort(x)])) : v);
+  return JSON.stringify(sort(value));
+}
+
+/** “When “Who pays the fee?” is “My employer”” (UX3-10). */
+function conditionText(definition: FormDefinition, when: Condition): string {
+  const t = TEXTS.forms;
+  const asked = definition.sections.flatMap((s) => s.fields).find((f) => f.key === when.field);
+  const question = asked ? textOf(asked.label, 'en') : (t.fieldNames[when.field] ?? when.field);
+  const answers = when.in.map((value) => `“${asked?.options?.find((o) => o.value === value) ? textOf(asked.options.find((o) => o.value === value)!.label, 'en') : value}”`).join(t.or);
+  return fill(t.requiredWhen, { question, answers });
+}
+
 /** Every field of the catalogue, also the ones switched off; a row opens its editor. */
 function FieldsCard({ configuration, definition, onEdit }: { configuration: Configuration; definition: FormDefinition | null; onEdit: (key: string) => void }) {
   const t = TEXTS.forms;
@@ -394,12 +425,16 @@ function FieldsCard({ configuration, definition, onEdit }: { configuration: Conf
     const field = section?.fields.find((f) => f.key === key);
     const own = configuration.fields?.[key];
     const shown = own?.enabled ?? field !== undefined;
+    const required = own?.required ?? field?.required ?? false;
+    // A field (or its section) asked only on an answer of another field (UX3-10): required then, not always.
+    const when = field?.visibleWhen ?? section?.visibleWhen ?? null;
     return {
       key,
       name: own?.label?.en ?? (field ? textOf(field.label, 'en') : (t.fieldNames[key] ?? key)),
       section: section ? textOf(section.label, 'en') : t.switchedOff,
       shown,
-      required: own?.required ?? field?.required ?? false,
+      conditional: when !== null,
+      requiredText: !required ? t.no : when && definition ? conditionText(definition, when) : t.yes,
     };
   });
   return (
@@ -414,8 +449,8 @@ function FieldsCard({ configuration, definition, onEdit }: { configuration: Conf
           columns={[
             { key: 'name', header: t.field },
             { key: 'section', header: t.section },
-            { key: 'shown', header: t.shown, render: (row) => <StatusBadge tone={row.shown ? 'success' : 'neutral'}>{row.shown ? t.yes : t.no}</StatusBadge> },
-            { key: 'required', header: t.required, render: (row) => (row.required ? t.yes : t.no) },
+            { key: 'shown', header: t.shown, render: (row) => <StatusBadge tone={row.shown ? 'success' : 'neutral'}>{!row.shown ? t.no : row.conditional ? t.shownWhen : t.yes}</StatusBadge> },
+            { key: 'required', header: t.required, render: (row) => <span className={styles.break}>{row.requiredText}</span> },
           ]}
         />
       </div>
@@ -426,6 +461,11 @@ function FieldsCard({ configuration, definition, onEdit }: { configuration: Conf
 /** The editor of one field, in a drawer; Apply writes it into the draft that is being edited. */
 function FieldDrawer({ fieldKey, configuration, definition, readOnly, onClose, onApply }: { fieldKey: string; configuration: Configuration; definition: FormDefinition; readOnly: boolean; onClose: () => void; onApply: (next: Configuration) => void }) {
   const t = TEXTS.forms;
+  // While the drawer is open the toasts stay off its footer (UX3-22).
+  useEffect(() => {
+    drawerOpened(true);
+    return () => drawerOpened(false);
+  }, []);
   const field = definition.sections.flatMap((s) => s.fields).find((f) => f.key === fieldKey);
   const own = configuration.fields?.[fieldKey] ?? {};
   const [enabled, setEnabled] = useState(own.enabled ?? field !== undefined);
@@ -506,6 +546,7 @@ function PreviewCard({ record, definition, conference }: { record: FormRecord; d
     slug: record.slug,
     version: (record.currentVersion?.number ?? 0) + 1,
     state: 'open',
+    closedReason: null,
     deadline: null,
     conference: {
       code: conference.code,
@@ -563,7 +604,7 @@ function BreakerCard({ record, readOnly, onSaved, onRefused }: { record: FormRec
         {readOnly ? null : (
           <div>
             <Button type="submit" variant="dark" disabled={busy}>
-              {TEXTS.common.save}
+              {t.breakerSave}
             </Button>
           </div>
         )}

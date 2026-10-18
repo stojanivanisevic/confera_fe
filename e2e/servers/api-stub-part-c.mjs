@@ -53,6 +53,9 @@ function definitionOf(configuration) {
 
 const now = () => new Date().toISOString();
 
+/** An abstract as authors write it: paragraphs, separated by an empty line (UX3-02). */
+const LONG_ABSTRACT = Array.from({ length: 4 }, (_, i) => `Pasus ${i + 1}: održivi turizam na Balkanu traži saradnju lokalnih zajednica, uprava i preduzeća, i merenje uticaja na prirodu i ljude.`).join('\n\n');
+
 /** The universe's part C, as the fixture has it at the start and after a reset. */
 export function freshPartC() {
   const version = { number: 1, publishedAt: '2026-10-15T09:00:00.000Z', publishedBy: ADMIN };
@@ -96,20 +99,21 @@ export function freshPartC() {
         language: 'sr',
         authorCount: 2,
         receivedAt: '2026-10-16T14:56:00.000Z',
+        fileSigns: { flags: ['macros', 'external_links'], scanPending: true },
         form: { id: PART_C.form, slug: 'kp-2026-abstract', versionNumber: 1 },
-        answers: { participationType: 'with_paper', title: 'Održivi turizam na Balkanu', abstract: 'Kratak apstrakt.', keywords: 'turizam', publication: 'proceedings', membership: 'no', attendance: 'in_person', discountClaim: 'no', payer: 'individual', billingAddress: 'Izmišljena 1, Beograd', paymentMethod: 'bank_wire', consent: true },
+        answers: { participationType: 'with_paper', title: 'Održivi turizam na Balkanu', abstract: LONG_ABSTRACT, keywords: 'turizam', publication: 'proceedings', membership: 'no', attendance: 'in_person', discountClaim: 'no', payer: 'individual', billingAddress: 'Izmišljena 1, Beograd', paymentMethod: 'bank_wire', consent: true },
         authors: [
           { position: 1, firstName: 'Živana', lastName: 'Đorđević', institution: 'Univerzitet za probe', institutionAddress: null, orcid: '0000-0002-1825-0097', email: 'zivana.dordevic@a.example.test', phone: '+381 11 123 4567', isCorresponding: true },
           { position: 2, firstName: 'Đorđe', lastName: 'Šćepanović', institution: 'Institut za probe', institutionAddress: null, orcid: null, email: 'djordje@a.example.test', phone: null, isCorresponding: false },
         ],
         files: [
-          { id: PART_C.files.clean, field: 'biographies', name: 'Biografije – Šćepanović.pdf', type: 'pdf', sizeBytes: 1048576, scanState: 'clean', scanFlag: null, scannedAt: '2026-10-16T14:57:00.000Z', pendingSince: null, sha256: 'a'.repeat(64) },
-          { id: PART_C.files.pending, field: 'biographies', name: 'Stari rad.doc', type: 'doc', sizeBytes: 52000, scanState: 'pending', scanFlag: 'macros', scannedAt: null, pendingSince: '2026-10-16T14:57:00.000Z', sha256: 'b'.repeat(64) },
-          { id: PART_C.files.linked, field: 'biographies', name: 'Rad.docx', type: 'docx', sizeBytes: 64000, scanState: 'clean', scanFlag: 'external_links', scannedAt: '2026-10-16T14:58:00.000Z', pendingSince: null, sha256: 'c'.repeat(64) },
+          { id: PART_C.files.clean, field: 'biographies', name: 'Biografije – Šćepanović.pdf', type: 'pdf', sizeBytes: 1048576, scanState: 'clean', scanFlag: null, downloadBlocked: null, nextScanAt: null, scannedAt: '2026-10-16T14:57:00.000Z', pendingSince: null, sha256: 'a'.repeat(64) },
+          { id: PART_C.files.pending, field: 'biographies', name: 'Stari rad.doc', type: 'doc', sizeBytes: 52000, scanState: 'pending', scanFlag: 'macros', downloadBlocked: 'scan_pending', nextScanAt: '2026-10-16T15:02:00.000Z', scannedAt: null, pendingSince: '2026-10-16T14:57:00.000Z', sha256: 'b'.repeat(64) },
+          { id: PART_C.files.linked, field: 'biographies', name: 'Rad.docx', type: 'docx', sizeBytes: 64000, scanState: 'clean', scanFlag: 'external_links', downloadBlocked: null, nextScanAt: null, scannedAt: '2026-10-16T14:58:00.000Z', pendingSince: null, sha256: 'c'.repeat(64) },
         ],
-        consent: { text: SEEDED.texts.consent.sr, links: { terms: 'https://kp.example.test/terms', privacy: null }, version: 'v1', consentedAt: '2026-10-16T14:56:00.000Z' },
+        consent: { text: SEEDED.texts.consent.sr, links: { terms: 'https://kp.example.test/terms', privacy: null }, version: 'c51e7625'.padEnd(64, '0'), consentedAt: '2026-10-16T14:56:00.000Z' },
         statusHistory: [{ status: 'new', changedAt: '2026-10-16T14:56:00.000Z', actor: null }],
-        emails: [{ id: PART_C.held[0], kind: 'submission_confirmation', recipient: 'zivana.dordevic@a.example.test', status: 'held', heldReason: 'send_breaker_form', lastErrorCode: null, createdAt: '2026-10-16T14:56:01.000Z', sentAt: null }],
+        emails: [{ id: PART_C.held[0], kind: 'submission_confirmation', recipient: 'zivana.dordevic@a.example.test', status: 'held', heldReason: 'send_breaker_form', heldBy: { windowHours: 1, count: 31, limit: 30 }, lastErrorCode: null, createdAt: '2026-10-16T14:56:01.000Z', sentAt: null }],
       },
       {
         id: PART_C.submissions[1],
@@ -125,6 +129,7 @@ export function freshPartC() {
         language: 'en',
         authorCount: 1,
         receivedAt: '2026-10-16T10:00:00.000Z',
+        fileSigns: { flags: [], scanPending: false },
         form: { id: PART_C.form, slug: 'kp-2026-abstract', versionNumber: 1 },
         answers: { participationType: 'without_paper', consent: true },
         authors: [{ position: 1, firstName: 'Marta', lastName: 'Kovač', institution: null, institutionAddress: null, orcid: null, email: 'marta.kovac@a.example.test', phone: null, isCorresponding: true }],
@@ -135,8 +140,8 @@ export function freshPartC() {
       },
     ],
     held: [
-      { id: PART_C.held[0], kind: 'submission_confirmation', recipient: 'zivana.dordevic@a.example.test', heldReason: 'send_breaker_form', conference: { id: KP, code: 'KP', name: 'Konferencija za probe' }, formId: PART_C.form, submission: { id: PART_C.submissions[0], reference: 'KP26-0002' }, createdAt: '2026-10-16T14:56:01.000Z' },
-      { id: PART_C.held[1], kind: 'submission_confirmation', recipient: 'ana.anic@b.example.test', heldReason: 'send_breaker_organisation', conference: { id: KP, code: 'KP', name: 'Konferencija za probe' }, formId: PART_C.form, submission: null, createdAt: '2026-10-16T14:58:00.000Z' },
+      { id: PART_C.held[0], kind: 'submission_confirmation', recipient: 'zivana.dordevic@a.example.test', heldReason: 'send_breaker_form', heldBy: { windowHours: 1, count: 31, limit: 30 }, conference: { id: KP, code: 'KP', name: 'Konferencija za probe' }, formId: PART_C.form, submission: { id: PART_C.submissions[0], reference: 'KP26-0002' }, createdAt: '2026-10-16T14:56:01.000Z' },
+      { id: PART_C.held[1], kind: 'submission_confirmation', recipient: 'ana.anic@b.example.test', heldReason: 'send_breaker_organisation', heldBy: null, conference: { id: KP, code: 'KP', name: 'Konferencija za probe' }, formId: PART_C.form, submission: null, createdAt: '2026-10-16T14:58:00.000Z' },
     ],
     breaker: { perHour: 100, perDay: 1000, version: 1 },
   };

@@ -74,6 +74,10 @@ describe('a form (M3-FE-03, M3-FE-05)', () => {
     useFake(answering(route({})));
     screen = await mount(<FormSettings id={FORM} publicOrigin="https://forms.example.test" />);
     const snippet = () => screen!.container.querySelector<HTMLTextAreaElement>('[name="snippet"]')!.value;
+    // The visitor's browser decides until the admin names the site's language (UX3-12).
+    expect(screen.container.querySelector<HTMLSelectElement>('[name="embedLanguage"]')!.value).toBe('browser');
+    expect(snippet()).not.toContain('lang=');
+    await select(screen.container.querySelector<HTMLSelectElement>('[name="embedLanguage"]')!, 'en');
     expect(snippet().split('\n')[0]).toBe('<p lang="en"><a href="https://forms.example.test/f/kp-2026-abstract?lang=en">Form not showing? Open it on its own page.</a></p>');
     await select(screen.container.querySelector<HTMLSelectElement>('[name="embedLanguage"]')!, 'sr');
     expect(snippet()).toContain('<p lang="sr"><a href="https://forms.example.test/f/kp-2026-abstract?lang=sr">Obrazac se ne prikazuje? Otvorite ga na posebnoj stranici.</a></p>');
@@ -120,7 +124,11 @@ describe('deadlines (M3-FE-06; FR-DL-03)', () => {
     }));
     screen = await mount(<Deadlines conferenceId={CONFERENCE} readOnly={false} archived={false} />);
     expect(screen.container.textContent).toContain('A deadline ends at the end of its day in Europe/Belgrade.');
-    expect(screen.container.textContent).toContain('Ends 16 Mar 2027, 00:00');
+    // The last day as set, inclusive, not the instant after it (UX3-08).
+    expect(screen.container.textContent).toContain('Open until the end of 15 Mar 2027 (Europe/Belgrade)');
+    expect(screen.container.textContent).not.toContain('16 Mar 2027');
+    // Three Saves, each with a name of its own (UX3-11).
+    expect([...screen.container.querySelectorAll('[data-confera-deadline] button[type="submit"]')].map((b) => b.getAttribute('aria-label'))).toEqual(['Save the abstract submission deadline', 'Save the fee payment deadline', 'Save the full paper deadline']);
     await typeInto(screen.container.querySelector<HTMLInputElement>('[name="abstract_submission"]')!, '2027-03-31');
     await click(button(screen.container, 'Save', '[data-confera-deadline="abstract_submission"]'));
     expect(sent).toEqual([{ endsOn: '2027-03-31', version: 1 }]);

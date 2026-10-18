@@ -340,3 +340,64 @@
   align-items: center;
   gap: var(--gutter-s) var(--gutter-m);
 }
+
+/* A long answer (the abstract) under the grid of a submission's data: the width of the card, a
+   readable measure, its paragraphs and line breaks as the author typed them (UX3-02). */
+.longAnswer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-s);
+  margin-top: var(--gutter-xl);
+  min-width: 0;
+}
+.longAnswerLabel {
+  margin: 0;
+  font: var(--text-field-label);
+  letter-spacing: var(--text-field-label-tracking);
+  color: var(--text-secondary);
+}
+.longAnswerText {
+  margin: 0;
+  max-width: 70ch;
+  font: var(--text-body-md);
+  letter-spacing: var(--text-body-md-tracking);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Save and Publish of a form, with the state of its draft: in view at the foot of the window wherever the long
+   page is scrolled (UX3-09). */
+.stickyActions {
+  position: sticky;
+  bottom: var(--gutter-null);
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gutter-m);
+  padding: var(--gutter-m) var(--gutter-l);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-field);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-overlay);
+}
+
+/* A line of its own in a row that wraps (the reason a file cannot be downloaded yet, UX3-07). */
+.fullLine {
+  flex-basis: 100%;
+}
+/* A badge with a line of explanation under it. */
+.stackTight {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gutter-xs);
+}
+/* Signs of a submission's files in the list (UX3-07). */
+.signs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--gutter-xs);
+}

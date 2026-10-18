@@ -23,6 +23,16 @@ import { useLoad } from './useLoad';
 /** The event the screen sends after a release: the shell's count reads again. */
 export const HELD_MAIL_CHANGED = 'confera:held-mail-changed';
 
+/** Why an email is held, with the numbers that tripped the breaker when they were kept (UX3-06). */
+export function heldWhy(row: Pick<HeldMailRow, 'heldReason' | 'heldBy'>): string {
+  const t = TEXTS.heldMail;
+  const reason = t.reasons[row.heldReason] ?? row.heldReason;
+  const by = row.heldBy;
+  if (!by) return reason;
+  const numbers = { reason, count: by.count, limit: by.limit, window: t.windows[by.windowHours] ?? t.windows[24] ?? '' };
+  return fill(row.heldReason === 'recipient_domain' ? t.reasonNumbersDomain : t.reasonNumbers, numbers);
+}
+
 export function HeldMail() {
   const { client, contact } = useSession();
   const t = TEXTS.heldMail;
@@ -71,7 +81,7 @@ export function HeldMail() {
           ) : undefined
         }
       />
-      <Alert tone="info" title={t.title}>
+      <Alert tone="info" title={t.deadlineTitle}>
         {t.deadlineNote}
       </Alert>
       {problem ? (
@@ -98,7 +108,7 @@ export function HeldMail() {
             { key: 'recipient', header: t.recipient },
             { key: 'conference', header: t.conference, render: (row) => row.conference?.name ?? '—' },
             { key: 'submission', header: t.submission, render: (row) => (row.submission ? <a className="ud-link" href={`/submissions/${row.submission.id}`}>{row.submission.reference}</a> : '—') },
-            { key: 'heldReason', header: t.reason, render: (row) => t.reasons[row.heldReason] ?? row.heldReason },
+            { key: 'heldReason', header: t.reason, render: (row) => heldWhy(row) },
             { key: 'createdAt', header: t.heldAt, render: (row) => formatDateTime(row.createdAt) },
           ]}
           footer={
@@ -163,7 +173,7 @@ function OrganisationBreaker({ breaker, onSaved }: { breaker: HeldMailPage['brea
         </div>
         <div>
           <Button type="submit" variant="dark" disabled={busy}>
-            {TEXTS.common.save}
+            {TEXTS.heldMail.breakerSave}
           </Button>
         </div>
       </form>

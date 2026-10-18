@@ -379,7 +379,7 @@ export const TEXTS = {
     saved: 'Settings of {name} saved',
     copy: 'Make a copy',
     copyTitle: 'Copy {name}',
-    copyText: 'The copy is a new draft with the settings, listed sites, mail server and templates of this one, without dates.',
+    copyText: 'The copy is a new draft with the settings, listed sites, mail server and templates of this one, and its forms as drafts that are not published, without dates.',
     copySubmit: 'Make the copy',
     copyName: '{name} (copy)',
     copied: '{name} created as a copy',
@@ -739,6 +739,11 @@ export const TEXTS = {
     required: 'Required',
     yes: 'Yes',
     no: 'No',
+    /** {question} {answers}: a field asked only on a condition (UX3-10). */
+    requiredWhen: 'When “{question}” is {answers}',
+    shownWhen: 'Only when asked',
+    /** Between the answers of a condition: “My employer” or “Other”. */
+    or: ' or ',
     edit: 'Edit',
     editTitle: 'Field: {name}',
     enabled: 'Show this field',
@@ -772,6 +777,15 @@ export const TEXTS = {
     perHour: 'Emails an hour',
     perDay: 'Emails a day',
     breakerSaved: 'Send breaker saved',
+    breakerSave: 'Save the send breaker',
+    // The state of the draft, beside Save and Publish (UX3-09).
+    draftState: {
+      unpublished: 'Draft, not published yet',
+      unsaved: 'Unsaved changes',
+      changed: 'Version {n} is published; the draft has changes that are not published',
+      same: 'Version {n} is published; the draft is the same',
+    },
+    actionsLabel: 'Save and publish',
     refused: {
       mandatoryField: 'This field is always part of the form and is always required',
       aboveCap: 'This is more than the field can take',
@@ -798,8 +812,12 @@ export const TEXTS = {
     notSet: 'Not set',
     passed: 'Passed',
     ahead: 'Ahead',
-    endsAt: 'Ends {when}',
+    /** {date} {zone}: the last day as the admin set it, inclusive (UX3-08). */
+    openUntil: 'Open until the end of {date} ({zone})',
     save: 'Save',
+    /** {kind}: the accessible name of a Save, so that the three are told apart (UX3-11). */
+    saveKind: 'Save the {kind} deadline',
+    byAndWhen: 'By and when',
     saved: '{kind}: the last day is now {date}',
     history: 'Changes',
     historyEmpty: 'No change yet.',
@@ -828,12 +846,26 @@ export const TEXTS = {
     emptyText: 'Submissions arrive here as authors send the form.',
     back: 'Submissions',
     data: 'Data',
+    /** {label} {n}: a long answer with its count of words (UX3-02). */
+    longAnswer: '{label}, {n} words',
     authors: 'Authors',
     corresponding: 'corresponding author',
     files: 'Files',
     noFiles: 'No file was sent.',
     download: 'Download {name}',
     scan: { pending: 'Scan pending since {when}', clean: 'Clean', infected: 'Infected: it is never served', not_clean: 'Not clean: it is not served' } as Record<string, string>,
+    /** Why a file cannot be downloaded (UX3-07); {when} is the next scan. */
+    blocked: {
+      scan_pending: 'The file can be downloaded when the scan is done.',
+      scan_retrying: 'The scan is taking longer than it should. The next try is {when}; the file can be downloaded once it is clean.',
+      file_not_clean: 'The scan did not find the file clean, so it is never served.',
+    } as Record<string, string>,
+    /** The list: a sign for a submission with a flagged or waiting file (UX3-07). */
+    filesColumn: 'Files',
+    signFlagged: 'Flagged file',
+    signPending: 'Scan pending',
+    /** {reason} {count} {limit} {window}: why an email of the submission is held (UX3-06). */
+    heldBy: '{count} in {window}, above the limit of {limit}',
     /** The flags of a kept file (G2-22, SEC-M3-06): each a warning for the office. */
     scanFlags: {
       macros: 'An old .doc with macros: open it with care',
@@ -878,6 +910,12 @@ export const TEXTS = {
     reason: 'Why',
     heldAt: 'Held since',
     reasons: { send_breaker_form: 'The breaker of the form', send_breaker_organisation: 'The breaker of the organisation', recipient_domain: 'Many emails to one domain' } as Record<string, string>,
+    /** {reason} {count} {limit} {window} (UX3-06): the numbers that tripped it. */
+    reasonNumbers: '{reason}: {count} confirmations in {window}, above the limit of {limit}',
+    reasonNumbersDomain: '{reason}: {count} submissions to the domain in {window}, above the limit of {limit}',
+    windows: { 1: 'the last hour', 24: 'the last 24 hours' } as Record<number, string>,
+    deadlineTitle: 'A deadline day can trip the breaker',
+    breakerSave: 'Save the send breaker',
     releaseSelected: 'Release the selected',
     releaseAll: 'Release all {count}',
     releaseQuestion: 'Release {count} emails?',
