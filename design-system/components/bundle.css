@@ -427,7 +427,8 @@ input[type="date"].ud-field__control::-webkit-calendar-picker-indicator { opacit
 .ud-tooltip.is-dismissed .ud-tooltip__bubble { opacity: 0; pointer-events: none; }
 
 /* Data table and pagination */
-.ud-table-wrap { background: var(--surface-1); border-radius: var(--radius-card); overflow: hidden; font-family: var(--font-sans); min-width: 0; container-type: inline-size; }
+/* The wrap is the containing block of the header row it hides below 600px (2.6.1), so its overflow clips it. */
+.ud-table-wrap { position: relative; background: var(--surface-1); border-radius: var(--radius-card); overflow: hidden; font-family: var(--font-sans); min-width: 0; container-type: inline-size; }
 .ud-table__toolbar { padding: var(--gutter-l) var(--gutter-xl); border-bottom: 1px solid var(--neutral-300); }
 .ud-table__scroll { overflow-x: auto; }
 .ud-table__scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
@@ -699,6 +700,8 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
 @container (max-width: 599px) {
   .ud-table, .ud-table tbody, .ud-table tr, .ud-table td { display: block; width: 100%; box-sizing: border-box; }
   .ud-table thead { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  /* A row group does not clip its cells: each header cell is out of sight on its own as well (2.6.1), and still read. */
+  .ud-table thead th { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
   .ud-table tbody tr { padding: var(--gutter-m) var(--gutter-l); border-bottom: 1px solid var(--neutral-300); }
   .ud-table tbody tr:last-child { border-bottom: 0; }
   .ud-table td { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: var(--gutter-s); padding: var(--gutter-xxs) 0; border-bottom: 0; text-align: left !important; overflow-wrap: anywhere; }
