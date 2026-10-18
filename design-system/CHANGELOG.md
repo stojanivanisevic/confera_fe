@@ -2,6 +2,14 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.6.1 (2026-10-18)
+
+Fixes one fault of the narrow DataTable (2.4.0), seen in Chromium on the submission screen of Confera 0.4.0. No token changed; no new token, no new label.
+
+### DataTable below 600px: the hidden header row does not widen the page
+
+- **The header cells stay out of sight.** Below 600px the header row is moved out of sight (`position: absolute`, 1 x 1 px, clipped) and is still read by a screen reader. But a row group does not clip its cells, and the hidden row had no positioned ancestor inside the table: its cells ("Email address", "ORCID iD", "Phone" of a table of six columns) stuck out to the right, and at 375px the whole page scrolled sideways. Now `.ud-table-wrap` is the containing block (`position: relative`), so its `overflow: hidden` clips the row, and each header cell is out of sight on its own as well (1 x 1 px, `clip`, `clip-path: inset(50%)`). The cells keep the role `columnheader` and their text.
+
 ## 2.6.0 (2026-10-18)
 
 For the admin screens of Confera 0.4.0: three icons, and the low findings of the UX and UI review of Confera 0.2.0 and the UI review of 2.3.0 that 2.4.0 left logged (M2-ISS-02 / UI-DS-02, M2-ISS-03 / UI-DS-03, UXUI-M2-34, UXUI-M2-36). No token changed its value; the new tokens are listed below. No new label.
