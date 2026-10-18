@@ -5,6 +5,7 @@ import { FORM_TEXTS } from '@confera/form-renderer';
 import { EmptyState } from '@confera/ui';
 
 import { getConfig } from '@/config/env';
+import { StagingBanner } from '@/server/staging';
 
 export const metadata: Metadata = { title: 'Page not found' };
 
@@ -18,6 +19,7 @@ export default async function NotFound() {
   if (host === getConfig().publicHost) {
     return (
       <main className="confera-page" data-confera-not-found="public">
+        <StagingBanner inside />
         <h1 className="ud-sr">{FORM_TEXTS.en.page.notFoundTitle}</h1>
         <EmptyState icon="search" title={FORM_TEXTS.en.page.notFoundTitle} description={FORM_TEXTS.en.page.notFoundText} />
         <div lang="sr">
@@ -28,6 +30,7 @@ export default async function NotFound() {
   }
   return (
     <main className="confera-page" data-confera-not-found="admin">
+      <StagingBanner inside />
       <h1 className="ud-sr">Page not found</h1>
       <EmptyState
         icon="search"

@@ -13,6 +13,7 @@ import { Alert } from '@confera/ui';
 import { fill, FORM_LANGUAGES, FORM_TEXTS, pickLanguage, textOf, type FormLanguage, type PublishedForm } from '@confera/form-renderer';
 
 import { lookUpForm, lookUpFrameSites } from './public-forms';
+import { StagingBanner } from './staging';
 
 /** One lookup per request, for the page and its metadata. */
 export const formOf = cache(lookUpForm);
@@ -36,6 +37,7 @@ export function FormUnavailable({ language }: { language: FormLanguage }) {
   const t = FORM_TEXTS[language].problems;
   return (
     <main className="confera-page" lang={language}>
+      <StagingBanner inside />
       <h1 className="ud-sr">{t.unavailableTitle}</h1>
       <Alert tone="warning" title={t.unavailableTitle}>
         {t.unavailableText}

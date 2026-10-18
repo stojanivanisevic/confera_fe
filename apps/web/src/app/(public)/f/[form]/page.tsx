@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { HostedForm } from '@confera/form-renderer';
 
 import { formMetadata, formOf, FormUnavailable, languageFor } from '@/server/form-page';
+import { StagingBanner } from '@/server/staging';
 
 interface Props {
   readonly params: Promise<{ form: string }>;
@@ -25,5 +26,5 @@ export default async function HostedFormPage({ params, searchParams }: Props) {
   const found = await formOf(form);
   if (found.kind === 'missing') notFound();
   if (found.kind === 'unavailable') return <FormUnavailable language={await languageFor(null, lang)} />;
-  return <HostedForm form={found.form} language={await languageFor(found.form, lang)} />;
+  return <HostedForm form={found.form} language={await languageFor(found.form, lang)} banner={<StagingBanner inside />} />;
 }

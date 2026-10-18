@@ -5,6 +5,7 @@ import { EmbeddedForm } from '@confera/form-renderer';
 
 import { formMetadata, formOf, frameSitesOf, FormUnavailable, languageFor } from '@/server/form-page';
 import { frameSitesFrom } from '@/server/security/frame-sites';
+import { StagingBanner } from '@/server/staging';
 import { getConfig } from '@/config/env';
 
 interface Props {
@@ -28,5 +29,5 @@ export default async function EmbedPage({ params, searchParams }: Props) {
   if (found.kind === 'missing') notFound();
   if (found.kind === 'unavailable') return <FormUnavailable language={await languageFor(null, lang)} />;
   const sites = frameSitesFrom(await frameSitesOf(form), getConfig().stage !== 'prod') ?? [];
-  return <EmbeddedForm form={found.form} language={await languageFor(found.form, lang)} parentOrigins={sites} />;
+  return <EmbeddedForm form={found.form} language={await languageFor(found.form, lang)} parentOrigins={sites} banner={<StagingBanner inside />} />;
 }

@@ -17,6 +17,18 @@ body {
   line-height: 1.4;
 }
 
+/* The staging banner (M4-OPS-02): the warning colours, the width of its place, never closed. */
+.confera-staging {
+  display: block;
+  margin: 0;
+  padding: var(--gutter-s) var(--gutter-l);
+  border: 1px solid var(--warning-border);
+  background: var(--warning-surface);
+  color: var(--ink);
+  font: var(--text-body-sm);
+  text-align: center;
+}
+
 /* The simple pages (admin home, sign-in, not found): one centred column. */
 .confera-page {
   display: flex;
