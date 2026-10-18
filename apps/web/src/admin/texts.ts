@@ -834,7 +834,11 @@ export const TEXTS = {
     noFiles: 'No file was sent.',
     download: 'Download {name}',
     scan: { pending: 'Scan pending since {when}', clean: 'Clean', infected: 'Infected: it is never served', not_clean: 'Not clean: it is not served' } as Record<string, string>,
-    macros: 'An old .doc with macros: open it with care',
+    /** The flags of a kept file (G2-22, SEC-M3-06): each a warning for the office. */
+    scanFlags: {
+      macros: 'An old .doc with macros: open it with care',
+      external_links: 'Links to content outside the file, such as a remote template: open it with care',
+    } as Record<string, string>,
     consent: 'Consent',
     consentAt: 'Given {when}, text version {version}',
     history: 'History',

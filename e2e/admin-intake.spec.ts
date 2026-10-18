@@ -142,6 +142,10 @@ test.describe('submissions (M3-FE-06; FR-SUB-02, FR-SUB-04)', () => {
     await expect(page.locator('[data-confera-file-scan="pending"]')).toContainText('Scan pending since');
     await expect(page.locator('[data-confera-file-scan="pending"]')).toContainText('An old .doc with macros: open it with care');
     await expect(page.locator('[data-confera-file-scan="pending"]').getByRole('link')).toHaveCount(0);
+    // A .docx with an external relationship (a remote template) is kept, served once clean, and flagged (SEC-M3-06).
+    const linked = page.locator('[data-confera-file-scan="clean"]', { has: page.getByRole('link', { name: 'Download Rad.docx' }) });
+    await expect(linked).toContainText('Links to content outside the file, such as a remote template: open it with care');
+    await expect(page.locator('[data-confera-file-scan="clean"]', { has: page.getByRole('link', { name: 'Download Biografije – Šćepanović.pdf' }) })).not.toContainText('open it with care');
     await expect(page.getByText('Given 16 Oct 2026, 16:56, text version v1')).toBeVisible();
     await expect(page.getByRole('table', { name: 'Emails' })).toContainText('Held by the send breaker');
   });

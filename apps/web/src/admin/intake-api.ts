@@ -73,7 +73,10 @@ export interface SubmissionFile {
   readonly type: string;
   readonly sizeBytes: number;
   readonly scanState: (typeof SCAN_STATES)[number];
-  /** `macros`: an old .doc with macros, accepted and flagged for the office (G2-22). */
+  /**
+   * `macros`: an old .doc with macros, accepted and flagged for the office (G2-22);
+   * `external_links`: a .docx with a remote template, frame or object, or a UNC path (SEC-M3-06).
+   */
   readonly scanFlag: string | null;
   readonly scannedAt: string | null;
   readonly pendingSince: string | null;

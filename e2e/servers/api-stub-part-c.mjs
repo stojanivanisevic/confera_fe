@@ -21,7 +21,7 @@ const ADMIN = { id: STUB.users.find((user) => user.role === 'admin').id, display
 export const PART_C = {
   form: '0e2ef000-0000-4000-8000-0000000000a1',
   submissions: ['0e2e5000-0000-4000-8000-0000000000b1', '0e2e5000-0000-4000-8000-0000000000b2'],
-  files: { clean: '0e2e5f00-0000-4000-8000-0000000000c1', pending: '0e2e5f00-0000-4000-8000-0000000000c2' },
+  files: { clean: '0e2e5f00-0000-4000-8000-0000000000c1', pending: '0e2e5f00-0000-4000-8000-0000000000c2', linked: '0e2e5f00-0000-4000-8000-0000000000c3' },
   held: ['0e2e6000-0000-4000-8000-0000000000d1', '0e2e6000-0000-4000-8000-0000000000d2'],
 };
 
@@ -105,6 +105,7 @@ export function freshPartC() {
         files: [
           { id: PART_C.files.clean, field: 'biographies', name: 'Biografije – Šćepanović.pdf', type: 'pdf', sizeBytes: 1048576, scanState: 'clean', scanFlag: null, scannedAt: '2026-10-16T14:57:00.000Z', pendingSince: null, sha256: 'a'.repeat(64) },
           { id: PART_C.files.pending, field: 'biographies', name: 'Stari rad.doc', type: 'doc', sizeBytes: 52000, scanState: 'pending', scanFlag: 'macros', scannedAt: null, pendingSince: '2026-10-16T14:57:00.000Z', sha256: 'b'.repeat(64) },
+          { id: PART_C.files.linked, field: 'biographies', name: 'Rad.docx', type: 'docx', sizeBytes: 64000, scanState: 'clean', scanFlag: 'external_links', scannedAt: '2026-10-16T14:58:00.000Z', pendingSince: null, sha256: 'c'.repeat(64) },
         ],
         consent: { text: SEEDED.texts.consent.sr, links: { terms: 'https://kp.example.test/terms', privacy: null }, version: 'v1', consentedAt: '2026-10-16T14:56:00.000Z' },
         statusHistory: [{ status: 'new', changedAt: '2026-10-16T14:56:00.000Z', actor: null }],

@@ -119,7 +119,7 @@ export function Submission({ id }: { id: string }) {
                 )}
                 <span className={styles.small}>{`${file.type.toUpperCase()}, ${size(file.sizeBytes)}`}</span>
                 {scan(file)}
-                {file.scanFlag === 'macros' ? <StatusBadge tone="warning">{t.macros}</StatusBadge> : null}
+                {file.scanFlag && t.scanFlags[file.scanFlag] ? <StatusBadge tone="warning">{t.scanFlags[file.scanFlag]}</StatusBadge> : null}
               </li>
             ))}
           </ul>
