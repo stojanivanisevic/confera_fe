@@ -116,7 +116,8 @@ describe('every rule of the form is checked on Send', () => {
     expect(abstract.getAttribute('aria-invalid')).toBe('true');
     expect(document.getElementById(abstract.getAttribute('aria-describedby')!)!.textContent).toBe('385 of 300 words. Shorten the text by 85 words.');
     await send();
-    expect(items()).toEqual(['385 of 300 words. Shorten the text by 85 words.']);
+    // In the summary the field is named first (UX3-04).
+    expect(items()).toEqual(['Abstract: 385 of 300 words. Shorten the text by 85 words.']);
     expect(container.querySelector('[data-confera-thanks]')).toBeNull();
     expect(api.calls.submits).toHaveLength(0);
   });

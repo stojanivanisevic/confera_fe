@@ -208,7 +208,7 @@ The admin routes want a session, and the pages of the links answer an unknown to
 
 ## 7. Design system
 
-`design-system/` is the UdEkoM Balkans design system, **version 2.5.0**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
+`design-system/` is the UdEkoM Balkans design system, **version 2.5.1**, made in this repository (ADR-21). Its `CHANGELOG.md` lists every change from version 1, which is the first commit of this repository.
 
 - The UI comes only from it: no other UI kit, no Tailwind, no colour literal outside `design-system/tokens.css`. Since design system 2.3.0 type, spacing and sizes are tokens too: a stylesheet writes `font: var(--text-body-sm)`, `var(--gutter-l)`, `var(--target-touch)`, never a px size or a font family (1 and 2 px borders and the breakpoints stay px). The lint enforces this (`colour-literal`, `size-literal`, `font-literal` and the rest), and `lint-fixtures/` holds a planted violation for every rule.
 - Application code imports `@confera/ui`, never the folder. `packages/ui/src/generated/` is the design-system script wrapped, unchanged, in a client module so that it renders on the server and hydrates. `corepack pnpm ds:build` regenerates it.

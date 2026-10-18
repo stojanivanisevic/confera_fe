@@ -2,6 +2,14 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.5.1 (2026-10-18)
+
+Fixes one finding of the UX and UI review of Confera 0.3.0 (UX3-01). No token changed; no new token, no new label.
+
+### FileDropzone: a refusal is said at once
+
+- **The reason a file was refused is an alert** (`role="alert"`): it appears when the consumer gives the file an `error`, and a screen reader says it without the person moving there (WCAG 4.1.3). Before, it was tied only to the file's remove button, and nothing was heard.
+
 ## 2.5.0 (2026-10-17)
 
 For the public forms of Confera 0.3.0 (UX-M1-21 and UX-M1-23 of the 0.1.0 UX review). No token changed; there is no new token and no new label.

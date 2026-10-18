@@ -93,6 +93,21 @@ test.describe('the abstract form on its own page', () => {
     expect(uploads).toEqual([]);
   });
 
+  test('choosing, refusing and uploading a file are said in the live region; a refusal is an alert (UX3-01)', async ({ page }) => {
+    await open(page);
+    const input = page.locator('[data-confera-file="biographies"] input[type="file"]');
+    const announced = page.locator('[data-confera-announce]');
+    await input.setInputFiles({ name: 'slika.png', mimeType: 'image/png', buffer: Buffer.from('png') });
+    await expect(announced).toHaveText('slika.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
+    await expect(page.locator('[data-confera-file="biographies"]').getByRole('alert')).toHaveText('slika.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
+    await input.setInputFiles({ name: 'rad.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF\n') });
+    await expect(page.locator('[data-confera-file="biographies"]')).toHaveAttribute('data-confera-file-state', 'uploaded');
+    await expect(announced).toHaveText('rad.pdf is uploaded.');
+    await expect(page.locator('[data-confera-file="biographies"]').getByRole('alert')).toHaveCount(0);
+    // A one-file field asks for one file (UX3-18).
+    await expect(page.locator('[data-confera-file="biographies"]')).toContainText('Drop a file here or click to choose');
+  });
+
   test('a file of another type is refused before the upload, with the types', async ({ page }) => {
     await open(page);
     await page.locator('[data-confera-file="biographies"] input[type="file"]').setInputFiles({ name: 'slika.png', mimeType: 'image/png', buffer: Buffer.from('png') });
@@ -105,7 +120,8 @@ test.describe('the abstract form on its own page', () => {
     await page.getByRole('button', { name: 'Pošalji' }).click();
     const summary = page.locator('[data-confera-errors]');
     await expect(summary).toBeFocused();
-    await expect(summary.getByRole('link')).toHaveText(['Ovde ne upisujte veb adrese']);
+    // The summary names the field first (UX3-04).
+    await expect(summary.getByRole('link')).toHaveText(['Naslov: ne upisujte veb adrese']);
     await expect(page.getByRole('textbox', { name: 'Naslov', exact: true })).toHaveAttribute('aria-invalid', 'true');
   });
 

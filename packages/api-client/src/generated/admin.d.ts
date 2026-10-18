@@ -996,9 +996,16 @@ export interface components {
         DeadlineDto: {
             /** @enum {string} */
             kind: "abstract_submission" | "fee_payment" | "full_paper";
-            /** @description The last day, YYYY-MM-DD, in the conference's time zone. */
+            /**
+             * @description The last day, inclusive, YYYY-MM-DD, in the conference's time zone: what a person reads
+             *     ("Ends 31 Dec 2099", UX3-08). It is what an admin sets and what is stored.
+             */
             endsOn: string;
-            /** @description The instant it ends: the start of the next day in the conference's time zone. */
+            /**
+             * @description The exclusive end: the instant it closes, the start of the day after `endsOn` in the
+             *     conference's time zone (`endsOn` 2099-12-31 in Europe/Belgrade: 2099-12-31T23:00:00.000Z).
+             *     For comparisons and countdowns, not to show as the last day.
+             */
             endsAt: string;
             /** @description Whether it has passed now. */
             passed: boolean;
@@ -1111,6 +1118,12 @@ export interface components {
             id: string;
             kind: string;
             recipient: string;
+            /**
+             * @description The numbers of the hold (UX3-06): `count` confirmations in the last `windowHours` hours,
+             *     this one included, above `limit` (for `recipient_domain`: submissions to that domain in
+             *     24 hours, limit 100). Null for an email held before the numbers were kept.
+             */
+            heldBy: components["schemas"]["HeldNumbersDto"] | null;
             conference: {
                 id: string;
                 code: string;
@@ -1133,6 +1146,12 @@ export interface components {
                 perDay: number;
                 version: number;
             };
+        };
+        HeldNumbersDto: {
+            /** @enum {number} */
+            windowHours: 1 | 24;
+            count: number;
+            limit: number;
         };
         InviteUserDto: {
             /** @description The address the invitation goes to; the user signs in with it. */
@@ -1403,6 +1422,7 @@ export interface components {
             language: string;
             authorCount: number;
             receivedAt: string;
+            fileSigns: components["schemas"]["SubmissionFileSignsDto"];
             form: {
                 id: string;
                 slug: string;
@@ -1432,6 +1452,8 @@ export interface components {
             /** @description queued, sending, sent, failed, held, stuck or waiting_for_server. */
             status: string;
             heldReason: string | null;
+            /** @description The numbers of the hold, as in the held emails (UX3-06); null when not held or unknown. */
+            heldBy: components["schemas"]["HeldNumbersDto"] | null;
             lastErrorCode: string | null;
             createdAt: string;
             sentAt: string | null;
@@ -1441,20 +1463,34 @@ export interface components {
             type: "pdf" | "docx" | "doc" | "jpeg" | "png";
             /** @enum {string} */
             scanState: "pending" | "clean" | "infected" | "not_clean";
+            /**
+             * @description `macros`: an old .doc with macros, accepted and flagged for the office (G2-22);
+             *     `external_links`: a .docx with a remote template, frame or object, or a UNC path (SEC-M3-06).
+             * @enum {string|null}
+             */
+            scanFlag: "macros" | "external_links" | null;
+            /**
+             * @description Null: it may be downloaded. Otherwise why not, yet or ever (UX3-07).
+             * @enum {string|null}
+             */
+            downloadBlocked: "scan_pending" | "scan_retrying" | "file_not_clean" | null;
             id: string;
             /** @description The file field of the form it was uploaded for. */
             field: string | null;
             name: string;
             sizeBytes: number;
-            /**
-             * @description `macros`: an old .doc with macros, accepted and flagged for the office (G2-22);
-             *     `external_links`: a .docx with a remote template, frame or object, or a UNC path (SEC-M3-06).
-             */
-            scanFlag: string | null;
             /** @description When the scan ended, or since when it waits. */
             scannedAt: string | null;
             pendingSince: string | null;
+            /** @description Pending: when the next scan is due. */
+            nextScanAt: string | null;
             sha256: string;
+        };
+        SubmissionFileSignsDto: {
+            /** @description The flags its files carry, each once, in this order: macros, external_links. */
+            flags: ("macros" | "external_links")[];
+            /** @description Whether a file still waits for its virus scan. */
+            scanPending: boolean;
         };
         SubmissionPageDto: {
             items: components["schemas"]["SubmissionSummaryDto"][];
@@ -1491,6 +1527,7 @@ export interface components {
             language: string;
             authorCount: number;
             receivedAt: string;
+            fileSigns: components["schemas"]["SubmissionFileSignsDto"];
         };
         TemplateCatalogueDto: {
             types: components["schemas"]["TemplateTypeDto"][];

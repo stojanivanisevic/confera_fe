@@ -128,6 +128,8 @@ export interface PublishedForm {
   readonly slug: string;
   readonly version: number;
   readonly state: FormState;
+  /** Why a closed form is closed (UX3-03): its last day is over, or the office closed it (no date is named then). */
+  readonly closedReason: 'deadline_passed' | 'conference_closed' | null;
   /** The last day of the form (FR-DL-01), `2027-03-15`; it ends at the end of that day in the conference's zone. */
   readonly deadline: string | null;
   readonly conference: {
@@ -308,6 +310,7 @@ export function readPublishedForm(value: unknown, frameSites: readonly string[] 
     slug: value.slug,
     version: count(value.versionNumber, 'versionNumber', 1, 1_000_000),
     state,
+    closedReason: state !== 'closed' ? null : value.closedReason === 'conference_closed' ? 'conference_closed' : value.closedReason === 'deadline_passed' ? 'deadline_passed' : null,
     deadline,
     conference: {
       code: c.code,

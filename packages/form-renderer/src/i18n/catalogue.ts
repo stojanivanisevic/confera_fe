@@ -31,6 +31,8 @@ export interface FormCatalogue {
   language: string;
   /** The name of each language, written in that language (and marked with its `lang`). */
   languageNames: Record<FormLanguage, string>;
+  /** Said after the language was switched, in the new language (UX3-14). */
+  languageNow: string;
   /** Above the fields: what the star means (UX-M1-21). */
   requiredNote: string;
   noScript: string;
@@ -62,12 +64,16 @@ export interface FormCatalogue {
     /** {max} */
     tooLong: string;
     noUrl: string;
+    /** noUrl after the field's label in the summary (UX3-04): "Title: leave out web addresses". */
+    noUrlNamed: string;
     notAnOption: string;
     invalidCharacters: string;
     /** By name of a pattern of the field catalogue (ADR-09: patterns come only from the catalogue in code). */
     patterns: Record<'orcid' | 'phone' | 'taxNumber' | 'registrationNumber', string>;
     /** Any other code the API may give: the form says that the field was refused, and the API's code is not shown. */
     fallback: string;
+    /** {label} {message}: a message that does not name its field, as the summary of errors says it (UX3-04). */
+    named: string;
   };
   /** Under a long text: {count} {max}. */
   words: string;
@@ -76,6 +82,10 @@ export interface FormCatalogue {
   files: {
     /** Under a file field: {max} {types}. */
     hint: string;
+    /** The drop area of a field that takes one file (UX3-18). */
+    drop: string;
+    /** {name}: a chosen file is on its way (UX3-01, said in the live region). */
+    started: string;
     /** {name} {max} */
     tooLarge: string;
     /** {name} {types} */
@@ -143,6 +153,8 @@ export interface FormCatalogue {
     closedTextNoDate: string;
     /** {email} */
     contact: string;
+    /** Said when "Send another" has given a new, empty form (UX3-15). */
+    ready: string;
     notOpenTitle: string;
     notOpenText: string;
     /** {date} {zone} */
@@ -196,6 +208,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
   en: {
     language: 'Language',
     languageNames: { en: 'English', sr: 'Srpski' },
+    languageNow: 'The form is now in English.',
     requiredNote: 'Kindly complete all mandatory fields, marked *.',
     noScript: 'This form needs JavaScript. Turn it on, or open the form in another browser.',
     send: 'Send',
@@ -223,6 +236,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       tooManyWords: '{count} of {max} words. Shorten the text by {over}.',
       tooLong: 'Shorten this to {max} characters or fewer',
       noUrl: 'Leave out web addresses here',
+      noUrlNamed: 'leave out web addresses',
       notAnOption: 'Choose one of the answers given',
       invalidCharacters: 'Remove the invisible or control characters from this text',
       patterns: {
@@ -232,11 +246,14 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
         registrationNumber: 'Enter the registration number with digits and letters only, like 07001703',
       },
       fallback: 'Check this field: the form could not accept what it holds.',
+      named: '{label}: {message}',
     },
     words: '{count} of {max} words',
     word: { one: 'word', other: 'words' },
     files: {
       hint: 'Up to {max}: {types}',
+      drop: 'Drop a file here or click to choose',
+      started: 'Uploading {name}…',
       tooLarge: '{name} is larger than {max}. Choose a smaller file.',
       wrongType: '{name} is not one of these types: {types}. Save it as one of them and add it again.',
       macros: '{name} contains macros. In Word choose File › Save As, pick “Word Document (*.docx)” and add the new file.',
@@ -273,6 +290,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       closedText: 'The deadline was {date}. Thank you for your interest.',
       closedTextNoDate: 'The form does not take submissions any more. Thank you for your interest.',
       contact: 'Questions? Write to {email}.',
+      ready: 'A new form is ready.',
       notOpenTitle: 'This form is not open yet',
       notOpenText: 'Come back later, or ask the organisers when it opens.',
       openUntil: 'Open until the end of {date} ({zone}).',
@@ -310,6 +328,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
   sr: {
     language: 'Jezik',
     languageNames: { en: 'English', sr: 'Srpski' },
+    languageNow: 'Obrazac je sada na srpskom.',
     requiredNote: 'Molimo vas da popunite sva obavezna polja, označena zvezdicom (*).',
     noScript: 'Za ovaj obrazac potreban je JavaScript. Uključite ga ili otvorite obrazac u drugom pregledaču.',
     send: 'Pošalji',
@@ -333,10 +352,11 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
         full_paper: 'Prihvatite uslove da biste poslali rad',
         membership: 'Prihvatite uslove da biste poslali prijavu',
       },
-      email: 'Unesite imejl adresu u obliku ime@univerzitet.rs',
+      email: 'Unesite adresu e-pošte u obliku ime@univerzitet.rs',
       tooManyWords: '{count} od {max} reči. Skratite tekst za {over}.',
       tooLong: 'Skratite ovo na najviše {max} znakova',
       noUrl: 'Ovde ne upisujte veb adrese',
+      noUrlNamed: 'ne upisujte veb adrese',
       notAnOption: 'Izaberite jedan od ponuđenih odgovora',
       invalidCharacters: 'Uklonite nevidljive ili kontrolne znakove iz ovog teksta',
       patterns: {
@@ -346,11 +366,14 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
         registrationNumber: 'Unesite matični broj samo ciframa i slovima, na primer 07001703',
       },
       fallback: 'Proverite ovo polje: obrazac nije mogao da prihvati ono što je upisano.',
+      named: '{label}: {message}',
     },
     words: '{count} od {max} reči',
     word: { one: 'reč', few: 'reči', other: 'reči' },
     files: {
       hint: 'Do {max}: {types}',
+      drop: 'Prevucite fajl ovde ili kliknite da ga izaberete',
+      started: 'Otprema se {name}…',
       tooLarge: '{name} je veći od {max}. Izaberite manji fajl.',
       wrongType: '{name} nije nijednog od ovih tipova: {types}. Sačuvajte ga u jednom od njih i dodajte ponovo.',
       macros: '{name} sadrži makroe. U Wordu izaberite Datoteka › Sačuvaj kao, zatim „Word dokument (*.docx)“ i dodajte novi fajl.',
@@ -365,7 +388,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
     authors: {
       add: 'Dodaj autora',
       removeLabel: 'Ukloni autora',
-      corresponding: 'Prvi autor je autor za korespondenciju: potvrda stiže na njegovu imejl adresu.',
+      corresponding: 'Prvi autor je autor za korespondenciju: potvrda stiže na njegovu adresu e-pošte.',
       limit: 'Možete dodati najviše {max} autora. Za više autora pišite na {email}.',
       limitNoContact: 'Možete dodati najviše {max} autora.',
       added: 'Dodat je autor {n}.',
@@ -387,6 +410,7 @@ export const FORM_TEXTS: Readonly<Record<FormLanguage, FormCatalogue>> = {
       closedText: 'Rok je bio {date}. Hvala vam na interesovanju.',
       closedTextNoDate: 'Obrazac više ne prima prijave. Hvala vam na interesovanju.',
       contact: 'Imate pitanje? Pišite na {email}.',
+      ready: 'Novi obrazac je spreman.',
       notOpenTitle: 'Ovaj obrazac još nije otvoren',
       notOpenText: 'Vratite se kasnije ili pitajte organizatore kada se otvara.',
       openUntil: 'Otvoreno do kraja dana {date} ({zone}).',

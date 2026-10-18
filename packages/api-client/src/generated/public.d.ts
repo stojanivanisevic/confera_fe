@@ -167,10 +167,13 @@ export interface components {
         PublicFormDto: {
             /** @enum {string} */
             state: "open" | "closed";
-            /** @enum {string|null} */
+            /**
+             * @description Why a closed form is closed (UX3-03): `deadline_passed`, its last day is over (the page may name `deadline`); `conference_closed`, the office closed submissions before or without the deadline (the page names no date); `not_published`. Null while open.
+             * @enum {string|null}
+             */
             closedReason: "conference_closed" | "deadline_passed" | "not_published" | null;
             slug: string;
-            /** @description The last day of submissions, YYYY-MM-DD, in the conference's time zone; null without a deadline. */
+            /** @description The last day of submissions (inclusive), YYYY-MM-DD, in the conference's time zone; null without a deadline. */
             deadline: string | null;
             /** @description The instant the form closes (the start of the day after the deadline there); null without one. */
             closesAt: string | null;

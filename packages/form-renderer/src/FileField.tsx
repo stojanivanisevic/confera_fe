@@ -80,9 +80,11 @@ export interface FileFieldProps {
   readonly upload: (file: File, onProgress: (percent: number) => void, signal: AbortSignal) => Promise<Uploaded>;
   /** The error of the field after Send (a required file that is missing). */
   readonly error?: string;
+  /** Says an outcome in the form's polite live region (UX3-01): the upload began, the file is uploaded, or it was refused or stopped. */
+  readonly announce?: (text: string) => void;
 }
 
-export function FileField({ id, fieldKey, label, required, rule, language, state, onState, upload, error }: FileFieldProps) {
+export function FileField({ id, fieldKey, label, required, rule, language, state, onState, upload, error, announce }: FileFieldProps) {
   const t = FORM_TEXTS[language].files;
   const running = useRef<AbortController | null>(null);
   // The latest state, for the callbacks of an upload that is still on its way.
@@ -98,12 +100,15 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
     running.current?.abort();
     const refused = checkFile(file, rule);
     if (refused) {
-      onState({ name: file.name, size: file.size, error: refused });
+      const next = { name: file.name, size: file.size, error: refused };
+      onState(next);
+      announce?.(fileMessage(next, rule, language));
       return;
     }
     const controller = new AbortController();
     running.current = controller;
     onState({ name: file.name, size: file.size, progress: 0 });
+    announce?.(fill(t.started, { name: file.name }));
     upload(
       file,
       (percent) => {
@@ -112,12 +117,16 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
       controller.signal,
     ).then(
       (done) => {
-        if (running.current === controller) onState({ name: file.name, size: file.size, uploadId: done.id });
+        if (running.current !== controller) return;
+        onState({ name: file.name, size: file.size, uploadId: done.id });
+        announce?.(fill(t.uploaded, { name: file.name }));
       },
       (reason: unknown) => {
         if (running.current !== controller || controller.signal.aborted) return;
         const code = reason instanceof PublicApiError ? reason.code : 'network';
-        onState({ name: file.name, size: file.size, error: { code } });
+        const next = { name: file.name, size: file.size, error: { code } };
+        onState(next);
+        announce?.(fileMessage(next, rule, language));
       },
     );
   };
@@ -134,6 +143,7 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
     <div id={id} tabIndex={-1} className="ud-span-all" data-confera-file={fieldKey} data-confera-file-state={state?.uploadId ? 'uploaded' : state?.error ? 'refused' : state ? 'uploading' : 'empty'}>
       <FileDropzone
         label={label}
+        title={t.drop}
         required={required}
         hint={hint}
         accept={extensionsOf(rule).map((ext) => `.${ext}`).join(',')}

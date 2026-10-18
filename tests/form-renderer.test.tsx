@@ -156,11 +156,11 @@ describe('authors (FR-FORM-03; UX-M1-09, 10; D4, D7)', () => {
     expect(field(`authors.${SECOND}.phone`)).not.toBeNull();
   });
 
-  it('at the limit of the form (D7) the add button goes and a line says the limit', async () => {
+  it('at the limit of the form (D7) the add button goes; without an address to write to, no line leads nowhere (UX3-17)', async () => {
     await mount();
     for (let i = 1; i < 10; i += 1) await click(buttonNamed('Add an author')!);
     expect(buttonNamed('Add an author')).toBeUndefined();
-    expect(container.textContent).toContain('You can add up to 10 authors.');
+    expect(container.textContent).not.toContain('You can add up to 10 authors');
     // From the fourth author on, the notice of the form.
     expect(container.textContent).toContain('Each author beyond the third adds to the fee.');
   });
@@ -282,7 +282,10 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     await fillAll();
     api.failNext(new PublicApiError(400, 'validation_failed', [{ path: 'title', code: 'noUrl' }, { path: 'authors[0].email', code: 'notAnEmail' }]));
     await send();
-    expect(items()).toEqual(['Author 1: Enter an email address like name@university.edu', 'Leave out web addresses here']);
+    // In the summary a message that does not name its field gets the label first (UX3-04); at the field it stays as it was.
+    expect(items()).toEqual(['Author 1: Enter an email address like name@university.edu', 'Title: leave out web addresses']);
+    const described = (field('title').getAttribute('aria-describedby') ?? '').split(' ').map((id) => document.getElementById(id)?.textContent ?? '');
+    expect(described).toContain('Leave out web addresses here');
     expect(field('title').getAttribute('aria-invalid')).toBe('true');
     expect(document.activeElement).toBe(container.querySelector('[data-confera-errors]'));
   });
@@ -402,6 +405,34 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     await send();
     expect(api.calls.submits[1]!.key).not.toBe(first);
   });
+
+  it('after “Send another” the first field of the new form has the focus, and it is said (UX3-15)', async () => {
+    await mount();
+    await fillAll();
+    await send();
+    await click([...container.querySelectorAll('button')].find((b) => b.textContent === 'Send another abstract')!);
+    await settle();
+    expect(document.activeElement).toBe(radio('participationType', 'with_paper').closest('[role="radiogroup"]')?.querySelector('input') ?? radio('participationType', 'with_paper'));
+    expect(announced()).toBe('A new form is ready.');
+  });
+
+  it('a switch of the language keeps the focus on the switch, also with the summary showing, and is said (UX3-14)', async () => {
+    await mount();
+    await send();
+    expect(document.activeElement).toBe(container.querySelector('[data-confera-errors]'));
+    const srpski = [...container.querySelectorAll<HTMLElement>('[role="radio"]')].find((r) => r.textContent === 'Srpski')!;
+    srpski.focus();
+    await click(srpski);
+    await settle();
+    expect(document.activeElement?.textContent).toBe('Srpski');
+    expect(announced()).toBe('Obrazac je sada na srpskom.');
+  });
+
+  it('says what the star means once: the office’s intro says it here, so the form adds no second note (UX3-13)', async () => {
+    await mount();
+    expect(container.textContent).toContain('Fields marked with * are required.');
+    expect(container.textContent).not.toContain('Kindly complete all mandatory fields');
+  });
 });
 
 describe('files (M3-FE-04; FR-FORM-10)', () => {
@@ -412,6 +443,37 @@ describe('files (M3-FE-04; FR-FORM-10)', () => {
     await dropFile('biographies', file('photo.png', 1000, 'image/png'));
     expect(api.calls.uploads).toEqual([]);
     expect(at()).toContain('photo.png is not one of these types: .pdf, .docx, .doc.');
+  });
+
+  it('choosing, refusing and uploading are each said in the live region; a refusal is an alert at the file (UX3-01)', async () => {
+    await mount();
+    const zone = () => container.querySelector('[data-confera-file="biographies"]')!;
+    await dropFile('biographies', file('photo.png', 1000, 'image/png'));
+    expect(announced()).toBe('photo.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
+    expect(zone().querySelector('[role="alert"]')!.textContent).toBe(announced());
+    // The same refusal twice is said twice.
+    await dropFile('biographies', file('photo.png', 1000, 'image/png'));
+    expect(announced().trim()).toBe('photo.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
+    let finish: (value: { id: string; name: string; size: number }) => void = () => undefined;
+    api.upload = vi.fn(() => new Promise<{ id: string; name: string; size: number }>((resolve) => (finish = resolve)));
+    await dropFile('biographies', file('rad.pdf', 5000));
+    expect(announced()).toBe('Uploading rad.pdf…');
+    expect(zone().querySelector('[role="alert"]')).toBeNull();
+    await act(async () => {
+      finish({ id: '0e2e0000-0000-4000-8000-000000000009', name: 'rad.pdf', size: 5000 });
+      await Promise.resolve();
+    });
+    await settle();
+    expect(announced()).toBe('rad.pdf is uploaded.');
+    api.upload = vi.fn(() => Promise.reject(new PublicApiError(0, 'network')));
+    await dropFile('biographies', file('drugi.pdf', 5000));
+    expect(announced()).toBe('The upload of drugi.pdf stopped. Check the connection and add the file again.');
+    expect(zone().querySelector('[role="alert"]')!.textContent).toBe(announced());
+  });
+
+  it('the drop area of a one-file field says “a file” (UX3-18)', async () => {
+    await mount();
+    expect(at()).toContain('Drop a file here or click to choose');
   });
 
   it('20 MB is accepted, one byte more is refused before the upload, with the limit', async () => {
@@ -497,13 +559,29 @@ describe('states of the form (FR-DL-02)', () => {
     expect(closed).toContain('Ovaj obrazac je zatvoren');
     expect(closed).toContain('Prijave za ovu konferenciju su zatvorene.');
     expect(closed).toContain('Rok je bio 15.03.2026.');
+    // The date ends the sentence with its own full stop: no "15.03.2026.." (UX3-16).
+    expect(closed).not.toContain('2026..');
+    expect(closed).toContain('Rok je bio 15.03.2026. Hvala vam');
+    // The office's introduction speaks to a person filling the form in: not on a closed form (UX3-13).
+    expect(container.textContent).not.toContain('Polja označena zvezdicom');
     expect(container.querySelector('form')).toBeNull();
     expect(api.calls.tokens).toBe(0);
   });
 
+  it('a form the office closed before its deadline names no date (UX3-03)', async () => {
+    await mount({ ...publishedForm('itema-2026-abstract'), state: 'closed', closedReason: 'conference_closed' });
+    const closed = container.querySelector('[data-confera-state="closed"]')!.textContent;
+    expect(closed).toContain('This form is closed');
+    expect(closed).not.toContain('The deadline was');
+    expect(closed).not.toContain('2027');
+  });
+
   it('an open form names its deadline and says what the star means', async () => {
     await mount();
-    expect(container.textContent).toContain('Kindly complete all mandatory fields, marked *. Open until the end of 15 March 2027 (Central European Time).');
+    // The star is explained by the office's intro, once (UX3-13); the deadline is a line of its own.
+    expect(container.textContent).toContain('Fields marked with * are required.');
+    const notes = [...container.querySelectorAll('p')].map((p) => p.textContent);
+    expect(notes).toContain('Open until the end of 15 March 2027 (Central European Time).');
   });
 });
 

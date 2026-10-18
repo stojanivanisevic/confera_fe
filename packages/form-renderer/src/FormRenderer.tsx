@@ -211,13 +211,14 @@ export function FormRenderer(props: FormRendererProps) {
       <div className={styles.form} data-confera-form={form.slug} data-hydrated={hydrated ? 'true' : 'false'} lang={language}>
         {props.preview ? null : props.embedded ? <h1 className="ud-sr">{title}</h1> : <PageHeader title={title} description={form.conference.name} />}
         {form.conference.languages.length > 1 ? <div data-confera-language="">{switcher}</div> : null}
-        {intro ? (
+        {/* The intro speaks to a person who fills the form in: a closed form shows its closed text instead (UX3-13). */}
+        {intro && form.state === 'open' ? (
           <p className={styles.intro}>
             <SafeText text={intro} newTab={t.consent.newTab} links={form.conference.links} />
           </p>
         ) : null}
         {form.state === 'open' ? (
-          <FormInstance key={instance} {...props} language={language} onLanguage={setLanguage} onAgain={() => setInstance((n) => n + 1)} />
+          <FormInstance key={instance} {...props} language={language} onLanguage={setLanguage} onAgain={() => setInstance((n) => n + 1)} fresh={instance > 0} />
         ) : (
           <Closed form={form} language={language} />
         )}
@@ -239,7 +240,8 @@ function Closed({ form, language }: { form: PublishedForm; language: FormLanguag
       </div>
     );
   }
-  const date = form.deadline ? ` ${fill(t.closedText, { date: formatDate(form.deadline, language, form.conference.timeZone) })}` : '';
+  // The date only when the deadline closed it; the office may close a form before its deadline (UX3-03).
+  const date = form.deadline && form.closedReason !== 'conference_closed' ? ` ${endSentence(fill(t.closedText, { date: formatDate(form.deadline, language, form.conference.timeZone) }))}` : '';
   return (
     <div data-confera-state="closed">
       <Alert tone="info" title={t.closedTitle}>
@@ -254,9 +256,14 @@ function Closed({ form, language }: { form: PublishedForm; language: FormLanguag
 interface InstanceProps extends FormRendererProps {
   readonly onLanguage: (language: FormLanguage) => void;
   readonly onAgain: () => void;
+  /** After "Send another": the new form takes the focus and says that it is ready (UX3-15). */
+  readonly fresh?: boolean;
 }
 
-function FormInstance({ form, language, onLanguage, onAgain, onShow, api = browserApi, storage = draftStorage }: InstanceProps) {
+/** A date that ends with its own full stop ("10.10.2026.") ends the sentence too: no "10.10.2026.." (UX3-16). */
+const endSentence = (text: string): string => text.replace(/(\d)\.\./g, '$1.');
+
+function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = false, api = browserApi, storage = draftStorage }: InstanceProps) {
   // (`preview` reaches the instance through `api` and `storage`: the admin gives ones that send and keep nothing.)
   const definition = form.definition;
   const t = FORM_TEXTS[language];
@@ -279,6 +286,9 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   const [problem, setProblem] = useState<SendProblem | null>(null);
   const [asking, setAsking] = useState<{ section: string; row: number } | null>(null);
   const [announcement, setAnnouncement] = useState('');
+  /** Says a text in the polite live region; the same text twice is said twice (a second refusal of the same file). */
+  const announce = useCallback((text: string) => setAnnouncement((current) => (current === text ? `${text}\u00a0` : text)), []);
+  const starExplained = textOf(definition.texts.intro, language).includes('*');
   const [correspondingNote, setCorrespondingNote] = useState('');
   const [restored, setRestored] = useState<'no' | 'rows' | 'done'>('no');
   const [draftValues, setDraftValues] = useState<FormValues | null>(null);
@@ -388,6 +398,27 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
   }, [unsaved]);
 
   // ---- focus ----------------------------------------------------------------------------
+  // A switch of the language is said, and the focus stays on the switch (UX3-14).
+  const [shownLanguage, setShownLanguage] = useState(language);
+  if (shownLanguage !== language) {
+    setShownLanguage(language);
+    setAnnouncement(t.languageNow);
+  }
+  // After "Send another": the first field of the new form has the focus, and it is said (UX3-15).
+  useEffect(() => {
+    if (!fresh || !hydrated) return;
+    const first = definition.sections[0];
+    const field = first?.fields[0];
+    const row = first?.repeat ? (rows[first.key] ?? [])[0] : undefined;
+    const id = first && field ? fieldId(controlName(field.key, first.repeat && row !== undefined ? { key: first.key, row } : undefined)) : null;
+    const element = id ? focusable(document.getElementById(id)) : null;
+    if (element) land(element);
+    // Said once the region is in the page, so that it is heard as a change.
+    const timer = setTimeout(() => announce(t.states.ready), 0);
+    return () => clearTimeout(timer);
+    // Once, when the new form is attached.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fresh, hydrated]);
   useEffect(() => {
     if (failedSends === 0 || !summaryRef.current) return;
     land(summaryRef.current);
@@ -423,7 +454,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
     const at = (path: string) => order.get(path) ?? order.size;
     return [...own, ...serverErrors.filter((e) => !paths.has(e.path))].sort((a, b) => at(a.path) - at(b.path));
   }, [checked, clientErrors, serverErrors, pendingFiles, definition, rows]);
-  const messageOf = (error: RuleError) => messageFor(error, definition, language, values[nameOfPath(definition, error.path, rows)] ?? '');
+  const messageOf = (error: RuleError, named = false) => messageFor(error, definition, language, values[nameOfPath(definition, error.path, rows)] ?? '', {}, { named });
   const errorOf = (path: string): string | undefined => {
     const error = shownErrors.find((e) => e.path === path);
     return error ? messageOf(error) : undefined;
@@ -636,6 +667,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
             onState={(state) => setFiles((current) => ({ ...current, [field.key]: state }))}
             upload={(file, onProgress, signal) => ensureToken().then((got) => api.upload(form.slug, got.token, field.key, file, onProgress, signal))}
             error={error}
+            announce={announce}
           />
         );
         break;
@@ -689,7 +721,8 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
       t.authors.corresponding,
       correspondingNote,
       notice,
-      atMax ? (contact ? fill(t.authors.limit, { max: repeat.max, email: contact }) : fill(t.authors.limitNoContact, { max: repeat.max })) : '',
+      // At the limit the line names whom to write to for more; without an address it would lead nowhere, so it is left out (D7, UX3-17).
+      atMax && contact ? fill(t.authors.limit, { max: repeat.max, email: contact }) : '',
     ]
       .filter(Boolean)
       .join(' ');
@@ -792,10 +825,9 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
       <noscript>
         <p className={styles.note}>{t.noScript}</p>
       </noscript>
-      <p className={styles.note}>
-        {t.requiredNote}
-        {deadline ? ` ${deadline}` : ''}
-      </p>
+      {/* One note of what the star means: the office's intro often says it already (UX3-13); the deadline on its own line. */}
+      {starExplained ? null : <p className={styles.note}>{t.requiredNote}</p>}
+      {deadline ? <p className={styles.note}>{deadline}</p> : null}
       {summary ? (
         <div ref={summaryRef} tabIndex={-1} className={styles.landing} data-confera-errors="" aria-describedby="confera-error-count">
           <Alert tone="error" title={t.errorsTitle[definition.type]}>
@@ -808,7 +840,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
                 return (
                   <li key={`${error.path}:${error.code}`}>
                     <a className="ud-link" href={`#${id}`} onClick={goTo(id)}>
-                      {messageOf(error)}
+                      {messageOf(error, true)}
                     </a>
                   </li>
                 );

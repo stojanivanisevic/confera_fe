@@ -46,7 +46,18 @@ export function plainLabel(text: string): string {
  * The message of an error. `value` is what the field holds now (for the count of words); `extra`
  * carries what an upload refusal names (the limit).
  */
-export function messageFor(error: RuleError, definition: FormDefinition, language: FormLanguage, value = '', extra: { maxBytes?: number } = {}): string {
+/** The codes whose message does not name the field ("Leave out web addresses here"): the summary puts the label first (UX3-04). */
+const NAMELESS = new Set(['tooManyWords', 'tooLong', 'noUrl', 'notAnOption', 'invalidCharacters']);
+
+/** The first letter of a message after "Label: " in lower case ("Title: leave out web addresses"), unless it is a number. */
+const afterLabel = (message: string, language: FormLanguage): string => message.charAt(0).toLocaleLowerCase(language) + message.slice(1);
+
+export interface MessageOptions {
+  /** As the summary of errors says it: a message that does not name its field gets the field's label first (UX3-04). */
+  readonly named?: boolean;
+}
+
+export function messageFor(error: RuleError, definition: FormDefinition, language: FormLanguage, value = '', extra: { maxBytes?: number } = {}, options: MessageOptions = {}): string {
   const t = FORM_TEXTS[language];
   const at = fieldAt(definition, error.path);
   if (!at) {
@@ -95,6 +106,9 @@ export function messageFor(error: RuleError, definition: FormDefinition, languag
       break;
     default:
       message = t.rules.fallback;
+  }
+  if (options.named && NAMELESS.has(error.code)) {
+    message = fill(t.rules.named, { label, message: afterLabel(error.code === 'noUrl' ? t.rules.noUrlNamed : message, language) });
   }
   // A label that already names its block ("Email of author {n}") needs no "Author 2:" before the message.
   const namesItsBlock = textOf(at.field.label, language).includes('{n}');
