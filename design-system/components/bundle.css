@@ -633,7 +633,7 @@ button.ud-stepper__btn:focus-visible { outline: 2px solid var(--focus); outline-
 .ud-page-head__actions { display: flex; flex-wrap: wrap; gap: var(--gutter-s); }
 .ud-filterbar { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--gutter-m); }
 .ud-filterbar__fields { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--gutter-m); flex: 1; min-width: 0; }
-.ud-filterbar__fields > * { flex: 1 1 180px; max-width: var(--filter-field-max); }
+.ud-filterbar__fields > * { flex: 1 1 var(--filter-field-min); max-width: var(--filter-field-max); }
 .ud-filterbar__actions { display: flex; gap: var(--gutter-s); margin-left: auto; }
 .ud-repeater { display: flex; flex-direction: column; gap: var(--gutter-m); }
 .ud-repeater__row { display: grid; grid-template-columns: var(--avatar-sm) 1fr auto; gap: var(--gutter-m); align-items: start; padding: var(--gutter-m); border: 1px solid var(--neutral-300); border-radius: var(--radius-field); background: var(--background-2); }
