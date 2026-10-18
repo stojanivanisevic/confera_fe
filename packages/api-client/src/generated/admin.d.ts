@@ -405,6 +405,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mail-images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The email images of the organisation, newest first. */
+        get: operations["listMailImages"];
+        put?: never;
+        /**
+         * Uploads an email image: multipart, one part `file`, at most 5 MB. PNG, JPEG or GIF by
+         *     content (415 `image_type_refused` otherwise, SVG included); at most 8,000 pixels a side
+         *     and 16 megapixels by its header (422 `image_too_many_pixels`); 422 `image_unreadable`
+         *     when it cannot be decoded in time; re-encoded at most 600 pixels wide and 200 KB (413
+         *     `image_too_large`). Its scan is pending until ClamAV says clean.
+         */
+        post: operations["uploadMailImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-images/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One image, to a signed-in admin of its organisation only, and only once its scan is clean
+         *     (409 `scan_pending`, `file_not_clean`); as an attachment with its fixed type, never sniffed.
+         */
+        get: operations["getMailImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/mail-log": {
         parameters: {
             query?: never;
@@ -414,6 +458,24 @@ export interface paths {
         };
         get: operations["listMailLog"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-log/retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How long the log keeps an entry (FR-SMTP-06): 24 months unless an admin set another period. */
+        get: operations["getMailLogRetention"];
+        /** Sets the retention: entries older than it are removed by the next run of the job. */
+        put: operations["setMailLogRetention"];
         post?: never;
         delete?: never;
         options?: never;
@@ -431,6 +493,27 @@ export interface paths {
         get: operations["getMailLogEntry"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mail-log/{id}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resends the message of this entry (FR-SMTP-05): as it was sent, with a fresh secure link
+         *     that ends the earlier one, or rendered again from the template when the content was not
+         *     kept. 409 `resend_refused` for a test message, or a message that is not done yet.
+         */
+        post: operations["resendMailLogEntry"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1358,9 +1441,13 @@ export interface components {
             /** @description The link stops working at this moment. */
             expiresAt: string;
         };
+        MailImageDto: Record<string, never>;
+        MailImageListDto: Record<string, never>;
         MailLogEntryDto: {
             /** @enum {string} */
             result: "sent" | "failed";
+            /** @enum {string|null} */
+            resendMode: "copy" | "rendered_again" | null;
             id: string;
             messageId: string;
             recipient: string;
@@ -1379,10 +1466,15 @@ export interface components {
              *     configured server (ADR-27, ST-50); `recipient` is still the original recipient.
              */
             diverted: boolean;
-            sentAt: string;
+            /** @description The subject as sent (M2-ISS-14), with every secure link as `[link]`; null when the organisation keeps no content. */
             subject: string | null;
+            /** @description The message this attempt resent (FR-SMTP-05), and how: `copy` or `rendered_again`. */
+            resendOf: string | null;
+            sentAt: string;
             bodyHtml: string | null;
             bodyText: string | null;
+            /** @description The email images the body showed: their ids, not their bytes (ADR-13). */
+            imageIds: string[];
         };
         MailLogPageDto: {
             items: components["schemas"]["MailLogSummaryDto"][];
@@ -1390,9 +1482,21 @@ export interface components {
             page: number;
             pageSize: number;
         };
+        MailLogRetentionDto: {
+            /** @description Days; 730 (24 months) on a fresh install. */
+            days: number;
+            /** @description The version of the organisation profile. */
+            version: number;
+        };
+        MailLogRetentionUpdateDto: {
+            days: number;
+            version: number;
+        };
         MailLogSummaryDto: {
             /** @enum {string} */
             result: "sent" | "failed";
+            /** @enum {string|null} */
+            resendMode: "copy" | "rendered_again" | null;
             id: string;
             messageId: string;
             recipient: string;
@@ -1411,6 +1515,10 @@ export interface components {
              *     configured server (ADR-27, ST-50); `recipient` is still the original recipient.
              */
             diverted: boolean;
+            /** @description The subject as sent (M2-ISS-14), with every secure link as `[link]`; null when the organisation keeps no content. */
+            subject: string | null;
+            /** @description The message this attempt resent (FR-SMTP-05), and how: `copy` or `rendered_again`. */
+            resendOf: string | null;
             sentAt: string;
         };
         MailServerDto: {
@@ -1554,6 +1662,12 @@ export interface components {
         };
         ReleasedDto: {
             released: number;
+        };
+        ResentDto: {
+            /** @enum {string} */
+            resendMode: "copy" | "rendered_again";
+            messageId: string;
+            resendOf: string;
         };
         ResetRequestDto: {
             /** @description The address of the account. The answer is the same whether it belongs to one or not. */
@@ -2912,6 +3026,97 @@ export interface operations {
             };
         };
     };
+    listMailImages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailImageListDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    uploadMailImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailImageDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getMailImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     listMailLog: {
         parameters: {
             query?: {
@@ -2947,6 +3152,66 @@ export interface operations {
             };
         };
     };
+    getMailLogRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailLogRetentionDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    setMailLogRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MailLogRetentionUpdateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailLogRetentionDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     getMailLogEntry: {
         parameters: {
             query?: never;
@@ -2964,6 +3229,36 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MailLogEntryDto"];
+                };
+            };
+            /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    resendMailLogEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResentDto"];
                 };
             };
             /** @description Any error, in the one error format of the API (RFC 9457 problem details). An unexpected error carries `code` and `traceId` only. */

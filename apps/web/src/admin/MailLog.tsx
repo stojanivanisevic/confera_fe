@@ -56,7 +56,7 @@ export function MailLog() {
           {log.state.problem.text}
         </Alert>
       ) : null}
-      {session?.user.permissions.includes('organisation.read') ? <MailLogSettings mayManage={session.user.permissions.includes('organisation.manage')} /> : null}
+      {session?.user.permissions.includes('organisation.read') ? <MailLogSettings mayManage={session.user.permissions.includes('organisation.manage') && session.user.permissions.includes('mail_log.manage')} /> : null}
       {/* While the list failed it shows no empty state that would contradict the alert (UXUI-M2-15). */}
       {log.state.phase === 'failed' && !log.state.data ? null : (
       <DataTable<MailLogSummary>
@@ -98,8 +98,8 @@ export function MailLog() {
           { key: 'sentAt', header: t.sentAt, render: (row) => formatDateTime(row.sentAt) },
           { key: 'recipient', header: t.recipient },
           { key: 'kind', header: t.kind, render: (row) => TEXTS.templates.types[row.kind] ?? row.kind },
-          // The subject, once the API gives it in the list (M2-ISS-14).
-          ...(log.state.data?.items.some((row) => typeof (row as { subject?: unknown }).subject === 'string') ? [{ key: 'subject', header: t.subject, render: (row: MailLogSummary) => <span className={styles.break}>{(row as { subject?: string | null }).subject ?? ''}</span> }] : []),
+          // The subject in the list (M2-ISS-14); a message whose content is not kept has none.
+          { key: 'subject', header: t.subject, render: (row) => <span className={styles.break}>{row.subject ?? ''}</span> },
           { key: 'language', header: t.language, render: (row) => TEXTS.conferences.languageNames[row.language] ?? row.language },
           { key: 'serverName', header: t.server, render: (row) => row.serverName ?? '' },
           { key: 'attempt', header: t.attempt, align: 'right' },
@@ -147,56 +147,65 @@ export function MailLog() {
   );
 }
 
-type Settings = Organisation & { readonly mailLogRetentionDays?: number };
-const DEFAULT_DAYS = 730;
-
-/** What the mail log keeps and how long (FR-SMTP-06; UXUI-M2-31): settings of the organisation. */
+/** What the mail log keeps and how long (FR-SMTP-06; UXUI-M2-31): the content switch of the profile and the retention, one card. */
 function MailLogSettings({ mayManage }: { mayManage: boolean }) {
   const { client, contact } = useSession();
   const t = TEXTS.mailLog;
-  const profile = useLoad<Settings>((c) => call(c.GET('/api/v1/organisation')), []);
-  const record = profile.state.data;
+  const settings = useLoad<{ profile: Organisation; days: number }>(async (c) => {
+    const [profile, retention] = await Promise.all([call(c.GET('/api/v1/organisation')), m4.retention(c)]);
+    return { profile, days: retention.days };
+  }, []);
+  const record = settings.state.data;
   const [days, setDays] = useState('');
   const [content, setContent] = useState(true);
-  const [held, setHeld] = useState<number | null>(null);
+  const [held, setHeld] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<Explained | null>(null);
   const [fields, setFields] = useState<Readonly<Record<string, string>>>({});
-  if (record && record.version !== held) {
-    setHeld(record.version);
-    setDays(String(record.mailLogRetentionDays ?? DEFAULT_DAYS));
-    setContent(record.mailLogContent);
+  const heldKey = record ? `${String(record.profile.version)}:${String(record.days)}` : null;
+  if (record && heldKey !== held) {
+    setHeld(heldKey);
+    setDays(String(record.days));
+    setContent(record.profile.mailLogContent);
   }
   if (!record) return null;
   const save = async (event: FormEvent) => {
     event.preventDefault();
     const value = Number(days);
     if (!Number.isInteger(value) || value < 30 || value > 3650) {
-      setFields({ mailLogRetentionDays: t.retentionHint });
+      setFields({ days: t.retentionHint });
       return;
     }
     setBusy(true);
     setProblem(null);
     setFields({});
     try {
-      const next = await m4.mailLogSettings(client, { mailLogContent: content, mailLogRetentionDays: value, version: record.version });
-      profile.replace({ ...record, ...next });
-      toast({ title: fill(t.retentionSaved, { days: next.mailLogRetentionDays ?? value }), tone: 'success' });
+      // Both are settings of the organisation profile, one version for both: the content first, then the days.
+      let profile = record.profile;
+      if (content !== profile.mailLogContent) profile = await call(client.PATCH('/api/v1/organisation', { body: { mailLogContent: content, version: profile.version } }));
+      let kept = record.days;
+      if (value !== record.days) {
+        const retention = await m4.setRetention(client, value, profile.version);
+        kept = retention.days;
+        profile = { ...profile, version: retention.version };
+      }
+      settings.replace({ profile, days: kept });
+      toast({ title: fill(t.retentionSaved, { days: kept }), tone: 'success' });
     } catch (error) {
       setFields(fieldMessages(error));
       setProblem(explain(error, contact));
+      void settings.reload({ background: true });
     } finally {
       setBusy(false);
     }
   };
-  const kept = record.mailLogRetentionDays ?? DEFAULT_DAYS;
   return (
-    <Card title={t.settings} subtitle={fill(t.retentionNow, { days: kept, months: Math.round(kept / 30.4) })} headingLevel={2} id="mail-log-settings" data-confera-mail-log-settings="">
+    <Card title={t.settings} subtitle={fill(t.retentionNow, { days: record.days, months: Math.round(record.days / 30.4) })} headingLevel={2} id="mail-log-settings" data-confera-mail-log-settings="">
       <form className={styles.form} onSubmit={(event) => void save(event)} noValidate>
         <p className={styles.text}>{t.settingsLead}</p>
         {problem && Object.keys(fields).length === 0 ? <Alert tone="error" title={problem.title}>{problem.text}</Alert> : null}
         <div className={styles.fields}>
-          <NumberField label={t.retention} unit={t.retentionUnit} name="mailLogRetentionDays" min={30} max={3650} step={1} value={days} disabled={!mayManage} onChange={(event) => setDays(event.target.value)} status={fields.mailLogRetentionDays ? 'error' : 'default'} message={fields.mailLogRetentionDays ?? t.retentionHint} />
+          <NumberField label={t.retention} unit={t.retentionUnit} name="days" min={30} max={3650} step={1} value={days} disabled={!mayManage} onChange={(event) => setDays(event.target.value)} status={fields.days ? 'error' : 'default'} message={fields.days ?? t.retentionHint} />
         </div>
         <Switch label={t.content} description={t.contentHint} checked={content} disabled={!mayManage} onChange={(event) => setContent(event.target.checked)} />
         {mayManage ? (

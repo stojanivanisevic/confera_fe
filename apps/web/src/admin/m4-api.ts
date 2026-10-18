@@ -1,11 +1,10 @@
 /**
  * The admin API of 0.4.0 that the screens of the statuses, the templates, the images and the mail
- * log use (M4-FE-01 to 04). The submissions, the status emails and the templates are typed by the
- * vendored contract of confera_be's m4/be (796338e). Three calls are written here before the
- * contract has them, in the direction of the plan and held by the API stub
- * (e2e/servers/api-stub-part-d.mjs): the upload and the address of an email image (M4-BE-06), the
- * resend of a mail-log entry and the retention of the mail log (M4-BE-05). `pnpm api:sync` with
- * those routes replaces them by typed calls.
+ * log use (M4-FE-01 to 04), typed by the vendored contract of confera_be's m4/be (3fd01e3). The one
+ * call made with `fetch` itself is the upload of an email image, a multipart body (the contract
+ * names the route; openapi-fetch sends JSON). The answer of an image carries no schema in the
+ * contract yet (`MailImageDto` without properties): its fields are written here from the
+ * backend's DTO class (`src/modules/files/mail-images.controller.ts`).
  */
 import type { components, SessionClient } from '@confera/api-client';
 
@@ -64,21 +63,18 @@ export interface SubmissionQuery {
 export interface MailImage {
   readonly id: string;
   readonly name: string;
+  /** png or jpeg: what it is after the server re-encoded it (a GIF becomes a PNG of its first frame). */
   readonly type: string;
   readonly width: number;
   readonly height: number;
   readonly sizeBytes: number;
+  /** pending until the scan says clean; only a clean image is shown or sent. */
+  readonly scanState: string;
+  readonly createdAt: string;
 }
+export type Resent = Schemas['ResentDto'];
+export type Retention = Schemas['MailLogRetentionDto'];
 
-/** The calls of the session client on a path the vendored contract does not list yet. */
-type Init = { params?: { query?: Record<string, unknown> }; body?: unknown } | undefined;
-type Answer = Promise<{ data?: unknown; error?: unknown; response: Response }>;
-interface Loose {
-  POST(path: string, init?: Init): Answer;
-  PATCH(path: string, init?: Init): Answer;
-}
-const loose = (client: SessionClient): Loose => client as unknown as Loose;
-const as = async <T>(promise: Answer): Promise<T> => (await call(promise)) as T;
 const at = (id: string) => ({ params: { path: { id } } });
 
 export const m4 = {
@@ -133,13 +129,14 @@ export const m4 = {
   statusSwitches: (client: SessionClient, conferenceId: string) => call(client.GET('/api/v1/conferences/{id}/status-emails', at(conferenceId))),
   setStatusSwitch: (client: SessionClient, conferenceId: string, current: StatusSwitches, type: string, enabled: boolean) =>
     call(client.PUT('/api/v1/conferences/{id}/status-emails', { ...at(conferenceId), body: { types: current.types.map((item) => (item.type === type ? { ...item, enabled } : item)), version: current.version } })),
-  /** The address of an email image: the browser reads it with the session (no public address, ADR-12). Before the contract (M4-BE-06). */
+  /** The address of an email image: the browser reads it with the session (no public address, ADR-12). */
   imageHref: (id: string) => `/api/v1/mail-images/${encodeURIComponent(id)}`,
 
-  /** Before the contract (M4-BE-05). */
-  resend: (client: SessionClient, id: string) => as<{ messageId: string; mode: 'stored' | 'rendered' }>(loose(client).POST(`/api/v1/mail-log/${encodeURIComponent(id)}/resend`, { body: {} })),
-  /** What the mail log keeps and for how long (FR-SMTP-06): the retention is before the contract (M4-BE-05). */
-  mailLogSettings: (client: SessionClient, body: { mailLogContent: boolean; mailLogRetentionDays: number; version: number }) => as<{ mailLogContent: boolean; mailLogRetentionDays?: number; version: number }>(loose(client).PATCH('/api/v1/organisation', { body })),
+  /** Sends the message of a log entry again (FR-SMTP-05): a copy with fresh links, or rendered again when no content was kept. */
+  resend: (client: SessionClient, id: string): Promise<Resent> => call(client.POST('/api/v1/mail-log/{id}/resend', at(id))),
+  /** How many days the mail log keeps an entry (FR-SMTP-06); the version is the organisation profile's. */
+  retention: (client: SessionClient): Promise<Retention> => call(client.GET('/api/v1/mail-log/retention')),
+  setRetention: (client: SessionClient, days: number, version: number): Promise<Retention> => call(client.PUT('/api/v1/mail-log/retention', { body: { days, version } })),
   /** In the contract since confera_be 85e01d1 (M3-ISS-14). */
   discardHeld: (client: SessionClient, body: { ids?: string[]; all?: boolean }) => call(client.POST('/api/v1/held-mail/discard', { body })),
 };

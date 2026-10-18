@@ -18,7 +18,7 @@ import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';
 import { formatDateTime } from './format';
 import { m4 } from './m4-api';
-import { call, explain, type Explained } from './problems';
+import { call, explain, isApiError, type Explained } from './problems';
 import { useSession } from './session';
 import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
@@ -28,12 +28,12 @@ export function MailLogEntry({ id }: { id: string }) {
   const { conferences } = useConference();
   const t = TEXTS.mailLog;
   const { client, contact, session } = useSession();
-  const entry = useLoad<MailLogRecord & { diverted?: boolean; resentFrom?: string | null }>((c) => call(c.GET('/api/v1/mail-log/{id}', { params: { path: { id } } })), [id]);
+  const entry = useLoad<MailLogRecord>((c) => call(c.GET('/api/v1/mail-log/{id}', { params: { path: { id } } })), [id]);
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<Explained | null>(null);
   const permissions = session?.user.permissions ?? [];
-  const mayResend = permissions.includes('mail_log.resend') || permissions.includes('mail_log.manage');
+  const mayResend = permissions.includes('mail_log.manage');
   const record = entry.state.data;
   const back = { label: t.back, href: '/mail-log', onClick: () => router.push('/mail-log') };
 
@@ -58,10 +58,10 @@ export function MailLogEntry({ id }: { id: string }) {
     try {
       const done = await m4.resend(client, record.id);
       setAsking(false);
-      toast({ title: t.resent, description: done.mode === 'stored' ? t.resentStored : t.resentRendered, tone: 'success' });
+      toast({ title: t.resent, description: done.resendMode === 'copy' ? t.resentStored : t.resentRendered, tone: 'success' });
     } catch (error) {
       setAsking(false);
-      setProblem(explain(error, contact));
+      setProblem(isApiError(error) && error.code === 'resend_refused' ? { ...explain(error, contact), title: t.resendRefused, text: t.resendRefusedText } : explain(error, contact));
     } finally {
       setBusy(false);
     }
@@ -87,8 +87,10 @@ export function MailLogEntry({ id }: { id: string }) {
           {t.divertedText}
         </Alert>
       ) : null}
-      {record.resentFrom ? (
-        <Alert tone="info" title={t.resentFrom} action={<TextButton onClick={() => router.push(`/mail-log/${record.resentFrom ?? ''}`)}>{t.resentFromLink}</TextButton>} />
+      {record.resendOf ? (
+        <Alert tone="info" title={record.resendMode === 'rendered_again' ? t.resentFromRendered : t.resentFrom}>
+          <span className={styles.break}>{fill(t.resentFromId, { id: record.resendOf })}</span>
+        </Alert>
       ) : null}
       <Card title={t.details} headingLevel={2}>
         <DescriptionList

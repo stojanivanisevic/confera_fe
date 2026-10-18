@@ -1,6 +1,5 @@
 // The stand-in for confera_be's admin API of 0.4.0, for the browser tests (ADR-24), after the vendored
-// contract of m4/be (796338e) where it has a route, and in the direction of the plan where it has none
-// yet (the email images of M4-BE-06, the resend and the retention of M4-BE-05): the statuses of a
+// contract of m4/be (3fd01e3): the statuses of a
 // submission with their emails, the preview before a status email goes out (FR-MAIL-08), notes, the
 // edit on the author's behalf with its kept revisions, search, filters and sort without diacritics
 // (FR-SUB-03); the templates saved, a conference's own version and its fallback, the switch of a
@@ -275,7 +274,7 @@ export function handlePartD(ctx) {
         if (body.previewDigest !== undefined && body.previewDigest !== sha(rendered.html + rendered.subject)) refuse(409, 'preview_outdated');
         const messageId = randomUUID();
         submission.emails.push({ id: messageId, kind: action.type, recipient, status: 'sent', heldReason: null, lastErrorCode: null, createdAt: nowIso(), sentAt: nowIso() });
-        state.mailLog.unshift({ id: randomUUID(), messageId, recipient, kind: action.type, language, conferenceId: submission.conference.id, mailServerId: STUB_PART_B.ids.server, serverName: 'Kancelarija', attempt: 1, result: 'sent', errorCode: null, sentAt: nowIso(), subject: rendered.subject, bodyHtml: render(emailOf(action, message).template, { values: values(message), conditions: new Set([...(submission.title ? ['hasTitle'] : []), ...(message ? ['hasMessage'] : [])]), images: d.images, inline: false }).html, bodyText: rendered.text, diverted: false, resentFrom: null });
+        state.mailLog.unshift({ id: randomUUID(), messageId, recipient, kind: action.type, language, conferenceId: submission.conference.id, mailServerId: STUB_PART_B.ids.server, serverName: 'Kancelarija', attempt: 1, result: 'sent', errorCode: null, sentAt: nowIso(), subject: rendered.subject, bodyHtml: render(emailOf(action, message).template, { values: values(message), conditions: new Set([...(submission.title ? ['hasTitle'] : []), ...(message ? ['hasMessage'] : [])]), images: d.images, inline: false }).html, bodyText: rendered.text, diverted: false, resendOf: null, resendMode: null, imageIds: [] });
       }
       submission.statusHistory.push({ status: action.to, fromStatus: submission.status, transition: action.transition, changedAt: nowIso(), actor, reason, message, email: off ? 'template_off' : 'queued', emailId: off ? null : (submission.emails.at(-1)?.id ?? null) });
       submission.status = action.to;
@@ -398,10 +397,11 @@ export function handlePartD(ctx) {
     if (!part || part.bytes.length === 0) refuse(400, 'validation_failed', [{ path: 'file', code: 'isNotEmpty' }]);
     const kind = imageOf(part.bytes);
     // By content, never by name or label: an SVG, or anything else, is refused (ST-60).
-    if (!kind) refuse(415, 'image_type');
+    if (!kind) refuse(415, 'image_type_refused');
     if (part.bytes.length > 5 * 1024 * 1024) refuse(413, 'image_too_large');
     const scale = Math.min(1, MAX_WIDTH / kind.width);
-    const image = { id: randomUUID(), name: part.name, type: kind.type, width: Math.round(kind.width * scale), height: Math.round(kind.height * scale), sizeBytes: Math.min(part.bytes.length, 200 * 1024), bytes: part.bytes.toString('base64'), createdAt: nowIso() };
+    // The stub's scan says clean at once; the API's says so when ClamAV has (scanState pending until then).
+    const image = { id: randomUUID(), name: part.name, type: kind.type, width: Math.round(kind.width * scale), height: Math.round(kind.height * scale), sizeBytes: Math.min(part.bytes.length, 200 * 1024), scanState: 'clean', bytes: part.bytes.toString('base64'), createdAt: nowIso() };
     d.images.push(image);
     record(me.id, 'mail_image.uploaded', 'mail_image', image.id);
     const dto = { ...image };
@@ -417,17 +417,33 @@ export function handlePartD(ctx) {
   }
 
   // ---- the mail log: resend (FR-SMTP-05) ---------------------------------------------------------------
+  if (path === '/api/v1/mail-log/retention') {
+    if (method === 'GET') {
+      need('mail_log.read');
+      return { status: 200, body: { days: state.organisation.mailLogRetentionDays, version: state.organisation.version } };
+    }
+    if (method === 'PUT') {
+      need('mail_log.manage');
+      versionOf(body.version, state.organisation);
+      if (!Number.isInteger(body.days) || body.days < 30 || body.days > 3650) refuse(400, 'validation_failed', [{ path: 'days', code: body.days < 30 ? 'min' : 'max' }]);
+      state.organisation.mailLogRetentionDays = body.days;
+      state.organisation.version += 1;
+      record(me.id, 'organisation.updated', 'organisation', state.organisation.id, { fields: ['mailLogRetentionDays'] });
+      return { status: 200, body: { days: body.days, version: state.organisation.version } };
+    }
+  }
   const resend = /^\/api\/v1\/mail-log\/([^/]+)\/resend$/.exec(path);
   if (resend && method === 'POST') {
-    need('mail_log.resend');
+    need('mail_log.manage');
     const entry = state.mailLog.find((e) => e.id === resend[1]);
     if (!entry) refuse(404, 'not_found');
-    // A stored content goes again with a fresh link; without one the template renders it again.
-    const mode = entry.bodyHtml !== null || entry.bodyText !== null ? 'stored' : 'rendered';
-    const copy = { ...entry, id: randomUUID(), messageId: randomUUID(), attempt: 1, result: 'sent', errorCode: null, sentAt: nowIso(), resentFrom: entry.id, resendMode: mode };
+    if (entry.kind === 'test_message') refuse(409, 'resend_refused');
+    // A stored content goes again as a copy with a fresh link; without one the template renders it again.
+    const mode = entry.bodyHtml !== null || entry.bodyText !== null ? 'copy' : 'rendered_again';
+    const copy = { ...entry, id: randomUUID(), messageId: randomUUID(), attempt: 1, result: 'sent', errorCode: null, sentAt: nowIso(), resendOf: entry.messageId, resendMode: mode };
     state.mailLog.unshift(copy);
     record(me.id, 'mail.resent', 'mail_log', entry.id);
-    return { status: 202, body: { messageId: copy.messageId, mode } };
+    return { status: 200, body: { resendMode: mode, messageId: copy.messageId, resendOf: entry.messageId } };
   }
 
   // ---- held emails: discard (M3-ISS-14) -----------------------------------------------------------------

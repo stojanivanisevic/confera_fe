@@ -9,8 +9,8 @@
  *     submission allows now are offered, nothing else. A change that carries a text for the author
  *     (return for revision always; reject, withdraw and reopen with a message) shows the finished
  *     email first, as the server renders it, in the sandboxed frame; Cancel changes nothing and
- *     sends nothing, Send changes the status and sends exactly that text (FR-MAIL-08). One key per
- *     dialog, so a double click is one change and one email (FR-MAIL-05);
+ *     sends nothing, Send changes the status and sends exactly that text (FR-MAIL-08). The version the
+ *     screen holds makes a double click one change and one email (FR-MAIL-05);
  *   - opening a new submission takes it into processing (transition 2): a POST of this page, as the
  *     plan has it, never a side effect of reading it (M4-BE-01);
  *   - internal notes (FR-SUB-07), the edit on the author's behalf with the old values kept
@@ -36,7 +36,6 @@ import { useLoad } from './useLoad';
 
 const MB = 1024 * 1024;
 const size = (bytes: number) => (bytes >= MB ? `${(Math.round((bytes / MB) * 10) / 10).toString()} MB` : `${Math.max(1, Math.round(bytes / 1024)).toString()} KB`);
-const newKey = (): string => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
 
 /** The answer of a field as the office reads it: the option's label, yes and no, or the text. */
 function answerText(definition: FormDefinition | null, key: string, value: unknown): string {
@@ -320,8 +319,6 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
   const { client, contact } = useSession();
   const t = TEXTS.submissions;
   const rule = ACTION_RULES[action];
-  // One key for this dialog: a double click, or Send pressed again after a lost answer, is one change (FR-MAIL-05).
-  const [key] = useState(newKey);
   const [message, setMessage] = useState('');
   const [reason, setReason] = useState('');
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});

@@ -31,7 +31,7 @@ export const SESSION_COOKIE = '__Host-confera_session';
 const DEVICE_COOKIE = '__Host-confera_device';
 const CONFIRMATION_MS = 5 * 60 * 1000;
 const PERMISSIONS = {
-  admin: ['account.manage', 'users.read', 'users.manage', 'organisation.read', 'organisation.manage', 'audit.read', 'mail_servers.read', 'mail_servers.manage', 'conferences.read', 'conferences.manage', 'templates.read', 'mail_log.read', 'forms.read', 'forms.manage', 'submissions.read', 'held_mail.manage', 'submissions.manage', 'templates.manage', 'mail_log.resend'],
+  admin: ['account.manage', 'users.read', 'users.manage', 'organisation.read', 'organisation.manage', 'audit.read', 'mail_servers.read', 'mail_servers.manage', 'conferences.read', 'conferences.manage', 'templates.read', 'mail_log.read', 'forms.read', 'forms.manage', 'submissions.read', 'held_mail.manage', 'submissions.manage', 'templates.manage', 'mail_log.manage'],
   reviewer: ['account.manage'],
 };
 
@@ -110,7 +110,12 @@ const invitationDelivery = (user) => {
   return user.invitedAt && Date.now() - user.invitedAt < 2000 ? 'queued' : 'sent';
 };
 const userDto = (user) => ({ id: user.id, email: user.email, displayName: user.displayName, role: user.role, status: user.status, createdAt: user.createdAt, version: user.version, invitationDelivery: invitationDelivery(user) });
-const organisationDto = () => ({ ...state.organisation });
+const organisationDto = () => {
+  // The retention is read and set on its own route (GET/PUT /api/v1/mail-log/retention), not in the profile.
+  const rest = { ...state.organisation };
+  delete rest.mailLogRetentionDays;
+  return rest;
+};
 
 function cookieValue(req, name) {
   const header = req.headers.cookie ?? '';
@@ -427,10 +432,9 @@ export async function handleAdmin(req, url) {
     if (body.registrationNumber != null && !/^\d{8}$/.test(body.registrationNumber)) errors.push({ path: 'registrationNumber', code: 'isRegistrationNumber' });
     if (body.taxNumber != null && !/^\d{9}$/.test(body.taxNumber)) errors.push({ path: 'taxNumber', code: 'isTaxNumber' });
     if (body.contactEmail != null && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.contactEmail)) errors.push({ path: 'contactEmail', code: 'isMailAddress' });
-    if (body.mailLogRetentionDays !== undefined && !(Number.isInteger(body.mailLogRetentionDays) && body.mailLogRetentionDays >= 30 && body.mailLogRetentionDays <= 3650)) errors.push({ path: 'mailLogRetentionDays', code: body.mailLogRetentionDays < 30 ? 'min' : 'max' });
     if (errors.length > 0) refuse(400, 'validation_failed', errors);
     const fields = [];
-    for (const key of ['name', 'legalName', 'address', 'registrationNumber', 'taxNumber', 'contactEmail', 'vatNoteSr', 'vatNoteEn', 'mailLogContent', 'mailLogRetentionDays']) {
+    for (const key of ['name', 'legalName', 'address', 'registrationNumber', 'taxNumber', 'contactEmail', 'vatNoteSr', 'vatNoteEn', 'mailLogContent']) {
       if (key in body && body[key] !== state.organisation[key]) {
         fields.push(key);
         state.organisation[key] = body[key];
