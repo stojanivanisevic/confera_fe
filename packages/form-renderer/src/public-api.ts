@@ -36,14 +36,16 @@ export interface SubmittedDto {
 export interface SubmitBody {
   language: 'en' | 'sr';
   answers: Record<string, unknown>;
-  /** The trap: a field no person sees. It must be empty. */
-  website?: string;
+  /** The trap: a field no person sees, with a name no autofill fills (SEC-M3-07). It must be empty. */
+  confera_hp?: string;
   /** The counter that answers the token's challenge, a decimal number as text. */
   proofOfWork?: string;
 }
 
 export const TOKEN_HEADER = 'X-Form-Token';
 export const IDEMPOTENCY_HEADER = 'Idempotency-Key';
+/** The name of the trap field (SEC-M3-07): no autofill heuristic or password manager takes it for one of its fields. */
+export const TRAP_FIELD = 'confera_hp';
 
 export interface FormToken {
   readonly token: string;

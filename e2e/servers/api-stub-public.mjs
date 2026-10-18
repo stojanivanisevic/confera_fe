@@ -149,8 +149,8 @@ export async function answerPublic(req, res, url) {
   if (form.state !== 'open') return problem(res, 409, 'form_closed'), true;
   if (token.used) return problem(res, 409, 'form_token_used'), true;
   const answers = body.answers ?? {};
-  // The trap field of ADR-08: a fake success, nothing stored.
-  if (typeof body.website === 'string' && body.website !== '') return send(res, 201, { language: body.language, reference: 'IT27-0000', receivedAt: new Date().toISOString() }), true;
+  // The trap field of ADR-08: a fake success, nothing stored. Filled under either name, as confera_be reads it (SEC-M3-07).
+  if (`${body.confera_hp ?? ''}${body.website ?? ''}` !== '') return send(res, 201, { language: body.language, reference: 'IT27-0000', receivedAt: new Date().toISOString() }), true;
   // The server checks again; the tests ask for a refusal by the title.
   if (answers.title === 'refused by the server') return problem(res, 400, 'validation_failed', { errors: [{ path: 'answers.title', code: 'noUrl' }] }), true;
   token.used = true;

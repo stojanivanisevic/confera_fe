@@ -118,6 +118,26 @@ test.describe('the abstract form on its own page', () => {
     await expect(page).toHaveTitle('Prijava apstrakta · ITEMA 2026');
     expect(await page.evaluate(() => document.documentElement.lang)).toBe('sr');
   });
+
+  test('the trap field (SEC-M3-07) is out of reach of the keyboard and of assistive technology', async ({ page }) => {
+    await open(page);
+    const trap = page.locator('input[name="confera_hp"]');
+    await expect(trap).toHaveCount(1);
+    await expect(page.locator('input[name="website"]')).toHaveCount(0);
+    await expect(trap).toHaveAttribute('autocomplete', 'off');
+    // Not in the accessibility tree: present only when hidden elements are included.
+    await expect(page.getByRole('textbox', { name: 'Extra field' })).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: 'Extra field', includeHidden: true })).toHaveCount(1);
+    // Inert: it cannot take the focus, not even from a script, and Tab passes it on the way to Send.
+    expect(await trap.evaluate((el) => (el.focus(), document.activeElement === el))).toBe(false);
+    await page.locator('body').focus();
+    const send = page.locator('button[type="submit"]');
+    for (let i = 0; i < 200 && !(await send.evaluate((el) => document.activeElement === el)); i++) {
+      await page.keyboard.press('Tab');
+      expect(await trap.evaluate((el) => document.activeElement === el)).toBe(false);
+    }
+    await expect(send).toBeFocused();
+  });
 });
 
 test.describe('a closed form (FR-DL-02)', () => {

@@ -1446,7 +1446,10 @@ export interface components {
             field: string | null;
             name: string;
             sizeBytes: number;
-            /** @description `macros`: an old .doc with macros, accepted and flagged for the office (G2-22). */
+            /**
+             * @description `macros`: an old .doc with macros, accepted and flagged for the office (G2-22);
+             *     `external_links`: a .docx with a remote template, frame or object, or a UNC path (SEC-M3-06).
+             */
             scanFlag: string | null;
             /** @description When the scan ended, or since when it waits. */
             scannedAt: string | null;

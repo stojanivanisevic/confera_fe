@@ -143,7 +143,7 @@ describe('typing before the form is attached', () => {
     expect(keptValues()).toMatchObject({ title: 'Održivi turizam na Balkanu', abstract: '' });
     // Never the consent, never the trap field.
     expect(keptValues()).not.toHaveProperty('consent');
-    expect(keptValues()).not.toHaveProperty('website');
+    expect(keptValues()).not.toHaveProperty('confera_hp');
   });
 
   it('a field that was left empty is still reported, with its message', async () => {

@@ -8,6 +8,7 @@
  */
 import { isFormLanguage, type FormLanguage } from './i18n/catalogue';
 import type { FormValues } from './form-values';
+import { TRAP_FIELD } from './public-api';
 import type { DraftStorage } from './safe-storage';
 
 export interface Draft {
@@ -19,8 +20,8 @@ export interface Draft {
   readonly idempotencyKey: string | null;
 }
 
-/** The names that are never kept: the consent, and the trap field of ADR-08. */
-const NOT_KEPT = new Set(['consent', 'website']);
+/** The names that are never kept: the consent, and the trap field of ADR-08 (SEC-M3-07). */
+const NOT_KEPT = new Set(['consent', TRAP_FIELD]);
 /** A draft larger than this is not kept: the storage of a tab is small, and a form is not that long. */
 const MAX_DRAFT = 400_000;
 

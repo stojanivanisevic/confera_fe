@@ -32,6 +32,10 @@ Milestone 0.3.0 (forms, embed and intake), against `confera_be` `m3/be` (the ven
 - **Q3-12:** on a site that zooms its content with CSS `zoom`, the whole form is inside the frame in WebKit too (it was 1,135 px short): WebKit lays the frame's page out in zoomed pixels but measures it in unzoomed ones, so the frame reads the factor from its viewport and tells heights multiplied by it. The snippet is unchanged; a snippet already pasted needs nothing. The embedded page is as tall as its form (no `min-height: 100vh`). **Not fixable here:** WebKit zooms the frame's layout viewport as well, so there the frame keeps a quarter of blank room to scroll below the form and clips its right fifth.
 - **Q3-09:** against a real API the specs on the stub's forms are left out by name (`STUB_FORM_SPECS`), and the form tests of `csp`, `pages` and `ds-2-3-0` are skipped.
 
+### Security (with `confera_be` m3/sec-fixes, `c93e602`)
+- **SEC-M3-07:** the trap field is `confera_hp` (was `website`): a name and a neutral label no autofill maps, `autocomplete="off"` and the password managers' ignore hints, in an `inert` container out of sight and hidden from assistive technology, so neither autofill, Tab nor a screen reader reaches it. The contract lock names `confera_be` `c93e602`.
+- **SEC-M3-06:** a file flagged `external_links` (a `.docx` with a remote template, frame or object, or a UNC path) carries a warning on the submission, like an old `.doc` with macros.
+
 ## 0.2.0 (2026-10-16): the admin, conferences, mail and the template-editor spike
 
 The web application of release 0.2.0, against `confera_be` 0.2.0 (`release/0.2.0`, `91f6085`; the vendored contract and its lock name that commit). Design systems 2.3.0, 2.4.0 and 2.4.1 are part of it.

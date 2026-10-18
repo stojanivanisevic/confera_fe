@@ -237,7 +237,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     expect(api.calls.uploads).toEqual([{ token: 'invented-form-token-1', field: 'biographies', name: 'Biografije autora – Šćepanović.pdf' }]);
     expect(JSON.parse(JSON.stringify(submit!.body))).toEqual({
       language: 'en',
-      website: '',
+      confera_hp: '',
       answers: {
         participationType: 'with_paper',
         authors: [{ firstName: 'Marta', lastName: 'Kovač', institution: 'Ekonomski fakultet, Univerzitet Primer', email: 'marta@example.test' }],
@@ -260,6 +260,21 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     expect(thanks.textContent).toContain('The confirmation goes to marta@example.test.');
     expect(container.querySelector('[data-confera-reference]')!.textContent).toBe('Your reference: IT27-0042');
     expect(window.sessionStorage.getItem(DRAFT_KEY)).toBeNull(); // nothing is kept once it is sent
+  });
+
+  it('the trap field (SEC-M3-07): confera_hp, no autofill, in an inert container out of sight and hidden from assistive technology', async () => {
+    await mount();
+    expect(container.querySelector('[name="website"]')).toBeNull();
+    const trap = field('confera_hp');
+    expect(trap.getAttribute('autocomplete')).toBe('off');
+    expect(trap.getAttribute('tabindex')).toBe('-1');
+    for (const hint of ['data-1p-ignore', 'data-lpignore', 'data-bwignore', 'data-form-type']) expect(trap.hasAttribute(hint)).toBe(true);
+    const box = trap.closest('[data-confera-trap]')!;
+    expect(box.hasAttribute('inert')).toBe(true);
+    expect(box.getAttribute('aria-hidden')).toBe('true');
+    expect(box.classList.contains('ud-sr')).toBe(true);
+    // A neutral label: nothing an autofill heuristic maps to an address, a name or a site.
+    expect(trap.closest('label')!.textContent.trim()).toBe('Extra field');
   });
 
   it('the API’s refusals come back to their fields, in the form’s words and in the order of the form', async () => {

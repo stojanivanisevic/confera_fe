@@ -41,7 +41,7 @@ import { createFormValueStore, useFormRef, useFormValues, type FormValues } from
 import { fill, FORM_TEXTS, plural, type FormLanguage } from './i18n/catalogue';
 import { formatDate, zoneName } from './i18n/format';
 import { blockTitle, messageFor } from './messages';
-import { browserApi, MINIMUM_FILL_MS, PublicApiError, solveProofOfWork, TOKEN_CODES, type FormToken, type PublicApi, type SubmitBody } from './public-api';
+import { browserApi, MINIMUM_FILL_MS, PublicApiError, solveProofOfWork, TOKEN_CODES, TRAP_FIELD, type FormToken, type PublicApi, type SubmitBody } from './public-api';
 import { checkAnswers, countWords, holds, isShown, pathOf, type AnswerValue, type Answers, type RuleError } from './rules';
 import { draftStorage, type DraftStorage } from './safe-storage';
 import { SafeText } from './safe-text';
@@ -535,8 +535,8 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
         const body: SubmitBody = {
           language,
           answers: kept,
-          // The trap field of ADR-08: empty from a person.
-          website: values.website ?? '',
+          // The trap field of ADR-08: empty from a person (SEC-M3-07).
+          [TRAP_FIELD]: values[TRAP_FIELD] ?? '',
           ...(counter !== null ? { proofOfWork: counter } : {}),
         };
         const result = await api.submit(form.slug, got.token, idempotency.current, body);
@@ -832,11 +832,25 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, api = brows
           </Button>
         }
       >
-        {/* The trap field of ADR-08: no person sees it or reaches it; a script that fills it gets a fake success. */}
-        <div className="ud-sr" aria-hidden="true">
+        {/* The trap field of ADR-08: no person sees it or reaches it; a script that fills it gets a fake success.
+            SEC-M3-07: a name and a label no autofill heuristic maps, `autocomplete="off"` and the ignore hints of the
+            password managers, so the browser never fills it for a person; the container is out of sight, hidden from
+            assistive technology and inert, so neither Tab nor a screen reader reaches it. */}
+        <div className="ud-sr" aria-hidden="true" inert data-confera-trap="">
           <label>
-            Website
-            <input type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
+            Extra field
+            <input
+              type="text"
+              name={TRAP_FIELD}
+              tabIndex={-1}
+              autoComplete="off"
+              spellCheck={false}
+              defaultValue=""
+              data-1p-ignore=""
+              data-lpignore="true"
+              data-bwignore=""
+              data-form-type="other"
+            />
           </label>
         </div>
         <p className={`ud-span-all ${styles.note}`}>
