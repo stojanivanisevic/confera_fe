@@ -412,8 +412,10 @@ function blockHtml(node: BlockNode, input: RenderInput): string {
       return input.conditions.has(node.key) ? node.children.map((child) => blockHtml(child, input)).join('') : '';
     case 'image': {
       const image = input.images?.get(node.fileId);
-      if (image === undefined) return '';
-      return `<p><img src="${escapeHtml(image.src)}" alt="${escapeHtml(node.alt)}" width="${String(image.width)}" height="${String(image.height)}"></p>`;
+      // Not clean (yet), or gone: its words in its place, as in the text (UX4-04, confera_be m4/be-fixes).
+      if (image === undefined) return node.alt === '' ? '' : `<p>[${escapeHtml(node.alt)}]</p>`;
+      // Never wider than the screen of a phone (UX4-04): the width is the most it takes.
+      return `<p><img src="${escapeHtml(image.src)}" alt="${escapeHtml(node.alt)}" width="${String(image.width)}" height="${String(image.height)}" style="${IMAGE_STYLE}"></p>`;
     }
   }
 }
@@ -439,7 +441,9 @@ function blockText(node: BlockNode, input: RenderInput): string {
 }
 
 /** The tags the serialiser writes, and the attributes each may carry (the API's allowlist, SEC-A-42 (7)). */
-const ALLOWED_TAGS: Readonly<Record<string, readonly string[]>> = { p: [], h1: [], h2: [], h3: [], ul: [], ol: [], li: [], strong: [], em: [], u: [], br: [], a: ['href'], img: ['src', 'alt', 'width', 'height'] };
+/** The one style the serialiser writes, on an image only (the API's IMAGE_STYLE). */
+export const IMAGE_STYLE = 'max-width:100%;height:auto';
+const ALLOWED_TAGS: Readonly<Record<string, readonly string[]>> = { p: [], h1: [], h2: [], h3: [], ul: [], ol: [], li: [], strong: [], em: [], u: [], br: [], a: ['href'], img: ['src', 'alt', 'width', 'height', 'style'] };
 const TAG = /<(\/?)([a-z0-9]+)((?:\s[a-z]+="[^"<>]*")*)>/g;
 const ATTRIBUTE = /\s([a-z]+)="([^"<>]*)"/g;
 // The secure-link mark of a stored rendering holds a control character on purpose (the API's mail-composer.ts).
@@ -457,6 +461,7 @@ export function assertSafeHtml(html: string): void {
       if (attribute === 'href' && !SAFE_HREF.test(decoded)) throw new RenderError('unsafe_html');
       if (attribute === 'src' && !SAFE_SRC.test(decoded)) throw new RenderError('unsafe_html');
       if ((attribute === 'width' || attribute === 'height') && !/^\d{1,4}$/.test(value)) throw new RenderError('unsafe_html');
+      if (attribute === 'style' && value !== IMAGE_STYLE) throw new RenderError('unsafe_html');
     }
     return '';
   });

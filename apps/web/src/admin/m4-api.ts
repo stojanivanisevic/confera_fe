@@ -1,10 +1,8 @@
 /**
  * The admin API of 0.4.0 that the screens of the statuses, the templates, the images and the mail
- * log use (M4-FE-01 to 04), typed by the vendored contract of confera_be's m4/be (3fd01e3). The one
+ * log use (M4-FE-01 to 04), typed by the vendored contract (confera_be m4/be-fixes 18cb978). The one
  * call made with `fetch` itself is the upload of an email image, a multipart body (the contract
- * names the route; openapi-fetch sends JSON). The answer of an image carries no schema in the
- * contract yet (`MailImageDto` without properties): its fields are written here from the
- * backend's DTO class (`src/modules/files/mail-images.controller.ts`).
+ * names the route; openapi-fetch sends JSON); its answer is the contract's `MailImageDto`.
  */
 import type { components, SessionClient } from '@confera/api-client';
 
@@ -60,18 +58,8 @@ export interface SubmissionQuery {
   readonly pageSize: number;
 }
 
-export interface MailImage {
-  readonly id: string;
-  readonly name: string;
-  /** png or jpeg: what it is after the server re-encoded it (a GIF becomes a PNG of its first frame). */
-  readonly type: string;
-  readonly width: number;
-  readonly height: number;
-  readonly sizeBytes: number;
-  /** pending until the scan says clean; only a clean image is shown or sent. */
-  readonly scanState: string;
-  readonly createdAt: string;
-}
+/** An email image as the API answers (`MailImageDto`, in the contract since confera_be m4/be-fixes 18cb978). */
+export type MailImage = Schemas['MailImageDto'];
 export type Resent = Schemas['ResentDto'];
 export type Retention = Schemas['MailLogRetentionDto'];
 

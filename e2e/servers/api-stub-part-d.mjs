@@ -73,7 +73,10 @@ export const fold = (value) =>
 /** The words of a submission, folded: đ both as d and as dj, as people type it (dordevic, djordjevic; Q4-01). */
 const words = (s) => [s.reference, s.title, s.firstAuthor, s.institution, ...(s.authors ?? []).flatMap((a) => [a.firstName, a.lastName, a.email, a.institution])].join(' ');
 const haystack = (s) => `${fold(words(s))} ${fold(words(s).replace(/đ/g, 'dj').replace(/Đ/g, 'Dj'))}`;
-const SORTS = { receivedAt: (s) => s.receivedAt, reference: (s) => s.reference, title: (s) => fold(s.title), firstAuthor: (s) => fold(s.firstAuthor), status: (s) => STATUSES.indexOf(s.status) };
+const SORTS = { receivedAt: (s) => s.receivedAt, reference: (s) => s.reference, title: (s) => s.title ?? '', firstAuthor: (s) => s.firstAuthor ?? '', institution: (s) => s.institution ?? '', status: (s) => STATUSES.indexOf(s.status) };
+/** Names and titles in the Serbian Latin alphabet (Dragan before Đorđe; UX4-15, as confera_be with ICU sr-Latn). */
+const SERBIAN = new Intl.Collator('sr-Latn', { sensitivity: 'base' });
+const compare = (x, y) => (typeof x === 'string' && typeof y === 'string' ? SERBIAN.compare(x, y) : x < y ? -1 : x > y ? 1 : 0);
 
 // ---- rendering, as the server renders (ADR-12) ----------------------------------------------------
 const escape = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -96,7 +99,9 @@ function blockHtml(node, input) {
   if (node.type === 'conditional') return input.conditions.has(node.key) ? node.children.map((c) => blockHtml(c, input)).join('') : '';
   if (node.type === 'image') {
     const image = input.images.find((i) => i.id === node.fileId);
-    return image ? `<p><img src="${input.inline ? `data:${image.type};base64,${image.bytes}` : `cid:${image.id}`}" alt="${escape(node.alt ?? '')}" width="${image.width}"></p>` : '';
+    // Never wider than a phone; one not clean yet is its words (UX4-04, as confera_be m4/be-fixes).
+    if (!image) return node.alt ? `<p>[${escape(node.alt)}]</p>` : '';
+    return `<p><img src="${input.inline ? `data:${image.type};base64,${image.bytes}` : `cid:${image.id}`}" alt="${escape(node.alt ?? '')}" width="${image.width}" style="max-width:100%;height:auto"></p>`;
   }
   return '';
 }
@@ -223,7 +228,7 @@ export function handlePartD(ctx) {
       .sort((a, b) => {
         const x = SORTS[sortKey](a);
         const y = SORTS[sortKey](b);
-        return (x < y ? -1 : x > y ? 1 : 0) * direction || (a.receivedAt < b.receivedAt ? 1 : -1);
+        return compare(x, y) * direction || (a.receivedAt < b.receivedAt ? 1 : -1);
       });
     const DETAIL_ONLY = ['form', 'answers', 'authors', 'files', 'consent', 'statusHistory', 'emails', 'notes', 'revisions'];
     const summary = (s) => Object.fromEntries(Object.entries(s).filter(([key]) => !DETAIL_ONLY.includes(key)));
@@ -243,10 +248,12 @@ export function handlePartD(ctx) {
     if (!submission) refuse(404, 'not_found');
     need('submissions.manage');
     const language = submission.language === 'sr' ? 'sr' : 'en';
-    const values = (message) => ({ organisationName: state.organisation.name, conferenceName: submission.conference.name, reference: submission.reference, title: submission.title ?? '', authorName: `${submission.authors[0].firstName} ${submission.authors[0].lastName}`, message: message ?? '' });
+    const values = (message) => ({ organisationName: state.organisation.name, conferenceName: submission.conference.name, reference: submission.reference, title: submission.title ?? '', authorName: `${submission.authors[0].firstName} ${submission.authors[0].lastName}`, message: message ?? '', contactEmail: state.organisation.contactEmail ?? '' });
+    // The organisation's contact address decides one of two blocks (UX4-06, as confera_be m4/be-fixes).
+    const contact = () => (state.organisation.contactEmail ? 'hasContact' : 'noContact');
     const emailOf = (action, message) => {
       const template = templateFor(submission.conference.id, action.type, language);
-      const conditions = new Set([...(submission.title ? ['hasTitle'] : []), ...(message ? ['hasMessage'] : [])]);
+      const conditions = new Set([...(submission.title ? ['hasTitle'] : []), ...(message ? ['hasMessage'] : []), contact()]);
       return { template, rendered: render(template, { values: values(message), conditions, images: d.images, inline: true }) };
     };
     const asked = () => {
@@ -285,7 +292,7 @@ export function handlePartD(ctx) {
         if (body.previewDigest !== undefined && body.previewDigest !== sha(rendered.html + rendered.subject)) refuse(409, 'preview_outdated');
         const messageId = randomUUID();
         submission.emails.push({ id: messageId, kind: action.type, recipient, status: 'sent', heldReason: null, lastErrorCode: null, createdAt: nowIso(), sentAt: nowIso() });
-        state.mailLog.unshift({ id: randomUUID(), messageId, recipient, kind: action.type, language, conferenceId: submission.conference.id, mailServerId: STUB_PART_B.ids.server, serverName: 'Kancelarija', attempt: 1, result: 'sent', errorCode: null, sentAt: nowIso(), subject: rendered.subject, bodyHtml: render(emailOf(action, message).template, { values: values(message), conditions: new Set([...(submission.title ? ['hasTitle'] : []), ...(message ? ['hasMessage'] : [])]), images: d.images, inline: false }).html, bodyText: rendered.text, diverted: false, resendOf: null, resendMode: null, imageIds: [] });
+        state.mailLog.unshift({ id: randomUUID(), messageId, recipient, kind: action.type, language, conferenceId: submission.conference.id, mailServerId: STUB_PART_B.ids.server, serverName: 'Kancelarija', attempt: 1, result: 'sent', errorCode: null, sentAt: nowIso(), subject: rendered.subject, bodyHtml: render(emailOf(action, message).template, { values: values(message), conditions: new Set([...(submission.title ? ['hasTitle'] : []), ...(message ? ['hasMessage'] : []), contact()]), images: d.images, inline: false }).html, bodyText: rendered.text, diverted: false, resendOf: null, resendMode: null, imageIds: [] });
       }
       submission.statusHistory.push({ status: action.to, fromStatus: submission.status, transition: action.transition, changedAt: nowIso(), actor, reason, message, email: off ? 'template_off' : 'queued', emailId: off ? null : (submission.emails.at(-1)?.id ?? null) });
       submission.status = action.to;
@@ -358,11 +365,13 @@ export function handlePartD(ctx) {
     need('templates.read');
     const entry = entryOf(body.type);
     checkTemplate(body.subject, body.body, entry, d.images, refuse);
-    const SAMPLE = { recipientName: 'Đorđe Šćepanović', authorName: 'Đorđe Šćepanović', organisationName: state.organisation.name, conferenceName: 'Konferencija za probe', reference: 'KP26-0042', title: 'Održivi turizam u Čačku i Žabalju', message: 'Please shorten the abstract to 250 words.', inviterName: 'Živana Đorđević', expiresIn: '7 days', newEmail: 'novi@a.example.test', change: 'role', actorName: 'Živana Đorđević', subjectName: 'Marta Kovač', serverName: 'Kancelarija' };
+    const SAMPLE = { recipientName: 'Đorđe Šćepanović', authorName: 'Đorđe Šćepanović', organisationName: state.organisation.name, conferenceName: 'Konferencija za probe', reference: 'KP26-0042', title: 'Održivi turizam u Čačku i Žabalju', message: 'Please shorten the abstract to 250 words.', inviterName: 'Živana Đorđević', expiresIn: '7 days', newEmail: 'novi@a.example.test', change: 'role', actorName: 'Živana Đorđević', subjectName: 'Marta Kovač', serverName: 'Kancelarija', contactEmail: state.organisation.contactEmail ?? '' };
+    // Every condition on, but the one of the contact address that does not hold (as confera_be).
+    const previewConditions = new Set(entry.conditions.filter((key) => key !== (state.organisation.contactEmail ? 'noContact' : 'hasContact')));
     // An image still being scanned is not shown yet (its words stand in its place) and is named (Q4-05).
     const pending = d.images.filter((image) => !cleanNow(image)).map((image) => image.id);
     const used = JSON.stringify(body.body);
-    return { status: 200, body: { ...render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: new Set(entry.conditions), images: d.images.filter(cleanNow), inline: true, link: 'https://admin.confera.example/invitations/sample' }), imagesPending: pending.filter((id) => used.includes(id)) } };
+    return { status: 200, body: { ...render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: previewConditions, images: d.images.filter(cleanNow), inline: true, link: 'https://admin.confera.example/invitations/sample' }), imagesPending: pending.filter((id) => used.includes(id)) } };
   }
   const templateRoute = /^\/api\/v1\/mail-templates\/([^/]+)$/.exec(path);
   if (templateRoute && (method === 'PUT' || method === 'DELETE')) {

@@ -67,9 +67,11 @@ describe('an email image in the format (ADR-12)', () => {
 
   it('renders as an inline part when it is clean, and only its words in the text when it is not yet', () => {
     const clean = renderBody(withImage, { values: {}, conditions: new Set(), images: new Map([[ID, { src: `cid:${ID}@confera`, width: 600, height: 120 }]]) });
-    expect(clean.html).toContain(`<img src="cid:${ID}@confera" alt="Logo konferencije" width="600" height="120">`);
+    expect(clean.html).toContain(`<img src="cid:${ID}@confera" alt="Logo konferencije" width="600" height="120" style="max-width:100%;height:auto">`);
     const pending = renderBody(withImage, { values: {}, conditions: new Set() });
     expect(pending.html).not.toContain('<img');
+    // Its words stand in its place in the HTML too (UX4-04).
+    expect(pending.html).toContain('<p>[Logo konferencije]</p>');
     expect(pending.text).toContain('[Logo konferencije]');
   });
 });

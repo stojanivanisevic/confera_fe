@@ -511,7 +511,9 @@ export interface paths {
         /**
          * Resends the message of this entry (FR-SMTP-05): as it was sent, with a fresh secure link
          *     that ends the earlier one, or rendered again from the template when the content was not
-         *     kept. 409 `resend_refused` for a test message, or a message that is not done yet.
+         *     kept. 409 `resend_refused` for a test message, an email change confirmation, a message
+         *     that is not done yet, and a link that is no longer true (it failed as stale, or the
+         *     password or the address changed after it was asked for; SEC-M4-02).
          */
         post: operations["resendMailLogEntry"];
         delete?: never;
@@ -1441,8 +1443,22 @@ export interface components {
             /** @description The link stops working at this moment. */
             expiresAt: string;
         };
-        MailImageDto: Record<string, never>;
-        MailImageListDto: Record<string, never>;
+        MailImageDto: {
+            id: string;
+            /** @description The name it was uploaded under, cleaned (with the extension of what it is now). */
+            name: string;
+            /** @description What it is now: png or jpeg (a GIF became a PNG of its first frame). */
+            type: string;
+            width: number;
+            height: number;
+            sizeBytes: number;
+            /** @description pending until ClamAV has said clean; only a clean image is shown or sent. */
+            scanState: string;
+            createdAt: string;
+        };
+        MailImageListDto: {
+            items: components["schemas"]["MailImageDto"][];
+        };
         MailLogEntryDto: {
             /** @enum {string} */
             result: "sent" | "failed";
@@ -1740,7 +1756,7 @@ export interface components {
             /** @description The HTML with its images embedded: show it in a sandboxed frame only (ST-28). */
             html: string | null;
             text: string | null;
-            /** @description Send it back with the change when it carries a `message`. */
+            /** @description Send it back with the change (every action but `open`, SEC-M4-05). */
             previewDigest: string | null;
         };
         StatusEmailSwitchDto: {
@@ -3124,6 +3140,12 @@ export interface operations {
                 result?: "sent" | "failed";
                 conferenceId?: string;
                 messageId?: string;
+                /**
+                 * @description Words searched in the recipient and the subject, any case (UX4-13): every word must
+                 *     occur in one of them. "did the author get the acceptance?" is `q=<address>` and the
+                 *     kind. A subject the log did not keep (`mailLogContent` off) is not searched.
+                 */
+                q?: string;
                 page?: number;
                 pageSize?: number;
             };

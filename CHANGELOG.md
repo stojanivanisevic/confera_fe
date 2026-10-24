@@ -4,7 +4,7 @@ All notable changes to `confera_fe`. Versions follow SemVer; `confera_be` carrie
 
 ## Unreleased
 
-Release 0.4.0 in progress (`m4/fe`), against `confera_be` `develop` (`ae29288`, its 0.4.0 integration; the vendored contract and its lock name that commit). Design systems 2.6.0 and 2.6.1 are part of it.
+Release 0.4.0 in progress (`m4/fe`), against `confera_be` `develop` (`ae29288`, its 0.4.0 integration); since the fix round the vendored contract and its lock name `m4/be-fixes` `18cb978` (the `MailImageDto` fields, `q` of the mail log, the digest of every status change but `open`, the placeholder `contactEmail` with the conditions `hasContact` and `noContact`, an image no wider than a phone and a pending one as its words; the client's renderer, the stub and its seeded templates follow it, and the stub sorts names in the Serbian Latin alphabet). Design systems 2.6.0 and 2.6.1 are part of it.
 
 ### Added
 - **Submissions (M4-FE-01).** The table searched without diacritics, filtered by status and participation and sorted from the API's fixed list, with the query in the address; a withdrawn submission only with the status filter. A submission's status changed along the state table, the email shown first (FR-MAIL-08; for every change whose email is on since the fix round), the version making a double click one change; a new one taken into processing by "Start processing" (it was a POST when it was opened, until SEC-M4-03); internal notes; the edit on the author's behalf with its kept revisions and the move back into processing; the history with message, reason and email.
