@@ -297,7 +297,9 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Send the email and change the status' }).click();
     await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
     const dialog = await changeStatus(page, 'Reject');
-    await dialog.getByRole('button', { name: 'Change the status' }).click();
+    // Reject shows its email first (SEC-M4-05) and its confirm names the consequence (UX4-07).
+    await dialog.getByRole('button', { name: 'Show the email' }).click();
+    await dialog.getByRole('button', { name: 'Reject and email the author' }).click();
     await expect(page.locator('[data-confera-submission-status="rejected"]')).toBeVisible();
     const mail = await waitForMail(email, /^Decision on your submission/);
     expect(mail.HTML).not.toMatch(/<script|<img src=x|<svg/i);
