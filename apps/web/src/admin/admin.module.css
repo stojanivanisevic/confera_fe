@@ -307,6 +307,11 @@
   overflow-wrap: anywhere;
 }
 
+/* A date and time on one line (the mail log's column, UX4-13). */
+.nowrap {
+  white-space: nowrap;
+}
+
 /* A message for the whole page above its content: the session ended, the server does not answer. */
 .banner {
   margin-bottom: var(--gutter-2xl);

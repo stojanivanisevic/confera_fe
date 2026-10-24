@@ -544,13 +544,21 @@ export const TEXTS = {
     divertedText: 'This attempt went to the mail catcher of the staging instance, not to the recipient.',
     // Retention and content (M4-FE-04; FR-SMTP-06, UXUI-M2-31).
     settings: 'What the mail log keeps',
-    settingsLead: 'Entries older than this are removed by the daily clean-up. A new organisation keeps them 24 months (730 days).',
+    /** One sentence, the settings folded under it (UX4-13). */
+    settingsChange: 'Change what the mail log keeps',
+    settingsShow: 'Show the settings',
     retention: 'Keep entries for',
     retentionUnit: 'days',
     retentionHint: 'From 30 to 3650 days. 730 days is 24 months.',
     retentionSave: 'Save',
     retentionSaved: 'The mail log keeps entries for {days} days',
-    retentionNow: 'Entries are kept for {days} days (about {months} months).',
+    retentionNow: 'Entries are kept for {days} days (about {months} months), with the content of each message; older ones are removed every day.',
+    retentionNowNoContent: 'Entries are kept for {days} days (about {months} months), without the content of the messages; older ones are removed every day.',
+    // The search of the log (UX4-13).
+    search: 'Search',
+    searchHint: 'Recipient or subject',
+    noMatch: 'No message matches “{q}”.',
+    noMatchFilters: 'No message matches these filters.',
     content: 'Keep the content of sent messages',
     contentHint: 'Switched off, the mail log keeps only who got which message and when. Links are never kept: they show as [link].',
   },

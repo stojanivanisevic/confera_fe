@@ -239,8 +239,9 @@ export function HeldMailAlert({ onOpen }: { onOpen: () => void }) {
   if (count === 0) return null;
   return (
     <div className={styles.banner} data-confera-held-mail-alert="">
+      {/* On a phone the count and the button only: the explanation would take a third of the first screen (UX4-26). */}
       <Alert tone="warning" title={count === 1 ? t.alertOne : fill(t.alert, { count })} action={<Button variant="dark" onClick={onOpen}>{t.review}</Button>}>
-        {t.alertText}
+        <span className={styles.wideOnly}>{t.alertText}</span>
       </Alert>
     </div>
   );
