@@ -343,6 +343,13 @@
   }
 }
 
+/* Shown below 600px only: the sort of a table whose column headers a phone hides (UX4-15). */
+@media (min-width: 600px) {
+  .narrowOnly {
+    display: none;
+  }
+}
+
 /* The person's name in the menu of the top bar: shown from 600px; on a phone the icon is the target (UXUI-M2-24). */
 .userName {
   overflow-wrap: anywhere;
@@ -430,6 +437,22 @@
   padding-block: var(--gutter-s);
   cursor: pointer;
   font: var(--text-body-sm);
+}
+
+/* Said to a screen reader, not shown: the step of a dialog, the rows a table now shows (UX4-02, UX4-19). */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* A sentence of a dialog that must not be missed (the language the author's email is in, UX4-14). */
+.strongText {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 /* A note keeps its lines as written. */

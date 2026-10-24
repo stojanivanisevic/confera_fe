@@ -14,7 +14,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-import { Alert, DataTable, EmptyState, FilterBar, PageHeader, Pagination, SearchField, Select, StatusBadge, TextButton } from '@confera/ui';
+import { Alert, DataTable, EmptyState, FilterBar, PageHeader, Pagination, Select, StatusBadge, TextButton, TextField } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';
@@ -33,6 +33,17 @@ const PAGE_SIZES = [25, 50, 100] as const;
 const PARTICIPATIONS = ['with_paper', 'without_paper'] as const;
 /** The columns the API sorts by, by the key of their column. */
 const SORTABLE: Readonly<Record<string, SortKey>> = { reference: 'reference', title: 'title', firstAuthor: 'firstAuthor', status: 'status', receivedAt: 'receivedAt' };
+/** The orders of the "Sort by" list of a phone, where the column headers are hidden (UX4-15): the API's fixed list. */
+const ORDERS: ReadonlyArray<{ readonly sort: SortKey | null; readonly direction: 'asc' | 'desc' }> = [
+  { sort: null, direction: 'desc' },
+  { sort: 'receivedAt', direction: 'asc' },
+  { sort: 'reference', direction: 'asc' },
+  { sort: 'reference', direction: 'desc' },
+  { sort: 'title', direction: 'asc' },
+  { sort: 'firstAuthor', direction: 'asc' },
+  { sort: 'status', direction: 'asc' },
+];
+const orderValue = (sort: SortKey | null, direction: 'asc' | 'desc') => (sort === null || (sort === 'receivedAt' && direction === 'desc') ? '' : `${sort}:${direction}`);
 
 export function Submissions() {
   const router = useRouter();
@@ -92,6 +103,9 @@ export function Submissions() {
   }, [typed, search]);
 
   const filtered = search !== '' || status !== '' || participation !== '';
+  // After Next or Previous the focus and the window go to the first row of the new page (UX4-19).
+  const table = useRef<HTMLDivElement>(null);
+  const paged = useRef(false);
   const list = useLoad<SubmissionPage>(
     (c) => m4.submissions(c, { conferenceId, search: search || undefined, status: (STATUSES as readonly string[]).includes(status) ? [status as Status] : undefined, participationType: participation || undefined, sort: sort ?? undefined, direction, page, pageSize }),
     [conferenceId, search, status, participation, sort, direction, page, pageSize],
@@ -103,6 +117,16 @@ export function Submissions() {
     setTyped('');
     setQuery({ q: null, status: null, participation: null });
   };
+  const data = list.state.data;
+  useEffect(() => {
+    if (!paged.current || list.state.phase !== 'ready') return;
+    paged.current = false;
+    table.current?.scrollIntoView({ block: 'start' });
+    table.current?.querySelector<HTMLElement>('tbody .ud-table__open')?.focus({ preventScroll: true });
+  }, [list.state]);
+  // The rows the table shows now, said after every page, filter and search (UX4-19).
+  const from = data && data.total > 0 ? (page - 1) * pageSize + 1 : 0;
+  const to = data ? Math.min(data.total, page * pageSize) : 0;
 
   return (
     <div className={styles.stack}>
@@ -113,13 +137,15 @@ export function Submissions() {
         </Alert>
       ) : null}
       {list.state.phase === 'failed' && !list.state.data ? null : (
+        <div ref={table} className={styles.anchored} data-confera-submissions-table="">
         <DataTable<SubmissionSummary>
           caption={t.title}
           rows={rows}
           rowKey="id"
           loading={list.state.phase === 'loading' && !list.state.data}
           filtered={filtered}
-          onClearFilters={clear}
+          // One way to clear, the toolbar's (UX4-20); the empty result names the search.
+          labels={{ noResults: search ? fill(t.noMatch, { q: search }) : t.noMatchFilters }}
           empty={<EmptyState title={t.empty} description={t.emptyText} />}
           onRowClick={(row) => router.push(`/submissions/${row.id}`)}
           manualSort
@@ -157,7 +183,20 @@ export function Submissions() {
           ]}
           toolbar={
             <FilterBar onReset={filtered ? clear : undefined}>
-              <SearchField label={t.search} placeholder={t.searchHint} value={typed} onChange={(event) => setTyped(event.target.value)} onClear={() => setTyped('')} data-confera-submission-search="" />
+              {/* A visible label, and a hint short enough for a phone (UX4-20). */}
+              <TextField type="search" icon="search" label={t.search} placeholder={t.searchHint} value={typed} onChange={(event) => setTyped(event.target.value)} data-confera-submission-search="" />
+              {/* A phone hides the column headers, and with them the sort: there it is a list (UX4-15). */}
+              <div className={styles.narrowOnly}>
+                <Select
+                  label={t.sortBy}
+                  value={orderValue(sort, direction)}
+                  onChange={(event) => {
+                    const [key, dir] = event.target.value.split(':');
+                    setQuery(key ? { sort: key, direction: dir ?? 'asc' } : { sort: null, direction: null });
+                  }}
+                  options={ORDERS.map((order) => ({ value: orderValue(order.sort, order.direction), label: t.orders[orderValue(order.sort, order.direction)] ?? '' }))}
+                />
+              </div>
               <Select
                 label={t.status}
                 value={status}
@@ -177,19 +216,22 @@ export function Submissions() {
               page={page}
               pageSize={pageSize}
               total={list.state.data?.total ?? 0}
-              onPageChange={(next) => setQuery({ page: next === 1 ? null : String(next) }, true)}
+              onPageChange={(next) => {
+                paged.current = true;
+                setQuery({ page: next === 1 ? null : String(next) }, true);
+              }}
               pageSizeOptions={[...PAGE_SIZES]}
               onPageSizeChange={(size) => setQuery({ size: size === 25 ? null : String(size) })}
             />
           }
         />
+        </div>
       )}
-      {list.state.data && list.state.data.total > 0 ? (
-        <p className={styles.small} role="status">
-          {fill('{n} {rows}', { n: list.state.data.total, rows: TEXTS.common.rows })}
-          {status === '' ? ` ${t.withdrawnHidden}` : ''}
-        </p>
-      ) : null}
+      {/* Shown with rows; with none the table says it, and this only tells a screen reader. */}
+      <p className={data && data.total > 0 ? styles.small : styles.visuallyHidden} role="status">
+        {data && data.total > 0 ? fill(t.showing, { from, to, total: data.total }) : data ? (search ? fill(t.noMatch, { q: search }) : filtered ? t.noMatchFilters : '') : ''}
+        {data && data.total > 0 && status === '' ? ` ${t.withdrawnHidden}` : ''}
+      </p>
     </div>
   );
 }

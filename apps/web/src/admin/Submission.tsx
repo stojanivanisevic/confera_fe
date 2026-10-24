@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { countWords, parseSafeText, readDefinition, textOf, type FieldKind, type FormDefinition } from '@confera/form-renderer';
-import { Alert, Button, Card, Checkbox, DataTable, DescriptionList, Dialog, Drawer, Menu, PageHeader, SandboxedMarkupFrame, Select, StatusBadge, Textarea, TextButton, TextField, toast } from '@confera/ui';
+import { Alert, Button, Card, Checkbox, DataTable, DescriptionList, Dialog, Drawer, Menu, PageHeader, SandboxedMarkupFrame, Select, Spinner, StatusBadge, Textarea, TextButton, TextField, toast } from '@confera/ui';
 
 import styles from './admin.module.css';
 import { formatDateTime } from './format';
@@ -60,7 +60,7 @@ const EDITABLE: readonly FieldKind[] = ['text', 'longText', 'email', 'choice'];
 
 export function Submission({ id }: { id: string }) {
   const router = useRouter();
-  const { client, contact, session } = useSession();
+  const { client, session } = useSession();
   const t = TEXTS.submissions;
   const mayManage = session?.user.permissions.includes('submissions.manage') ?? false;
   const detail = useLoad<ManagedSubmission>((c) => m4.submission(c, id), [id]);
@@ -73,25 +73,10 @@ export function Submission({ id }: { id: string }) {
   const [asked, setAsked] = useState<Action | null>(null);
   const [editing, setEditing] = useState(false);
   const [problem, setProblem] = useState<Explained | null>(null);
-
-  // Transition 2: the first admin who opens a new submission takes it into processing, by a POST of this page.
-  const opening = useRef(false);
-  useEffect(() => {
-    if (!record || !mayManage || opening.current || !actionsOf(record).includes('open')) return;
-    opening.current = true;
-    m4.changeStatus(client, record.id, { action: 'open', version: record.version }).then(
-      (next) => {
-        detail.replace(next);
-        const off = next.statusHistory.at(-1)?.email === 'template_off';
-        toast({ title: t.autoOpened, description: off ? t.autoOpenedOff : t.autoOpenedText, tone: 'success' });
-      },
-      (error: unknown) => {
-        // Another admin was first: the page reads the submission as it is now.
-        if (isApiError(error) && (error.code === 'version_conflict' || error.code === 'transition_refused')) void detail.reload({ background: true });
-        else setProblem(explain(error, contact));
-      },
-    );
-  }, [record, mayManage, client, detail, contact, t]);
+  // Another admin was first (UX4-09): said on the page, which shows the submission as it is now.
+  const [overtaken, setOvertaken] = useState<string | null>(null);
+  // Reading a submission changes nothing and sends nothing: taking a new one into processing is an act of
+  // the office, "Start processing", with its email shown first like every other change (SEC-M4-03, UX4-08).
 
   if (detail.state.phase === 'failed' && !record) {
     return (
@@ -114,7 +99,23 @@ export function Submission({ id }: { id: string }) {
   // Short answers in the grid; a long text (the abstract) under it, the width of the card, with its paragraphs (UX3-02).
   const rows = answered.filter((row) => !isLong(row.kind, row.text)).map((row) => ({ label: row.label, value: <span className={styles.break}>{row.text}</span> }));
   const long = answered.filter((row) => isLong(row.kind, row.text));
-  const actions = mayManage ? actionsOf(record).filter((action) => action !== 'open') : [];
+  const allowed = mayManage ? actionsOf(record) : [];
+  const starts = allowed.includes('open');
+  const actions = allowed.filter((action) => action !== 'open');
+  // Who took it into processing, and whether the author was emailed: a line that stays (UX4-08).
+  const opened = [...record.statusHistory].reverse().find((entry) => entry.transition === 2);
+  /** The page reads the submission again after another admin was first, and says what happened (UX4-09). */
+  const stale = async (before: string) => {
+    try {
+      const next = await m4.submission(client, record.id);
+      detail.replace(next);
+      setOvertaken(next.status !== before ? fill(t.changedByOther, { status: statusText(next.status) }) : t.changedByOtherSame);
+    } catch {
+      void detail.reload({ background: true });
+      setOvertaken(t.changedByOtherSame);
+    }
+    setAsked(null);
+  };
   const labelOf = (field: string): string => {
     if (field === 'title') return t.fieldTitle;
     const key = field.replace(/^answers\./, '');
@@ -144,10 +145,26 @@ export function Submission({ id }: { id: string }) {
                 {t.edit}
               </Button>
             ) : null}
-            {actions.length > 0 ? <Menu label={t.changeStatus} align="end" trigger={<Button type="button">{t.changeStatus}</Button>} items={actions.map((action) => ({ label: t.actions[action] ?? action, danger: action === 'reject' || action === 'withdraw', onSelect: () => setAsked(action) }))} /> : null}
+            {starts ? (
+              <Button type="button" onClick={() => setAsked('open')} data-confera-start-processing="">
+                {t.actions.open}
+              </Button>
+            ) : null}
+            {actions.length > 0 ? <Menu label={t.changeStatus} align="end" trigger={<Button type="button" variant={starts ? 'dark' : undefined}>{t.changeStatus}</Button>} items={actions.map((action) => ({ label: t.actions[action] ?? action, danger: action === 'reject' || action === 'withdraw', onSelect: () => setAsked(action) }))} /> : null}
           </div>
         }
       />
+      {opened ? (
+        <p className={styles.text} data-confera-opened="">
+          {fill(t.openedBy, { name: opened.actor?.displayName ?? t.none, when: formatDateTime(opened.changedAt) })} {opened.email === 'template_off' ? t.openedNoEmail : opened.email === 'queued' ? t.openedEmailed : ''}
+        </p>
+      ) : null}
+      {record.status === 'new' && starts ? (
+        <Alert tone="info" title={t.newTitle}>
+          {t.newText}
+        </Alert>
+      ) : null}
+      {overtaken ? <ProblemAlert title={overtaken} onClose={() => setOvertaken(null)} /> : null}
       {problem ? (
         <ProblemAlert title={problem.title} onClose={() => setProblem(null)}>
           {problem.text}
@@ -245,7 +262,17 @@ export function Submission({ id }: { id: string }) {
                   t.none
                 ),
             },
-            { key: 'email', header: t.historyEmail, render: (row) => (row.email === 'template_off' ? <StatusBadge tone="neutral">{t.emailOff}</StatusBadge> : row.email === 'queued' ? t.emailQueued : t.none) },
+            // What the Emails card says of the same email (UX4-21): queued, sent, held, failed.
+            {
+              key: 'email',
+              header: t.historyEmail,
+              render: (row) => {
+                if (row.email === 'template_off') return <StatusBadge tone="neutral">{t.emailOff}</StatusBadge>;
+                if (row.email !== 'queued') return t.none;
+                const sent = record.emails.find((email) => email.id === row.emailId);
+                return sent ? (t.emailStatus[sent.status] ?? sent.status) : t.emailQueued;
+              },
+            },
             { key: 'changedAt', header: t.when, render: (row) => formatDateTime(row.changedAt) },
             { key: 'actor', header: t.by, render: (row) => row.actor?.displayName ?? t.none },
           ]}
@@ -289,10 +316,11 @@ export function Submission({ id }: { id: string }) {
           onChanged={(next) => {
             detail.replace(next);
             setAsked(null);
+            setOvertaken(null);
             const off = next.statusHistory.at(-1)?.email === 'template_off';
             toast({ title: fill(t.changed, { status: statusText(next.status) }), description: off ? t.changedNoEmail : t.changedEmail, tone: 'success' });
           }}
-          onStale={() => void detail.reload({ background: true })}
+          onStale={() => void stale(record.status)}
         />
       ) : null}
       {editing ? (
@@ -300,9 +328,11 @@ export function Submission({ id }: { id: string }) {
           record={record}
           definition={definition}
           onClose={() => setEditing(false)}
-          onSaved={(next) => {
+          onSaved={(next, resume) => {
             detail.replace(next);
             setEditing(false);
+            // The corrections of a returned submission take it back into processing: its email is shown first (SEC-M4-05).
+            if (resume) setAsked('resume');
           }}
           onStale={() => void detail.reload({ background: true })}
         />
@@ -312,36 +342,47 @@ export function Submission({ id }: { id: string }) {
 }
 
 /**
- * A change of status. A text for the author makes it two steps: the message, then the email as the
- * server renders it, shown before it goes (FR-MAIL-08). Without one it is one confirmation.
+ * A change of status. Every change whose email is on shows that email first, as the server renders
+ * it, and the change goes with the digest of exactly what was shown (FR-MAIL-08, SEC-M4-05): a
+ * change that asks for words (a message for the author, an internal reason) has them first, then
+ * the email; one that asks for none (start processing, accept, back in processing) opens on the
+ * email. A change whose template is off says that no email goes.
+ *
+ * At each step the focus goes to the dialog's heading and the step is said (UX4-02): the button
+ * that had the focus is gone then. A refused message puts the focus in its field.
  */
 function StatusDialog({ record, action, onClose, onChanged, onStale }: { record: ManagedSubmission; action: Action; onClose: () => void; onChanged: (next: ManagedSubmission) => void; onStale: () => void }) {
   const { client, contact } = useSession();
   const t = TEXTS.submissions;
   const rule = ACTION_RULES[action];
+  const asks = rule.message !== 'none' || rule.reason;
   const [message, setMessage] = useState('');
   const [reason, setReason] = useState('');
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  const [step, setStep] = useState<'message' | 'email'>(asks ? 'message' : 'email');
   const [preview, setPreview] = useState<StatusEmailPreview | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<Explained | null>(null);
+  const body = useRef<HTMLDivElement>(null);
   const withMessage = rule.message !== 'none' && message.trim() !== '';
-  const showsEmail = rule.message === 'required' || withMessage;
+  const title = t.actions[action] ?? action;
 
   const refused = (error: unknown) => {
     if (isApiError(error) && (error.code === 'version_conflict' || error.code === 'transition_refused')) {
+      // Another admin was first: the dialog closes and the page says what happened (UX4-09).
       onStale();
-      setProblem({ ...explain(error, contact), title: t.transitionRefused });
       return;
     }
     if (isApiError(error) && error.code === 'preview_outdated') {
-      setPreview(null);
       setProblem({ ...explain(error, contact), title: t.previewOutdated });
+      void loadPreview();
       return;
     }
     const fields = fieldMessages(error);
-    if (Object.keys(fields).length > 0) setErrors(fields);
-    else setProblem(explain(error, contact));
+    if (Object.keys(fields).length > 0) {
+      setErrors(fields);
+      setStep('message');
+    } else setProblem(explain(error, contact));
   };
   const checked = (): boolean => {
     const next: Record<string, string> = {};
@@ -350,28 +391,40 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
     setErrors(next);
     return Object.keys(next).length === 0;
   };
-  const showEmail = async () => {
-    if (!checked()) return;
+  const loadPreview = async () => {
     setBusy(true);
-    setProblem(null);
     try {
       setPreview(await m4.previewStatus(client, record.id, { action, message: withMessage ? message.trim() : undefined, reason: rule.reason ? reason.trim() : undefined }));
+      setStep('email');
     } catch (error) {
       refused(error);
     } finally {
       setBusy(false);
     }
   };
-  const change = async () => {
+  const showEmail = () => {
     if (!checked()) return;
+    setProblem(null);
+    void loadPreview();
+  };
+  // A change that asks for no words opens on its email.
+  const opening = useRef(true);
+  useEffect(() => {
+    if (!asks) void loadPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when the dialog opens
+  }, []);
+  const change = async () => {
+    if (!checked() || !preview) return;
     setBusy(true);
     setProblem(null);
     try {
-      const next = await m4.changeStatus(
-        client,
-        record.id,
-        { action, version: record.version, ...(withMessage ? { message: message.trim() } : {}), ...(rule.reason ? { reason: reason.trim() } : {}), ...(preview?.previewDigest ? { previewDigest: preview.previewDigest } : {}) },
-      );
+      const next = await m4.changeStatus(client, record.id, {
+        action,
+        version: record.version,
+        ...(withMessage ? { message: message.trim() } : {}),
+        ...(rule.reason ? { reason: reason.trim() } : {}),
+        ...(preview.previewDigest ? { previewDigest: preview.previewDigest } : {}),
+      });
       onChanged(next);
     } catch (error) {
       refused(error);
@@ -380,25 +433,50 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
     }
   };
 
-  const title = t.actions[action] ?? action;
   const email = preview?.sends && preview.html !== null ? preview : null;
+  const shown = step === 'email' && preview !== null;
+  // The focus and the words of each step (UX4-02): the heading takes the focus, the step is said.
+  useEffect(() => {
+    if (opening.current && step === 'message') {
+      opening.current = false;
+      return;
+    }
+    if (step === 'email' && !preview) return;
+    opening.current = false;
+    const heading = body.current?.closest('[role="dialog"]')?.querySelector<HTMLElement>('.ud-dialog__title');
+    if (heading) {
+      heading.tabIndex = -1;
+      heading.focus();
+    }
+  }, [step, preview]);
+  // What the live region says: it changes with the step, so it is heard at each step.
+  const said = step === 'message' ? fill(t.stepMessage, { action: title }) : !preview ? '' : email ? fill(t.stepEmail, { to: email.to ?? t.none, language: email.language ? (t.languages[email.language] ?? email.language) : t.none, subject: email.subject ?? '' }) : t.stepNoEmail;
+  // A refused field takes the focus, so the person hears what is wrong where it is wrong.
+  useEffect(() => {
+    const first = ['message', 'reason'].find((name) => errors[name]);
+    if (first) body.current?.querySelector<HTMLElement>(`textarea[name="${first}"]`)?.focus();
+  }, [errors]);
+
+  const confirmText = email ? (t.confirmWithEmail[action] ?? t.sendAndChange) : (t.confirmWithoutEmail[action] ?? t.confirmChange);
   return (
     <Dialog
       open
-      size={preview ? 'lg' : 'md'}
+      size={shown ? 'lg' : 'md'}
       onClose={onClose}
-      title={preview ? t.emailTitle : title}
+      title={shown && email ? t.emailTitle : title}
       actions={
-        preview ? (
+        step === 'email' ? (
           <>
             <TextButton type="button" onClick={onClose}>
               {TEXTS.common.cancel}
             </TextButton>
-            <TextButton type="button" onClick={() => setPreview(null)}>
-              {t.previous}
-            </TextButton>
-            <Button type="button" disabled={busy} onClick={() => void change()}>
-              {busy ? TEXTS.common.loading : email ? t.sendAndChange : t.confirmChange}
+            {asks ? (
+              <TextButton type="button" onClick={() => setStep('message')}>
+                {t.previous}
+              </TextButton>
+            ) : null}
+            <Button type="button" variant={action === 'reject' || action === 'withdraw' ? 'danger' : undefined} disabled={busy || !preview} onClick={() => void change()}>
+              {busy ? TEXTS.common.loading : confirmText}
             </Button>
           </>
         ) : (
@@ -406,42 +484,54 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
             <TextButton type="button" onClick={onClose}>
               {TEXTS.common.cancel}
             </TextButton>
-            <Button type="button" disabled={busy} onClick={() => void (showsEmail ? showEmail() : change())}>
-              {busy ? TEXTS.common.loading : showsEmail ? t.showEmail : t.confirmChange}
+            <Button type="button" disabled={busy} onClick={showEmail}>
+              {busy ? TEXTS.common.loading : t.showEmail}
             </Button>
           </>
         )
       }
     >
-      <div className={styles.form} data-confera-status-dialog={action} data-confera-status-step={preview ? 'email' : 'message'}>
+      <div ref={body} className={styles.form} data-confera-status-dialog={action} data-confera-status-step={step}>
+        <p className={styles.visuallyHidden} role="status">
+          {said}
+        </p>
         {problem ? <Alert tone="error" title={problem.title}>{problem.text}</Alert> : null}
-        {preview ? (
-          email ? (
-            <>
-              <p className="ud-dialog__text">{t.emailLead}</p>
-              <DescriptionList
-                items={[
-                  { label: t.emailTo, value: <span className={styles.break}>{email.to ?? t.none}</span> },
-                  { label: t.emailLanguage, value: email.language ? (t.languages[email.language] ?? email.language) : t.none },
-                  { label: t.emailSubject, value: <strong className={styles.break} data-confera-status-email-subject="">{email.subject}</strong> },
-                ]}
-              />
-              {/* The server's rendering, never in the page itself (ST-28). */}
-              <SandboxedMarkupFrame className={styles.frame} title={t.emailFrame} markup={email.html ?? ''} />
-              {/* The plain-text alternative, folded, so the dialog stays one screen high. */}
-              <details className={styles.folded}>
-                <summary>{t.emailPlain}</summary>
-                <pre className={styles.plain} data-confera-status-email-text="">
-                  {email.text}
-                </pre>
-              </details>
-            </>
+        {step === 'email' ? (
+          !preview ? (
+            <Spinner label={t.previewLoading} />
           ) : (
-            <Alert tone="info" title={t.templateOff} />
+            <>
+              {!asks ? <p className="ud-dialog__text">{t.actionText[action]}</p> : null}
+              {email ? (
+                <>
+                  <p className="ud-dialog__text">{t.emailLead}</p>
+                  <DescriptionList
+                    items={[
+                      { label: t.emailTo, value: <span className={styles.break}>{email.to ?? t.none}</span> },
+                      { label: t.emailLanguage, value: email.language ? (t.languages[email.language] ?? email.language) : t.none },
+                      { label: t.emailSubject, value: <strong className={styles.break} data-confera-status-email-subject="">{email.subject}</strong> },
+                    ]}
+                  />
+                  {/* The server's rendering, never in the page itself (ST-28). */}
+                  <SandboxedMarkupFrame className={styles.frame} title={t.emailFrame} markup={email.html ?? ''} />
+                  {/* The plain-text alternative, folded, so the dialog stays one screen high. */}
+                  <details className={styles.folded}>
+                    <summary>{t.emailPlain}</summary>
+                    <pre className={styles.plain} data-confera-status-email-text="">
+                      {email.text}
+                    </pre>
+                  </details>
+                </>
+              ) : (
+                <Alert tone="info" title={t.templateOff} />
+              )}
+            </>
           )
         ) : (
           <>
             <p className="ud-dialog__text">{t.actionText[action]}</p>
+            {/* The language of the email is the author's: said before the message is written (UX4-14). */}
+            {rule.message !== 'none' && t.messageLanguage[record.language] ? <p className={`ud-dialog__text ${styles.strongText}`}>{t.messageLanguage[record.language]}</p> : null}
             {rule.message !== 'none' ? (
               <Textarea label={t.message} name="message" required={rule.message === 'required'} rows={6} value={message} onChange={(event) => setMessage(event.target.value)} message={errors.message ?? t.messageHint} status={errors.message ? 'error' : 'default'} maxLength={5000} />
             ) : null}
@@ -515,6 +605,40 @@ function NotesCard({ record, mayManage, onSaved }: { record: ManagedSubmission; 
 
 const shown = (value: unknown): string => (value === null || value === undefined || value === '' ? TEXTS.submissions.none : typeof value === 'string' ? value : JSON.stringify(value));
 const authorNames = (value: unknown): string => (Array.isArray(value) ? value.map((a: { firstName?: string; lastName?: string }) => `${a.firstName ?? ''} ${a.lastName ?? ''}`.trim()).join(', ') : shown(value));
+/** A value of an author as the office compares it: no value, an empty one and spaces are the same. */
+const authorValue = (value: unknown): string => (typeof value === 'string' ? value.trim() : value === null || value === undefined ? '' : JSON.stringify(value));
+const AUTHOR_FIELDS = ['firstName', 'lastName', 'institution', 'email'] as const;
+const authorFieldLabel = (key: string): string => {
+  const t = TEXTS.submissions;
+  return key === 'firstName' ? t.firstName : key === 'lastName' ? t.lastName : key === 'institution' ? t.institution : key === 'email' ? t.email : key === 'orcid' ? t.orcid : key === 'phone' ? t.phone : key;
+};
+/**
+ * What changed in the authors, field by field (UX4-16): the names when they changed, else each other
+ * field that did, and nothing at all for authors that are the same (no "X became X").
+ */
+function authorChanges(before: unknown, after: unknown): string[] {
+  const t = TEXTS.submissions;
+  const was = Array.isArray(before) ? (before as Record<string, unknown>[]) : [];
+  const now = Array.isArray(after) ? (after as Record<string, unknown>[]) : [];
+  if (!Array.isArray(before) || !Array.isArray(after)) return [fill(t.revisionAuthors, { before: authorNames(before), after: authorNames(after) })];
+  const name = (author: Record<string, unknown>) => `${authorValue(author.firstName)} ${authorValue(author.lastName)}`.trim();
+  if (was.map(name).join('|') !== now.map(name).join('|')) return [fill(t.revisionAuthors, { before: authorNames(before), after: authorNames(after) })];
+  const lines: string[] = [];
+  for (let index = 0; index < Math.max(was.length, now.length); index++) {
+    const a = was[index];
+    const b = now[index];
+    if (!a && b) lines.push(fill(t.revisionAuthorAdded, { n: index + 1, name: name(b) }));
+    else if (a && !b) lines.push(fill(t.revisionAuthorRemoved, { n: index + 1, name: name(a) }));
+    else if (a && b) {
+      const keys = [...new Set([...AUTHOR_FIELDS, ...Object.keys(a), ...Object.keys(b)])].filter((key) => key !== 'firstName' && key !== 'lastName');
+      for (const key of keys) if (authorValue(a[key]) !== authorValue(b[key])) lines.push(fill(t.revisionAuthorField, { n: index + 1, field: authorFieldLabel(key), before: shown(a[key]), after: shown(b[key]) }));
+    }
+  }
+  return lines;
+}
+/** Whether the authors differ in what the office can change here (the same comparison as the revision's lines). */
+const authorsDiffer = (a: readonly Record<string, unknown>[], b: readonly Record<string, unknown>[]): boolean =>
+  a.length !== b.length || a.some((author, index) => AUTHOR_FIELDS.some((key) => authorValue(author[key]) !== authorValue(b[index]?.[key])));
 
 /** What the office changed on the author's behalf, with the old values (FR-SUB-06). */
 function RevisionsCard({ revisions, labelOf }: { revisions: readonly Revision[]; labelOf: (field: string) => string }) {
@@ -528,11 +652,13 @@ function RevisionsCard({ revisions, labelOf }: { revisions: readonly Revision[];
           {[...revisions].reverse().map((revision) => (
             <li key={revision.number} className={styles.stackTight}>
               <strong>{fill(t.revisionBy, { when: formatDateTime(revision.changedAt), name: revision.changedBy?.displayName ?? t.none })}</strong>
-              {revision.fields.map((field) => (
-                <span key={field} className={`${styles.small} ${styles.break}`}>
-                  {field === 'authors' ? fill(t.revisionAuthors, { before: authorNames(revision.before[field]), after: authorNames(revision.after[field]) }) : fill(t.revisionField, { field: labelOf(field), before: shown(revision.before[field]), after: shown(revision.after[field]) })}
-                </span>
-              ))}
+              {revision.fields.flatMap((field) =>
+                (field === 'authors' ? authorChanges(revision.before[field], revision.after[field]) : [fill(t.revisionField, { field: labelOf(field), before: shown(revision.before[field]), after: shown(revision.after[field]) })]).map((line, index) => (
+                  <span key={`${field}.${String(index)}`} className={`${styles.small} ${styles.break}`}>
+                    {line}
+                  </span>
+                )),
+              )}
             </li>
           ))}
         </ul>
@@ -546,7 +672,7 @@ type AuthorDraft = Record<string, unknown> & { firstName?: string; lastName?: st
 const text = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 /** The edit on the author's behalf (FR-SUB-06): the texts and choices of the form and the authors; files stay as sent. */
-function EditDrawer({ record, definition, onClose, onSaved, onStale }: { record: ManagedSubmission; definition: FormDefinition | null; onClose: () => void; onSaved: (next: ManagedSubmission) => void; onStale: () => void }) {
+function EditDrawer({ record, definition, onClose, onSaved, onStale }: { record: ManagedSubmission; definition: FormDefinition | null; onClose: () => void; onSaved: (next: ManagedSubmission, resume: boolean) => void; onStale: () => void }) {
   const { client, contact } = useSession();
   const t = TEXTS.submissions;
   const editable = (definition?.sections.filter((s) => !s.repeat).flatMap((s) => s.fields) ?? []).filter((f) => EDITABLE.includes(f.kind) && Object.hasOwn(record.answers, f.key));
@@ -564,17 +690,18 @@ function EditDrawer({ record, definition, onClose, onSaved, onStale }: { record:
 
   const save = async () => {
     const changed: Record<string, unknown> = Object.fromEntries(Object.entries(answers).filter(([key, value]) => value !== text(record.answers[key])));
-    if (JSON.stringify(authors) !== JSON.stringify(stored)) changed.authors = authors;
+    // The authors go only when a value of theirs really changed (UX4-16).
+    if (authorsDiffer(authors, stored)) changed.authors = authors;
     setBusy(true);
     setProblem(null);
     setErrors({});
     try {
       let next = record;
       if (Object.keys(changed).length > 0) next = await m4.edit(client, record.id, { version: record.version, answers: changed });
-      // The corrections of a returned submission take it back into processing: transition 5, with its own email.
-      if (canResume && resume) next = await m4.changeStatus(client, record.id, { action: 'resume', version: next.version });
       toast({ title: next === record ? t.editNothing : t.editSaved, tone: next === record ? 'info' : 'success' });
-      onSaved(next);
+      // The corrections of a returned submission take it back into processing: transition 5, whose email the
+      // page shows next, before it goes (SEC-M4-05).
+      onSaved(next, canResume && resume);
     } catch (error) {
       if (isApiError(error) && error.code === 'version_conflict') onStale();
       const fields = fieldMessages(error);
@@ -606,6 +733,9 @@ function EditDrawer({ record, definition, onClose, onSaved, onStale }: { record:
     >
       <div className={styles.form} data-confera-edit-submission="">
         <p className={styles.text}>{t.editLead}</p>
+        <p className={styles.text} data-confera-edit-not-here="">
+          {t.editNotHere}
+        </p>
         {problem ? (
           <ProblemAlert title={problem.title} onClose={() => setProblem(null)}>
             {problem.text}

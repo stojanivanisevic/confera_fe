@@ -980,14 +980,30 @@ export const TEXTS = {
     statuses: { new: 'New', received: 'New', open: 'Open', returned_for_revision: 'Returned for revision', returned: 'Returned for revision', accepted: 'Accepted', rejected: 'Rejected', withdrawn: 'Withdrawn' } as Record<string, string>,
     // The table's search, filters and sort (M4-FE-01; FR-SUB-03).
     search: 'Search',
-    searchHint: 'Reference, title, author, email or institution',
+    /** Short enough for a phone (UX4-20); the search also covers the authors' institutions. */
+    searchHint: 'Reference, title, author, email…',
+    /** The sort of a phone, where the column headers are hidden (UX4-15), by `sort:direction`. */
+    sortBy: 'Sort by',
+    orders: {
+      '': 'Newest first',
+      'receivedAt:asc': 'Oldest first',
+      'reference:asc': 'Reference, first to last',
+      'reference:desc': 'Reference, last to first',
+      'title:asc': 'Title, A to Z',
+      'firstAuthor:asc': 'First author, A to Z',
+      'status:asc': 'Status',
+    } as Record<string, string>,
+    /** The empty result and the rows shown (UX4-19, UX4-20). */
+    noMatch: 'No submission matches “{q}”.',
+    noMatchFilters: 'No submission matches these filters.',
+    showing: '{from}–{to} of {total} submissions.',
     anyStatus: 'Every status but withdrawn',
     anyParticipation: 'Any participation',
     withdrawnHidden: 'Withdrawn submissions are not shown: choose “Withdrawn” under Status to see them.',
     // The status actions (M4-FE-01; FR-SUB-05, FR-SUB-08, FR-MAIL-08).
     changeStatus: 'Change the status',
     actions: {
-      open: 'Take into processing',
+      open: 'Start processing',
       return: 'Return for revision',
       resume: 'Back in processing',
       accept: 'Accept',
@@ -997,12 +1013,12 @@ export const TEXTS = {
     } as Record<string, string>,
     /** What each action does, said in its dialog. */
     actionText: {
-      open: 'The submission is open: the office works on it. The author gets the email “Taken into processing”.',
+      open: 'The submission is open: the office works on it. The author gets the email “Taken into processing”, shown here before it goes.',
       return: 'The author gets the email “Returned for revision” with your message, which says what to correct. You see the email before it goes.',
       resume: 'The corrections are in: the submission is open again. The author gets the email “Back in processing”.',
       accept: 'The author gets the acceptance email.',
       reject: 'The author gets the email “Rejected”. A message is optional; with one, you see the email before it goes.',
-      withdraw: 'The submission keeps all its data and leaves the default view of the table. The author gets the email “Withdrawn”. The reason is internal; a message for the author is optional.',
+      withdraw: 'A withdrawn submission cannot be reopened. It keeps all its data and leaves the default view of the table. The author gets the email “Withdrawn”. The reason is internal; a message for the author is optional.',
       reopen: 'The submission is open again. The author gets the email “Reopened”. The reason is internal; a message for the author is optional.',
     } as Record<string, string>,
     message: 'Message for the author',
@@ -1014,6 +1030,16 @@ export const TEXTS = {
     showEmail: 'Show the email',
     confirmChange: 'Change the status',
     sendAndChange: 'Send the email and change the status',
+    /** The confirm of a change whose consequence the button names (UX4-07): with the email, and when its template is off. */
+    confirmWithEmail: { reject: 'Reject and email the author', withdraw: 'Withdraw for good and email the author' } as Record<string, string>,
+    confirmWithoutEmail: { reject: 'Reject (no email)', withdraw: 'Withdraw for good (no email)' } as Record<string, string>,
+    /** Step 1 of a change with a message (UX4-14): the email's language is the author's, said before the message is written. */
+    messageLanguage: { en: 'The author’s email is in English. Write your message in English.', sr: 'The author’s email is in Serbian. Write your message in Serbian.' } as Record<string, string>,
+    /** Said to a screen reader at each step of the dialog (UX4-02). */
+    stepMessage: '{action}: the message for the author.',
+    stepEmail: 'The email to the author is shown: to {to}, in {language}, subject “{subject}”.',
+    stepNoEmail: 'No email goes with this change.',
+    previewLoading: 'The server is preparing the email…',
     previous: 'Back',
     emailTitle: 'The email to the author',
     emailLead: 'This is the email exactly as it goes. Send it and change the status, or go back and change the message.',
@@ -1026,18 +1052,24 @@ export const TEXTS = {
     changed: 'Status: {status}',
     changedEmail: 'The author is emailed.',
     changedNoEmail: 'No email: the template is off.',
-    autoOpened: 'Taken into processing',
-    autoOpenedText: 'Opening it took the submission into processing; the author is emailed.',
-    autoOpenedOff: 'Opening it took the submission into processing. No email went: the template is off for the conference.',
+    /** A new submission: nobody has started on it; starting is an act of its own, with its email shown first (SEC-M4-03, UX4-08). */
+    newTitle: 'Nobody has started processing this submission yet',
+    newText: 'Reading it changes nothing and sends nothing. “Start processing” opens it for the office and sends the author the email “Taken into processing”, which you see before it goes.',
+    /** The line under the title once it was taken into processing (UX4-08): it stays. */
+    openedBy: 'Taken into processing by {name} on {when}.',
+    openedEmailed: 'The author was emailed.',
+    openedNoEmail: 'No email went: the template is off for the conference.',
     previewOutdated: 'The email changed after you saw it. Look at it again before it goes.',
-    transitionRefused: 'This change is not possible from the status the submission has now. The page shows its status as it is.',
+    /** Another admin was first (UX4-09): plain words, the dialog closed, the page as it is now. */
+    changedByOther: 'Another admin has just changed this submission to {status}. Nothing was sent.',
+    changedByOtherSame: 'Another admin has just changed this submission. Nothing was sent. Look at it again, then change its status.',
     historyAction: 'Change',
     receivedFromForm: 'Received from the form',
     historyEmail: 'Email',
     historyDetail: 'Message and reason',
     historyMessage: 'Message: {text}',
     historyReason: 'Internal reason: {text}',
-    emailQueued: 'Sent to the outbox',
+    emailQueued: 'Queued',
     emailOff: 'No email: template off',
     // Notes (FR-SUB-07).
     notes: 'Notes',
@@ -1050,10 +1082,12 @@ export const TEXTS = {
     // Edit on the author's behalf (FR-SUB-06).
     edit: 'Edit on the author’s behalf',
     editLead: 'The new values replace the old ones in the submission; the old ones stay in its history, with who changed them and when.',
+    /** Why some data are not here (UX4-16; M4-ISS-02: a revision refuses changes to file fields). */
+    editNotHere: 'Files, phone numbers and ORCID iDs are not changed here. Ask the author to send them again.',
     editSave: 'Save the changes',
     editSaved: 'Changes saved',
     editNothing: 'Nothing was changed.',
-    editResume: 'These are the author’s corrections: take the submission back into processing (the author gets the email “Back in processing”)',
+    editResume: 'These are the author’s corrections: take the submission back into processing (the author gets the email “Back in processing”, which you see before it goes)',
     editAuthor: 'Author {n}',
     firstName: 'First name',
     lastName: 'Last name',
@@ -1063,6 +1097,10 @@ export const TEXTS = {
     revisionBy: 'Changed {when} by {name}',
     revisionField: '{field}: “{before}” became “{after}”',
     revisionAuthors: 'Authors: {before} became {after}',
+    /** One field of one author that changed, when the names stayed (UX4-16). */
+    revisionAuthorField: 'Author {n}, {field}: “{before}” became “{after}”',
+    revisionAuthorAdded: 'Author {n} added: {name}',
+    revisionAuthorRemoved: 'Author {n} removed: {name}',
     fieldTitle: 'Title',
     participations: { with_paper: 'With a paper', without_paper: 'Without a paper' } as Record<string, string>,
     empty: 'No submissions yet',
