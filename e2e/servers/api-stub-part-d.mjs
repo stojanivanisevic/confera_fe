@@ -70,7 +70,9 @@ export const fold = (value) =>
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
     .toLowerCase();
-const haystack = (s) => fold([s.reference, s.title, s.firstAuthor, s.institution, ...(s.authors ?? []).flatMap((a) => [a.firstName, a.lastName, a.email, a.institution])].join(' '));
+/** The words of a submission, folded: đ both as d and as dj, as people type it (dordevic, djordjevic; Q4-01). */
+const words = (s) => [s.reference, s.title, s.firstAuthor, s.institution, ...(s.authors ?? []).flatMap((a) => [a.firstName, a.lastName, a.email, a.institution])].join(' ');
+const haystack = (s) => `${fold(words(s))} ${fold(words(s).replace(/đ/g, 'dj').replace(/Đ/g, 'Dj'))}`;
 const SORTS = { receivedAt: (s) => s.receivedAt, reference: (s) => s.reference, title: (s) => fold(s.title), firstAuthor: (s) => fold(s.firstAuthor), status: (s) => STATUSES.indexOf(s.status) };
 
 // ---- rendering, as the server renders (ADR-12) ----------------------------------------------------
@@ -167,6 +169,13 @@ function filePart(raw, contentType) {
 }
 /** Re-encoded on the server to at most 600 px wide (ADR-12): the stub only says so in the numbers. */
 const MAX_WIDTH = 600;
+/** How long an image named scan-slow-* waits for its scan. */
+const SLOW_SCAN_MS = 3_000;
+/** Whether an image is clean now; a slow one becomes clean when its time has come. */
+function cleanNow(image) {
+  if (image.scanState === 'pending' && image.cleanAt && Date.now() >= image.cleanAt) image.scanState = 'clean';
+  return image.scanState === 'clean';
+}
 
 // ---- the handler -----------------------------------------------------------------------------------
 const nowIso = () => new Date().toISOString();
@@ -271,6 +280,8 @@ export function handlePartD(ctx) {
       if (!off) {
         const { rendered } = emailOf(action, message);
         // What was shown is what goes (FR-MAIL-08): a preview of another text is refused.
+        // Every change whose email is on needs the digest of the email shown (SEC-M4-05), open excepted, as confera_be.
+        if (body.previewDigest === undefined && action.type !== 'submission_opened') refuse(400, 'validation_failed', [{ path: 'previewDigest', code: 'required' }]);
         if (body.previewDigest !== undefined && body.previewDigest !== sha(rendered.html + rendered.subject)) refuse(409, 'preview_outdated');
         const messageId = randomUUID();
         submission.emails.push({ id: messageId, kind: action.type, recipient, status: 'sent', heldReason: null, lastErrorCode: null, createdAt: nowIso(), sentAt: nowIso() });
@@ -348,7 +359,10 @@ export function handlePartD(ctx) {
     const entry = entryOf(body.type);
     checkTemplate(body.subject, body.body, entry, d.images, refuse);
     const SAMPLE = { recipientName: 'Đorđe Šćepanović', authorName: 'Đorđe Šćepanović', organisationName: state.organisation.name, conferenceName: 'Konferencija za probe', reference: 'KP26-0042', title: 'Održivi turizam u Čačku i Žabalju', message: 'Please shorten the abstract to 250 words.', inviterName: 'Živana Đorđević', expiresIn: '7 days', newEmail: 'novi@a.example.test', change: 'role', actorName: 'Živana Đorđević', subjectName: 'Marta Kovač', serverName: 'Kancelarija' };
-    return { status: 200, body: { ...render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: new Set(entry.conditions), images: d.images, inline: true, link: 'https://admin.confera.example/invitations/sample' }), imagesPending: [] } };
+    // An image still being scanned is not shown yet (its words stand in its place) and is named (Q4-05).
+    const pending = d.images.filter((image) => !cleanNow(image)).map((image) => image.id);
+    const used = JSON.stringify(body.body);
+    return { status: 200, body: { ...render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: new Set(entry.conditions), images: d.images.filter(cleanNow), inline: true, link: 'https://admin.confera.example/invitations/sample' }), imagesPending: pending.filter((id) => used.includes(id)) } };
   }
   const templateRoute = /^\/api\/v1\/mail-templates\/([^/]+)$/.exec(path);
   if (templateRoute && (method === 'PUT' || method === 'DELETE')) {
@@ -401,18 +415,22 @@ export function handlePartD(ctx) {
     if (part.bytes.length > 5 * 1024 * 1024) refuse(413, 'image_too_large');
     const scale = Math.min(1, MAX_WIDTH / kind.width);
     // The stub's scan says clean at once; the API's says so when ClamAV has (scanState pending until then).
-    const image = { id: randomUUID(), name: part.name, type: kind.type, width: Math.round(kind.width * scale), height: Math.round(kind.height * scale), sizeBytes: Math.min(part.bytes.length, 200 * 1024), scanState: 'clean', bytes: part.bytes.toString('base64'), createdAt: nowIso() };
+    // An image named scan-slow-* stays pending for a few seconds, as one the API's scanner has not reached yet (Q4-05).
+    const slow = /^scan-slow/.test(part.name);
+    const image = { id: randomUUID(), name: part.name, type: kind.type, width: Math.round(kind.width * scale), height: Math.round(kind.height * scale), sizeBytes: Math.min(part.bytes.length, 200 * 1024), scanState: slow ? 'pending' : 'clean', cleanAt: slow ? Date.now() + SLOW_SCAN_MS : 0, bytes: part.bytes.toString('base64'), createdAt: nowIso() };
     d.images.push(image);
     record(me.id, 'mail_image.uploaded', 'mail_image', image.id);
     const dto = { ...image };
     delete dto.bytes;
+    delete dto.cleanAt;
     return { status: 201, body: dto };
   }
   const imageRoute = /^\/api\/v1\/mail-images\/([^/]+)$/.exec(path);
   if (imageRoute && method === 'GET') {
     need('templates.read');
     const image = d.images.find((i) => i.id === imageRoute[1]);
-    if (!image) refuse(404, 'not_found');
+    // Served only once clean (ADR-12).
+    if (!image || !cleanNow(image)) refuse(404, 'not_found');
     return { status: 200, raw: { type: image.type, name: image.name, bytes: Buffer.from(image.bytes, 'base64') } };
   }
 

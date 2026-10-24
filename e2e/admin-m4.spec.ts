@@ -1,7 +1,7 @@
 // M4-FE-01 to 04 in a browser, against the API stub (e2e/servers/api-stub-part-d.mjs, written in the
 // direction of the plan until confera_be's contract of 0.4.0 has every route):
 //   the submissions table searched without diacritics, filtered and sorted; a new submission taken
-//   into processing when opened; a return for revision with the email shown first (FR-MAIL-08), the
+//   into processing by its own action, its email shown first; a return for revision with the email shown first (FR-MAIL-08), the
 //   edit on the author's behalf that takes it back into processing, and the email in the mail log;
 //   the template editor that saves, has language tabs, a conference's own version, the switch of a
 //   status email (FR-MAIL-07) and images; a stored document with hostile strings that runs nothing in
@@ -41,6 +41,15 @@ const overflowing = (page: Page) =>
   });
 const scan = async (page: Page) =>
   (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('iframe[sandbox]').analyze()).violations.map((v) => `${v.id}: ${v.help} — ${v.nodes.slice(0, 4).map((n) => n.target.join(' ')).join(' | ')}`);
+/** Reading a new submission sends nothing: the office starts processing it, its email shown first (SEC-M4-03, UX4-08). */
+const startProcessing = async (page: Page) => {
+  await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Start processing' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.locator('iframe[title="The email to the author"]')).toHaveAttribute('sandbox', '');
+  await dialog.getByRole('button', { name: 'Send the email and change the status' }).click();
+  await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+};
 const changeStatus = async (page: Page, action: string) => {
   await page.getByRole('button', { name: 'Change the status' }).click();
   await page.getByRole('menuitem', { name: action }).click();
@@ -89,11 +98,14 @@ test.describe('submissions (M4-FE-01)', () => {
     await expect(rows(page).first()).toContainText('KP26-0001');
   });
 
-  test('a new one is taken into processing when opened; returned for revision with the email shown first; corrected and back in processing', async ({ page }) => {
+  test('a new one is taken into processing by Start processing, its email first; returned for revision with the email shown first; corrected and back in processing', async ({ page }) => {
     const problems = watchPage(page);
     await signIn(page, undefined, `/submissions/${PART_C.submissions[1]}`);
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
-    await expect(toast(page)).toContainText('Taken into processing');
+    // Reading it changes nothing and sends nothing, also after a reload (SEC-M4-03).
+    await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+    await page.reload();
+    await startProcessing(page);
+    await expect(page.locator('[data-confera-opened]')).toContainText('The author was emailed.');
 
     // Cancel: nothing changes, nothing is sent.
     let dialog = await changeStatus(page, 'Return for revision');
@@ -122,6 +134,9 @@ test.describe('submissions (M4-FE-01)', () => {
     await drawer.getByLabel('First name').first().fill('Marta Ana');
     await expect(drawer.getByRole('checkbox', { name: /These are the author’s corrections/ })).toBeChecked();
     await drawer.getByRole('button', { name: 'Save the changes' }).click();
+    // The move back into processing shows its email before it goes (SEC-M4-05).
+    const resumed = page.getByRole('dialog', { name: 'The email to the author' });
+    await resumed.getByRole('button', { name: 'Send the email and change the status' }).click();
     await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
     await expect(page.locator('[data-confera-revisions]')).toContainText('Authors: Marta Kovač became Marta Ana Kovač');
 
@@ -132,14 +147,16 @@ test.describe('submissions (M4-FE-01)', () => {
     expect(problems.messages).toEqual([]);
   });
 
-  test('withdraw asks for an internal reason, which the email does not carry; a note is for admins', async ({ page }) => {
+  test('withdraw asks for an internal reason, which the email does not carry, and says it is final; a note is for admins', async ({ page }) => {
     await signIn(page, undefined, `/submissions/${PART_C.submissions[1]}`);
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+    await startProcessing(page);
     const dialog = await changeStatus(page, 'Withdraw');
-    await dialog.getByRole('button', { name: 'Change the status' }).click();
+    await expect(dialog).toContainText('A withdrawn submission cannot be reopened.');
+    await dialog.getByRole('button', { name: 'Show the email' }).click();
     await expect(dialog).toContainText('Give the reason.');
     await dialog.getByLabel('Internal reason').fill('Sent twice by mistake');
-    await dialog.getByRole('button', { name: 'Change the status' }).click();
+    await dialog.getByRole('button', { name: 'Show the email' }).click();
+    await dialog.getByRole('button', { name: 'Withdraw for good and email the author' }).click();
     await expect(page.locator('[data-confera-submission-status="withdrawn"]')).toBeVisible();
     await expect(page.getByRole('table', { name: 'History' })).toContainText('Internal reason: Sent twice by mistake');
     const notes = page.locator('[data-confera-notes]');
@@ -163,9 +180,10 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
 
     // The same text goes out in a rejection, and the mail log shows it inside its frame only.
     await page.goto(`${ADMIN_ORIGIN}/submissions/${PART_C.submissions[1]}`);
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+    await startProcessing(page);
     const dialog = await changeStatus(page, 'Reject');
-    await dialog.getByRole('button', { name: 'Change the status' }).click();
+    await dialog.getByRole('button', { name: 'Show the email' }).click();
+    await dialog.getByRole('button', { name: 'Reject and email the author' }).click();
     await expect(page.locator('[data-confera-submission-status="rejected"]')).toBeVisible();
     await page.goto(`${ADMIN_ORIGIN}/mail-log`);
     await page.getByRole('table', { name: 'Mail log' }).locator('tbody tr').filter({ hasText: 'Submission rejected' }).first().getByRole('button').click();
@@ -215,8 +233,9 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
     await expect(toggle).not.toBeChecked();
     await expect(toast(page)).toContainText('The email is off for Konferencija za probe (KP 2026)');
     await page.goto(`${ADMIN_ORIGIN}/submissions/${PART_C.submissions[1]}`);
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+    await startProcessing(page);
     const dialog = await changeStatus(page, 'Accept');
+    await expect(dialog).toContainText('No email goes');
     await dialog.getByRole('button', { name: 'Change the status' }).click();
     await expect(page.locator('[data-confera-submission-status="accepted"]')).toBeVisible();
     await expect(page.getByRole('table', { name: 'History' })).toContainText('No email: template off');
@@ -279,6 +298,9 @@ test.describe('the mail log and held emails (M4-FE-04, M3-ISS-14)', () => {
     await page.goto(`${ADMIN_ORIGIN}/mail-log`);
     const settings = page.locator('[data-confera-mail-log-settings]');
     await expect(settings).toContainText('Entries are kept for 730 days');
+    // One sentence; the settings are folded under it (UX4-13).
+    await expect(settings.getByLabel('Keep entries for')).toBeHidden();
+    await settings.getByText('Change what the mail log keeps').click();
     await settings.getByLabel('Keep entries for').fill('10');
     await settings.getByRole('button', { name: 'Save' }).click();
     await expect(settings).toContainText('From 30 to 3650 days');
@@ -307,9 +329,12 @@ for (const width of [1440, 375]) {
 
     test('a submission, its status dialog with the email and its edit pass axe and fit the width', async ({ page }) => {
       await signIn(page, undefined, `/submissions/${PART_C.submissions[0]}`);
-      await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+      // A new submission, as it is read, with Start processing (UX4-08).
+      await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
       expect(await scan(page)).toEqual([]);
       expect(await overflowing(page)).toEqual([]);
+      await startProcessing(page);
+      expect(await scan(page)).toEqual([]);
       const dialog = await changeStatus(page, 'Return for revision');
       await dialog.getByLabel('Message for the author').fill('Molimo skratite apstrakt.');
       await dialog.getByRole('button', { name: 'Show the email' }).click();

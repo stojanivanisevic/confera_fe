@@ -268,9 +268,10 @@ export function TemplateEditor({ id }: { id: string }) {
   const toolControls = (): HTMLElement[] => [...(toolbarElement.current?.querySelectorAll<HTMLElement>('button:not([disabled]), select:not([disabled])') ?? [])];
   useEffect(() => {
     const controls = toolControls();
-    const active = Math.min(toolIndex, controls.length - 1);
-    controls.forEach((control, index) => {
-      control.tabIndex = index === active ? 0 : -1;
+    const active = controls[Math.min(toolIndex, controls.length - 1)];
+    // A disabled one too, so that it is no Tab stop of its own once it is enabled.
+    toolbarElement.current?.querySelectorAll<HTMLElement>('button, select').forEach((control) => {
+      control.tabIndex = control === active ? 0 : -1;
     });
   });
   const onToolbarKey = (event: KeyboardEvent<HTMLDivElement>) => {

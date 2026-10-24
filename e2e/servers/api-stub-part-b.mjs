@@ -258,8 +258,11 @@ export function handlePartB(ctx) {
     const q = url.searchParams;
     const page = Number(q.get('page') ?? 1);
     const pageSize = Number(q.get('pageSize') ?? 25);
+    // `q`: words searched in the recipient and the subject, any case; every word in one of them (UX4-13, as confera_be).
+    const words = (q.get('q') ?? '').toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+    const found = (e) => words.every((word) => e.recipient.toLowerCase().includes(word) || (e.subject ?? '').toLowerCase().includes(word));
     const all = state.mailLog
-      .filter((e) => (!q.get('kind') || e.kind === q.get('kind')) && (!q.get('result') || e.result === q.get('result')) && (!q.get('conferenceId') || e.conferenceId === q.get('conferenceId')) && (!q.get('messageId') || e.messageId === q.get('messageId')))
+      .filter((e) => (!q.get('kind') || e.kind === q.get('kind')) && (!q.get('result') || e.result === q.get('result')) && (!q.get('conferenceId') || e.conferenceId === q.get('conferenceId')) && (!q.get('messageId') || e.messageId === q.get('messageId')) && found(e))
       .sort((a, b) => b.sentAt.localeCompare(a.sentAt));
     const summary = (entry) => Object.fromEntries(Object.entries(entry).filter(([key]) => !['bodyHtml', 'bodyText', 'imageIds'].includes(key)));
     return { status: 200, body: { items: all.slice((page - 1) * pageSize, page * pageSize).map(summary), total: all.length, page, pageSize } };
