@@ -9,7 +9,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { Alert, AppShell, Button, Menu, PageHeader, Select, SidebarNav, Spinner, TextButton, toast, ToastHost } from '@confera/ui';
+import { Alert, AppShell, Button, Menu, PageHeader, Select, SidebarNav, Spinner, StatusBadge, TextButton, toast, ToastHost } from '@confera/ui';
 
 import { signInHref } from '@/lib/next-path';
 
@@ -121,7 +121,20 @@ function Unreachable({ page = false }: { page?: boolean }) {
   );
 }
 
-function Guarded({ children }: { children: ReactNode }) {
+/** The mark of a staging instance in the sticky top bar: it stays in view after the banner scrolled away (UX4-27). */
+function StagingMark() {
+  return (
+    <span data-confera-staging-mark="">
+      <StatusBadge tone="warning">
+        <span lang="en">{TEXTS.nav.staging}</span>
+        <span aria-hidden="true"> · </span>
+        <span lang="sr">{TEXTS.nav.stagingSr}</span>
+      </StatusBadge>
+    </span>
+  );
+}
+
+function Guarded({ children, staging }: { children: ReactNode; staging: boolean }) {
   const { status, session, client, background, clear, setContact } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -210,6 +223,7 @@ function Guarded({ children }: { children: ReactNode }) {
           <div className={styles.topbar}>
             <div className={styles.conference}>{permissions.includes('conferences.read') && narrows(pathname) ? <ConferenceSwitch /> : null}</div>
             <div className={styles.topbarEnd}>
+              {staging ? <StagingMark /> : null}
               {/* The person's menu (UXUI-M2-24): the name and two entries, one target at any width. */}
               <Menu
                 label={TEXTS.nav.userMenu}
@@ -248,12 +262,12 @@ function Toasts() {
   return <ToastHost position={drawer ? 'top' : 'bottom'} />;
 }
 
-export function AdminShell({ children }: { children: ReactNode }) {
+export function AdminShell({ children, staging = false }: { children: ReactNode; staging?: boolean }) {
   return (
     <SessionProvider>
       <Toasts />
       <LeaveGuardProvider>
-        <Guarded>{children}</Guarded>
+        <Guarded staging={staging}>{children}</Guarded>
       </LeaveGuardProvider>
     </SessionProvider>
   );

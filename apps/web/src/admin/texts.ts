@@ -11,6 +11,9 @@ export const TEXTS = {
   product: 'Confera',
   nav: {
     main: 'Main',
+    /** The mark of a staging instance in the top bar (UX4-27), in both languages like the banner. */
+    staging: 'Staging',
+    stagingSr: 'Probno',
     home: 'Home',
     users: 'Users',
     organisation: 'Organisation',
@@ -549,7 +552,7 @@ export const TEXTS = {
     settingsShow: 'Show the settings',
     retention: 'Keep entries for',
     retentionUnit: 'days',
-    retentionHint: 'From 30 to 3650 days. 730 days is 24 months.',
+    retentionHint: 'From 30 to 3650 days.',
     retentionSave: 'Save',
     retentionSaved: 'The mail log keeps entries for {days} days',
     retentionNow: 'Entries are kept for {days} days (about {months} months), with the content of each message; older ones are removed every day.',
