@@ -180,8 +180,12 @@ test.describe('M4-QA-01: the "To show" flow through the real API, read back from
     await page.getByLabel('Search').first().fill(reference);
     await expect(rows(page)).toHaveCount(1);
     await rows(page).first().getByRole('button').first().click();
+    // Opening is an act of its own, its email shown first (SEC-M4-03, UX4-08).
+    await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+    await page.getByRole('button', { name: 'Start processing' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Send the email and change the status' }).click();
     await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
-    await expect(toast(page)).toContainText('Taken into processing');
+    await expect(toast(page)).toContainText('Status: Open');
 
     const note = `Molimo skratite apstrakt na 250 reči. ${SERBIAN}`;
     let dialog = await changeStatus(page, 'Return for revision');
@@ -287,6 +291,10 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     const reference = await submitThroughTheForm(page, email, `Hostile ${id}`, 'en');
     await page.goto(`${ADMIN_ORIGIN}/submissions?q=${encodeURIComponent(reference)}`);
     await rows(page).first().getByRole('button').first().click();
+    // Opening is an act of its own, its email shown first (SEC-M4-03, UX4-08).
+    await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+    await page.getByRole('button', { name: 'Start processing' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Send the email and change the status' }).click();
     await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
     const dialog = await changeStatus(page, 'Reject');
     await dialog.getByRole('button', { name: 'Change the status' }).click();
