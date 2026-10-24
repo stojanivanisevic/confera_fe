@@ -285,8 +285,9 @@ test.describe('the template editor (M2-FE-05, M4-FE-02; ADR-12)', () => {
     await page.keyboard.type('After the list');
     await expect(body(page).locator('ul li')).toHaveText(['Help', 'Second']);
     await expect(body(page).locator('ul + p')).toHaveText('After the list');
-    await page.getByRole('toolbar', { name: 'Formatting' }).getByLabel('Paragraph style').selectOption('heading2');
-    await expect(body(page).locator('h2')).toHaveText('After the list');
+    await page.getByRole('toolbar', { name: 'Formatting' }).getByLabel('Style in the email').selectOption('heading2');
+    // A heading of the email, not of the page (UX4-18): under the card's h2 it is level 4.
+    await expect(body(page).locator('[role="heading"][aria-level="4"]')).toHaveText('After the list');
     const preview = page.frameLocator('iframe[title="Preview of the message"]');
     await expect(preview.locator('ul li')).toHaveText(['Help', 'Second']);
     await expect(preview.locator('h2')).toHaveText('After the list');
