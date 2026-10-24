@@ -31,9 +31,17 @@ interface LeaveGuardApi {
 
 const LeaveGuardContext = createContext<LeaveGuardApi>({ leave: (go) => go(), hold: () => undefined });
 
-/** The mark of the history entry the guard puts on top of this page. */
+/** The mark of the history entry the guard puts on top of this page: an id of its own, so an older one is not taken for it. */
 const SENTINEL = 'conferaLeaveGuard';
-const isSentinel = (state: unknown): boolean => typeof state === 'object' && state !== null && (state as Record<string, unknown>)[SENTINEL] === true;
+const markOf = (state: unknown): unknown => (typeof state === 'object' && state !== null ? (state as Record<string, unknown>)[SENTINEL] : undefined);
+let sentinels = 0;
+/** Puts a new entry of this page on top of the history, and gives its id. */
+function pushSentinel(): string {
+  sentinels += 1;
+  const id = `guard-${String(Date.now())}-${String(sentinels)}`;
+  window.history.pushState({ ...(window.history.state as object | null), [SENTINEL]: id }, '', window.location.href);
+  return id;
+}
 
 /** A click that would leave this page for another of this origin, as a plain left click on a link does. */
 function leavingLink(event: MouseEvent): HTMLAnchorElement | null {
@@ -62,6 +70,8 @@ export function LeaveGuardProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<(() => void) | null>(null);
   // Set for the one move the person agreed to, so the guard lets it through.
   const passing = useRef(false);
+  // The entry of this page the guard keeps on top of the history (the back button lands on the one below it).
+  const sentinel = useRef<string | null>(null);
 
   const hold = useCallback((next: LeaveQuestion | null) => {
     held.current = next;
@@ -96,9 +106,9 @@ export function LeaveGuardProvider({ children }: { children: ReactNode }) {
       event.returnValue = '';
     };
     // The back button: the page's own entry stays on top, so "back" comes here first.
-    if (!isSentinel(window.history.state)) window.history.pushState({ ...(window.history.state as object | null), [SENTINEL]: true }, '', window.location.href);
+    if (sentinel.current === null || markOf(window.history.state) !== sentinel.current) sentinel.current = pushSentinel();
     const onPop = () => {
-      if (passing.current || isSentinel(window.history.state)) return;
+      if (passing.current || markOf(window.history.state) === sentinel.current) return;
       setPending(() => () => window.history.back());
     };
     document.addEventListener('click', onClick, true);
@@ -114,7 +124,7 @@ export function LeaveGuardProvider({ children }: { children: ReactNode }) {
   const stay = () => {
     setPending(null);
     // After "back", the entry the guard keeps on top is put there again.
-    if (held.current && !isSentinel(window.history.state)) window.history.pushState({ ...(window.history.state as object | null), [SENTINEL]: true }, '', window.location.href);
+    if (held.current && markOf(window.history.state) !== sentinel.current) sentinel.current = pushSentinel();
   };
   const go = () => {
     const run = pending;
