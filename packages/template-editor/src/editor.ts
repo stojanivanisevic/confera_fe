@@ -31,6 +31,14 @@ export interface EditorOptions {
   readonly onImageFile?: (file: File) => void;
   /** A paste held images of a web page (a remote address, an embedded data: image): they were dropped (ADR-12). */
   readonly onImagesDropped?: () => void;
+  /**
+   * The level of the page's heading that the editor sits under (UX4-18). A heading of the email is
+   * not a heading of the page: it is shown with `role="heading"` one level or more below this one
+   * ("Heading 1" of the email under the card's h2 is level 3), never as the page's h1.
+   */
+  readonly headingLevelUnder?: number;
+  /** The words above a block shown on a condition ("Only when the office wrote a message", UX4-11), by its key. */
+  readonly conditionLabel?: (key: string) => string;
 }
 
 export type Checked<T> = { readonly ok: true; readonly document: T } | { readonly ok: false; readonly code: string; readonly path: string };
@@ -86,6 +94,40 @@ function imageView(src: (fileId: string) => string) {
   };
 }
 
+/**
+ * A heading of the email in the page: its text styled as the heading it is, named a heading one or
+ * more levels below the card it sits in (UX4-18), so the page keeps one h1 and a screen reader's list
+ * of headings is not led by the email's words. The clipboard still carries h1 to h3 (the schema's).
+ */
+function headingView(under: number) {
+  return (node: EditorNode): NodeView => {
+    const level = node.attrs.level as number;
+    const dom = document.createElement('div');
+    dom.className = `confera-heading confera-heading--${String(level)}`;
+    dom.dataset.emailHeading = String(level);
+    dom.setAttribute('role', 'heading');
+    dom.setAttribute('aria-level', String(Math.min(6, under + level)));
+    return { dom, contentDOM: dom };
+  };
+}
+
+/** A block shown on a condition: its words above it, not editable, then the blocks it holds (UX4-11). */
+function conditionView(label: (key: string) => string) {
+  return (node: EditorNode): NodeView => {
+    const dom = document.createElement('section');
+    dom.dataset.condition = node.attrs.key as string;
+    const head = document.createElement('div');
+    head.className = 'confera-condition__label';
+    head.setAttribute('contenteditable', 'false');
+    head.dataset.conditionLabel = '';
+    head.textContent = label(node.attrs.key as string);
+    const content = document.createElement('div');
+    content.className = 'confera-condition__blocks';
+    dom.append(head, content);
+    return { dom, contentDOM: content, ignoreMutation: (mutation) => head.contains(mutation.target) };
+  };
+}
+
 /** The image files of a paste or a drop. */
 const imageFiles = (data: DataTransfer | null): File[] => [...(data?.files ?? [])].filter((file) => /^image\//.test(file.type));
 
@@ -100,7 +142,12 @@ function mount<T>(element: HTMLElement, doc: EditorNode, plugins: EditorState['p
       ...(options.describedBy ? { 'aria-describedby': options.describedBy } : {}),
       spellcheck: 'true',
     },
-    nodeViews: { placeholder: placeholderView(options.placeholderLabel), ...(multiline && options.imageSrc ? { image: imageView(options.imageSrc) } : {}) },
+    nodeViews: {
+      placeholder: placeholderView(options.placeholderLabel),
+      ...(multiline && options.imageSrc ? { image: imageView(options.imageSrc) } : {}),
+      ...(multiline && options.headingLevelUnder !== undefined ? { heading: headingView(options.headingLevelUnder) } : {}),
+      ...(multiline && options.conditionLabel ? { conditional: conditionView(options.conditionLabel) } : {}),
+    },
     // A pasted or dropped image file is uploaded by the page, never put in as data (ADR-12, ST-60).
     handlePaste: (_view, event) => {
       const files = imageFiles(event.clipboardData);

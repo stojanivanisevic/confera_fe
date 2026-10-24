@@ -101,6 +101,16 @@ describe('a placeholder is one indivisible object', () => {
     expect(() => checkBody(bodyFromEditor(apply(state, insertPlaceholder('paymentLink')).doc), catalogueOf('invitation'))).toThrow(/unknown_placeholder/);
   });
 
+  it('Bold pressed before a chip stays on for the words typed after it (UX4-12)', () => {
+    let state = stateOf(paragraph({ type: 'text', text: 'Title: ' }));
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 8)));
+    state = apply(state, toggleTextMark('bold'));
+    state = apply(state, insertPlaceholder('title'));
+    expect(toolbarState(state).marks.bold).toBe(true);
+    state = state.apply(state.tr.insertText(' was accepted'));
+    expect(bodyFromEditor(state.doc)).toEqual(paragraph({ type: 'text', text: 'Title: ' }, { type: 'placeholder', key: 'title' }, { type: 'text', text: ' was accepted', marks: ['bold'] }));
+  });
+
   it('a typed brace is text, not a placeholder (ST-22)', () => {
     const parsed = SchemaParser.fromSchema(bodySchema).parse(Object.assign(document.createElement('div'), { innerHTML: '<p>Dear {{recipientName}} and {link}</p>' }));
     expect(bodyFromEditor(parsed)).toEqual(paragraph({ type: 'text', text: 'Dear {{recipientName}} and {link}' }));
@@ -171,5 +181,32 @@ describe('in a page', () => {
     expect(subject.read()).toEqual({ ok: true, document: normaliseSubject(template.subject) });
     body.destroy();
     subject.destroy();
+  });
+
+  it('a heading of the email is no heading of the page, and a condition is named above its blocks (UX4-18, UX4-11)', () => {
+    element = document.body.appendChild(document.createElement('div'));
+    const doc: DocNode = {
+      type: 'doc',
+      children: [
+        { type: 'heading', level: 1, children: [{ type: 'text', text: 'Odluka' }] },
+        { type: 'conditional', key: 'hasMessage', children: [{ type: 'paragraph', children: [{ type: 'placeholder', key: 'message' }] }] },
+      ],
+    };
+    const body = mountBodyEditor(element.appendChild(document.createElement('div')), doc, { type: 'submission_rejected', label: 'Message', placeholderLabel: (key) => key, headingLevelUnder: 2, conditionLabel: (key) => `Only when ${key}` });
+    expect(element.querySelector('h1, h2, h3')).toBeNull();
+    const heading = element.querySelector('[role="heading"]')!;
+    expect(heading.getAttribute('aria-level')).toBe('3');
+    expect(heading.textContent).toBe('Odluka');
+    const label = element.querySelector('section[data-condition="hasMessage"] [data-condition-label]')!;
+    expect(label.textContent).toBe('Only when hasMessage');
+    expect(label.getAttribute('contenteditable')).toBe('false');
+    // The words of the label are not part of the document.
+    expect(body.read()).toEqual({ ok: true, document: doc });
+    // The toolbar knows the condition around the cursor (UX4-10: "Remove the condition" only there).
+    body.view.dispatch(body.view.state.tr.setSelection(TextSelection.create(body.view.state.doc, 2)));
+    expect(body.toolbar().condition).toBeNull();
+    body.view.dispatch(body.view.state.tr.setSelection(TextSelection.near(body.view.state.doc.resolve(body.view.state.doc.content.size - 2))));
+    expect(body.toolbar().condition).toBe('hasMessage');
+    body.destroy();
   });
 });
