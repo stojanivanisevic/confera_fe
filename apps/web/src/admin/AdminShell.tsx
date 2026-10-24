@@ -18,6 +18,7 @@ import { FreshPasswordProvider } from './FreshPassword';
 import { HeldMailAlert } from './HeldMail';
 import { conferenceLabel, ConferenceProvider, useConference } from './conference-context';
 import { DRAWER_EVENT } from './drawer-event';
+import { LeaveGuardProvider, useLeave } from './leave-guard';
 import { call, callEmpty, SESSION_ENDED_EVENT } from './problems';
 import { SessionProvider, useSession } from './session';
 import { fill, TEXTS } from './texts';
@@ -124,6 +125,8 @@ function Guarded({ children }: { children: ReactNode }) {
   const { status, session, client, background, clear, setContact } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  // Every move the shell makes asks first while the page has unsaved changes (UX4-01).
+  const leave = useLeave();
   // The session a change found ended, by its CSRF value: a new session (signed in again) has another,
   // and the message goes by itself (UXUI-M2-02).
   const csrfNow = useRef<string | null>(null);
@@ -202,7 +205,7 @@ function Guarded({ children }: { children: ReactNode }) {
       <AppShell
         product={TEXTS.product}
         logo={<img src="/icon.png" alt="" width={28} height={28} />}
-        sidebar={<SidebarNav label={TEXTS.nav.main} value={current(pathname)} items={nav} onNavigate={(value) => router.push(value)} />}
+        sidebar={<SidebarNav label={TEXTS.nav.main} value={current(pathname)} items={nav} onNavigate={(value) => leave(() => router.push(value))} />}
         topbar={
           <div className={styles.topbar}>
             <div className={styles.conference}>{permissions.includes('conferences.read') && narrows(pathname) ? <ConferenceSwitch /> : null}</div>
@@ -217,8 +220,8 @@ function Guarded({ children }: { children: ReactNode }) {
                   </TextButton>
                 }
                 items={[
-                  { label: TEXTS.nav.account, icon: 'user', onSelect: () => router.push('/account') },
-                  { label: TEXTS.nav.signOut, icon: 'log-out', onSelect: () => void signOut() },
+                  { label: TEXTS.nav.account, icon: 'user', onSelect: () => leave(() => router.push('/account')) },
+                  { label: TEXTS.nav.signOut, icon: 'log-out', onSelect: () => leave(() => void signOut()) },
                 ]}
               />
             </div>
@@ -227,7 +230,7 @@ function Guarded({ children }: { children: ReactNode }) {
       >
         {ended ? <SessionEnded onContinued={() => setEndedFor(null)} /> : null}
         {status === 'unreachable' ? <Unreachable /> : null}
-        {permissions.includes('held_mail.manage') && current(pathname) !== '/held-mail' ? <HeldMailAlert onOpen={() => router.push('/held-mail')} /> : null}
+        {permissions.includes('held_mail.manage') && current(pathname) !== '/held-mail' ? <HeldMailAlert onOpen={() => leave(() => router.push('/held-mail'))} /> : null}
         <FreshPasswordProvider>{children}</FreshPasswordProvider>
       </AppShell>
     </ConferenceProvider>
@@ -249,7 +252,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <Toasts />
-      <Guarded>{children}</Guarded>
+      <LeaveGuardProvider>
+        <Guarded>{children}</Guarded>
+      </LeaveGuardProvider>
     </SessionProvider>
   );
 }

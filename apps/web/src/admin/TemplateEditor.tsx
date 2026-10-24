@@ -9,21 +9,27 @@
  * address behind the session. What leaves the page is the document, checked as the server checks it,
  * never markup.
  *
- *   - Language tabs: the English and the Serbian version of the same message.
+ *   - Language tabs: the English and the Serbian version of the same message; with a conference
+ *     chosen, each tab says whose version it opens (UX4-22).
  *   - The conference of the switch: it uses the organisation's template until it has its own; here
- *     it gets its own, and gives it up again (the fallback of ADR-12).
- *   - A status email is switched on and off per conference (FR-MAIL-07).
+ *     it gets its own, and gives it up again (the fallback of ADR-12). The organisation's template
+ *     never claims a conference that has its own version (Q4-03).
+ *   - A status email is switched on and off per conference, for both languages (FR-MAIL-07).
  *   - The preview is the server's: rendered with made-up values and the images inside, shown only in
- *     the sandboxed frame (ST-28). A stored document with hostile strings is text in the editor,
- *     escaped by the server in the preview (ST-59).
+ *     the sandboxed frame (ST-28); a condition can be unticked to see the email without its blocks
+ *     (UX4-11); an image still being scanned is shown by itself once it is clean (Q4-05). A stored
+ *     document with hostile strings is text in the editor, escaped by the server in the preview (ST-59).
  *   - Paste keeps only the format; an image of a web page is dropped and the page says so; an image
  *     file pasted or dropped is uploaded, with the words it needs asked first (ADR-12, ST-60).
+ *   - Unsaved changes: the state stands next to Save, in a bar that stays in view (UX4-10); every way
+ *     out of the page asks first (UX4-01, `leave-guard.tsx`); Ctrl+S saves.
+ *   - The toolbar is one Tab stop; the arrow keys move inside it (UX4-10).
  */
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
 import { checkBody, checkSubject, DocumentError, isTypedLink, MAX_IMAGES, type Catalogue, type DocNode, type SubjectNode } from '@confera/api-client';
-import { Alert, Button, Card, ConfirmDialog, Dialog, FileButton, IconButton, PageHeader, RadioGroup, SandboxedMarkupFrame, SegmentedTabs, Select, Spinner, Switch, TextButton, TextField, toast, type IconName } from '@confera/ui';
+import { Alert, Button, Card, CheckboxGroup, ConfirmDialog, Dialog, FileButton, IconButton, PageHeader, RadioGroup, SandboxedMarkupFrame, SegmentedTabs, Select, Spinner, Switch, TextButton, TextField, toast, type IconName } from '@confera/ui';
 import {
   insertHardBreak,
   insertImage,
@@ -51,6 +57,7 @@ import {
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';
+import { useLeave, useLeaveGuard } from './leave-guard';
 import { m4, uploadImage, type CatalogueType, type RenderedPreview, type StatusSwitches, type TemplateRecord } from './m4-api';
 import { ProblemAlert } from './ProblemAlert';
 import { explain, isApiError, type Explained } from './problems';
@@ -60,11 +67,16 @@ import { useLoad } from './useLoad';
 
 const t = TEXTS.templates;
 const placeholderLabel = (key: string): string => t.placeholders[key] ?? key;
+const conditionLabel = (key: string): string => fill(t.conditionShownWhen, { condition: t.conditions[key] ?? key });
 const LANGUAGES = ['en', 'sr'] as const;
+/** While an image is being scanned, the preview is asked again this often, until the server shows it (Q4-05). */
+const PENDING_POLL_MS = 4_000;
+/** The editor sits in a card whose heading is h2: the email's "Heading 1" is level 3 there (UX4-18). */
+const CARD_HEADING_LEVEL = 2;
 
 type CheckResult = { readonly part: 'subject' | 'body'; readonly code: string; readonly path: string };
 
-const NO_TOOLBAR: ToolbarState = { marks: { bold: false, italic: false, underline: false }, block: 'paragraph', list: null, link: null, canUndo: false, canRedo: false };
+const NO_TOOLBAR: ToolbarState = { marks: { bold: false, italic: false, underline: false }, block: 'paragraph', list: null, link: null, condition: null, canUndo: false, canRedo: false };
 
 /** A toolbar button: it keeps the editor's selection (no focus on mouse down) and says whether it is on. */
 function ToolButton({ pressed, onPress, disabled, icon, children }: { pressed?: boolean; onPress: () => void; disabled?: boolean; icon?: IconName; children: string }) {
@@ -89,13 +101,26 @@ function refusalOf(error: unknown): CheckResult | null {
   return { part: path.startsWith('subject') ? 'subject' : 'body', code: String(first.code ?? ''), path: path.replace(/^(subject|body)/, '$') };
 }
 
+type Block = DocNode['children'][number];
 const countImages = (doc: DocNode): number => {
-  const count = (blocks: DocNode['children']): number => blocks.reduce((sum, block) => sum + (block.type === 'image' ? 1 : block.type === 'conditional' ? count(block.children) : 0), 0);
+  const count = (blocks: readonly Block[]): number => blocks.reduce((sum, block) => sum + (block.type === 'image' ? 1 : block.type === 'conditional' ? count(block.children) : 0), 0);
   return count(doc.children);
 };
 
+/**
+ * The body as an author gets it when the conditions in `off` do not hold: their blocks left out
+ * (UX4-11). The server renders that as it renders the mail, so the preview stays the server's.
+ */
+function withoutConditions(doc: DocNode, off: ReadonlySet<string>): DocNode {
+  if (off.size === 0) return doc;
+  const strip = (blocks: readonly Block[]): Block[] => blocks.flatMap((block): Block[] => (block.type === 'conditional' ? (off.has(block.key) ? [] : [{ ...block, children: strip(block.children) as typeof block.children }]) : [block]));
+  const children = strip(doc.children);
+  return { ...doc, children: (children.length > 0 ? children : [{ type: 'paragraph', children: [] }]) };
+}
+
 export function TemplateEditor({ id }: { id: string }) {
   const router = useRouter();
+  const leave = useLeave();
   const { client, contact, session } = useSession();
   const { selected } = useConference();
   const mayManage = session?.user.permissions.includes('templates.manage') ?? false;
@@ -127,9 +152,11 @@ export function TemplateEditor({ id }: { id: string }) {
 
   const subjectElement = useRef<HTMLDivElement>(null);
   const bodyElement = useRef<HTMLDivElement>(null);
+  const toolbarElement = useRef<HTMLDivElement>(null);
   const editors = useRef<{ subject: EditorHandle<SubjectNode>; body: EditorHandle<DocNode> } | null>(null);
   const focused = useRef<'subject' | 'body'>('body');
   const [toolbar, setToolbar] = useState<ToolbarState>(NO_TOOLBAR);
+  const [toolIndex, setToolIndex] = useState(0);
   const [refused, setRefused] = useState<CheckResult | null>(null);
   const [dirty, setDirty] = useState(false);
   const [images, setImages] = useState(0);
@@ -137,7 +164,7 @@ export function TemplateEditor({ id }: { id: string }) {
   const [problem, setProblem] = useState<Explained | null>(null);
   const [preview, setPreview] = useState<{ phase: 'loading' | 'ready' | 'failed'; data: RenderedPreview | null }>({ phase: 'loading', data: null });
   const [previewAsked, setPreviewAsked] = useState(0);
-  const [leaving, setLeaving] = useState<string | null>(null);
+  const [previewOff, setPreviewOff] = useState<readonly string[]>([]);
   const [dropping, setDropping] = useState(false);
   const [linking, setLinking] = useState(false);
   const [linkKind, setLinkKind] = useState<'secure' | 'typed'>('typed');
@@ -151,6 +178,8 @@ export function TemplateEditor({ id }: { id: string }) {
   const [imageBusy, setImageBusy] = useState(false);
 
   const ready = loaded !== null && !(loaded instanceof DocumentError);
+  // Every way out of the page asks first while something is not saved (UX4-01).
+  useLeaveGuard(dirty, { title: t.leaveQuestion, text: t.leaveText, leave: t.leave });
 
   useEffect(() => {
     if (!record || !catalogue || loaded === null || loaded instanceof DocumentError || !subjectElement.current || !bodyElement.current) return;
@@ -175,6 +204,8 @@ export function TemplateEditor({ id }: { id: string }) {
       label: t.body,
       describedBy: 'template-body-hint',
       imageSrc: m4.imageHref,
+      headingLevelUnder: CARD_HEADING_LEVEL,
+      conditionLabel,
       onImageFile: (file) => {
         setImageAlt('');
         setImageProblem(null);
@@ -195,6 +226,7 @@ export function TemplateEditor({ id }: { id: string }) {
   }, [loaded, catalogue]);
 
   // The server's preview, a moment after the last change (ADR-12): the same rendering that is sent.
+  const off = useMemo(() => new Set(previewOff), [previewOff]);
   useEffect(() => {
     if (!record || previewAsked === 0) return undefined;
     const timer = window.setTimeout(() => {
@@ -207,13 +239,69 @@ export function TemplateEditor({ id }: { id: string }) {
         return;
       }
       setPreview((current) => ({ phase: 'loading', data: current.data }));
-      m4.previewTemplate(client, { type: record.type, language: record.language, conferenceId: record.conferenceId, subject: subject.document, body: body.document }).then(
+      m4.previewTemplate(client, { type: record.type, language: record.language, conferenceId: record.conferenceId, subject: subject.document, body: withoutConditions(body.document, off) }).then(
         (data) => setPreview({ phase: 'ready', data }),
         () => setPreview({ phase: 'failed', data: null }),
       );
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [previewAsked, record, client]);
+  }, [previewAsked, record, client, off]);
+
+  // An image still being scanned: the preview is asked again until the server shows it (Q4-05), and the
+  // editor reads the picture again once it is clean (it is served only then).
+  const pendingBefore = useRef<readonly string[]>([]);
+  useEffect(() => {
+    if (preview.phase !== 'ready' || !preview.data) return undefined;
+    const pending = preview.data.imagesPending;
+    for (const cleared of pendingBefore.current.filter((fileId) => !pending.includes(fileId))) {
+      bodyElement.current?.querySelectorAll<HTMLImageElement>(`figure[data-confera-image="${CSS.escape(cleared)}"] img`).forEach((img) => {
+        img.src = `${m4.imageHref(cleared)}?clean=${String(Date.now())}`;
+      });
+    }
+    pendingBefore.current = pending;
+    if (pending.length === 0) return undefined;
+    const timer = window.setTimeout(() => setPreviewAsked((n) => n + 1), PENDING_POLL_MS);
+    return () => window.clearTimeout(timer);
+  }, [preview]);
+
+  // The toolbar is one Tab stop (roving tabindex, UX4-10): the control last used holds it.
+  const toolControls = (): HTMLElement[] => [...(toolbarElement.current?.querySelectorAll<HTMLElement>('button:not([disabled]), select:not([disabled])') ?? [])];
+  useEffect(() => {
+    const controls = toolControls();
+    const active = Math.min(toolIndex, controls.length - 1);
+    controls.forEach((control, index) => {
+      control.tabIndex = index === active ? 0 : -1;
+    });
+  });
+  const onToolbarKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+    const controls = toolControls();
+    const at = controls.indexOf(event.target as HTMLElement);
+    if (at < 0 || controls.length === 0) return;
+    // Left and Right move between the controls; Up and Down still choose in a list.
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? controls.length - 1 : (at + (event.key === 'ArrowRight' ? 1 : -1) + controls.length) % controls.length;
+    setToolIndex(next);
+    controls[next]?.focus();
+  };
+  const onToolbarFocus = (event: FocusEvent<HTMLDivElement>) => {
+    const at = toolControls().indexOf(event.target);
+    if (at >= 0) setToolIndex(at);
+  };
+
+  // Ctrl+S (Cmd+S) saves, as people expect of an editor.
+  // It presses the Save of the bar, so it does exactly what Save does, and nothing while Save is off.
+  const actionsElement = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        actionsElement.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.click();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const back = { label: t.back, href: '/templates', onClick: () => router.push('/templates') };
   const failed = template.state.phase === 'failed' ? template.state : catalogues.state.phase === 'failed' ? catalogues.state : null;
@@ -247,12 +335,24 @@ export function TemplateEditor({ id }: { id: string }) {
   const conditions = [...catalogue.conditions];
   const carries = entry?.carriesLink ?? false;
   const all = scope.state.data ?? [];
+  const known = scope.state.phase === 'ready';
   const own = record.conferenceId !== null;
   const conferenceName = selected ? conferenceLabel(selected) : '';
   const organisationsOf = (language: string) => all.find((item) => item.conferenceId === null && item.type === record.type && item.language === language);
-  /** The template a language tab opens: the conference's own in that language, else the organisation's (the fallback). */
-  const siblingOf = (language: string) => (own ? (all.find((item) => item.conferenceId === record.conferenceId && item.type === record.type && item.language === language) ?? organisationsOf(language)) : organisationsOf(language));
-  const go = (target: string) => (dirty ? setLeaving(target) : router.push(`/templates/${target}`));
+  const conferencesOf = (language: string) => (conferenceId ? all.find((item) => item.conferenceId === conferenceId && item.type === record.type && item.language === language) : undefined);
+  /** The template a language tab opens: the chosen conference's own in that language, else the organisation's (the fallback). */
+  const siblingOf = (language: string) => (own ? (all.find((item) => item.conferenceId === record.conferenceId && item.type === record.type && item.language === language) ?? organisationsOf(language)) : (conferencesOf(language) ?? organisationsOf(language)));
+  // The organisation's template while the chosen conference has its own of this language (Q4-03): it says so, and leads there.
+  const conferenceOwn = !own ? conferencesOf(record.language) : undefined;
+  const go = (target: string) => leave(() => router.push(`/templates/${target}`));
+  const languageName = (language: string) => TEXTS.conferences.languageNames[language] ?? language;
+  /** With a conference chosen, a tab says whose version it opens (UX4-22). */
+  const tabLabel = (language: string) => {
+    const name = languageName(language);
+    if (!selected || !known) return name;
+    const opens = siblingOf(language);
+    return opens ? fill(opens.conferenceId !== null ? t.languageOwn : t.languageOrganisation, { language: name }) : name;
+  };
 
   const body = (run: (handle: EditorHandle<DocNode>) => void) => () => {
     if (editors.current) run(editors.current.body);
@@ -310,7 +410,11 @@ export function TemplateEditor({ id }: { id: string }) {
       toast({ title: fill(t.madeOwn, { conference: conferenceName }), tone: 'success' });
       router.push(`/templates/${created.id}`);
     } catch (error) {
-      failedWith(error);
+      // Someone made it meanwhile (Q4-03): say so plainly, and the page shows the way to it.
+      if (isApiError(error) && error.code === 'template_exists') {
+        setProblem({ ...explain(error, contact), title: fill(t.ownExistsTitle, { conference: conferenceName }), text: fill(t.ownExistsText, { conference: conferenceName }) });
+        void scope.reload({ background: true });
+      } else failedWith(error);
     } finally {
       setBusy(false);
     }
@@ -380,34 +484,27 @@ export function TemplateEditor({ id }: { id: string }) {
 
   return (
     <div className={styles.stack} data-confera-template={`${record.type}:${record.language}`}>
-      <PageHeader
-        title={title}
-        description={own ? fill(t.scopeConference, { conference: conferenceName || (TEXTS.templates.thisConference) }) : t.scopeOrganisation}
-        breadcrumbs={[back, { label: title }]}
-        actions={
-          mayManage ? (
-            <Button onClick={() => void save()} disabled={!ready || busy || !dirty}>
-              {busy ? TEXTS.common.loading : t.save}
-            </Button>
-          ) : undefined
-        }
-      />
+      <PageHeader title={title} description={own ? fill(t.scopeConference, { conference: conferenceName || (TEXTS.templates.thisConference) }) : t.scopeOrganisation} breadcrumbs={[back, { label: title }]} />
       <SegmentedTabs
         label={t.languages}
         value={record.language}
-        options={LANGUAGES.map((language) => ({ value: language, label: TEXTS.conferences.languageNames[language] ?? language }))}
+        options={LANGUAGES.map((language) => ({ value: language, label: tabLabel(language) }))}
         onChange={(language) => {
           const target = siblingOf(language);
           if (target && target.id !== record.id) go(target.id);
         }}
       />
-      {dirty ? <Alert tone="info" title={t.unsaved} /> : null}
       {problem ? (
         <ProblemAlert title={problem.title} onClose={() => setProblem(null)}>
           {problem.text}
         </ProblemAlert>
       ) : null}
-      {selected && !own ? (
+      {selected && !own && known && conferenceOwn ? (
+        <Alert tone="info" title={fill(t.hasOwnTitle, { conference: conferenceName })} action={<TextButton onClick={() => go(conferenceOwn.id)}>{fill(t.openOwn, { conference: conferenceName })}</TextButton>}>
+          {fill(t.hasOwnText, { conference: conferenceName })}
+        </Alert>
+      ) : null}
+      {selected && !own && known && !conferenceOwn ? (
         <Alert tone="info" title={fill(t.inheritedTitle, { conference: conferenceName })} action={mayManage ? <TextButton onClick={() => void makeOwn()}>{fill(t.makeOwn, { conference: conferenceName })}</TextButton> : undefined}>
           {fill(t.inheritedText, { conference: conferenceName })}
         </Alert>
@@ -434,10 +531,12 @@ export function TemplateEditor({ id }: { id: string }) {
           </Alert>
         </div>
       ) : null}
-      <div className={styles.cards}>
+      <div className={styles.editorCards}>
         <Card title={t.body} headingLevel={2}>
           <div className={styles.form}>
-            <div className={styles.editorToolbar} role="toolbar" aria-label={t.toolbar} data-confera-template-toolbar>
+            {/* One Tab stop; the arrow keys move inside (WAI-ARIA toolbar). */}
+            { }
+            <div ref={toolbarElement} className={styles.editorToolbar} role="toolbar" aria-label={t.toolbar} data-confera-template-toolbar onKeyDown={onToolbarKey} onFocus={onToolbarFocus}>
               <div className={styles.editorField}>
                 <Select label={t.block} value={toolbar.block === 'list' || toolbar.block === 'mixed' ? '' : toolbar.block} placeholder="—" onChange={(event) => body((handle) => handle.run(setBlock(event.target.value as BlockKind)))()} options={(['paragraph', 'heading1', 'heading2', 'heading3'] as const).map((value) => ({ value, label: t.blocks[value] ?? value }))} />
               </div>
@@ -484,7 +583,8 @@ export function TemplateEditor({ id }: { id: string }) {
                   <Select label={t.condition} value="" placeholder={t.conditionChoose} onChange={(event) => body((handle) => handle.run(wrapInCondition(event.target.value)))()} options={conditions.map((key) => ({ value: key, label: t.conditions[key] ?? key }))} />
                 </div>
               ) : null}
-              {conditions.length > 0 ? <ToolButton onPress={body((handle) => handle.run(liftOutOfCondition))}>{t.conditionLift}</ToolButton> : null}
+              {/* Only where it does something: the cursor in a block shown on a condition (UX4-10). */}
+              {toolbar.condition !== null ? <ToolButton onPress={body((handle) => handle.run(liftOutOfCondition))}>{t.conditionLift}</ToolButton> : null}
               <div className={styles.editorGroup}>
                 <ToolButton icon="undo" disabled={!toolbar.canUndo} onPress={body((handle) => handle.run(undo))}>
                   {t.undo}
@@ -506,6 +606,7 @@ export function TemplateEditor({ id }: { id: string }) {
               <div ref={bodyElement} className={styles.editor} onFocus={() => (focused.current = 'body')} data-confera-template-body />
               <p id="template-body-hint" className={styles.text}>
                 {t.bodyHint}
+                {record.language === 'sr' ? ` ${t.serbianCase}` : ''}
               </p>
             </div>
           </div>
@@ -513,11 +614,19 @@ export function TemplateEditor({ id }: { id: string }) {
         <Card title={t.preview} headingLevel={2}>
           <div className={styles.form} data-confera-template-preview={preview.phase}>
             <p className={styles.text}>{t.previewText}</p>
+            {conditions.length > 0 ? (
+              <CheckboxGroup
+                label={t.previewConditions}
+                value={conditions.filter((key) => !off.has(key))}
+                onChange={(on) => setPreviewOff(conditions.filter((key) => !on.includes(key)))}
+                options={conditions.map((key) => ({ value: key, label: t.conditions[key] ?? key }))}
+              />
+            ) : null}
             {preview.phase === 'loading' && !shown ? <Spinner label={t.previewLoading} /> : null}
             {preview.phase === 'failed' ? <Alert tone="warning" title={t.previewFailed} /> : null}
             {shown && preview.phase !== 'failed' ? (
               <>
-                <p className={styles.text}>
+                <p className={`${styles.text} ${styles.break}`}>
                   {t.previewSubject}: <strong data-confera-preview-subject>{shown.subject}</strong>
                 </p>
                 {/* The server's rendering, only in the sandboxed frame (ST-28). */}
@@ -531,6 +640,17 @@ export function TemplateEditor({ id }: { id: string }) {
           </div>
         </Card>
       </div>
+      {/* Save with the state beside it, in view wherever the page is scrolled (UX4-10); the editor is never pushed down. */}
+      {mayManage ? (
+        <div ref={actionsElement} className={styles.stickyActions} role="region" aria-label={t.actionsLabel} data-confera-template-actions="">
+          <span className={styles.text} role="status" data-confera-template-state={dirty ? 'unsaved' : 'saved'}>
+            {dirty ? t.unsaved : t.savedState} <span className={styles.wideOnly}>{t.saveShortcut}</span>
+          </span>
+          <Button onClick={() => void save()} disabled={!ready || busy || !dirty}>
+            {busy ? TEXTS.common.loading : t.save}
+          </Button>
+        </div>
+      ) : null}
 
       <Dialog
         open={linking}
@@ -597,9 +717,6 @@ export function TemplateEditor({ id }: { id: string }) {
         </div>
       </Dialog>
 
-      <ConfirmDialog open={leaving !== null} title={t.leaveQuestion} confirmText={t.leave} destructive onCancel={() => setLeaving(null)} onConfirm={() => leaving && router.push(`/templates/${leaving}`)}>
-        {t.leaveText}
-      </ConfirmDialog>
       <ConfirmDialog open={dropping} title={fill(t.dropOwnQuestion, { conference: conferenceName || t.thisConference })} confirmText={t.dropOwn} destructive busy={busy} onCancel={() => setDropping(false)} onConfirm={() => void dropOwn()}>
         {fill(t.dropOwnText, { conference: conferenceName || t.thisConference })}
       </ConfirmDialog>

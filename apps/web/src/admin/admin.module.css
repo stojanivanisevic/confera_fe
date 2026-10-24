@@ -225,9 +225,37 @@
 .editor :global(.ProseMirror) h1,
 .editor :global(.ProseMirror) h2,
 .editor :global(.ProseMirror) h3,
+.editor :global(.ProseMirror) [data-email-heading],
 .editor :global(.ProseMirror) ul,
 .editor :global(.ProseMirror) ol {
   margin: 0 0 var(--gutter-s);
+}
+
+/* A heading of the email: styled as one, but no heading of the page (UX4-18). */
+.editor :global([data-email-heading="1"]) {
+  font: var(--text-h4);
+}
+
+.editor :global([data-email-heading="2"]) {
+  font: var(--text-h5);
+}
+
+.editor :global([data-email-heading="3"]) {
+  font: var(--text-h6);
+}
+
+/* The editor and the preview side by side only where both have room; below, one under the other (UX4-17). */
+.editorCards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gutter-2xl);
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .editorCards {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
 }
 
 .editor :global(.ProseMirror) a {
@@ -253,7 +281,7 @@
   box-shadow: var(--focus-ring);
 }
 
-/* A block shown only when a condition holds. */
+/* A block shown only when a condition holds, with the condition named above it (UX4-11). */
 .editor :global(section[data-condition]) {
   margin: 0 0 var(--gutter-s);
   padding: var(--gutter-s) var(--gutter-m);
@@ -261,10 +289,17 @@
   background: var(--background-2);
 }
 
+.editor :global([data-condition-label]) {
+  margin: 0 0 var(--gutter-xs);
+  font: var(--text-caption);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--warning);
+  user-select: none;
+}
+
+/* The subject is one line of text, but a long one wraps rather than being cut (UX4-17). */
 .subject :global(.ProseMirror) {
   min-height: 0;
-  white-space: pre;
-  overflow-x: auto;
 }
 
 /* A long address or id breaks anywhere rather than pushing the page sideways at 375 px. */
