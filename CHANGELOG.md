@@ -17,6 +17,13 @@ Release 0.4.0 in progress (`m4/fe`), against `confera_be` `develop` (`ae29288`, 
 - **Design system 2.6.0:** icons `image`, `message-square`, `rotate-ccw`; named type styles for the caption-xs overrides (M2-ISS-02); the DataTable guard for a control in the open cell (M2-ISS-03); fields and selects at the touch size (UXUI-M2-34); the layout tokens `--card-min`, `--field-min`, `--filter-field-min`, which the admin's stylesheet now uses (UXUI-M2-36).
 - **The form screen** names its parts as links (M3-ISS-22) and warns when there is no contact address; the public form shows "Uploaded" with a tick (UX3-19) and a next step when it closed while typing (UX3-21).
 
+### Security
+- **Q4-08: `pnpm audit` is clean again** (it found 11: 2 critical, 3 high, 4 moderate, 2 low). Each package moved to the fixed patch release the advisory names, pinned exactly (the transitive ones in the lockfile, without overrides), each older than the 3 days of `minimumReleaseAge` (Next 16.4.3, one day old, is not taken yet):
+  - `next` 16.4.0 → **16.4.2** (and `@next/env`, `@next/swc-*` with it): GHSA-2464-fhr4-w9xw (critical, unauthenticated remote code execution in the image optimisation API with SVG files), GHSA-673q-mjm6-r5xr (critical, unauthenticated remote code execution in `use cache` functions returning typed arrays), GHSA-p3m5-59mp-jv5r (high, denial of service in the App Router through server actions); fixed in 16.4.1.
+  - `zod` 4.6.5 → **4.6.7** (of `eslint-plugin-react-hooks`, lint only): GHSA-mrhx-c7xc-m3w5 (high, memory exhausted on oversized constrained collections); fixed in 4.6.6.
+  - `undici` 7.30.0 → **7.30.1** (of `jsdom`, unit tests only): GHSA-xjj6-f33q-929c (high, unhandled error on excessive content encodings), GHSA-4qv8-2p9j-2685 and GHSA-f72v-6w45-q472 (moderate).
+  - `fast-uri` 3.1.8 → **3.1.9** (of `ajv` under `secretlint`, the secret scan only): GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr (moderate), GHSA-xhq7-xmqj-769h, GHSA-333x-w4r6-6crp (low).
+
 ## 0.3.0 – 2026-10-18
 
 The web application of release 0.3.0 (forms, embed and intake), against `confera_be` 0.3.0 (`release/0.3.0`, `6521310`; the vendored contract and its lock name that commit, and the contract is the one of `93938dd` with the version 0.3.0). Design systems 2.5.0 and 2.5.1 are part of it.
