@@ -151,7 +151,7 @@ corepack pnpm e2e:install
 corepack pnpm e2e
 ```
 
-The full run takes about 22 minutes on a quiet development machine, and about 52 minutes on a loaded one (the clean-machine verification of 0.3.0, against the real API). It needs the ports **3000, 3100, 3101, 4000 and 4001** free (stop `pnpm dev` first). It builds a test build, starts it, starts the application once more in development mode, a harness "conference site" and an API stub, and stops them all at the end.
+The full run takes about 26 minutes on a quiet development machine (the clean-machine verification of 0.4.0, against the stub), and about 52 minutes on a loaded one (that of 0.3.0, against the real API). It needs the ports **3000, 3100, 3101, 4000 and 4001** free (stop `pnpm dev` first). It builds a test build, starts it, starts the application once more in development mode, a harness "conference site" and an API stub, and stops them all at the end.
 
 - **Three engines**, each with third-party cookies blocked; one test proves the blocking is in effect.
 - **Tests that are skipped or left out, each for a stated reason** (and only these):
@@ -183,10 +183,10 @@ Things a newcomer trips over:
 
 The same browser tests run in front of a real `confera_be` instead of the stub. The API is started by the documented commands of that repository and by nothing else (its README, section 9). In `..\confera_be`, with its `.env` a copy of `.env.example`:
 
-**A second checkout of `confera_be`** (a clone or a git worktree beside the one a backend developer runs) gets a stack of its own: after the copy of `.env.example`, `corepack pnpm stack:ports` writes PostgreSQL and Mailpit ports derived from its folder (25000 + n, 26000 + n, 27000 + n) into its `.env`, and `stack:up` starts containers named after that folder, so the two stacks never share a database. The API port stays 3001: only one checkout runs `pnpm start` at a time. Name that checkout and its mail catcher for the flows of 0.2.0 with `CONFERA_E2E_BE_DIR`, `CONFERA_E2E_MAILPIT_ORIGIN` (`http://127.0.0.1:<CONFERA_MAIL_WEB_PORT>`) and `CONFERA_E2E_MAILPIT_SMTP_PORT` (`<CONFERA_MAIL_SMTP_PORT>`), from its `.env`.
+**A second checkout of `confera_be`** (a clone or a git worktree beside the one a backend developer runs) gets a stack of its own: after the copy of `.env.example`, `corepack pnpm stack:ports` writes PostgreSQL, Mailpit and fake clamd ports derived from its folder (25000 + n, 26000 + n, 27000 + n, 28000 + n) into its `.env` (with `CLAMAV_ADDRESS`), and `stack:up` starts containers named after that folder, so the two stacks never share a database. The API port stays 3001: only one checkout runs `pnpm start` at a time. Name that checkout and its mail catcher for the flows of 0.2.0 with `CONFERA_E2E_BE_DIR`, `CONFERA_E2E_MAILPIT_ORIGIN` (`http://127.0.0.1:<CONFERA_MAIL_WEB_PORT>`) and `CONFERA_E2E_MAILPIT_SMTP_PORT` (`<CONFERA_MAIL_SMTP_PORT>`), from its `.env`.
 
 ```
-corepack pnpm stack:up
+corepack pnpm stack:up       (PostgreSQL, Mailpit and the fake clamd)
 corepack pnpm db:provision
 corepack pnpm db:migrate
 corepack pnpm seed:e2e
@@ -194,7 +194,7 @@ corepack pnpm build
 corepack pnpm start          (its own terminal; the log ends with "api.started")
 ```
 
-That API listens on `127.0.0.1:3001` and knows `localhost:3000` and `127.0.0.1:3000` as its two host names, which are the two origins of the browser tests. Then, in this repository:
+That API listens on `127.0.0.1:3001` and knows `localhost:3000` and `127.0.0.1:3000` as its two host names, which are the two origins of the browser tests. **The fake clamd is part of this run**: the API serves an uploaded file and shows an email image only once its virus scan is clean, and the development stack has no real ClamAV. `stack:up` starts `confera_be`'s fake one (every file clean but the EICAR test string; its README, section 2) and `.env.example` points `CLAMAV_ADDRESS` at it, so a fresh copy needs nothing more. When `stack:up` ends with a note that `CLAMAV_ADDRESS` does not name it (an `.env` copied before 0.4.0, or `CONFERA_FAKE_CLAMD=off`), set `CLAMAV_ADDRESS=127.0.0.1:3310` (its `CONFERA_CLAMD_PORT` on a second checkout) and restart the API: otherwise every file stays "scan pending", and the "To show" flow and the image preview of `qa-m4-real-api.spec.ts` fail. Then, in this repository:
 
 ```
 corepack pnpm api:check --sibling
@@ -297,7 +297,7 @@ To see the seeded form `e2eprobnaforma01` in a conference site's frame by hand, 
    ```
 
    Open the address it prints in your browser.
-6. After Send, the submission is in the admin under **Submissions** (`/submissions`), and the confirmation in the mail catcher of that checkout (`http://127.0.0.1:8025`, or its `CONFERA_MAIL_WEB_PORT`). The mail needs a default mail server of organisation A that sends to the catcher: on a fresh seed add one under **Mail servers** (host `127.0.0.1`, port `1025` or its `CONFERA_MAIL_SMTP_PORT`, encryption none, default); until then the confirmation waits in the outbox as `waiting_for_server`.
+6. After Send, the submission is in the admin under **Submissions** (`/submissions`), and the confirmation in the mail catcher of that checkout (`http://127.0.0.1:8025`, or its `CONFERA_MAIL_WEB_PORT`). **The confirmation needs a mail server, and `seed:e2e` creates none.** So before you press Send on a fresh seed, add one in the admin under **Mail servers**: host `127.0.0.1`, port `1025` (or that checkout's `CONFERA_MAIL_SMTP_PORT`), encryption none, a sender on `a.example.test`, enabled and default. (A run of the browser tests against this API adds the same server, `ensureMailServer`; then it is already there.) Without one the confirmation waits in the outbox as `waiting_for_server`, and goes out once you add it.
 
 Stop the harness and `pnpm dev` with Ctrl+C.
 
