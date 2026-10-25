@@ -226,7 +226,8 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
     await expect(row('Version')).toHaveText(ADMIN_CONTRACT.info.version);
     await expect.poll(() => seen.length).toBe(1);
     expect(seen[0]?.status).toBe(200);
-    expect(seen[0]?.body).toEqual({ name: 'confera-api', version: ADMIN_CONTRACT.info.version });
+    // The decided shape of /meta (M4-OPS-02, the staging banner): name, version and instance, null on a developer machine's API.
+    expect(seen[0]?.body).toEqual({ name: 'confera-api', version: ADMIN_CONTRACT.info.version, instance: null });
     expect(String(seen[0]?.traceId), 'the answer on the page came from the real API').toMatch(UUID);
     // One call of the meta route, and every call to the page's own origin (ADR-02): the browser never talks to the API's address.
     expect(problems.requests.filter((url) => url.endsWith('/api/v1/meta'))).toEqual([`${ADMIN_ORIGIN}/api/v1/meta`]);
