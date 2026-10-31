@@ -1,6 +1,6 @@
-# Production image of the Confera web application (M4-FE-05; ADR-20, ADR-24, ADR-26).
+# Production image of the Congresa web application (M4-FE-05; ADR-20, ADR-24, ADR-26).
 #
-#   docker build -t confera-web .
+#   docker build -t congresa-web .
 #
 # - Both stages start from the same base image, referenced by digest (ADR-01).
 # - The build stage makes the production build (no dev pages: no gallery, no harness, no spike
@@ -37,18 +37,18 @@ COPY scripts/next.mjs scripts/lib.mjs scripts/listen-host.mjs scripts/verify-bui
 COPY design-system design-system
 COPY packages packages
 COPY apps/web apps/web
-RUN CONFERA_STANDALONE=1 node scripts/next.mjs build \
+RUN CONGRESA_STANDALONE=1 node scripts/next.mjs build \
  && node scripts/verify-build.mjs
 
 # ---------------------------------------------------------------------------------------------
 # runtime
 # ---------------------------------------------------------------------------------------------
 FROM node:22.23.3-bookworm-slim@sha256:c3de60bf2f9dd0ac6370e6117950ff62d6e339527e7472301c9c78a017978392 AS runtime
-ARG CONFERA_REVISION=unknown
-LABEL org.opencontainers.image.title="confera-web" \
-      org.opencontainers.image.description="Confera web application (UdEkoM Balkans)" \
+ARG CONGRESA_REVISION=unknown
+LABEL org.opencontainers.image.title="congresa-web" \
+      org.opencontainers.image.description="Congresa web application (UdEkoM Balkans)" \
       org.opencontainers.image.source="https://github.com/stojanivanisevic/confera_fe" \
-      org.opencontainers.image.revision="${CONFERA_REVISION}" \
+      org.opencontainers.image.revision="${CONGRESA_REVISION}" \
       org.opencontainers.image.licenses="UNLICENSED"
 # HOSTNAME is the address Next's standalone server listens on: inside its container, every
 # address (ADR-24: 0.0.0.0 on prod). Telemetry off (ADR-20).

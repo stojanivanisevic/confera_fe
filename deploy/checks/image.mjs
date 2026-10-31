@@ -1,7 +1,7 @@
 // Checks the production image of the web application (M4-FE-05): ST-02 (frontend part) and ST-12
 // on the real image, as it will run on a server.
 //
-//   node --experimental-strip-types deploy/checks/image.mjs [image]     default: confera-m4-infra-web:check
+//   node --experimental-strip-types deploy/checks/image.mjs [image]     default: congresa-m4-infra-web:check
 //
 // 1. ST-02 / the route allowlist: the build inside the image is checked by scripts/verify-build.mjs
 //    (its routes equal the declared, non-planned routes of routes.json: no gallery, no harness, no
@@ -13,7 +13,7 @@
 //    apps/web/src/server/security/headers.ts defines for it (the nonce read from the answer), each
 //    load with a fresh nonce; the host separation holds; the framework's files keep `nosniff`.
 //
-// Needs Docker. Everything it makes is named confera-m4-infra-* and removed at the end.
+// Needs Docker. Everything it makes is named congresa-m4-infra-* and removed at the end.
 // Log: .artifacts/deploy-checks/image.log.
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -31,10 +31,10 @@ const logFile = path.join(artifacts, 'image.log');
 writeFileSync(logFile, `image check ${new Date().toISOString()}\n`);
 const log = (text) => appendFileSync(logFile, `${text}\n`);
 
-const image = process.argv[2] ?? 'confera-m4-infra-web:check';
-const container = 'confera-m4-infra-web-check';
-const ADMIN = 'admin.confera.test';
-const PUBLIC = 'forms.confera.test';
+const image = process.argv[2] ?? 'congresa-m4-infra-web:check';
+const container = 'congresa-m4-infra-web-check';
+const ADMIN = 'admin.congresa.test';
+const PUBLIC = 'forms.congresa.test';
 const REPORT_TO = `https://${PUBLIC}/public/v1/csp-reports`;
 
 const { buildSecurityHeaders } = await import('../../apps/web/src/server/security/headers.ts');
@@ -105,7 +105,7 @@ function headerProblems(kind, response) {
 try {
   // ---- 1. The image's files ------------------------------------------------------------------
   const inspect = JSON.parse(docker(['image', 'inspect', image]).stdout || '[]')[0];
-  check(`the image ${image} exists`, inspect !== undefined, 'build it first: docker build -t confera-m4-infra-web:check .');
+  check(`the image ${image} exists`, inspect !== undefined, 'build it first: docker build -t congresa-m4-infra-web:check .');
   if (inspect === undefined) throw new Error('no image');
 
   const extracted = path.join(artifacts, 'image-next');
@@ -155,10 +155,10 @@ try {
     '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true', '--memory', '768m', '--pids-limit', '200',
     '--publish', `127.0.0.1:${String(port)}:3000`,
     '--env', 'STAGE=prod',
-    '--env', `CONFERA_ADMIN_ORIGIN=https://${ADMIN}`,
-    '--env', `CONFERA_PUBLIC_ORIGIN=https://${PUBLIC}`,
+    '--env', `CONGRESA_ADMIN_ORIGIN=https://${ADMIN}`,
+    '--env', `CONGRESA_PUBLIC_ORIGIN=https://${PUBLIC}`,
     // Nothing answers there: the pages must keep their headers when the API cannot be reached.
-    '--env', 'CONFERA_API_ORIGIN=http://127.0.0.1:9',
+    '--env', 'CONGRESA_API_ORIGIN=http://127.0.0.1:9',
     image,
   ]);
   check('the image starts read-only, without capabilities, on STAGE=prod', started.code === 0, started.stderr);
@@ -182,7 +182,7 @@ try {
   check('its environment holds no database address and no key', runtimeSecretLike.length === 0, runtimeSecretLike.join(', '));
 
   // ---- 3. ST-12: every kind of page has its headers ----------------------------------------------
-  const session = '__Host-confera_session=invented-session-of-the-image-check';
+  const session = '__Host-congresa_session=invented-session-of-the-image-check';
   const pages = [
     ['admin', ADMIN, '/', { cookie: session }],
     ['admin', ADMIN, '/submissions', { cookie: session }],
