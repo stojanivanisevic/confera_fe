@@ -3,9 +3,9 @@
   "source": {
     "repository": "confera_be",
     "directory": "openapi",
-    "commit": "18cb978a51a13c096903d425a26804e75b9bdbe3",
+    "commit": "87e6bc3c7d94774cdd8e796177df36b6acd77d4e",
     "tag": null,
-    "branch": "HEAD",
+    "branch": "m4/rename-congresa",
     "committed": true
   },
   "files": {
@@ -13,25 +13,25 @@
       "title": "Congresa admin API",
       "version": "0.3.0",
       "sha256": "445375be0ea7c231879b30bb2192ee4fd62df5238cc70ac89ee124deadc35a95",
-      "commit": "08d3c87ec15db7b3c0946065519b7fff54ef09c2"
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     },
     "openapi.public.json": {
       "title": "Congresa public API",
       "version": "0.3.0",
       "sha256": "e054b6baed608a9f83ba359ee7362b9f77e5e19f4a5bb38558f690847d861a7b",
-      "commit": "85e01d1cf24bf21431abb0dddbc2abfce1c99d91"
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     },
     "password-rules.json": {
       "title": "contracts/password-rules.json",
       "version": "1",
       "sha256": "c4e6f184367d5ed369a88321dc3c92136683295ff53a30056d15981fc14c9efe",
-      "commit": "77add5fee31d591fdf88a1fedce30466763b2daf"
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     },
     "template-vectors.json": {
       "title": "contracts/template-vectors.json",
       "version": "1",
       "sha256": "ce81e1fe8a7051aee6f242efd48fd99027736757aa3c39119ae6d04d7cb6ce9c",
-      "commit": "a7b00d662f91bc3b568ff2b2779fd16044f58ab7"
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     },
     "form-definition.schema.json": {
       "title": "contracts/form-definition.schema.json",
@@ -49,7 +49,7 @@
       "title": "contracts/form-rule-vectors.json",
       "version": "1",
       "sha256": "458bb150d8b2d0e3e70c22e9c09f6868409c7f29f61e8c812515da4b93fd9482",
-      "commit": "45ee1320ce8ec2ef1f8654c9d7ceb87e8245c5dd"
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     }
   },
   "generator": {
