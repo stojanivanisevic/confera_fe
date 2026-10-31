@@ -3,8 +3,8 @@
 # Started by hand only (workflow_dispatch), with the digest from the summary of the image workflow.
 # It runs NO project code: there is no checkout. It holds the one deploy key of this repository,
 # which the server accepts for one thing only: handing over an image digest to the forced command
-# `/usr/local/sbin/confera-deploy-gate web` (confera_be, deploy/server). The key opens no shell, no
-# forward and no file transfer, and can name no image but confera-web's.
+# `/usr/local/sbin/congresa-deploy-gate web` (confera_be, deploy/server). The key opens no shell, no
+# forward and no file transfer, and can name no image but congresa-web's.
 #
 # Who can deploy (SEC-M4I-03). GitHub Pro offers no "required reviewers" on an environment of a
 # private repository (that needs Enterprise), so no approval by GitHub stands between a dispatch
@@ -28,7 +28,7 @@ on:
   workflow_dispatch:
     inputs:
       digest:
-        description: 'The digest of ghcr.io/stojanivanisevic/confera-web to deploy (sha256: and 64 hex digits)'
+        description: 'The digest of ghcr.io/stojanivanisevic/congresa-web to deploy (sha256: and 64 hex digits)'
         required: true
         type: string
 
@@ -108,4 +108,4 @@ jobs:
           ssh -T -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes \
             -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known" \
             -o ForwardAgent=no -o ClearAllForwardings=yes \
-            "confera-deploy-web@$SSH_HOST" "$DIGEST"
+            "congresa-deploy-web@$SSH_HOST" "$DIGEST"
