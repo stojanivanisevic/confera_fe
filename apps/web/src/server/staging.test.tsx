@@ -33,9 +33,9 @@ beforeEach(() => {
 
 describe('the staging banner', () => {
   it('shows on a staging instance, in both languages, with nothing to close', async () => {
-    answer.value = meta({ name: 'confera-api', version: '0.4.0', instance: 'staging' });
+    answer.value = meta({ name: 'congresa-api', version: '0.4.0', instance: 'staging' });
     const html = await render();
-    expect(html).toContain('<aside class="confera-staging" aria-label="Staging"');
+    expect(html).toContain('<aside class="congresa-staging" aria-label="Staging"');
     expect(html).toContain('<strong lang="en">Staging — test data only</strong>');
     expect(html).toContain('<strong lang="sr">Probno okruženje — samo probni podaci</strong>');
     expect(html).not.toMatch(/<button|close/i);
@@ -43,11 +43,11 @@ describe('the staging banner', () => {
 
   it('inside a page (a form, the frame) it is a note in its main, not a second landmark', async () => {
     answer.value = meta({ stage: 'staging' });
-    expect(await render(true)).toMatch(/^<p class="confera-staging" role="note"/);
+    expect(await render(true)).toMatch(/^<p class="congresa-staging" role="note"/);
   });
 
   it.each([
-    ['production', meta({ name: 'confera-api', version: '1.0.0', instance: 'production' })],
+    ['production', meta({ name: 'congresa-api', version: '1.0.0', instance: 'production' })],
     ['production that also names a stage', meta({ instance: 'production', stage: 'staging' })],
   ])('never renders on %s', async (_what, value) => {
     answer.value = value;
@@ -57,13 +57,13 @@ describe('the staging banner', () => {
 
   it.each(['local', 'dev', 'test'])('never renders on a developer machine: the API names no instance and the web application runs on %s', async (stage) => {
     answer.stage = stage;
-    answer.value = meta({ name: 'confera-api', version: '0.4.0', instance: null });
+    answer.value = meta({ name: 'congresa-api', version: '0.4.0', instance: null });
     expect(await render()).toBe('');
   });
 
   it.each([
-    ['a production build whose API names no instance', meta({ name: 'confera-api', version: '0.4.0', instance: null })],
-    ['an API without an instance', meta({ name: 'confera-api', version: '0.3.0' })],
+    ['a production build whose API names no instance', meta({ name: 'congresa-api', version: '0.4.0', instance: null })],
+    ['an API without an instance', meta({ name: 'congresa-api', version: '0.3.0' })],
     ['a stage of prod but no instance', meta({ stage: 'prod' })],
     ['another casing', meta({ instance: 'Staging' })],
     ['an instance it does not know', meta({ instance: 'preview' })],
@@ -71,14 +71,14 @@ describe('the staging banner', () => {
     ['a refusal', { status: 503, text: JSON.stringify({ instance: 'production' }) }],
   ])('fails closed and shows on %s (SEC-M4-06)', async (_what, value) => {
     answer.value = value;
-    expect(await render()).toContain('data-confera-staging');
+    expect(await render()).toContain('data-congresa-staging');
   });
 
   it('fails closed when the API does not answer at all, on any stage', async () => {
     answer.value = 'throws';
-    expect(await render()).toContain('data-confera-staging');
+    expect(await render()).toContain('data-congresa-staging');
     answer.stage = 'local';
-    expect(await render()).toContain('data-confera-staging');
+    expect(await render()).toContain('data-congresa-staging');
   });
 
   it('asks the API at most once a minute; a confirmation outlives a short silence, not a long one', async () => {

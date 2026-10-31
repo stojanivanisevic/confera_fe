@@ -23,7 +23,7 @@ import { Schema, type DOMOutputSpec, type MarkSpec, type NodeSpec } from 'prosem
 import { isTypedLink } from '@congresa/api-client';
 
 /** The address a link mark carries for the secure link of the message (`{ placeholder: 'link' }` in the format). */
-export const SECURE_LINK = 'confera:secure-link';
+export const SECURE_LINK = 'congresa:secure-link';
 
 /** The id of an email image, as the format has it. */
 export const IMAGE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -80,8 +80,8 @@ export const bodySchema = new Schema({
       draggable: true,
       attrs: { fileId: { validate: 'string' }, alt: { default: '', validate: 'string' } },
       // On the clipboard it is named by its id only, with no address: a paste elsewhere shows nothing to load.
-      toDOM: (node): DOMOutputSpec => ['figure', { 'data-confera-image': node.attrs.fileId as string, 'data-alt': node.attrs.alt as string }],
-      parseDOM: [{ tag: 'figure[data-confera-image]', getAttrs: (dom) => (IMAGE_ID.test(dom.dataset.conferaImage ?? '') ? { fileId: dom.dataset.conferaImage, alt: dom.dataset.alt ?? '' } : false) }],
+      toDOM: (node): DOMOutputSpec => ['figure', { 'data-congresa-image': node.attrs.fileId as string, 'data-alt': node.attrs.alt as string }],
+      parseDOM: [{ tag: 'figure[data-congresa-image]', getAttrs: (dom) => (IMAGE_ID.test(dom.dataset.congresaImage ?? '') ? { fileId: dom.dataset.congresaImage, alt: dom.dataset.alt ?? '' } : false) }],
     },
   },
   marks: {

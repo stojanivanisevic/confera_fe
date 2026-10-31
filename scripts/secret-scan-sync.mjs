@@ -1,6 +1,6 @@
 // `pnpm secrets:sync`: takes the scan for secret-like names from confera_be.
 //   pnpm secrets:sync                      from ../confera_be
-//   pnpm secrets:sync --from <directory>   from another checkout (or set CONFERA_BE_DIR)
+//   pnpm secrets:sync --from <directory>   from another checkout (or set CONGRESA_BE_DIR)
 //
 // The scanner, its two corpora and their manifest (scripts/secret-assignments/) are written
 // in confera_be and are the same four files in both repositories: one rule, set by the lead.
@@ -26,7 +26,7 @@ const LOCK = join(root, 'scripts', 'secret-scan.lock.json');
 
 const args = process.argv.slice(2);
 const fromIndex = args.indexOf('--from');
-const from = resolve(fromIndex >= 0 ? (args[fromIndex + 1] ?? '') : (process.env.CONFERA_BE_DIR ?? join(root, '..', 'confera_be')));
+const from = resolve(fromIndex >= 0 ? (args[fromIndex + 1] ?? '') : (process.env.CONGRESA_BE_DIR ?? join(root, '..', 'confera_be')));
 
 const git = (...gitArgs) => {
   const result = spawnSync('git', ['-C', from, ...gitArgs], { encoding: 'utf8' });

@@ -4,7 +4,7 @@
 // it; pasted into the harness site (`hostile.html?paste=<base64url>`), it is the form in a frame.
 // Nothing is sent, so the API's limit of 10 submits an hour per client is not touched.
 //
-// Skipped without CONFERA_E2E_API_ORIGIN (the stub has its own forms: admin-intake.spec.ts), and in
+// Skipped without CONGRESA_E2E_API_ORIGIN (the stub has its own forms: admin-intake.spec.ts), and in
 // WebKit (NO_SESSION_IN_WEBKIT). The clipboard is read back in Chromium, the one engine that lets a
 // test grant the permission; elsewhere the snippet is taken from its field.
 import { frameId } from '../packages/embed-loader/src/index';
@@ -27,7 +27,7 @@ test("the seeded form's screen shows its snippet; copied and pasted into the har
   await signIn(page, ADMIN, '/forms');
   await page.getByRole('table', { name: 'Forms' }).locator('tbody tr').filter({ hasText: `/f/${SLUG}` }).click();
   await expect(page).toHaveURL(new RegExp(`^${ADMIN_ORIGIN}/forms/[0-9a-f-]{36}$`));
-  const card = page.locator('[data-confera-embed-card]');
+  const card = page.locator('[data-congresa-embed-card]');
   // The screen, not the error page ("This page couldn’t load") of a record it cannot draw.
   await expect(card, 'the screen of the form').toBeVisible();
   await expect(card.getByRole('heading', { name: 'On a conference website' })).toBeVisible();
@@ -52,7 +52,7 @@ test("the seeded form's screen shows its snippet; copied and pasted into the har
   await frameElement.scrollIntoViewIfNeeded();
   const frame = await (await frameElement.elementHandle())?.contentFrame();
   if (!frame) throw new Error('The frame of the form has no document');
-  await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor({ timeout: 30_000 });
+  await frame.locator('[data-congresa-form][data-hydrated="true"]').waitFor({ timeout: 30_000 });
   await expect(frame.getByRole('radio', { name: 'Srpski' })).toBeChecked();
   await expect(frame.getByRole('button', { name: 'Pošalji' })).toBeEnabled();
   await expect(page.getByRole('link', { name: 'Obrazac se ne prikazuje? Otvorite ga na posebnoj stranici.' })).toHaveAttribute('href', `${PUBLIC_ORIGIN}/f/${SLUG}?lang=sr`);

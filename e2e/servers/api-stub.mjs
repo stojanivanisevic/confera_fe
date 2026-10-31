@@ -27,8 +27,8 @@ const rules = JSON.parse(readFileSync(join(contractDir, 'password-rules.json'), 
 const COMMON = new Set(rules.lines.find((line) => line.id === 'not_common').common);
 
 const ADMIN_ORIGIN = 'http://localhost:3000';
-export const SESSION_COOKIE = '__Host-confera_session';
-const DEVICE_COOKIE = '__Host-confera_device';
+export const SESSION_COOKIE = '__Host-congresa_session';
+const DEVICE_COOKIE = '__Host-congresa_device';
 const CONFIRMATION_MS = 5 * 60 * 1000;
 const PERMISSIONS = {
   admin: ['account.manage', 'users.read', 'users.manage', 'organisation.read', 'organisation.manage', 'audit.read', 'mail_servers.read', 'mail_servers.manage', 'conferences.read', 'conferences.manage', 'templates.read', 'mail_log.read', 'forms.read', 'forms.manage', 'submissions.read', 'held_mail.manage', 'submissions.manage', 'templates.manage', 'mail_log.manage'],
@@ -188,7 +188,7 @@ export async function handleAdmin(req, url) {
   const changing = method !== 'GET' && method !== 'HEAD';
   const publicRoute = /^\/api\/v1\/(meta|session$|password-resets|invitations\/|email-changes\/)/.test(path) && !(path === '/api/v1/session' && method !== 'POST');
 
-  if (path === '/api/v1/meta' && method === 'GET') return { status: 200, body: { name: 'confera-api', version, instance: null } };
+  if (path === '/api/v1/meta' && method === 'GET') return { status: 200, body: { name: 'congresa-api', version, instance: null } };
   enter(req);
   if (path === '/__stub/reset' && method === 'POST') {
     reset(req);

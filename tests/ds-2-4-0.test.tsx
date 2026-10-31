@@ -119,7 +119,7 @@ describe('AppShell (UXUI-M2-04, 35)', () => {
 
   it('a link chosen in the open drawer closes it, and the focus goes to the content', async () => {
     await mount(
-      <U.AppShell product="Confera" sidebar={<U.SidebarNav items={[{ label: 'Users', value: 'u', href: '#u' }]} onNavigate={() => undefined} />}>
+      <U.AppShell product="Congresa" sidebar={<U.SidebarNav items={[{ label: 'Users', value: 'u', href: '#u' }]} onNavigate={() => undefined} />}>
         <h1>Users</h1>
       </U.AppShell>,
     );
@@ -132,7 +132,7 @@ describe('AppShell (UXUI-M2-04, 35)', () => {
   });
 
   it('the first stop of the Tab order skips to the content', async () => {
-    await mount(<U.AppShell product="Confera" sidebar={null}>content</U.AppShell>);
+    await mount(<U.AppShell product="Congresa" sidebar={null}>content</U.AppShell>);
     const skip = container.querySelector<HTMLAnchorElement>('.ud-shell > a')!;
     expect(skip.textContent).toBe('Skip to content');
     expect(skip.getAttribute('href')).toBe(`#${container.querySelector('main')!.id}`);

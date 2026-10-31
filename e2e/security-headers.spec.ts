@@ -167,7 +167,7 @@ test.describe('ST-66 (routing part): the host separation is enforced in the appl
       expect(response.status()).toBe(404);
       expect(response.headers()['set-cookie']).toBeUndefined();
       const body = await response.text();
-      expect(body).not.toMatch(/Sign-in arrives|foundations|confera-api/i); // nothing of the admin surface is shown
+      expect(body).not.toMatch(/Sign-in arrives|foundations|congresa-api/i); // nothing of the admin surface is shown
       expect(response.headers()['cache-control']).toContain('no-store');
     });
   }
@@ -176,7 +176,7 @@ test.describe('ST-66 (routing part): the host separation is enforced in the appl
     test(`${path} asked under the admin host name is not found`, async ({ request }) => {
       const response = await request.get(`${ADMIN_ORIGIN}${path}`);
       expect(response.status()).toBe(404);
-      expect(await response.text()).not.toContain('data-confera-form');
+      expect(await response.text()).not.toContain('data-congresa-form');
       // No frame permission is ever given on the admin host.
       if (response.headers()['content-type']?.includes('text/html')) expect(response.headers()['content-security-policy']).toMatch(/^frame-ancestors 'none';/);
     });
@@ -190,7 +190,7 @@ test.describe('ST-66 (routing part): the host separation is enforced in the appl
     const meta = await request.get(`${ADMIN_ORIGIN}/api/v1/meta`);
     expect(meta.status()).toBe(200);
     expect(meta.headers()['content-type']).toContain('application/json');
-    expect(await meta.json()).toMatchObject({ name: 'confera-api', version: expect.stringMatching(/^[0-9]+[.][0-9]+[.][0-9]+/) });
+    expect(await meta.json()).toMatchObject({ name: 'congresa-api', version: expect.stringMatching(/^[0-9]+[.][0-9]+[.][0-9]+/) });
   });
 
   test('the forward keeps the Host header: the control', async ({ request }) => {

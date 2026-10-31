@@ -6,7 +6,7 @@ import '@congresa/ui/styles';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: 'Confera', template: '%s · Confera' },
+  title: { default: 'Congresa', template: '%s · Congresa' },
 };
 
 export const viewport: Viewport = {

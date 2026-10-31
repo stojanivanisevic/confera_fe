@@ -15,7 +15,7 @@ import { webDir } from './lib.mjs';
 export const FRAMEWORK_ROUTES = ['/_not-found', '/_global-error'];
 
 /** Text that exists only in dev pages and spike fixtures. None of it may be in a production build. */
-export const DEV_ONLY_MARKERS = ['dev/gallery', 'dev/render-error', 'spike-abstract', 'spike-unlisted', 'dev-fixtures.dev', 'data-confera-dev'];
+export const DEV_ONLY_MARKERS = ['dev/gallery', 'dev/render-error', 'spike-abstract', 'spike-unlisted', 'dev-fixtures.dev', 'data-congresa-dev'];
 
 /** Pure part: compares the routes of a build with the declared routes. Returns a list of problems. */
 export function checkRoutes(buildRoutes, declared) {
@@ -74,7 +74,7 @@ export function verifyBuild(distDir) {
   if (config.poweredByHeader !== false) problems.push('poweredByHeader is not off');
   if (config.productionBrowserSourceMaps !== false) problems.push('productionBrowserSourceMaps is not off');
   if (config.images?.unoptimized !== true) problems.push('the image optimiser is not off');
-  if (config.env?.CONFERA_DEV_PAGES !== '0') problems.push('the build was made with the dev pages');
+  if (config.env?.CONGRESA_DEV_PAGES !== '0') problems.push('the build was made with the dev pages');
 
   return problems;
 }

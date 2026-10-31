@@ -536,7 +536,7 @@ describe('AppShell, the modal layer and Menu (item 6: R-01, R-03, R-06, R-07)', 
     });
     function Shell() {
       return (
-        <U.AppShell product="Confera" sidebar={<U.SidebarNav items={[{ label: 'Conferences', value: 'c', href: '#c' }, { label: 'Users', value: 'u', href: '#u' }]} />}>
+        <U.AppShell product="Congresa" sidebar={<U.SidebarNav items={[{ label: 'Conferences', value: 'c', href: '#c' }, { label: 'Users', value: 'u', href: '#u' }]} />}>
           <button type="button">Save changes</button>
         </U.AppShell>
       );

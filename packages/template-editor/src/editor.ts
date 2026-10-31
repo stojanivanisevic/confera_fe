@@ -77,7 +77,7 @@ function placeholderView(label: (key: string) => string) {
 function imageView(src: (fileId: string) => string) {
   return (node: EditorNode): NodeView => {
     const dom = document.createElement('figure');
-    dom.dataset.conferaImage = node.attrs.fileId as string;
+    dom.dataset.congresaImage = node.attrs.fileId as string;
     dom.setAttribute('contenteditable', 'false');
     const img = document.createElement('img');
     img.src = src(node.attrs.fileId as string);
@@ -103,7 +103,7 @@ function headingView(under: number) {
   return (node: EditorNode): NodeView => {
     const level = node.attrs.level as number;
     const dom = document.createElement('div');
-    dom.className = `confera-heading confera-heading--${String(level)}`;
+    dom.className = `congresa-heading congresa-heading--${String(level)}`;
     dom.dataset.emailHeading = String(level);
     dom.setAttribute('role', 'heading');
     dom.setAttribute('aria-level', String(Math.min(6, under + level)));
@@ -117,12 +117,12 @@ function conditionView(label: (key: string) => string) {
     const dom = document.createElement('section');
     dom.dataset.condition = node.attrs.key as string;
     const head = document.createElement('div');
-    head.className = 'confera-condition__label';
+    head.className = 'congresa-condition__label';
     head.setAttribute('contenteditable', 'false');
     head.dataset.conditionLabel = '';
     head.textContent = label(node.attrs.key as string);
     const content = document.createElement('div');
-    content.className = 'confera-condition__blocks';
+    content.className = 'congresa-condition__blocks';
     dom.append(head, content);
     return { dom, contentDOM: content, ignoreMutation: (mutation) => head.contains(mutation.target) };
   };
@@ -157,7 +157,7 @@ function mount<T>(element: HTMLElement, doc: EditorNode, plugins: EditorState['p
     },
     // Pasted markup keeps what the schema has; an image of a web page is never taken over, and the page says so.
     transformPastedHTML: (html) => {
-      if (multiline && /<img[\s>](?![^>]*data-confera-image)/i.test(html)) options.onImagesDropped?.();
+      if (multiline && /<img[\s>](?![^>]*data-congresa-image)/i.test(html)) options.onImagesDropped?.();
       return html;
     },
     handleDrop: (_view, event) => {

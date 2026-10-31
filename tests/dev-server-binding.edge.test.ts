@@ -81,9 +81,9 @@ describe.skipIf(lanAddress === undefined)('edge case (M1-REV-01): the web applic
       env: {
         ...process.env,
         STAGE: 'local',
-        CONFERA_PUBLIC_ORIGIN: `http://127.0.0.1:${port}`,
-        CONFERA_ADMIN_ORIGIN: `http://localhost:${port}`,
-        CONFERA_API_ORIGIN: 'http://127.0.0.1:3001',
+        CONGRESA_PUBLIC_ORIGIN: `http://127.0.0.1:${port}`,
+        CONGRESA_ADMIN_ORIGIN: `http://localhost:${port}`,
+        CONGRESA_API_ORIGIN: 'http://127.0.0.1:3001',
         PORT: String(port),
       },
     });

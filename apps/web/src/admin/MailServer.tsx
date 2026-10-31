@@ -209,7 +209,7 @@ export function MailServer({ id }: { id: string }) {
         </ProblemAlert>
       ) : null}
       <Card title={TEXTS.conferences.settings} headingLevel={2}>
-        <form className={styles.fields} onSubmit={(event) => void save(event)} noValidate data-confera-mail-server>
+        <form className={styles.fields} onSubmit={(event) => void save(event)} noValidate data-congresa-mail-server>
           <TextField label={t.name} name="name" value={form.name} disabled={readOnly} onChange={(event) => set({ name: event.target.value })} required status={fields.name ? 'error' : 'default'} message={fields.name} />
           <TextField label={t.host} name="host" value={form.host} disabled={readOnly} autoComplete="off" spellCheck={false} onChange={(event) => set({ host: event.target.value })} required status={fields.host ? 'error' : 'default'} message={fields.host} />
           <Select
@@ -266,7 +266,7 @@ export function MailServer({ id }: { id: string }) {
         {record === null ? (
           <p className={styles.text}>{t.testSaveFirst}</p>
         ) : (
-          <form className={styles.fields} onSubmit={(event) => void sendTest(event)} noValidate data-confera-test-message>
+          <form className={styles.fields} onSubmit={(event) => void sendTest(event)} noValidate data-congresa-test-message>
             <p className={`${styles.text} ${styles.all}`}>{t.testText}</p>
             <TextField label={t.testTo} name="to" type="email" value={testTo} onChange={(event) => setTestTo(event.target.value)} required />
             <Select label={t.testLanguage} name="language" value={testLanguage} onChange={(event) => setTestLanguage(event.target.value as 'en' | 'sr')} options={LANGUAGES.map((value) => ({ value, label: TEXTS.conferences.languageNames[value] ?? value }))} />
@@ -276,10 +276,10 @@ export function MailServer({ id }: { id: string }) {
               </Button>
             </div>
             {testResult ? (
-              <div className={styles.all} data-confera-test-result={testResult.result}>
+              <div className={styles.all} data-congresa-test-result={testResult.result}>
                 <Alert tone={testResult.result === 'sent' ? 'success' : 'error'} title={fill(t.testResult[testResult.result] ?? '', { to: testResult.to, reason: testResult.reason ? (t.reasons[testResult.reason] ?? t.reasonFallback) : t.reasonFallback })}>
                   {/* What kind of failure it was, in the office's words (M2-ISS-14, UXUI-M2-11). */}
-                  {testResult.result === 'failed' && testResult.cause ? <span data-confera-test-cause={testResult.cause}>{t.causes[testResult.cause] ?? ''}</span> : null}
+                  {testResult.result === 'failed' && testResult.cause ? <span data-congresa-test-cause={testResult.cause}>{t.causes[testResult.cause] ?? ''}</span> : null}
                 </Alert>
               </div>
             ) : null}

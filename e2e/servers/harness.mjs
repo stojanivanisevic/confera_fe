@@ -36,7 +36,7 @@ function site(port, extraHeaders = () => ({})) {
       // this server (not from an intercepted response) so that the browser sees a normal local site.
       const paste = url.searchParams.get('paste');
       const body = readFileSync(file);
-      res.end(paste === null ? body : body.toString('utf8').replace('<!--CONFERA_SNIPPET-->', Buffer.from(paste, 'base64url').toString('utf8')));
+      res.end(paste === null ? body : body.toString('utf8').replace('<!--CONGRESA_SNIPPET-->', Buffer.from(paste, 'base64url').toString('utf8')));
     },
     port,
     'harness site',
@@ -44,12 +44,12 @@ function site(port, extraHeaders = () => ({})) {
 }
 
 // A page can ask for a content security policy of the conference site itself (?csp=...):
-//   allow-inline  a strict site that still lets pasted inline script run and allows Confera's frame
+//   allow-inline  a strict site that still lets pasted inline script run and allows Congresa's frame
 //   no-inline     a site that lets no pasted script run at all: the snippet falls back to its fixed height
-const CONFERA_PUBLIC = 'http://127.0.0.1:3000';
+const CONGRESA_PUBLIC = 'http://127.0.0.1:3000';
 const HOST_POLICIES = {
-  'allow-inline': `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; frame-src ${CONFERA_PUBLIC}`,
-  'no-inline': `default-src 'none'; style-src 'unsafe-inline'; script-src 'none'; frame-src ${CONFERA_PUBLIC}`,
+  'allow-inline': `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; frame-src ${CONGRESA_PUBLIC}`,
+  'no-inline': `default-src 'none'; style-src 'unsafe-inline'; script-src 'none'; frame-src ${CONGRESA_PUBLIC}`,
 };
 const hostPolicy = (url) => {
   const policy = HOST_POLICIES[url.searchParams.get('csp') ?? ''];

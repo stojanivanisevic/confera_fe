@@ -23,7 +23,7 @@ if (devPages && process.env.STAGE === 'prod') {
 const env = {
   // ADR-20: telemetry off. The variable is the framework's documented switch.
   NEXT_TELEMETRY_DISABLED: '1',
-  CONFERA_DEV_PAGES: devPages ? '1' : '0',
+  CONGRESA_DEV_PAGES: devPages ? '1' : '0',
 };
 
 if (['dev', 'start'].includes(command) && !args.includes('-p') && !args.includes('--port')) {

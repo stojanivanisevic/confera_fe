@@ -10,27 +10,27 @@
   },
   "files": {
     "openapi.json": {
-      "title": "Confera admin API",
+      "title": "Congresa admin API",
       "version": "0.3.0",
-      "sha256": "2eb5ea66e9fb0c2063f9288dcf60a4efc6ada6b13f28b83bae0ce8cb035dc496",
+      "sha256": "445375be0ea7c231879b30bb2192ee4fd62df5238cc70ac89ee124deadc35a95",
       "commit": "08d3c87ec15db7b3c0946065519b7fff54ef09c2"
     },
     "openapi.public.json": {
-      "title": "Confera public API",
+      "title": "Congresa public API",
       "version": "0.3.0",
-      "sha256": "94b7f6c463b9f0da156e2dbdb76530d754c548aa5444caf86f1cfeeaf02cd2c0",
+      "sha256": "e054b6baed608a9f83ba359ee7362b9f77e5e19f4a5bb38558f690847d861a7b",
       "commit": "85e01d1cf24bf21431abb0dddbc2abfce1c99d91"
     },
     "password-rules.json": {
       "title": "contracts/password-rules.json",
       "version": "1",
-      "sha256": "50c24619647c9387fc01bec9ae9d0b3817f0b9a5a9da85a8d8fea279b9244004",
+      "sha256": "c4e6f184367d5ed369a88321dc3c92136683295ff53a30056d15981fc14c9efe",
       "commit": "77add5fee31d591fdf88a1fedce30466763b2daf"
     },
     "template-vectors.json": {
       "title": "contracts/template-vectors.json",
       "version": "1",
-      "sha256": "254c160552ede53a0e31a1e78afb9fc2fdbe6b0004a07f44b37d23a948d6a60f",
+      "sha256": "ce81e1fe8a7051aee6f242efd48fd99027736757aa3c39119ae6d04d7cb6ce9c",
       "commit": "a7b00d662f91bc3b568ff2b2779fd16044f58ab7"
     },
     "form-definition.schema.json": {
@@ -48,7 +48,7 @@
     "form-rule-vectors.json": {
       "title": "contracts/form-rule-vectors.json",
       "version": "1",
-      "sha256": "7b3e475e570f89c1479d31038c7d0ff72c4c715113fb1bfa19b8cfa62a845331",
+      "sha256": "458bb150d8b2d0e3e70c22e9c09f6868409c7f29f61e8c812515da4b93fd9482",
       "commit": "45ee1320ce8ec2ef1f8654c9d7ceb87e8245c5dd"
     }
   },

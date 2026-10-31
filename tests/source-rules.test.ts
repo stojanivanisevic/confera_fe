@@ -117,7 +117,7 @@ describe('1. only the configuration module reads the environment (ADR-01)', () =
   it('in the application the environment is read in the configuration module, and once more for the runtime the framework fills in', () => {
     expect(scanAll(environmentAccesses)).toEqual([
       'apps/web/src/config/env.ts:151: process.env',
-      'apps/web/src/config/env.ts:151: process.env.CONFERA_DEV_PAGES',
+      'apps/web/src/config/env.ts:151: process.env.CONGRESA_DEV_PAGES',
       'apps/web/src/config/env.ts:157: process.env.NODE_ENV',
       // Not configuration: the framework replaces it at build time (see the comment in the file).
       'apps/web/src/instrumentation.ts:8: process.env.NEXT_RUNTIME',

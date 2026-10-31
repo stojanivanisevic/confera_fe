@@ -19,7 +19,7 @@ export function Gallery() {
   const hydrated = useSyncExternalStore(subscribeToNothing, () => true, () => false);
 
   return (
-    <main className={styles.page} data-confera-dev="gallery" data-hydrated={hydrated ? 'true' : 'false'}>
+    <main className={styles.page} data-congresa-dev="gallery" data-hydrated={hydrated ? 'true' : 'false'}>
       <h1 className={styles.title}>Design system gallery</h1>
       <p className={styles.lead}>
         UdEkoM Balkans design system {DS_VERSION}: {COMPONENT_NAMES.length} components, rendered on the server and hydrated.
@@ -27,7 +27,7 @@ export function Gallery() {
       {COMPONENT_NAMES.map((name) => {
         const Scenario = SCENARIOS[name];
         return (
-          <section key={name} className={styles.card} data-confera-dev="gallery-card" data-component={name} aria-labelledby={`gallery-${name}`}>
+          <section key={name} className={styles.card} data-congresa-dev="gallery-card" data-component={name} aria-labelledby={`gallery-${name}`}>
             <h2 className={styles.name} id={`gallery-${name}`}>
               {name}
             </h2>

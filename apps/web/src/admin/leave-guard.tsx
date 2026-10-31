@@ -32,7 +32,7 @@ interface LeaveGuardApi {
 const LeaveGuardContext = createContext<LeaveGuardApi>({ leave: (go) => go(), hold: () => undefined });
 
 /** The mark of the history entry the guard puts on top of this page: an id of its own, so an older one is not taken for it. */
-const SENTINEL = 'conferaLeaveGuard';
+const SENTINEL = 'congresaLeaveGuard';
 const markOf = (state: unknown): unknown => (typeof state === 'object' && state !== null ? (state as Record<string, unknown>)[SENTINEL] : undefined);
 let sentinels = 0;
 /** Puts a new entry of this page on top of the history, and gives its id. */

@@ -119,7 +119,7 @@ export default tseslint.config(
       'packages/ui/src/generated/**',
       'packages/api-client/src/generated/**',
       // Planted violations: linted only by tests/lint-fixtures.test.ts.
-      ...(process.env.CONFERA_LINT_FIXTURES === '1' ? [] : ['lint-fixtures/**']),
+      ...(process.env.CONGRESA_LINT_FIXTURES === '1' ? [] : ['lint-fixtures/**']),
     ],
   },
 

@@ -7,11 +7,11 @@ import type { NextConfig } from 'next';
 // all: their page files have the extension `.dev.tsx`, which only a test build
 // treats as a page, and the fixture module is swapped for an empty one
 // (ADR-20, ADR-24: dev tools are absent, not switched off).
-const devPages = process.env.CONFERA_DEV_PAGES === '1';
+const devPages = process.env.CONGRESA_DEV_PAGES === '1';
 
-// The container image (Dockerfile, M4-FE-05) is built with CONFERA_STANDALONE=1: the server and only
+// The container image (Dockerfile, M4-FE-05) is built with CONGRESA_STANDALONE=1: the server and only
 // the files it needs, traced across the workspace, in .next/standalone. Never with the dev pages.
-const standalone = process.env.CONFERA_STANDALONE === '1';
+const standalone = process.env.CONGRESA_STANDALONE === '1';
 if (standalone && devPages) throw new Error('A standalone (image) build never carries the dev pages (ADR-24).');
 
 // `next dev` serves its own resources only to the host names listed here (and to "localhost").
@@ -23,7 +23,7 @@ const hostnameOf = (origin: string | undefined): string | null => {
     return null;
   }
 };
-const devHosts = [hostnameOf(process.env.CONFERA_PUBLIC_ORIGIN), hostnameOf(process.env.CONFERA_ADMIN_ORIGIN)].filter((host): host is string => host !== null);
+const devHosts = [hostnameOf(process.env.CONGRESA_PUBLIC_ORIGIN), hostnameOf(process.env.CONGRESA_ADMIN_ORIGIN)].filter((host): host is string => host !== null);
 
 const nextConfig: NextConfig = {
   // The two builds never share an output directory.
@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
   pageExtensions: devPages ? ['tsx', 'ts', 'dev.tsx', 'dev.ts'] : ['tsx', 'ts'],
 
   // Fixed at build time: read by the configuration module only.
-  env: { CONFERA_DEV_PAGES: devPages ? '1' : '0' },
+  env: { CONGRESA_DEV_PAGES: devPages ? '1' : '0' },
 
   // The internal packages are TypeScript source.
   transpilePackages: ['@congresa/ui', '@congresa/form-renderer', '@congresa/embed-loader', '@congresa/api-client', '@congresa/template-editor'],

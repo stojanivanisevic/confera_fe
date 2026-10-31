@@ -113,9 +113,9 @@ describe('the status of a submission (M4-FE-01)', () => {
     await click([...dialog()!.querySelectorAll('button')].find((b) => b.textContent === 'Send the email and change the status')!);
     expect(statusPosts(fake)).toHaveLength(1);
     expect(statusPosts(fake)[0]!.body).toEqual({ action: 'open', version: 1, previewDigest: 'd1' });
-    expect(screen.container.querySelector('[data-confera-submission-status]')?.getAttribute('data-confera-submission-status')).toBe('open');
+    expect(screen.container.querySelector('[data-congresa-submission-status]')?.getAttribute('data-congresa-submission-status')).toBe('open');
     // It stays said who took it and that the author was emailed.
-    expect(screen.container.querySelector('[data-confera-opened]')!.textContent).toMatch(/^Taken into processing by .+\. The author was emailed\.$/);
+    expect(screen.container.querySelector('[data-congresa-opened]')!.textContent).toMatch(/^Taken into processing by .+\. The author was emailed\.$/);
   });
 
   it('return for revision: the email is shown first, Cancel sends nothing, Send sends what was shown, once', async () => {
@@ -135,7 +135,7 @@ describe('the status of a submission (M4-FE-01)', () => {
     expect(frame.getAttribute('sandbox')).toBe('');
     expect(frame.getAttribute('srcdoc')).toContain('Skratite apstrakt na 250 reči.');
     expect(document.body.dataset.pwned).toBeUndefined();
-    expect(dialog()!.querySelector('[data-confera-status-email-subject]')!.textContent).toBe('Prijava KP26-0002 je vraćena na doradu');
+    expect(dialog()!.querySelector('[data-congresa-status-email-subject]')!.textContent).toBe('Prijava KP26-0002 je vraćena na doradu');
     // Cancel: nothing changes, nothing is sent.
     await click([...dialog()!.querySelectorAll('button')].find((b) => b.textContent === 'Cancel')!);
     expect(statusPosts(fake)).toHaveLength(0);
@@ -147,7 +147,7 @@ describe('the status of a submission (M4-FE-01)', () => {
     await click(send);
     expect(statusPosts(fake)).toHaveLength(1);
     expect(statusPosts(fake)[0]!.body).toEqual({ action: 'return', version: 1, message: 'Skratite apstrakt.', previewDigest: 'd1' });
-    expect(screen.container.querySelector('[data-confera-submission-status]')?.getAttribute('data-confera-submission-status')).toBe('returned_for_revision');
+    expect(screen.container.querySelector('[data-congresa-submission-status]')?.getAttribute('data-congresa-submission-status')).toBe('returned_for_revision');
     expect(screen.container.textContent).toContain('Message: Skratite apstrakt.');
   });
 
@@ -215,7 +215,7 @@ describe('the status of a submission (M4-FE-01)', () => {
     expect(dialog()).toBeNull();
     expect(screen.container.textContent).toContain('Another admin has just changed this submission to Rejected. Nothing was sent.');
     expect(screen.container.textContent).not.toMatch(/name this id/);
-    expect(screen.container.querySelector('[data-confera-submission-status]')?.getAttribute('data-confera-submission-status')).toBe('rejected');
+    expect(screen.container.querySelector('[data-congresa-submission-status]')?.getAttribute('data-congresa-submission-status')).toBe('rejected');
   });
 
   it('a revision shows no author line that changed nothing, and names the field of an author that did (UX4-16)', async () => {
@@ -238,7 +238,7 @@ describe('the status of a submission (M4-FE-01)', () => {
     };
     useFake(fake);
     screen = await mount(<Submission id={ID} />);
-    const revisions = screen.container.querySelector('[data-confera-revisions]')!.textContent ?? '';
+    const revisions = screen.container.querySelector('[data-congresa-revisions]')!.textContent ?? '';
     expect(revisions).toContain('Title: “Turizam” became “Održivi turizam”');
     expect(revisions).not.toContain('Authors: Đorđe Đorđević became Đorđe Đorđević');
     expect(revisions).toContain('Author 1, ORCID iD: “0000-0002-1825-0097” became “—”');
@@ -248,11 +248,11 @@ describe('the status of a submission (M4-FE-01)', () => {
     const fake = fakeOf('open');
     useFake(fake);
     screen = await mount(<Submission id={ID} />);
-    const notes = screen.container.querySelector<HTMLElement>('[data-confera-notes]')!;
+    const notes = screen.container.querySelector<HTMLElement>('[data-congresa-notes]')!;
     expect(notes.textContent).toContain('Only admins see notes');
     await typeInto(notes.querySelector('textarea')!, 'Pozvati autora telefonom.');
     await click(button(notes, 'Add the note'));
     expect(fake.calls('POST', `/api/v1/submissions/${ID}/notes`)[0]!.body).toEqual({ body: 'Pozvati autora telefonom.' });
-    expect(screen.container.querySelector('[data-confera-notes]')!.textContent).toContain('Pozvati autora telefonom.');
+    expect(screen.container.querySelector('[data-congresa-notes]')!.textContent).toContain('Pozvati autora telefonom.');
   });
 });

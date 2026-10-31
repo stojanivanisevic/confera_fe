@@ -21,10 +21,10 @@ test.describe('the admin home and the API (M1-FE-05)', () => {
     await signIn(page);
     const problems = watchPage(page);
     await page.goto(`${ADMIN_ORIGIN}/`);
-    await expect(page.locator('[data-confera-connection="connected"]')).toContainText('Confera is working.');
+    await expect(page.locator('[data-congresa-connection="connected"]')).toContainText('Congresa is working.');
     await page.getByText('Technical details').click();
     const row = (label: string) => page.locator('.ud-dl__row', { has: page.locator('dt', { hasText: label }) }).locator('dd');
-    await expect(row('Service')).toHaveText('confera-api');
+    await expect(row('Service')).toHaveText('congresa-api');
     await expect(row('Version')).toHaveText(/^\d+\.\d+\.\d+/);
     await expect(row('Contract of this build')).toHaveText(await row('Version').innerText());
     // Every call went to the page's own origin: there is no cross-origin API call (ADR-02).
@@ -59,7 +59,7 @@ for (const width of [1440, 375]) {
       test.skip(AGAINST_REAL_API, STUB_FORMS);
       const problems = watchPage(page);
       await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
-      await page.locator('[data-confera-form][data-hydrated="true"]').waitFor(); // typing before the form is attached would not be seen
+      await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor(); // typing before the form is attached would not be seen
       await expect(page.getByRole('heading', { level: 1, name: 'Abstract submission' })).toBeVisible();
       return problems;
     };
@@ -109,12 +109,12 @@ for (const width of [1440, 375]) {
     test('the draft stays in the tab: what was typed is there after a reload', async ({ page }) => {
       test.skip(AGAINST_REAL_API, STUB_FORMS);
       await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
-      await page.locator('[data-confera-form][data-hydrated="true"]').waitFor(); // typing before the form is attached would not be seen
+      await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor(); // typing before the form is attached would not be seen
       await page.getByLabel('Title of the paper').fill('Šta đaci čitaju');
       await page.getByLabel('Abstract').fill('Prva druga treća');
       await expect(page.getByText('3 of 300 words')).toBeVisible();
       await page.reload();
-      await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+      await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
       await expect(page.getByLabel('Title of the paper')).toHaveValue('Šta đaci čitaju');
       await expect(page.getByLabel('Abstract')).toHaveValue('Prva druga treća');
     });

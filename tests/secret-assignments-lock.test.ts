@@ -42,8 +42,8 @@ const sha256 = (text: string) => createHash('sha256').update(text, 'utf8').diges
 const ours = join(root, DIRECTORY);
 const manifest = JSON.parse(manifestText(ours)) as Manifest;
 
-// The checkout of confera_be: the one named by CONFERA_BE_DIR (as for `pnpm api:sync`), else the one next to this repository.
-const sibling = resolve(process.env.CONFERA_BE_DIR ?? join(root, '..', 'confera_be'));
+// The checkout of confera_be: the one named by CONGRESA_BE_DIR (as for `pnpm api:sync`), else the one next to this repository.
+const sibling = resolve(process.env.CONGRESA_BE_DIR ?? join(root, '..', 'confera_be'));
 const theirs = join(sibling, DIRECTORY);
 // A checkout on a branch from before the scanner has nothing to compare; one with the scanner is compared.
 const siblingHasScanner = existsSync(theirs);
@@ -75,7 +75,7 @@ describe('the scanner copied from confera_be', () => {
   it.skipIf(!siblingHasScanner)(`has the manifest of the checkout of confera_be in ${sibling}`, () => {
     expect(
       existsSync(join(theirs, MANIFEST)),
-      `confera_be in ${sibling} has a scanner without a manifest, from before version 1.0.0: bring that checkout up to date, or point CONFERA_BE_DIR at one that is.`,
+      `confera_be in ${sibling} has a scanner without a manifest, from before version 1.0.0: bring that checkout up to date, or point CONGRESA_BE_DIR at one that is.`,
     ).toBe(true);
     const theirManifest = JSON.parse(manifestText(theirs)) as Manifest;
     expect(

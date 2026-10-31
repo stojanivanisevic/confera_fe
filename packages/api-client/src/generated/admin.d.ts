@@ -768,7 +768,7 @@ export interface paths {
         };
         /**
          * The signed-in user, the organisation and the CSRF value of the session. A request with
-         *     the header `X-Confera-Background` (a refetch the person did not ask for) does not renew
+         *     the header `X-Congresa-Background` (a refetch the person did not ask for) does not renew
          *     the session.
          */
         get: operations["getSession"];

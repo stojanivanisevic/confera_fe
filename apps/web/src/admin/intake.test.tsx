@@ -93,7 +93,7 @@ describe('a form (M3-FE-03, M3-FE-05)', () => {
     screen = await mount(<FormSettings id={FORM} publicOrigin="https://forms.example.test" />);
     const row = [...screen.container.querySelectorAll<HTMLButtonElement>('table button')].find((b) => b.textContent === 'Keywords')!;
     await click(row);
-    const drawer = document.body.querySelector<HTMLElement>('[data-confera-field-editor="keywords"]')!;
+    const drawer = document.body.querySelector<HTMLElement>('[data-congresa-field-editor="keywords"]')!;
     const labelEn = [...drawer.querySelectorAll<HTMLInputElement>('input')].find((input) => input.closest('.ud-field')?.textContent?.startsWith('Label (English)'))!;
     await typeInto(labelEn, 'Key words');
     await click(button(document.body, 'Apply'));
@@ -128,9 +128,9 @@ describe('deadlines (M3-FE-06; FR-DL-03)', () => {
     expect(screen.container.textContent).toContain('Open until the end of 15 Mar 2027 (Europe/Belgrade)');
     expect(screen.container.textContent).not.toContain('16 Mar 2027');
     // Three Saves, each with a name of its own (UX3-11).
-    expect([...screen.container.querySelectorAll('[data-confera-deadline] button[type="submit"]')].map((b) => b.getAttribute('aria-label'))).toEqual(['Save the abstract submission deadline', 'Save the fee payment deadline', 'Save the full paper deadline']);
+    expect([...screen.container.querySelectorAll('[data-congresa-deadline] button[type="submit"]')].map((b) => b.getAttribute('aria-label'))).toEqual(['Save the abstract submission deadline', 'Save the fee payment deadline', 'Save the full paper deadline']);
     await typeInto(screen.container.querySelector<HTMLInputElement>('[name="abstract_submission"]')!, '2027-03-31');
-    await click(button(screen.container, 'Save', '[data-confera-deadline="abstract_submission"]'));
+    await click(button(screen.container, 'Save', '[data-congresa-deadline="abstract_submission"]'));
     expect(sent).toEqual([{ endsOn: '2027-03-31', version: 1 }]);
     expect(screen.container.textContent).toContain('Abstract submission: 15 Mar 2027 → 31 Mar 2027');
   });

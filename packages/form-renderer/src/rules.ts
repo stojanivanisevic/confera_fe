@@ -54,7 +54,7 @@ const LOCAL = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~
 const LABEL = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
 
 /**
- * The one address rule (ADR-09) for every email address that enters Confera: ONE plain address
+ * The one address rule (ADR-09) for every email address that enters Congresa: ONE plain address
  * of at most 254 characters, a local part of at most 64 of the dot-atom of RFC 5322, a domain of
  * at least two labels, the last of two letters at least; no display name, comma, angle bracket,
  * quote, space or control character. ASCII only (no SMTPUTF8 in the MVP).

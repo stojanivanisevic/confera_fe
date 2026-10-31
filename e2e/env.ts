@@ -8,7 +8,7 @@
 //   harness         http://localhost:4000    a "conference site" that is listed for the spike form
 //   unlisted site   http://localhost:4001    a site that is NOT listed
 //   API stub        http://127.0.0.1:3101    behaves like the API of confera_be for GET /api/v1/meta
-//   real API        http://127.0.0.1:3001    confera_be itself, only when CONFERA_E2E_API_ORIGIN names it
+//   real API        http://127.0.0.1:3001    confera_be itself, only when CONGRESA_E2E_API_ORIGIN names it
 // The harness (localhost) and the public surface (127.0.0.1) are different
 // sites, so the frame is a real third-party frame.
 export const WEB_PORT = 3000;
@@ -20,7 +20,7 @@ export const API_STUB_ORIGIN = 'http://127.0.0.1:3101';
 
 /**
  * The cross-repo smoke test (M1-QA-02; README, "Against the real API"): when the variable
- * CONFERA_E2E_API_ORIGIN names a confera_be that runs on this machine, the web application
+ * CONGRESA_E2E_API_ORIGIN names a confera_be that runs on this machine, the web application
  * under test forwards to it and not to the stub. Nothing else changes.
  *
  * Only an address of this machine is taken: `http://127.0.0.1:<port>` or
@@ -30,7 +30,7 @@ export const API_STUB_ORIGIN = 'http://127.0.0.1:3101';
 export function realApiOrigin(value: string | undefined): string | null {
   if (value === undefined || value.trim() === '') return null;
   const refuse = (why: string): never => {
-    throw new Error(`CONFERA_E2E_API_ORIGIN is "${value}": ${why}. Write it as http://127.0.0.1:3001 (the API of confera_be on this machine), or leave it unset to use the stub.`);
+    throw new Error(`CONGRESA_E2E_API_ORIGIN is "${value}": ${why}. Write it as http://127.0.0.1:3001 (the API of confera_be on this machine), or leave it unset to use the stub.`);
   };
   let url: URL;
   try {
@@ -48,7 +48,7 @@ export function realApiOrigin(value: string | undefined): string | null {
 }
 
 /** The real API of this run, or null when the run uses the stub. */
-export const REAL_API_ORIGIN = realApiOrigin(process.env.CONFERA_E2E_API_ORIGIN);
+export const REAL_API_ORIGIN = realApiOrigin(process.env.CONGRESA_E2E_API_ORIGIN);
 /** The API the web application under test forwards to. */
 export const API_ORIGIN = REAL_API_ORIGIN ?? API_STUB_ORIGIN;
 
@@ -60,8 +60,8 @@ export const DEV_PUBLIC_ORIGIN = `http://127.0.0.1:${DEV_PORT}`;
 /** Environment of the web application under test. It does not depend on a local .env file. */
 export const webEnv = (port: number): Record<string, string> => ({
   STAGE: 'test',
-  CONFERA_ADMIN_ORIGIN: `http://localhost:${port}`,
-  CONFERA_PUBLIC_ORIGIN: `http://127.0.0.1:${port}`,
-  CONFERA_API_ORIGIN: API_ORIGIN,
+  CONGRESA_ADMIN_ORIGIN: `http://localhost:${port}`,
+  CONGRESA_PUBLIC_ORIGIN: `http://127.0.0.1:${port}`,
+  CONGRESA_API_ORIGIN: API_ORIGIN,
   PORT: String(port),
 });

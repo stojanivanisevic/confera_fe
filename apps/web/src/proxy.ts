@@ -25,7 +25,7 @@ import { buildSecurityHeaders, createNonce, type PageKind } from '@/server/secur
 import { classifyRoute, surfaceOfHost } from '@/server/security/route-kinds';
 
 /** A path no route will ever have: rewriting to it renders the application's own "not found" page. */
-const NOT_FOUND_PATH = '/_confera/not-found';
+const NOT_FOUND_PATH = '/_congresa/not-found';
 
 /** Where a browser reports what the enforced policy blocked: the API's public route, through the public origin (M1-ISS-11). */
 const reportAddress = (): string => `${getConfig().publicOrigin}/public/v1/csp-reports`;
@@ -51,7 +51,7 @@ function page(request: NextRequest, kind: PageKind, frameSites: readonly string[
 }
 
 /** The session cookie of the API (ADR-03). The web application reads whether it is there, never what it holds. */
-const SESSION_COOKIE = '__Host-confera_session';
+const SESSION_COOKIE = '__Host-congresa_session';
 
 /** 307 to sign-in with `next` set to the path asked for, with the header set of an auth page. */
 function signInFirst(request: NextRequest): NextResponse {

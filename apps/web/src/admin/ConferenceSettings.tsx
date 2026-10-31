@@ -261,7 +261,7 @@ export function ConferenceSettings({ id, timeZones = runtimeTimeZones() }: { id:
         </ProblemAlert>
       ) : null}
       <Card title={t.settings} headingLevel={2}>
-        <form className={styles.fields} onSubmit={(event) => void save(event)} noValidate data-confera-conference-settings>
+        <form className={styles.fields} onSubmit={(event) => void save(event)} noValidate data-congresa-conference-settings>
           <TextField label={t.name} name="name" value={form.name} disabled={readOnly} onChange={(event) => set({ name: event.target.value })} required status={fields.name ? 'error' : 'default'} message={fields.name} />
           <TextField label={t.code} name="code" value={form.code} maxLength={2} disabled={readOnly} onChange={(event) => set({ code: event.target.value.toUpperCase() })} required status={fields.code ? 'error' : 'default'} message={fields.code ?? t.codeHint} />
           <TextField label={t.edition} name="editionYear" inputMode="numeric" value={form.edition} disabled={readOnly} onChange={(event) => set({ edition: event.target.value })} status={fields.editionYear ? 'error' : 'default'} message={fields.editionYear ?? t.editionHint} />

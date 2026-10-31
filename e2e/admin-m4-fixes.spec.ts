@@ -30,14 +30,14 @@ test.beforeEach(async ({ page }) => {
 const CONFERENCE = 'Konferencija za probe (KP 2026)';
 const toast = (page: Page) => page.locator('.ud-toast').last();
 const rows = (page: Page) => page.getByRole('table', { name: 'Submissions' }).locator('tbody tr');
-const body = (page: Page) => page.locator('[data-confera-template-body] .ProseMirror');
+const body = (page: Page) => page.locator('[data-congresa-template-body] .ProseMirror');
 const scan = async (page: Page) =>
   (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('iframe[sandbox]').analyze()).violations.map((v) => `${v.id}: ${v.help} — ${v.nodes.slice(0, 4).map((n) => n.target.join(' ')).join(' | ')}`);
 const openTemplate = async (page: Page, type: string, language = 'English') => {
   await page.goto(`${ADMIN_ORIGIN}/templates`);
   await page.getByRole('table').locator('tbody tr').filter({ hasText: type }).filter({ hasText: language }).first().getByRole('button').click();
   await expect(page.getByRole('heading', { level: 1, name: type })).toBeVisible();
-  await expect(page.locator('[data-confera-template-preview="ready"]')).toBeVisible();
+  await expect(page.locator('[data-congresa-template-preview="ready"]')).toBeVisible();
 };
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DAwMDAxMDAwMDAAAANHQEDasKb6QAAAABJRU5ErkJggg==', 'base64');
 
@@ -50,7 +50,7 @@ test.describe('the template editor (UX4-01, 10, 11, 17, 18; Q4-03, Q4-05)', () =
     await page.keyboard.press('ControlOrMeta+End');
     await page.keyboard.type(' Izmena.');
     // The state stands beside Save (UX4-10), not in a bar above the editor.
-    await expect(page.locator('[data-confera-template-actions] [data-confera-template-state="unsaved"]')).toContainText('The template has changes that are not saved.');
+    await expect(page.locator('[data-congresa-template-actions] [data-congresa-template-state="unsaved"]')).toContainText('The template has changes that are not saved.');
     const ask = page.getByRole('alertdialog', { name: 'Leave the template without saving?' });
     const stays = async () => {
       await expect(ask).toBeVisible();
@@ -112,11 +112,11 @@ test.describe('the template editor (UX4-01, 10, 11, 17, 18; Q4-03, Q4-05)', () =
     await page.keyboard.press('End');
     await page.keyboard.type(' Srdačno.');
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(page.locator('[data-confera-template-actions]')).toBeInViewport();
+    await expect(page.locator('[data-congresa-template-actions]')).toBeInViewport();
     await body(page).locator('p').first().click();
     await page.keyboard.press('ControlOrMeta+s');
     await expect(toast(page)).toContainText('Template saved');
-    await expect(page.locator('[data-confera-template-state="saved"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-template-state="saved"]')).toBeVisible();
     expect(await scan(page)).toEqual([]);
   });
 
@@ -124,11 +124,11 @@ test.describe('the template editor (UX4-01, 10, 11, 17, 18; Q4-03, Q4-05)', () =
     await page.setViewportSize({ width: 768, height: 1024 });
     await signIn(page, undefined, '/templates');
     await openTemplate(page, 'Submission returned for revision');
-    const editorCard = page.locator('[data-confera-template-body]');
-    const previewCard = page.locator('[data-confera-template-preview]');
+    const editorCard = page.locator('[data-congresa-template-body]');
+    const previewCard = page.locator('[data-congresa-template-preview]');
     const [editorBox, previewBox] = [await editorCard.boundingBox(), await previewCard.boundingBox()];
     expect(previewBox!.y).toBeGreaterThan(editorBox!.y + editorBox!.height);
-    const subject = page.locator('[data-confera-template-subject] .ProseMirror');
+    const subject = page.locator('[data-congresa-template-subject] .ProseMirror');
     expect(await subject.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
 
     await body(page).locator('p').first().click();
@@ -141,7 +141,7 @@ test.describe('the template editor (UX4-01, 10, 11, 17, 18; Q4-03, Q4-05)', () =
 
   test('the organisation’s template does not claim a conference that has its own version; a 409 is said plainly (Q4-03)', async ({ page }) => {
     await signIn(page, undefined, '/templates');
-    await page.locator('select[data-confera-conference-switch]').selectOption({ label: CONFERENCE });
+    await page.locator('select[data-congresa-conference-switch]').selectOption({ label: CONFERENCE });
     await openTemplate(page, 'Submission accepted');
     await expect(page.getByText(`${CONFERENCE} uses the organisation’s template`)).toBeVisible();
 
@@ -156,7 +156,7 @@ test.describe('the template editor (UX4-01, 10, 11, 17, 18; Q4-03, Q4-05)', () =
     await expect(toast(page)).toContainText('has its own version now');
     // The organisation's template, by its address, with the conference still chosen.
     await page.goto(`${ADMIN_ORIGIN}/templates/${templateId('submission_accepted', 'en')}`);
-    await expect(page.locator('[data-confera-template-preview="ready"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-template-preview="ready"]')).toBeVisible();
     await expect(page.getByText(`${CONFERENCE} sends its own version of this email`)).toBeVisible();
     await expect(page.getByText(`${CONFERENCE} uses the organisation’s template`)).toHaveCount(0);
     await expect(page.getByRole('button', { name: `Make a version for ${CONFERENCE}` })).toHaveCount(0);
@@ -180,17 +180,17 @@ test.describe('the template editor (UX4-01, 10, 11, 17, 18; Q4-03, Q4-05)', () =
     await expect.poll(async () => (await page.locator('iframe[title="Preview of the message"]').getAttribute('srcdoc')) ?? '', { timeout: 20_000, intervals: [1_000] }).toContain('src="data:image/png;base64,');
     await expect(page.getByText('An image is still being scanned', { exact: false })).toHaveCount(0);
     // The editor shows the picture too, now that it is served.
-    await expect.poll(() => body(page).locator('figure[data-confera-image] img').evaluate((img: HTMLImageElement) => img.naturalWidth), { timeout: 10_000 }).toBe(2);
+    await expect.poll(() => body(page).locator('figure[data-congresa-image] img').evaluate((img: HTMLImageElement) => img.naturalWidth), { timeout: 10_000 }).toBe(2);
   });
 });
 
 test.describe('a submission (SEC-M4-03, UX4-02, 08, 14)', () => {
   test('a new submission is read without a change; Start processing shows its email first; the dialog’s heading takes the focus at each step', async ({ page }) => {
     await signIn(page, undefined, `/submissions/${PART_C.submissions[0]}`);
-    await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="new"]')).toBeVisible();
     await expect(page.getByText('Nobody has started processing this submission yet')).toBeVisible();
     await page.reload();
-    await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="new"]')).toBeVisible();
     await expect(page.getByRole('table', { name: 'History' }).locator('tbody tr')).toHaveCount(1);
 
     await page.getByRole('button', { name: 'Start processing' }).click();
@@ -198,8 +198,8 @@ test.describe('a submission (SEC-M4-03, UX4-02, 08, 14)', () => {
     await expect(dialog.getByRole('heading', { name: 'The email to the author' })).toBeFocused();
     await expect(dialog.getByRole('status')).toContainText('The email to the author is shown: to');
     await dialog.getByRole('button', { name: 'Send the email and change the status' }).click();
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
-    await expect(page.locator('[data-confera-opened]')).toContainText('The author was emailed.');
+    await expect(page.locator('[data-congresa-submission-status="open"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-opened]')).toContainText('The author was emailed.');
 
     await page.getByRole('button', { name: 'Change the status' }).click();
     await page.getByRole('menuitem', { name: 'Return for revision' }).click();

@@ -166,8 +166,8 @@ function plantedSecrets() {
     { what: 'an npm token in a package .npmrc', file: 'packages/ui/.npmrc', text: `//registry.npmjs.org/:_authToken=${'np' + 'm_'}${random(36, ALNUM)}\n` },
     { what: 'AWS keys in an environment file', file: 'apps/web/planted-aws.env', text: `AWS_ACCESS_KEY_ID=${'AK' + 'IA'}${random(16, BASE32)}\nAWS_SECRET_ACCESS_KEY=${random(40, ALNUM)}\n` },
     { what: 'a private key', file: 'e2e/planted-key.pem', text: privateKey },
-    { what: 'an API address with a user and a password, in a test', file: 'tests/planted/address.test.ts', text: `export const api = '${address('https', 'deploy', random(16, ALNUM), 'api.confera.example.org/api/v1')}';\n` },
-    { what: 'a registry address with a password, in a workflow file', file: '.github/workflows/planted.yml', text: `url: ${address('https', 'deploy', random(16, ALNUM), 'registry.example.org/confera')}\n` },
+    { what: 'an API address with a user and a password, in a test', file: 'tests/planted/address.test.ts', text: `export const api = '${address('https', 'deploy', random(16, ALNUM), 'api.congresa.example.org/api/v1')}';\n` },
+    { what: 'a registry address with a password, in a workflow file', file: '.github/workflows/planted.yml', text: `url: ${address('https', 'deploy', random(16, ALNUM), 'registry.example.org/congresa')}\n` },
     { what: 'a chat token in the design system', file: 'design-system/planted.md', text: `Hook: ${'xo' + 'xb'}-${'1'.repeat(12)}-${'2'.repeat(13)}-${random(24, ALNUM)}\n` },
     // The web application must never be given a secret (ADR-26); if one is committed all the same,
     // it will most likely look like these: a name and a random value, in no token format.
@@ -218,7 +218,7 @@ function plantedSecrets() {
   ];
   const control = {
     file: 'tests/planted/no-secret.test.ts',
-    text: "export const settings = 'STAGE=local CONFERA_API_ORIGIN=http://127.0.0.1:3001';\n",
+    text: "export const settings = 'STAGE=local CONGRESA_API_ORIGIN=http://127.0.0.1:3001';\n",
   };
 
   const scanWithPlants = () => {

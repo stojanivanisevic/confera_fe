@@ -70,7 +70,7 @@ test.describe('ST-66: odd Host headers', () => {
         for (const path of [...ADMIN_PATHS, ...PUBLIC_PATHS, '/dev/gallery']) {
           const response = await get(path, host);
           expect(response.status, `${path} under "${host}"`).toBe(404);
-          expect(response.body, `${path} under "${host}"`).not.toMatch(/data-confera-form|Sign-in arrives|confera-api/);
+          expect(response.body, `${path} under "${host}"`).not.toMatch(/data-congresa-form|Sign-in arrives|congresa-api/);
           expect(response.headers['set-cookie']).toBeUndefined();
           // No frame permission is ever given under a host that is not the public one.
           if (String(response.headers['content-type']).includes('text/html')) expect(response.headers['content-security-policy']).toMatch(/^frame-ancestors 'none';/);

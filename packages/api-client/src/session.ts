@@ -4,7 +4,7 @@
 // never reads it. What the application holds is the CSRF value of the session, which
 // GET /api/v1/session hands out, and which every changing request carries in the header
 // `X-CSRF-Token`. A request the person did not ask for (a refetch in the background) says so
-// with `X-Confera-Background`, and does not renew the session.
+// with `X-Congresa-Background`, and does not renew the session.
 import createClient, { type Client, type Middleware } from 'openapi-fetch';
 
 import type { components, paths as AdminPaths } from './generated/admin';
@@ -33,7 +33,7 @@ export type SessionClient = Client<AdminPaths>;
 /** The header of every changing request of a signed-in user: the CSRF value of the session (ADR-03). */
 export const CSRF_HEADER = 'X-CSRF-Token';
 /** The header of a request the person did not ask for: it does not renew the session. */
-export const BACKGROUND_HEADER = 'X-Confera-Background';
+export const BACKGROUND_HEADER = 'X-Congresa-Background';
 
 const READING = new Set(['GET', 'HEAD']);
 

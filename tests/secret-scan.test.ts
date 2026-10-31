@@ -20,7 +20,7 @@ const filler = (length: number) => Array.from({ length }, (_, i) => 'abcdefghijk
 
 let work: string;
 beforeAll(() => {
-  work = mkdtempSync(join(tmpdir(), 'confera-secret-scan-'));
+  work = mkdtempSync(join(tmpdir(), 'congresa-secret-scan-'));
 });
 afterAll(() => rmSync(work, { recursive: true, force: true }));
 
@@ -39,7 +39,7 @@ describe('secret scan', () => {
 
   it('passes on a file without a secret', () => {
     const file = join(work, 'clean.txt');
-    writeFileSync(file, 'STAGE=local\nCONFERA_API_ORIGIN=http://127.0.0.1:3001\n');
+    writeFileSync(file, 'STAGE=local\nCONGRESA_API_ORIGIN=http://127.0.0.1:3001\n');
     expect(scan(file).status).toBe(0);
   });
 });

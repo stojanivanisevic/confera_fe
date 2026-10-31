@@ -254,7 +254,7 @@ export function TemplateEditor({ id }: { id: string }) {
     if (preview.phase !== 'ready' || !preview.data) return undefined;
     const pending = preview.data.imagesPending;
     for (const cleared of pendingBefore.current.filter((fileId) => !pending.includes(fileId))) {
-      bodyElement.current?.querySelectorAll<HTMLImageElement>(`figure[data-confera-image="${CSS.escape(cleared)}"] img`).forEach((img) => {
+      bodyElement.current?.querySelectorAll<HTMLImageElement>(`figure[data-congresa-image="${CSS.escape(cleared)}"] img`).forEach((img) => {
         img.src = `${m4.imageHref(cleared)}?clean=${String(Date.now())}`;
       });
     }
@@ -484,7 +484,7 @@ export function TemplateEditor({ id }: { id: string }) {
   const shown = preview.data;
 
   return (
-    <div className={styles.stack} data-confera-template={`${record.type}:${record.language}`}>
+    <div className={styles.stack} data-congresa-template={`${record.type}:${record.language}`}>
       <PageHeader title={title} description={own ? fill(t.scopeConference, { conference: conferenceName || (TEXTS.templates.thisConference) }) : t.scopeOrganisation} breadcrumbs={[back, { label: title }]} />
       <SegmentedTabs
         label={t.languages}
@@ -516,7 +516,7 @@ export function TemplateEditor({ id }: { id: string }) {
         </Alert>
       ) : null}
       {statusEmail ? (
-        <Card title={t.statusEmails} headingLevel={2} data-confera-template-switch="">
+        <Card title={t.statusEmails} headingLevel={2} data-congresa-template-switch="">
           {selected ? (
             <Switch label={fill(t.switchLabel, { conference: conferenceName })} description={enabled ? t.switchOn : fill(t.switchOff, { conference: conferenceName })} checked={enabled} disabled={!mayManage || switches.state.phase !== 'ready'} onChange={(event) => void setSwitch(event.target.checked)} />
           ) : (
@@ -526,7 +526,7 @@ export function TemplateEditor({ id }: { id: string }) {
       ) : null}
       {loaded instanceof DocumentError ? <Alert tone="error" title={t.refused}>{fill(t.refusedText, { problem: t.documentProblems[loaded.code] ?? loaded.code, part: t.parts.body ?? 'body', path: loaded.path })}</Alert> : null}
       {refused ? (
-        <div data-confera-template-check="refused">
+        <div data-congresa-template-check="refused">
           <Alert tone="error" title={t.refused}>
             {fill(t.refusedText, { problem: t.documentProblems[refused.code] ?? refused.code, part: t.parts[refused.part] ?? refused.part, path: refused.path })}
           </Alert>
@@ -537,7 +537,7 @@ export function TemplateEditor({ id }: { id: string }) {
           <div className={styles.form}>
             {/* One Tab stop; the arrow keys move inside (WAI-ARIA toolbar). */}
             { }
-            <div ref={toolbarElement} className={styles.editorToolbar} role="toolbar" aria-label={t.toolbar} data-confera-template-toolbar onKeyDown={onToolbarKey} onFocus={onToolbarFocus}>
+            <div ref={toolbarElement} className={styles.editorToolbar} role="toolbar" aria-label={t.toolbar} data-congresa-template-toolbar onKeyDown={onToolbarKey} onFocus={onToolbarFocus}>
               <div className={styles.editorField}>
                 <Select label={t.block} value={toolbar.block === 'list' || toolbar.block === 'mixed' ? '' : toolbar.block} placeholder="—" onChange={(event) => body((handle) => handle.run(setBlock(event.target.value as BlockKind)))()} options={(['paragraph', 'heading1', 'heading2', 'heading3'] as const).map((value) => ({ value, label: t.blocks[value] ?? value }))} />
               </div>
@@ -577,7 +577,7 @@ export function TemplateEditor({ id }: { id: string }) {
                 </ToolButton>
               </div>
               <div className={styles.editorField}>
-                <Select label={t.insert} value="" placeholder={t.insertChoose} onChange={(event) => insert(event.target.value)} options={placeholders.map((key) => ({ value: key, label: placeholderLabel(key) }))} data-confera-insert-placeholder />
+                <Select label={t.insert} value="" placeholder={t.insertChoose} onChange={(event) => insert(event.target.value)} options={placeholders.map((key) => ({ value: key, label: placeholderLabel(key) }))} data-congresa-insert-placeholder />
               </div>
               {conditions.length > 0 ? (
                 <div className={styles.editorField}>
@@ -597,14 +597,14 @@ export function TemplateEditor({ id }: { id: string }) {
             </div>
             <div className={styles.form}>
               <span className={styles.editorLabel}>{t.subject}</span>
-              <div ref={subjectElement} className={`${styles.editor} ${styles.subject}`} onFocus={() => (focused.current = 'subject')} data-confera-template-subject />
+              <div ref={subjectElement} className={`${styles.editor} ${styles.subject}`} onFocus={() => (focused.current = 'subject')} data-congresa-template-subject />
               <p id="template-subject-hint" className={styles.text}>
                 {t.subjectHint}
               </p>
             </div>
             <div className={styles.form}>
               <span className={styles.editorLabel}>{t.body}</span>
-              <div ref={bodyElement} className={styles.editor} onFocus={() => (focused.current = 'body')} data-confera-template-body />
+              <div ref={bodyElement} className={styles.editor} onFocus={() => (focused.current = 'body')} data-congresa-template-body />
               <p id="template-body-hint" className={styles.text}>
                 {t.bodyHint}
                 {record.language === 'sr' ? ` ${t.serbianCase}` : ''}
@@ -613,7 +613,7 @@ export function TemplateEditor({ id }: { id: string }) {
           </div>
         </Card>
         <Card title={t.preview} headingLevel={2}>
-          <div className={styles.form} data-confera-template-preview={preview.phase}>
+          <div className={styles.form} data-congresa-template-preview={preview.phase}>
             <p className={styles.text}>{t.previewText}</p>
             {conditions.length > 0 ? (
               <CheckboxGroup
@@ -628,7 +628,7 @@ export function TemplateEditor({ id }: { id: string }) {
             {shown && preview.phase !== 'failed' ? (
               <>
                 <p className={`${styles.text} ${styles.break}`}>
-                  {t.previewSubject}: <strong data-confera-preview-subject>{shown.subject}</strong>
+                  {t.previewSubject}: <strong data-congresa-preview-subject>{shown.subject}</strong>
                 </p>
                 {/* The server's rendering, only in the sandboxed frame (ST-28). */}
                 {shown.imagesPending.length > 0 ? <Alert tone="info" title={t.imagesPending} /> : null}
@@ -643,8 +643,8 @@ export function TemplateEditor({ id }: { id: string }) {
       </div>
       {/* Save with the state beside it, in view wherever the page is scrolled (UX4-10); the editor is never pushed down. */}
       {mayManage ? (
-        <div ref={actionsElement} className={styles.stickyActions} role="region" aria-label={t.actionsLabel} data-confera-template-actions="">
-          <span className={styles.text} role="status" data-confera-template-state={dirty ? 'unsaved' : 'saved'}>
+        <div ref={actionsElement} className={styles.stickyActions} role="region" aria-label={t.actionsLabel} data-congresa-template-actions="">
+          <span className={styles.text} role="status" data-congresa-template-state={dirty ? 'unsaved' : 'saved'}>
             {dirty ? t.unsaved : t.savedState} <span className={styles.wideOnly}>{t.saveShortcut}</span>
           </span>
           <Button onClick={() => void save()} disabled={!ready || busy || !dirty}>
@@ -702,7 +702,7 @@ export function TemplateEditor({ id }: { id: string }) {
           </>
         }
       >
-        <div className={styles.form} data-confera-image-dialog="">
+        <div className={styles.form} data-congresa-image-dialog="">
           <p className="ud-dialog__text">{t.imageText}</p>
           {imageProblem ? <Alert tone="error" title={imageProblem} /> : null}
           <FileButton

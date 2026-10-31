@@ -18,7 +18,7 @@ export default async function NotFound() {
   const host = (await headers()).get('host')?.toLowerCase() ?? '';
   if (host === getConfig().publicHost) {
     return (
-      <main className="confera-page" data-confera-not-found="public">
+      <main className="congresa-page" data-congresa-not-found="public">
         <StagingBanner inside />
         <h1 className="ud-sr">{FORM_TEXTS.en.page.notFoundTitle}</h1>
         <EmptyState icon="search" title={FORM_TEXTS.en.page.notFoundTitle} description={FORM_TEXTS.en.page.notFoundText} />
@@ -29,7 +29,7 @@ export default async function NotFound() {
     );
   }
   return (
-    <main className="confera-page" data-confera-not-found="admin">
+    <main className="congresa-page" data-congresa-not-found="admin">
       <StagingBanner inside />
       <h1 className="ud-sr">Page not found</h1>
       <EmptyState
@@ -38,7 +38,7 @@ export default async function NotFound() {
         description="This address does not exist. Check the link you followed."
         action={
           <a className="ud-link" href="/">
-            Go to Confera
+            Go to Congresa
           </a>
         }
       />

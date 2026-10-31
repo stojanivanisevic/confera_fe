@@ -17,7 +17,7 @@
 // In both cases the frame stays at its fixed height for the life of the page, and the
 // snippet cannot be fixed afterwards without every conference site pasting it again
 // ("to update, the snippet is pasted again", G2-17). The rules of ADR-07 (only messages
-// whose source is the frame and whose origin is Confera's) stay what they are.
+// whose source is the frame and whose origin is Congresa's) stay what they are.
 import { runInThisContext } from 'node:vm';
 
 import { beforeEach, describe, expect, it } from 'vitest';

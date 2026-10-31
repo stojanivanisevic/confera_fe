@@ -13,7 +13,7 @@ import type { Conference } from '@congresa/api-client';
 import { call } from './problems';
 import { useSession } from './session';
 
-const STORAGE_KEY = 'confera.conference';
+const STORAGE_KEY = 'congresa.conference';
 
 export interface ConferenceState {
   /** The conferences of the organisation, when the person may read them and they arrived. */

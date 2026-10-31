@@ -121,7 +121,7 @@ export function Account() {
         </Card>
 
         <Card title={t.changePasswordTitle} headingLevel={2}>
-          <form className={styles.form} onSubmit={(event) => void changePassword(event)} noValidate data-confera-change-password>
+          <form className={styles.form} onSubmit={(event) => void changePassword(event)} noValidate data-congresa-change-password>
             {passwordProblem ? (
               <ProblemAlert title={passwordProblem.title}>
                 {passwordProblem.text}
@@ -145,7 +145,7 @@ export function Account() {
               {fill(t.emailLinkSentText, { current: user.email })}
             </Alert>
           ) : null}
-          <form className={styles.form} onSubmit={(event) => void changeEmail(event)} noValidate data-confera-change-email>
+          <form className={styles.form} onSubmit={(event) => void changeEmail(event)} noValidate data-congresa-change-email>
             {emailProblem ? (
               <ProblemAlert title={emailProblem.title}>
                 {emailProblem.text}

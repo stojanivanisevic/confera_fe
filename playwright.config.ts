@@ -10,7 +10,7 @@ import { ADMIN_ORIGIN, DEV_PORT, DEV_PUBLIC_ORIGIN, HARNESS_ORIGIN, PUBLIC_ORIGI
 // e2e/embed.spec.ts contains a control that proves the blocking is in effect.
 const reuse = !process.env.CI;
 
-// The cross-repo smoke test (M1-QA-02; README, "Against the real API"). With CONFERA_E2E_API_ORIGIN
+// The cross-repo smoke test (M1-QA-02; README, "Against the real API"). With CONGRESA_E2E_API_ORIGIN
 // set, the web application forwards to a real confera_be, and one more project runs: e2e/real-api.spec.ts,
 // which asks what only the real API can answer. Without the variable that file belongs to no project.
 const REAL_API_SPEC = '**/real-api.spec.ts';

@@ -18,7 +18,7 @@ body {
 }
 
 /* The staging banner (M4-OPS-02): the warning colours, the width of its place, never closed. */
-.confera-staging {
+.congresa-staging {
   display: block;
   margin: 0;
   padding: var(--gutter-s) var(--gutter-l);
@@ -30,7 +30,7 @@ body {
 }
 
 /* The simple pages (admin home, sign-in, not found): one centred column. */
-.confera-page {
+.congresa-page {
   display: flex;
   flex-direction: column;
   gap: var(--gutter-2xl);

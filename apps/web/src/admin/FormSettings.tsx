@@ -185,7 +185,7 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
         actions={<StatusBadge tone={record.state === 'open' ? 'success' : 'neutral'}>{formStateText(record.state, record.closedReason)}</StatusBadge>}
       />
       {/* The screen is long (UX3-09, M3-ISS-22): its parts are named here, each a link to its card. */}
-      <nav aria-label={t.sectionsLabel} className={styles.anchors} data-confera-form-sections="">
+      <nav aria-label={t.sectionsLabel} className={styles.anchors} data-congresa-form-sections="">
         <ul>
           {(['snippet', 'texts', 'authors', 'fields', ...(definition && conference.state.data ? (['preview'] as const) : []), 'versions', 'breaker'] as const).map((part) => (
             <li key={part}>
@@ -222,7 +222,7 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
 
       <EmbedCard record={record} conference={conference.state.data ?? null} publicOrigin={publicOrigin} />
 
-      <form className={styles.stack} onSubmit={(event) => void save(event)} noValidate data-confera-form-configuration="">
+      <form className={styles.stack} onSubmit={(event) => void save(event)} noValidate data-congresa-form-configuration="">
         <TextsCard configuration={configuration} definition={definition} readOnly={!mayManage} onChange={change} />
         <AuthorsCard configuration={configuration} definition={definition} readOnly={!mayManage} onChange={change} />
         <FieldsCard configuration={configuration} definition={definition} onEdit={setEditing} />
@@ -264,8 +264,8 @@ export function FormSettings({ id, publicOrigin }: { id: string; publicOrigin: s
       ) : null}
 
       {/* Save and Publish together, with the state of the draft, in view wherever the page is scrolled (UX3-09). */}
-      <div className={styles.stickyActions} role="region" aria-label={t.actionsLabel} data-confera-form-actions="">
-        <span data-confera-draft-state={draftState}>
+      <div className={styles.stickyActions} role="region" aria-label={t.actionsLabel} data-congresa-form-actions="">
+        <span data-congresa-draft-state={draftState}>
           <StatusBadge tone={stateTone}>{stateText}</StatusBadge>
         </span>
         {mayManage ? (
@@ -322,7 +322,7 @@ function EmbedCard({ record, conference, publicOrigin }: { record: FormRecord; c
   const sites = conference?.listedSites ?? [];
   const hosted = `${publicOrigin}/f/${record.slug}${language === 'browser' ? '' : `?lang=${language}`}`;
   return (
-    <Card title={t.embedTitle} headingLevel={2} id="form-snippet" className={styles.anchored} data-confera-embed-card="">
+    <Card title={t.embedTitle} headingLevel={2} id="form-snippet" className={styles.anchored} data-congresa-embed-card="">
       <div className={styles.stack}>
         <p className={styles.text}>{t.embedLead}</p>
         {record.currentVersion === null ? (
@@ -527,7 +527,7 @@ function FieldDrawer({ fieldKey, configuration, definition, readOnly, onClose, o
         )
       }
     >
-      <div className={styles.form} data-confera-field-editor={fieldKey}>
+      <div className={styles.form} data-congresa-field-editor={fieldKey}>
         <Switch label={t.enabled} description={t.enabledHint} checked={enabled} disabled={readOnly} onChange={(event) => setEnabled(event.target.checked)} />
         <Checkbox label={t.requiredLabel} checked={required} disabled={readOnly} onChange={(event) => setRequired(event.target.checked)} />
         <TextField label={fill(t.english, { name: t.label })} value={label.en} disabled={readOnly} onChange={(event) => setLabel({ ...label, en: event.target.value })} />
@@ -582,7 +582,7 @@ function PreviewCard({ record, definition, conference }: { record: FormRecord; d
     definition,
   };
   return (
-    <Card title={t.preview} headingLevel={2} id="form-preview" className={styles.anchored} data-confera-form-preview="">
+    <Card title={t.preview} headingLevel={2} id="form-preview" className={styles.anchored} data-congresa-form-preview="">
       <div className={styles.stack}>
         <p className={styles.text}>{t.previewLead}</p>
         <div className={styles.fields}>

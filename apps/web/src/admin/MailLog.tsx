@@ -140,7 +140,7 @@ export function MailLog() {
         ]}
         toolbar={
           <FilterBar onReset={filtered ? clear : undefined}>
-            <TextField type="search" icon="search" label={t.search} placeholder={t.searchHint} value={typed} onChange={(event) => setTyped(event.target.value)} data-confera-mail-log-search="" />
+            <TextField type="search" icon="search" label={t.search} placeholder={t.searchHint} value={typed} onChange={(event) => setTyped(event.target.value)} data-congresa-mail-log-search="" />
             <Select
               label={t.kind}
               value={kind}
@@ -235,7 +235,7 @@ function MailLogSettings({ mayManage }: { mayManage: boolean }) {
   // One sentence says what is kept; the settings themselves are folded until asked for (UX4-13).
   const now = fill(record.profile.mailLogContent ? t.retentionNow : t.retentionNowNoContent, { days: record.days, months: Math.round(record.days / 30.4) });
   return (
-    <Card title={t.settings} subtitle={now} headingLevel={2} id="mail-log-settings" data-confera-mail-log-settings="">
+    <Card title={t.settings} subtitle={now} headingLevel={2} id="mail-log-settings" data-congresa-mail-log-settings="">
       <details className={styles.folded} open={problem !== null || Object.keys(fields).length > 0 ? true : undefined}>
         <summary>{mayManage ? t.settingsChange : t.settingsShow}</summary>
         <form className={styles.form} onSubmit={(event) => void save(event)} noValidate>

@@ -11,8 +11,8 @@ test('development mode: all components hydrate under React 19 without a warning'
   test.setTimeout(180_000); // the first request compiles the page
   const problems = watchPage(page);
   await page.goto('/dev/gallery', { timeout: 150_000 });
-  await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
-  await expect(page.locator('[data-confera-dev="gallery-card"]')).toHaveCount(COMPONENT_NAMES.length);
+  await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+  await expect(page.locator('[data-congresa-dev="gallery-card"]')).toHaveCount(COMPONENT_NAMES.length);
 
   // This really is React's development build.
   const reactMode = await page.evaluate(() => {

@@ -30,7 +30,7 @@ test.beforeEach(async ({ page }) => {
 
 const toast = (page: Page) => page.locator('.ud-toast').last();
 const rows = (page: Page) => page.getByRole('table', { name: 'Submissions' }).locator('tbody tr');
-const conferenceSwitch = (page: Page) => page.locator('select[data-confera-conference-switch]');
+const conferenceSwitch = (page: Page) => page.locator('select[data-congresa-conference-switch]');
 const pwned = (page: Page) => page.evaluate(() => document.body.dataset.pwned ?? null);
 /** What sticks out to the right of a phone's window, by its tag and class, when the page scrolls sideways. */
 const overflowing = (page: Page) =>
@@ -43,12 +43,12 @@ const scan = async (page: Page) =>
   (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('iframe[sandbox]').analyze()).violations.map((v) => `${v.id}: ${v.help} — ${v.nodes.slice(0, 4).map((n) => n.target.join(' ')).join(' | ')}`);
 /** Reading a new submission sends nothing: the office starts processing it, its email shown first (SEC-M4-03, UX4-08). */
 const startProcessing = async (page: Page) => {
-  await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+  await expect(page.locator('[data-congresa-submission-status="new"]')).toBeVisible();
   await page.getByRole('button', { name: 'Start processing' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.locator('iframe[title="The email to the author"]')).toHaveAttribute('sandbox', '');
   await dialog.getByRole('button', { name: 'Send the email and change the status' }).click();
-  await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+  await expect(page.locator('[data-congresa-submission-status="open"]')).toBeVisible();
 };
 const changeStatus = async (page: Page, action: string) => {
   await page.getByRole('button', { name: 'Change the status' }).click();
@@ -59,7 +59,7 @@ const openTemplate = async (page: Page, type: string, language = 'English') => {
   await page.goto(`${ADMIN_ORIGIN}/templates`);
   await page.getByRole('table').locator('tbody tr').filter({ hasText: type }).filter({ hasText: language }).first().getByRole('button').click();
   await expect(page.getByRole('heading', { level: 1, name: type })).toBeVisible();
-  await expect(page.locator('[data-confera-template-preview="ready"]')).toBeVisible();
+  await expect(page.locator('[data-congresa-template-preview="ready"]')).toBeVisible();
 };
 // A PNG of 2 x 2 pixels, and an SVG, which an email never takes (ST-60).
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DAwMDAxMDAwMDAAAANHQEDasKb6QAAAABJRU5ErkJggg==', 'base64');
@@ -102,28 +102,28 @@ test.describe('submissions (M4-FE-01)', () => {
     const problems = watchPage(page);
     await signIn(page, undefined, `/submissions/${PART_C.submissions[1]}`);
     // Reading it changes nothing and sends nothing, also after a reload (SEC-M4-03).
-    await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="new"]')).toBeVisible();
     await page.reload();
     await startProcessing(page);
-    await expect(page.locator('[data-confera-opened]')).toContainText('The author was emailed.');
+    await expect(page.locator('[data-congresa-opened]')).toContainText('The author was emailed.');
 
     // Cancel: nothing changes, nothing is sent.
     let dialog = await changeStatus(page, 'Return for revision');
     await dialog.getByLabel('Message for the author').fill('Please shorten the abstract to 250 words.');
     await dialog.getByRole('button', { name: 'Show the email' }).click();
-    await expect(dialog.locator('[data-confera-status-step="email"]')).toBeVisible();
+    await expect(dialog.locator('[data-congresa-status-step="email"]')).toBeVisible();
     await expect(dialog.locator('iframe[title="The email to the author"]')).toHaveAttribute('sandbox', '');
     await expect(dialog.frameLocator('iframe[title="The email to the author"]').getByText('Please shorten the abstract to 250 words.')).toBeVisible();
-    await expect(dialog.locator('[data-confera-status-email-subject]')).toHaveText('Your submission KP26-0001 needs changes');
+    await expect(dialog.locator('[data-congresa-status-email-subject]')).toHaveText('Your submission KP26-0001 needs changes');
     await dialog.getByRole('button', { name: 'Cancel' }).click();
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="open"]')).toBeVisible();
 
     // Send: the status changes, the email is the text shown.
     dialog = await changeStatus(page, 'Return for revision');
     await dialog.getByLabel('Message for the author').fill('Please shorten the abstract to 250 words.');
     await dialog.getByRole('button', { name: 'Show the email' }).click();
     await dialog.getByRole('button', { name: 'Send the email and change the status' }).dblclick();
-    await expect(page.locator('[data-confera-submission-status="returned_for_revision"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="returned_for_revision"]')).toBeVisible();
     await expect(page.getByRole('table', { name: 'History' })).toContainText('Message: Please shorten the abstract to 250 words.');
     // A double click is one change and one email (FR-MAIL-05).
     await expect(page.getByRole('table', { name: 'Emails' }).locator('tbody tr').filter({ hasText: 'Returned for revision' })).toHaveCount(1);
@@ -137,8 +137,8 @@ test.describe('submissions (M4-FE-01)', () => {
     // The move back into processing shows its email before it goes (SEC-M4-05).
     const resumed = page.getByRole('dialog', { name: 'The email to the author' });
     await resumed.getByRole('button', { name: 'Send the email and change the status' }).click();
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
-    await expect(page.locator('[data-confera-revisions]')).toContainText('Authors: Marta Kovač became Marta Ana Kovač');
+    await expect(page.locator('[data-congresa-submission-status="open"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-revisions]')).toContainText('Authors: Marta Kovač became Marta Ana Kovač');
 
     // The emails are in the mail log.
     await page.goto(`${ADMIN_ORIGIN}/mail-log`);
@@ -157,9 +157,9 @@ test.describe('submissions (M4-FE-01)', () => {
     await dialog.getByLabel('Internal reason').fill('Sent twice by mistake');
     await dialog.getByRole('button', { name: 'Show the email' }).click();
     await dialog.getByRole('button', { name: 'Withdraw for good and email the author' }).click();
-    await expect(page.locator('[data-confera-submission-status="withdrawn"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="withdrawn"]')).toBeVisible();
     await expect(page.getByRole('table', { name: 'History' })).toContainText('Internal reason: Sent twice by mistake');
-    const notes = page.locator('[data-confera-notes]');
+    const notes = page.locator('[data-congresa-notes]');
     await notes.getByLabel('A new note').fill('Called the author.');
     await notes.getByRole('button', { name: 'Add the note' }).click();
     await expect(notes).toContainText('Called the author.');
@@ -170,7 +170,7 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
   test('a stored document with hostile strings runs nothing in the editor, the preview or the mail log (ST-59, ST-28)', async ({ page }) => {
     await signIn(page, undefined, '/templates');
     await openTemplate(page, 'Submission rejected');
-    const body = page.locator('[data-confera-template-body] .ProseMirror');
+    const body = page.locator('[data-congresa-template-body] .ProseMirror');
     await expect(body).toContainText('<script>parent.document.body.dataset.pwned="editor"</script>');
     // ProseMirror's own separator after an inline object is the only image there; nothing is made of the text.
     expect(await body.locator('script, img:not(.ProseMirror-separator), svg, iframe, [onerror], [onload]').count()).toBe(0);
@@ -184,12 +184,12 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
     const dialog = await changeStatus(page, 'Reject');
     await dialog.getByRole('button', { name: 'Show the email' }).click();
     await dialog.getByRole('button', { name: 'Reject and email the author' }).click();
-    await expect(page.locator('[data-confera-submission-status="rejected"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="rejected"]')).toBeVisible();
     await page.goto(`${ADMIN_ORIGIN}/mail-log`);
     await page.getByRole('table', { name: 'Mail log' }).locator('tbody tr').filter({ hasText: 'Submission rejected' }).first().getByRole('button').click();
     await expect(page.locator('iframe[title="Email body"]')).toHaveAttribute('sandbox', '');
     await expect(page.frameLocator('iframe[title="Email body"]').getByText('{{constructor}}', { exact: false })).toBeVisible();
-    await expect(page.locator('[data-confera-plain-body]')).toContainText('<script>');
+    await expect(page.locator('[data-congresa-plain-body]')).toContainText('<script>');
     expect(await pwned(page)).toBeNull();
   });
 
@@ -197,7 +197,7 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
     const problems = watchPage(page);
     await signIn(page, undefined, '/templates');
     await openTemplate(page, 'Submission accepted');
-    const body = page.locator('[data-confera-template-body] .ProseMirror');
+    const body = page.locator('[data-congresa-template-body] .ProseMirror');
     await body.locator('p').last().click();
     await page.keyboard.press('ControlOrMeta+End');
     await page.keyboard.type(' Srdačno.');
@@ -208,7 +208,7 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
     await expect(body).toContainText('Srdačno.');
 
     await page.getByRole('radiogroup', { name: 'Language of the template' }).getByRole('radio', { name: 'Serbian' }).click();
-    await expect(page.locator('[data-confera-template="submission_accepted:sr"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-template="submission_accepted:sr"]')).toBeVisible();
     await expect(body).toContainText('Sa zadovoljstvom');
 
     await conferenceSwitch(page).selectOption({ label: 'Konferencija za probe (KP 2026)' });
@@ -229,7 +229,7 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
     const toggle = page.getByRole('switch', { name: 'Send this email for Konferencija za probe (KP 2026)' });
     await expect(toggle).toBeChecked();
     // The design system's track lies over the input: the person clicks the switch's words.
-    await page.locator('[data-confera-template-switch] .ud-switch__label').click();
+    await page.locator('[data-congresa-template-switch] .ud-switch__label').click();
     await expect(toggle).not.toBeChecked();
     await expect(toast(page)).toContainText('The email is off for Konferencija za probe (KP 2026)');
     await page.goto(`${ADMIN_ORIGIN}/submissions/${PART_C.submissions[1]}`);
@@ -237,7 +237,7 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
     const dialog = await changeStatus(page, 'Accept');
     await expect(dialog).toContainText('No email goes');
     await dialog.getByRole('button', { name: 'Change the status' }).click();
-    await expect(page.locator('[data-confera-submission-status="accepted"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="accepted"]')).toBeVisible();
     await expect(page.getByRole('table', { name: 'History' })).toContainText('No email: template off');
     await expect(page.getByRole('table', { name: 'Emails' }).locator('tbody tr').filter({ hasText: 'Accepted' })).toHaveCount(0);
   });
@@ -245,7 +245,7 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
   test('an image is uploaded and inserted, and travels inside the preview; an SVG is refused (ST-60)', async ({ page }) => {
     await signIn(page, undefined, '/templates');
     await openTemplate(page, 'Submission accepted');
-    await page.locator('[data-confera-template-body] .ProseMirror p').first().click();
+    await page.locator('[data-congresa-template-body] .ProseMirror p').first().click();
     await page.getByRole('toolbar', { name: 'Formatting' }).getByRole('button', { name: 'Image' }).click();
     const dialog = page.getByRole('dialog', { name: 'Insert an image' });
     expect(await scan(page)).toEqual([]);
@@ -256,7 +256,7 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
     await dialog.locator('input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG });
     await dialog.getByRole('button', { name: 'Upload and insert' }).click();
     await expect(dialog).toBeHidden();
-    const image = page.locator('[data-confera-template-body] figure[data-confera-image] img');
+    const image = page.locator('[data-congresa-template-body] figure[data-congresa-image] img');
     await expect(image).toHaveAttribute('alt', 'Logo');
     await expect(image).toHaveAttribute('src', /^\/api\/v1\/mail-images\/[0-9a-f-]{36}$/);
     await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(2);
@@ -271,7 +271,7 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: ADMIN_ORIGIN });
     await signIn(page, undefined, '/templates');
     await openTemplate(page, 'Submission accepted');
-    const body = page.locator('[data-confera-template-body] .ProseMirror');
+    const body = page.locator('[data-congresa-template-body] .ProseMirror');
     await body.locator('p').first().click();
     await page.evaluate(async () => {
       const html = '<p><b>Podebljano</b> <img src="https://tracker.example.test/pixel.gif"> <a href="javascript:alert(1)">veza</a> <img src="data:image/png;base64,iVBORw0KGgo="></p>';
@@ -296,7 +296,7 @@ test.describe('the mail log and held emails (M4-FE-04, M3-ISS-14)', () => {
     expect(await pwned(page)).toBeNull();
 
     await page.goto(`${ADMIN_ORIGIN}/mail-log`);
-    const settings = page.locator('[data-confera-mail-log-settings]');
+    const settings = page.locator('[data-congresa-mail-log-settings]');
     await expect(settings).toContainText('Entries are kept for 730 days');
     // One sentence; the settings are folded under it (UX4-13).
     await expect(settings.getByLabel('Keep entries for')).toBeHidden();
@@ -308,7 +308,7 @@ test.describe('the mail log and held emails (M4-FE-04, M3-ISS-14)', () => {
     await settings.getByRole('button', { name: 'Save' }).click();
     await expect(toast(page)).toContainText('The mail log keeps entries for 365 days');
     await page.reload();
-    await expect(page.locator('[data-confera-mail-log-settings]')).toContainText('Entries are kept for 365 days');
+    await expect(page.locator('[data-congresa-mail-log-settings]')).toContainText('Entries are kept for 365 days');
   });
 
   test('a held email is discarded: never sent, gone from the list', async ({ page }) => {
@@ -330,7 +330,7 @@ for (const width of [1440, 375]) {
     test('a submission, its status dialog with the email and its edit pass axe and fit the width', async ({ page }) => {
       await signIn(page, undefined, `/submissions/${PART_C.submissions[0]}`);
       // A new submission, as it is read, with Start processing (UX4-08).
-      await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+      await expect(page.locator('[data-congresa-submission-status="new"]')).toBeVisible();
       expect(await scan(page)).toEqual([]);
       expect(await overflowing(page)).toEqual([]);
       await startProcessing(page);
@@ -338,7 +338,7 @@ for (const width of [1440, 375]) {
       const dialog = await changeStatus(page, 'Return for revision');
       await dialog.getByLabel('Message for the author').fill('Molimo skratite apstrakt.');
       await dialog.getByRole('button', { name: 'Show the email' }).click();
-      await expect(dialog.locator('[data-confera-status-step="email"]')).toBeVisible();
+      await expect(dialog.locator('[data-congresa-status-step="email"]')).toBeVisible();
       expect(await scan(page)).toEqual([]);
       await dialog.getByRole('button', { name: 'Cancel' }).click();
       await page.getByRole('button', { name: 'Edit on the author’s behalf' }).click();
@@ -353,7 +353,7 @@ for (const width of [1440, 375]) {
       expect(await scan(page)).toEqual([]);
       expect(await fitsTheWidth(page)).toBe(true);
       await page.goto(`${ADMIN_ORIGIN}/mail-log`);
-      await expect(page.locator('[data-confera-mail-log-settings]')).toBeVisible();
+      await expect(page.locator('[data-congresa-mail-log-settings]')).toBeVisible();
       expect(await scan(page)).toEqual([]);
       expect(await fitsTheWidth(page)).toBe(true);
       await page.goto(`${ADMIN_ORIGIN}/submissions`);

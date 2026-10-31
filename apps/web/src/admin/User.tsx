@@ -125,7 +125,7 @@ export function User({ id }: { id: string }) {
         {record.status === 'active' ? <Button variant="dark" onClick={() => open('sessions')}>{t.endSessions}</Button> : null}
         {!removed ? <Button variant="danger" disabled={lastAdmin} onClick={() => open('remove')}>{t.remove}</Button> : null}
       </div>
-      {lastAdmin ? <p className={styles.text} data-confera-last-admin>{t.lastAdminNote}</p> : null}
+      {lastAdmin ? <p className={styles.text} data-congresa-last-admin>{t.lastAdminNote}</p> : null}
     </>
   );
 

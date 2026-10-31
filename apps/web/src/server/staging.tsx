@@ -82,7 +82,7 @@ function showFor(answer: InstanceAnswer, now: number): boolean {
 }
 
 /**
- * The banner itself, in both languages of Confera, with nothing to close. Above a page it is a
+ * The banner itself, in both languages of Congresa, with nothing to close. Above a page it is a
  * landmark of its own; inside the page's `main` (a form, a frame, not found) it is a note there.
  */
 export function StagingNotice({ inside = false }: { readonly inside?: boolean }) {
@@ -94,11 +94,11 @@ export function StagingNotice({ inside = false }: { readonly inside?: boolean })
     </>
   );
   return inside ? (
-    <p className="confera-staging" role="note" data-confera-staging="">
+    <p className="congresa-staging" role="note" data-congresa-staging="">
       {words}
     </p>
   ) : (
-    <aside className="confera-staging" aria-label="Staging" data-confera-staging="">
+    <aside className="congresa-staging" aria-label="Staging" data-congresa-staging="">
       {words}
     </aside>
   );

@@ -11,7 +11,7 @@ export function isFormSlug(value: unknown): value is string {
 }
 
 /** The only message type. */
-export const HEIGHT_MESSAGE = 'confera:height';
+export const HEIGHT_MESSAGE = 'congresa:height';
 
 /** A frame is never made shorter or taller than this by a message, in CSS pixels. */
 export const MIN_FRAME_HEIGHT = 200;
@@ -39,7 +39,7 @@ export function heightMessage(height: number): HeightMessage | null {
  * message: a type and how far down the frame that part starts, in CSS pixels. The snippet reads it
  * only once the product owner has decided that its lines may scroll the frame (decision D1).
  */
-export const INTO_VIEW_MESSAGE = 'confera:into-view';
+export const INTO_VIEW_MESSAGE = 'congresa:into-view';
 
 export interface IntoViewMessage {
   readonly type: typeof INTO_VIEW_MESSAGE;

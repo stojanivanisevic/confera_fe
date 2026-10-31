@@ -27,7 +27,7 @@ export async function languageFor(form: PublishedForm | null, requested: string 
 
 export async function formMetadata(slug: string, requested: string | string[] | undefined): Promise<Metadata> {
   const found = await formOf(slug);
-  if (found.kind !== 'form') return { title: { absolute: 'Confera' }, robots: { index: false } };
+  if (found.kind !== 'form') return { title: { absolute: 'Congresa' }, robots: { index: false } };
   const language = await languageFor(found.form, requested);
   return { title: { absolute: fill(FORM_TEXTS[language].page.title, { title: textOf(found.form.definition.texts.title, language), conference: found.form.conference.name }) } };
 }
@@ -36,7 +36,7 @@ export async function formMetadata(slug: string, requested: string | string[] | 
 export function FormUnavailable({ language }: { language: FormLanguage }) {
   const t = FORM_TEXTS[language].problems;
   return (
-    <main className="confera-page" lang={language}>
+    <main className="congresa-page" lang={language}>
       <StagingBanner inside />
       <h1 className="ud-sr">{t.unavailableTitle}</h1>
       <Alert tone="warning" title={t.unavailableTitle}>

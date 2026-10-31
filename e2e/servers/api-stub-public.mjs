@@ -1,6 +1,6 @@
 // The stand-in for confera_be's public form API of 0.3.0 (ADR-08; openapi.public.json), for the
 // browser tests. It follows the rules the web application depends on: the surface from the Host
-// header (only "127.0.0.1"), an exact Origin (Confera's public origin) on every POST, the single-use
+// header (only "127.0.0.1"), an exact Origin (Congresa's public origin) on every POST, the single-use
 // form token in `X-Form-Token`, JSON only for a token and a submit and multipart only for an upload
 // (the part `field` before the part `file`), an Idempotency-Key whose repeat answers with the first
 // result, a trap field answered with a fake success, a closed form refused with 409 `form_closed`, and
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const FIXTURE = JSON.parse(readFileSync(join(here, 'public-forms.json'), 'utf8'));
 const FORMS = FIXTURE.forms;
-/** Confera's public origins in the browser tests: the test build and `next dev`. */
+/** Congresa's public origins in the browser tests: the test build and `next dev`. */
 const PUBLIC_ORIGINS = new Set(['http://127.0.0.1:3000', 'http://127.0.0.1:3100']);
 const MAX_BODY = 25 * 1024 * 1024;
 /** The extensions of the file types, for the stub's own check (the API reads the content). */
@@ -89,7 +89,7 @@ export async function answerPublic(req, res, url) {
     return true;
   }
   if (req.method !== 'POST') return problem(res, 405, 'method_not_allowed'), true;
-  // Only Confera's own page may call: an exact Origin (ADR-08).
+  // Only Congresa's own page may call: an exact Origin (ADR-08).
   if (!PUBLIC_ORIGINS.has(req.headers.origin ?? '')) return problem(res, 403, 'origin_refused'), true;
 
   if (action === 'tokens') {
@@ -151,8 +151,8 @@ export async function answerPublic(req, res, url) {
   const answers = body.answers ?? {};
   // The old trap name is gone (SEC-M3-07): confera_be refuses it as it refuses every unknown property.
   if (Object.hasOwn(body ?? {}, 'website')) return problem(res, 400, 'validation_failed', { errors: [{ path: 'website', code: 'whitelistValidation' }] }), true;
-  // The trap field of ADR-08: a fake success, nothing stored. Only `confera_hp`, as confera_be reads it.
-  if ((body.confera_hp ?? '') !== '') return send(res, 201, { language: body.language, reference: 'IT27-0000', receivedAt: new Date().toISOString() }), true;
+  // The trap field of ADR-08: a fake success, nothing stored. Only `congresa_hp`, as confera_be reads it.
+  if ((body.congresa_hp ?? '') !== '') return send(res, 201, { language: body.language, reference: 'IT27-0000', receivedAt: new Date().toISOString() }), true;
   // The server checks again; the tests ask for a refusal by the title.
   if (answers.title === 'refused by the server') return problem(res, 400, 'validation_failed', { errors: [{ path: 'answers.title', code: 'noUrl' }] }), true;
   token.used = true;

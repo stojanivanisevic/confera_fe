@@ -147,14 +147,14 @@ export function Organisation() {
     <div className={styles.stack}>
       <PageHeader title={t.title} description={t.lead} />
       {recent ? (
-        <div data-confera-payment-notice>
+        <div data-congresa-payment-notice>
           <Alert tone="warning" title={fill(t.recentChange, { when: formatDate(record.paymentDetailsChangedAt), who: record.paymentDetailsChangedBy?.displayName ?? TEXTS.audit.system })}>
             {t.recentChangeText}
           </Alert>
         </div>
       ) : null}
       <Card title={t.issuer} headingLevel={2}>
-        <form className={styles.fields} onSubmit={(event) => void saveIssuer(event)} noValidate data-confera-issuer>
+        <form className={styles.fields} onSubmit={(event) => void saveIssuer(event)} noValidate data-congresa-issuer>
           {issuerProblem ? (
             <div className={styles.all}>
               <ProblemAlert title={issuerProblem.title} action={conflict(issuerProblem) ? reloadAction : undefined}>
@@ -191,7 +191,7 @@ export function Organisation() {
         </form>
       </Card>
       <Card title={t.payment} subtitle={t.paymentLead} headingLevel={2}>
-        <form className={styles.fields} onSubmit={(event) => void savePayment(event)} noValidate data-confera-payment>
+        <form className={styles.fields} onSubmit={(event) => void savePayment(event)} noValidate data-congresa-payment>
           {paymentProblem ? (
             <div className={styles.all}>
               <ProblemAlert title={paymentProblem.title} action={conflict(paymentProblem) ? reloadAction : undefined}>

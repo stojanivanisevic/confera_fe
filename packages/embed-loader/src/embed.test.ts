@@ -52,7 +52,7 @@ describe('the snippet', () => {
   const snippet = buildEmbedSnippet(base);
 
   it('is a frame, a link to the hosted form and one inline script', () => {
-    expect(snippet).toContain('<iframe id="confera-form-itema-2026-abstract" src="https://forms.example.test/embed/itema-2026-abstract"');
+    expect(snippet).toContain('<iframe id="congresa-form-itema-2026-abstract" src="https://forms.example.test/embed/itema-2026-abstract"');
     expect(snippet).toContain('<a href="https://forms.example.test/f/itema-2026-abstract"');
     expect(snippet.match(/<script>/g)).toHaveLength(1);
     expect(snippet).not.toMatch(/<script[^>]+src=/); // no code is loaded from anywhere
@@ -117,7 +117,7 @@ describe('the snippet', () => {
 });
 
 describe('the inline lines', () => {
-  const source = listenerSource('confera-form-x', 'https://forms.example.test');
+  const source = listenerSource('congresa-form-x', 'https://forms.example.test');
 
   it('write no markup, run no text as code, load nothing and store nothing', () => {
     expect(source).not.toMatch(/innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(|Function\(|setTimeout|setInterval|import\(|fetch\(|XMLHttpRequest|cookie|localStorage|sessionStorage|createElement|\.src\b|location/);
@@ -128,7 +128,7 @@ describe('the inline lines', () => {
   });
 
   it('check the origin first, then find the frame by the window that sent the message, before reading anything', () => {
-    expect(source).toContain('var o="https://forms.example.test",i="confera-form-x";');
+    expect(source).toContain('var o="https://forms.example.test",i="congresa-form-x";');
     expect(source).toContain('if(e.origin!==o||!e.source)return;');
     expect(source).toContain('for(var a=document.querySelectorAll("iframe#"+i),k=0,g;k<a.length;k++)if(a[k].contentWindow===e.source)g=a[k];');
     expect(source.indexOf('e.origin!==o')).toBeLessThan(source.indexOf('contentWindow===e.source'));
@@ -152,7 +152,7 @@ describe('the inline lines', () => {
 
   it('scroll only within the limits of decision D1: that frame, vertical, out of view, a clamped number, once a second', () => {
     const handler = source.slice(source.indexOf('addEventListener("message"'));
-    expect(handler).toContain('if(d.type==="confera:into-view"&&N(t)&&n-w>999){');
+    expect(handler).toContain('if(d.type==="congresa:into-view"&&N(t)&&n-w>999){');
     expect(handler).toContain('t=r.top+Math.min(Math.max(t,0),r.height);');
     expect(handler).toContain('h=innerHeight;');
     expect(handler).toContain('if(t<0||t>h){w=n;scrollBy(0,t-h/4)}');

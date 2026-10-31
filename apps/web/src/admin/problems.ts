@@ -33,7 +33,7 @@ interface Answer<T> {
  * a timeout) becomes an ApiError with the status 0 and the code `api_unreachable`.
  */
 /** The shell listens: a change met a session that has ended (UXUI-M2-02). */
-export const SESSION_ENDED_EVENT = 'confera:session-ended';
+export const SESSION_ENDED_EVENT = 'congresa:session-ended';
 
 function announce(status: number, error: unknown): void {
   const code = typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined;

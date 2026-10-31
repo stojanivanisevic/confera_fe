@@ -48,7 +48,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // The support contact of the last good load in this tab, so that "cannot reach its server" can name it (UXUI-M2-16).
   const [contact, setContactState] = useState<string | null>(() => {
     try {
-      return typeof window === 'undefined' ? null : window.sessionStorage.getItem('confera.contact');
+      return typeof window === 'undefined' ? null : window.sessionStorage.getItem('congresa.contact');
     } catch {
       return null;
     }
@@ -56,7 +56,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const setContact = useCallback((next: string | null) => {
     setContactState(next);
     try {
-      if (next) window.sessionStorage.setItem('confera.contact', next);
+      if (next) window.sessionStorage.setItem('congresa.contact', next);
     } catch {
       // Without storage the contact is known while the page is open.
     }

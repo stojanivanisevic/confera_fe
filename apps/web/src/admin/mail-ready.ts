@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Whether Confera can send mail now (UXUI-M2-01): a mail server that is switched on exists. An
+ * Whether Congresa can send mail now (UXUI-M2-01): a mail server that is switched on exists. An
  * invitation made without one waits and goes out once a server is set up (the backend holds the
  * message); the screens say so instead of "sent". `null` while it is not known, or when the
  * person may not read the mail servers.

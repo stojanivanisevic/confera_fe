@@ -59,18 +59,18 @@ const start = (playwright: BrowserStart['playwright'], browserName: Engine, use:
 describe('the `browser` fixture and the "switched off" marker', () => {
   const saved = { ...process.env };
   let scratch: string;
-  const profiles = () => readdirSync(scratch).filter((name) => name.startsWith('confera-e2e-chromium-'));
+  const profiles = () => readdirSync(scratch).filter((name) => name.startsWith('congresa-e2e-chromium-'));
   const trip = () => writeFileSync(guardMarkerPath(), '2026-10-13T08:00:00.000Z  after a Chromium worker finished: bad-password count 0 -> 1\n');
 
   beforeEach(() => {
-    scratch = mkdtempSync(join(tmpdir(), 'confera-os-fixture-test-'));
+    scratch = mkdtempSync(join(tmpdir(), 'congresa-os-fixture-test-'));
     // The fixture makes its profiles in the temporary folder: for the length of a test that is the scratch folder.
     process.env.TEMP = scratch;
     process.env.TMP = scratch;
     process.env.TMPDIR = scratch;
-    process.env.CONFERA_E2E_OS_GUARD_MARKER = join(scratch, 'tripped');
+    process.env.CONGRESA_E2E_OS_GUARD_MARKER = join(scratch, 'tripped');
     // No baseline: the count of the real account is never read from a unit test.
-    delete process.env.CONFERA_E2E_BAD_PASSWORD_BASELINE;
+    delete process.env.CONGRESA_E2E_BAD_PASSWORD_BASELINE;
   });
   afterEach(() => {
     process.env = { ...saved };
@@ -146,7 +146,7 @@ describe('the `browser` fixture and the "switched off" marker', () => {
     const [{ engine, method, args }] = asked as [Asked];
     expect(engine).toBe('chromium');
     expect(method).toMatch(/PersistentContext$/); // the only call that takes a profile directory
-    expect(args[0]).toMatch(/confera-e2e-chromium-/);
+    expect(args[0]).toMatch(/congresa-e2e-chromium-/);
     expect(args[1]).toEqual({ channel: 'chromium', headless: true });
     expect(localStateWhileRunning).toEqual(CHROMIUM_LOCAL_STATE);
     expect(closed).toHaveBeenCalledTimes(1);

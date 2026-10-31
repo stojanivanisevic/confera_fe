@@ -118,7 +118,7 @@ export function MailLogEntry({ id }: { id: string }) {
           ) : null}
           {record.bodyText !== null ? (
             <Card title={t.bodyText} headingLevel={2}>
-              <pre className={styles.plain} data-confera-plain-body>
+              <pre className={styles.plain} data-congresa-plain-body>
                 {record.bodyText}
               </pre>
             </Card>

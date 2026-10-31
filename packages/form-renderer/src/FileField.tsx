@@ -140,7 +140,7 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
   const shown = state ? [{ name: state.name, size: state.size, ...(state.progress !== undefined ? { progress: state.progress } : {}), ...(state.error ? { error: fileMessage(state, rule, language) } : {}) }] : [];
   const hint = fill(t.hint, { max: formatBytes(rule.maxBytes, language), types: typesText(rule) });
   return (
-    <div id={id} tabIndex={-1} className="ud-span-all" data-confera-file={fieldKey} data-confera-file-state={state?.uploadId ? 'uploaded' : state?.error ? 'refused' : state ? 'uploading' : 'empty'}>
+    <div id={id} tabIndex={-1} className="ud-span-all" data-congresa-file={fieldKey} data-congresa-file-state={state?.uploadId ? 'uploaded' : state?.error ? 'refused' : state ? 'uploading' : 'empty'}>
       <FileDropzone
         label={label}
         title={t.drop}
@@ -155,7 +155,7 @@ export function FileField({ id, fieldKey, label, required, rule, language, state
       />
       {/* A file on the server says so in words and with a tick, not only by the absence of a bar (UX3-19). */}
       {state?.uploadId ? (
-        <p className={styles.fileDone} data-confera-file-done="">
+        <p className={styles.fileDone} data-congresa-file-done="">
           <Icon name="check-circle-2" size={16} />
           <span>{`${t.done}: ${state.name}`}</span>
         </p>

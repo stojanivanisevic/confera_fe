@@ -30,7 +30,7 @@ function copyOfClient(name: string): string {
 const edit = (file: string, change: (text: string) => string) => writeFileSync(file, change(readFileSync(file, 'utf8')));
 
 beforeAll(() => {
-  work = mkdtempSync(join(tmpdir(), 'confera-api-contract-'));
+  work = mkdtempSync(join(tmpdir(), 'congresa-api-contract-'));
   // A stand-in for the checkout of confera_be: a git repository with the two documents committed.
   backend = join(work, 'confera_be');
   mkdirSync(join(backend, 'openapi'), { recursive: true });

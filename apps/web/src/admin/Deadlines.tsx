@@ -64,7 +64,7 @@ export function Deadlines({ conferenceId, readOnly, archived }: { conferenceId: 
   };
 
   return (
-    <Card title={t.title} headingLevel={2} data-confera-deadlines="">
+    <Card title={t.title} headingLevel={2} data-congresa-deadlines="">
       <div className={styles.stack}>
         <p className={styles.text}>{fill(t.lead, { zone: record.timeZone })}</p>
         {archived ? (
@@ -81,7 +81,7 @@ export function Deadlines({ conferenceId, readOnly, archived }: { conferenceId: 
           const deadline = of(kind);
           const value = days[kind] ?? deadline?.endsOn ?? '';
           return (
-            <form key={kind} className={styles.fields} onSubmit={(event) => void save(event, kind)} noValidate data-confera-deadline={kind}>
+            <form key={kind} className={styles.fields} onSubmit={(event) => void save(event, kind)} noValidate data-congresa-deadline={kind}>
               <DateField
                 label={t.kinds[kind] ?? kind}
                 name={kind}

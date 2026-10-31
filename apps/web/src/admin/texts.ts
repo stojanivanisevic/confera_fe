@@ -8,7 +8,7 @@ export const fill = (text: string, values: Record<string, string | number>): str
   Object.entries(values).reduce((out, [key, value]) => out.split(`{${key}}`).join(String(value)), text);
 
 export const TEXTS = {
-  product: 'Confera',
+  product: 'Congresa',
   nav: {
     main: 'Main',
     /** The mark of a staging instance in the top bar (UX4-27), in both languages like the banner. */
@@ -41,16 +41,16 @@ export const TEXTS = {
   },
   connection: {
     title: 'Connection',
-    working: 'Confera is working.',
+    working: 'Congresa is working.',
     checking: 'Checking the connection…',
-    down: 'Confera cannot reach its server',
+    down: 'Congresa cannot reach its server',
     downText: 'Nothing you saved is lost. Try again in a minute. If it keeps happening, write to {contact}.',
     downTextNoContact: 'Nothing you saved is lost. Try again in a minute. If it keeps happening, tell another admin.',
     tryAgain: 'Try again',
     tryNow: 'Try now',
-    downTextRetry: 'Nothing you saved is lost. Confera tries again every 30 seconds. If it keeps happening, write to {contact}.',
-    downTextRetryNoContact: 'Nothing you saved is lost. Confera tries again every 30 seconds. If it keeps happening, tell another admin.',
-    updated: 'Confera has been updated',
+    downTextRetry: 'Nothing you saved is lost. Congresa tries again every 30 seconds. If it keeps happening, write to {contact}.',
+    downTextRetryNoContact: 'Nothing you saved is lost. Congresa tries again every 30 seconds. If it keeps happening, tell another admin.',
+    updated: 'Congresa has been updated',
     updatedText: 'Reload the page to continue. If this message comes back, write to {contact}.',
     updatedTextNoContact: 'Reload the page to continue. If this message comes back, tell another admin.',
     reload: 'Reload page',
@@ -165,7 +165,7 @@ export const TEXTS = {
   },
   users: {
     title: 'Users',
-    lead: 'The people who work in Confera: admins and reviewers.',
+    lead: 'The people who work in Congresa: admins and reviewers.',
     invite: 'Invite a user',
     search: 'Search by name or address',
     status: 'Status',
@@ -240,7 +240,7 @@ export const TEXTS = {
     endSessionsText: 'They are signed out everywhere and sign in again.',
     sessionsEnded: 'Sessions of {name} ended',
     lastAdmin: '{name} is the last active admin',
-    lastAdminText: 'Confera needs at least one admin who can sign in. Make someone else an admin first.',
+    lastAdminText: 'Congresa needs at least one admin who can sign in. Make someone else an admin first.',
     notFound: 'This user does not exist',
     notFoundText: 'The link may be old. Go back to the list.',
   },
@@ -252,7 +252,7 @@ export const TEXTS = {
     lead: 'The issuer data printed on documents, and the accounts that receive payments.',
     issuer: 'Issuer data',
     name: 'Short name',
-    nameHint: 'Shown in Confera.',
+    nameHint: 'Shown in Congresa.',
     legalName: 'Legal name',
     address: 'Address',
     registrationNumber: 'Registration number (matični broj)',
@@ -260,7 +260,7 @@ export const TEXTS = {
     taxNumber: 'Tax number (PIB)',
     taxHint: '9 digits.',
     contactEmail: 'Contact email address',
-    contactHint: 'Shown to admins in Confera’s own error messages as the support contact.',
+    contactHint: 'Shown to admins in Congresa’s own error messages as the support contact.',
     vatNoteSr: 'VAT note, Serbian',
     vatNoteEn: 'VAT note, English',
     vatHint: 'The note on documents that the association is exempt from VAT.',
@@ -287,7 +287,7 @@ export const TEXTS = {
     lead: 'Who did what, newest first. Entries cannot be changed or removed.',
     when: 'When',
     who: 'Who',
-    system: 'Confera',
+    system: 'Congresa',
     action: 'Action',
     subject: 'Concerning',
     fields: 'Changed',
@@ -411,7 +411,7 @@ export const TEXTS = {
   },
   mailServers: {
     title: 'Mail servers',
-    lead: 'The servers that send the messages of Confera. One is the default; a fallback takes over when a server fails.',
+    lead: 'The servers that send the messages of Congresa. One is the default; a fallback takes over when a server fails.',
     add: 'Add a mail server',
     newTitle: 'New mail server',
     back: 'Mail servers',
@@ -458,7 +458,7 @@ export const TEXTS = {
     inUse: 'This server is in use',
     inUseText: 'A conference or a template names it. Choose another server there first.',
     empty: 'No mail servers yet',
-    emptyText: 'Add the server of your organisation; until then Confera keeps every message waiting.',
+    emptyText: 'Add the server of your organisation; until then Congresa keeps every message waiting.',
     test: 'Test message',
     testText: 'Sends a short message through this server to one address.',
     testTo: 'Send to',
@@ -469,7 +469,7 @@ export const TEXTS = {
     testResult: {
       sent: 'Test message sent to {to}. Check that mailbox.',
       failed: 'The server did not take the message.',
-      refused: 'Confera did not send the message: {reason}',
+      refused: 'Congresa did not send the message: {reason}',
     } as Record<string, string>,
     reasons: {
       tls_required: 'this server needs encryption (TLS or STARTTLS).',
@@ -479,7 +479,7 @@ export const TEXTS = {
     reasonFallback: 'the server is not allowed.',
     /** Why a test message failed (M2-ISS-14): the API's code, never the server's words. */
     causes: {
-      connection_failed: 'No connection to the server, or none in time. Check the host and the port, and whether the server takes connections from Confera.',
+      connection_failed: 'No connection to the server, or none in time. Check the host and the port, and whether the server takes connections from Congresa.',
       certificate_refused: 'The server’s certificate was not accepted. Check the host name: it must be the name in the certificate.',
       authentication_failed: 'The server refused the user name or the password.',
       recipient_refused: 'The server refused the recipient’s address.',
@@ -517,7 +517,7 @@ export const TEXTS = {
     emptyConferenceText: 'Messages not tied to a conference (invitations, security notices) show under All conferences.',
     showAll: 'Show all conferences',
     empty: 'Nothing sent yet',
-    emptyText: 'Messages appear here as soon as Confera sends them. A test message of a mail server is the first one.',
+    emptyText: 'Messages appear here as soon as Congresa sends them. A test message of a mail server is the first one.',
     toServers: 'Open the mail servers',
     back: 'Mail log',
     entry: 'To {recipient}',
@@ -567,7 +567,7 @@ export const TEXTS = {
   },
   templates: {
     title: 'Email templates',
-    lead: 'The messages Confera sends, in English and Serbian.',
+    lead: 'The messages Congresa sends, in English and Serbian.',
     leadConference: 'The templates of {conference}. Without a template of its own a conference uses the organisation’s.',
     // Saving, the languages, a conference's own version and the switch (M4-FE-02; FR-MAIL-01, 02, 07).
     save: 'Save the template',
@@ -767,7 +767,7 @@ export const TEXTS = {
       subjectName: 'Ana Čolić',
       serverName: 'Office server',
     } as Record<string, string>,
-    sampleLink: 'https://admin.confera.example/invitations/sample',
+    sampleLink: 'https://admin.congresa.example/invitations/sample',
     conditions: { hasActor: 'someone made the change', hasSubject: 'it concerns a person', hasTitle: 'the submission has a title', hasMessage: 'the office wrote a message', hasContact: 'the organisation has a contact address', noContact: 'the organisation has no contact address' } as Record<string, string>,
   },
   problems: {
@@ -863,7 +863,7 @@ export const TEXTS = {
     snippet: 'Snippet',
     copy: 'Copy the snippet',
     copied: 'Snippet copied',
-    copyFailed: 'The browser did not let Confera copy. Select the text of the snippet and copy it.',
+    copyFailed: 'The browser did not let Congresa copy. Select the text of the snippet and copy it.',
     hosted: 'The form on its own page',
     sitesNote: 'The site must be on the listed sites of the conference, or the browser does not show the frame: the visitor then sees the link above it. Listed now: {sites}.',
     sitesNone: 'No site is listed yet: add the conference site in the settings of the conference.',
@@ -1226,7 +1226,7 @@ export const TEXTS = {
     close: 'Close',
     save: 'Save',
     loading: 'Loading',
-    noScript: 'Confera needs JavaScript. Turn it on, or open Confera in another browser.',
+    noScript: 'Congresa needs JavaScript. Turn it on, or open Congresa in another browser.',
     required: 'Fill this in',
     rows: 'rows',
   },

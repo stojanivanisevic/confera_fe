@@ -506,7 +506,7 @@ export const SCENARIOS: Record<ComponentName, FC<ScenarioProps>> = {
   AppShell: () => (
     <div className={styles.shell}>
       <U.AppShell
-        product="Confera"
+        product="Congresa"
         sidebar={<U.SidebarNav label="Main" value="submissions" sections={NAV} />}
         topbar={<U.Breadcrumbs items={[{ label: 'ITEMA 2026', href: '#itema' }, { label: 'Submissions' }]} />}
       >

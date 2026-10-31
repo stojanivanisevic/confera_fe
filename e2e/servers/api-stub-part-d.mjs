@@ -371,7 +371,7 @@ export function handlePartD(ctx) {
     // An image still being scanned is not shown yet (its words stand in its place) and is named (Q4-05).
     const pending = d.images.filter((image) => !cleanNow(image)).map((image) => image.id);
     const used = JSON.stringify(body.body);
-    return { status: 200, body: { ...render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: previewConditions, images: d.images.filter(cleanNow), inline: true, link: 'https://admin.confera.example/invitations/sample' }), imagesPending: pending.filter((id) => used.includes(id)) } };
+    return { status: 200, body: { ...render({ subject: body.subject, body: body.body }, { values: SAMPLE, conditions: previewConditions, images: d.images.filter(cleanNow), inline: true, link: 'https://admin.congresa.example/invitations/sample' }), imagesPending: pending.filter((id) => used.includes(id)) } };
   }
   const templateRoute = /^\/api\/v1\/mail-templates\/([^/]+)$/.exec(path);
   if (templateRoute && (method === 'PUT' || method === 'DELETE')) {

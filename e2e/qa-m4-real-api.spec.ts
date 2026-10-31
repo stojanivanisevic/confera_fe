@@ -13,9 +13,9 @@
 // template with hostile strings through the real server's preview and mail log, pasted images and a very large
 // paste, images built to hurt a decoder, and the staging banner that a developer instance never shows.
 //
-// Skipped without CONFERA_E2E_API_ORIGIN, and in WebKit (NO_SESSION_IN_WEBKIT: the __Host- session cookie is
+// Skipped without CONGRESA_E2E_API_ORIGIN, and in WebKit (NO_SESSION_IN_WEBKIT: the __Host- session cookie is
 // Secure and WebKit keeps none on http://localhost; the screens are proven in WebKit only over HTTPS, M2-ISS-04).
-// Needs from that checkout: CONFERA_E2E_MAILPIT_ORIGIN and CONFERA_E2E_MAILPIT_SMTP_PORT, and a ClamAV at its
+// Needs from that checkout: CONGRESA_E2E_MAILPIT_ORIGIN and CONGRESA_E2E_MAILPIT_SMTP_PORT, and a ClamAV at its
 // CLAMAV_ADDRESS (a fake daemon in 'clean' mode is enough) so that an uploaded image becomes clean and is sent.
 import type { Page } from '@playwright/test';
 import { PNG as PNGJS } from 'pngjs';
@@ -28,7 +28,7 @@ import { watchPage } from './support/page-problems';
 
 const SLUG = 'e2eprobnaforma01';
 const CONFERENCE = 'Probna konferencija (izmišljeno) (PK 2027)';
-const MAILPIT = process.env.CONFERA_E2E_MAILPIT_ORIGIN ?? 'http://127.0.0.1:8025';
+const MAILPIT = process.env.CONGRESA_E2E_MAILPIT_ORIGIN ?? 'http://127.0.0.1:8025';
 const SERBIAN = 'š č ć ž đ Š Č Ć Ž Đ';
 
 test.skip(!AGAINST_REAL_API, 'only against a real confera_be with seed:e2e');
@@ -65,7 +65,7 @@ async function waitForMail(address: string, subject: RegExp): Promise<MailDetail
 
 const run = () => `${test.info().project.name}.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const toast = (page: Page) => page.locator('.ud-toast').last();
-const conferenceSwitch = (page: Page) => page.locator('select[data-confera-conference-switch]');
+const conferenceSwitch = (page: Page) => page.locator('select[data-congresa-conference-switch]');
 const rows = (page: Page) => page.getByRole('table', { name: 'Submissions' }).locator('tbody tr');
 const pwned = (page: Page) => page.evaluate(() => document.body.dataset.pwned ?? null);
 const changeStatus = async (page: Page, action: string) => {
@@ -83,7 +83,7 @@ async function openTemplate(page: Page, type: string, language: 'English' | 'Ser
   if (conference) await page.waitForLoadState('networkidle');
   await matching.first().getByRole('button').click();
   await expect(page.getByRole('heading', { level: 1, name: type })).toBeVisible();
-  await expect(page.locator('[data-confera-template-preview="ready"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-congresa-template-preview="ready"]')).toBeVisible({ timeout: 30_000 });
 }
 
 // A PNG of 3 x 2 pixels.
@@ -96,7 +96,7 @@ const PNG = (() => {
 /** The hosted form of the seed, filled in English (and sent in Serbian when asked), as an author does. */
 async function submitThroughTheForm(page: Page, email: string, title: string, language: 'en' | 'sr'): Promise<string> {
   await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-  const form = page.locator('[data-confera-form][data-hydrated="true"]');
+  const form = page.locator('[data-congresa-form][data-hydrated="true"]');
   await form.waitFor({ timeout: 30_000 });
   await page.getByRole('radio', { name: 'With an abstract and a paper' }).check({ force: true });
   await page.getByRole('textbox', { name: 'First name', exact: true }).first().fill('Živana');
@@ -118,8 +118,8 @@ async function submitThroughTheForm(page: Page, email: string, title: string, la
   // Past the minimum fill time of the API (3 s from the token).
   await page.waitForTimeout(3_500);
   await page.getByRole('button', { name: language === 'sr' ? 'Pošalji' : 'Send' }).click();
-  await expect(page.locator('[data-confera-thanks]')).toBeVisible({ timeout: 60_000 });
-  return (await page.locator('[data-confera-reference]').innerText()).replace(/^.*: /, '').trim();
+  await expect(page.locator('[data-congresa-thanks]')).toBeVisible({ timeout: 60_000 });
+  return (await page.locator('[data-congresa-reference]').innerText()).replace(/^.*: /, '').trim();
 }
 
 test.describe('M4-QA-01: the "To show" flow through the real API, read back from the mail catcher', () => {
@@ -148,13 +148,13 @@ test.describe('M4-QA-01: the "To show" flow through the real API, read back from
       await expect(toast(page)).toContainText('has its own version now');
     }
     await expect(page.getByText(`Only ${CONFERENCE} sends this version.`)).toBeVisible();
-    const body = page.locator('[data-confera-template-body] .ProseMirror');
+    const body = page.locator('[data-congresa-template-body] .ProseMirror');
     await body.locator('p').first().click();
     await page.keyboard.press('ControlOrMeta+End');
     await page.keyboard.press('Enter');
     await page.keyboard.type(`${marker}: `);
     await page.getByLabel('Insert a placeholder').selectOption({ label: 'Title of the submission' });
-    await expect(body.locator('[data-confera-placeholder="title"], [data-placeholder="title"]').or(body.getByText('Title of the submission')).first()).toBeVisible();
+    await expect(body.locator('[data-congresa-placeholder="title"], [data-placeholder="title"]').or(body.getByText('Title of the submission')).first()).toBeVisible();
     await page.getByRole('toolbar', { name: 'Formatting' }).getByRole('button', { name: 'Image' }).click();
     const imageDialog = page.getByRole('dialog', { name: 'Insert an image' });
     await imageDialog.locator('input[type="file"]').setInputFiles({ name: 'logo-čačak.png', mimeType: 'image/png', buffer: PNG });
@@ -171,7 +171,7 @@ test.describe('M4-QA-01: the "To show" flow through the real API, read back from
     test.info().annotations.push({ type: 'Q4 preview after the scan', description: stale.includes('src="data:image/png;base64,') ? 'refreshed by itself' : 'still without the image 15 s after the scan' });
     await expect.poll(async () => {
       await page.reload();
-      await expect(page.locator('[data-confera-template-preview="ready"]')).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator('[data-congresa-template-preview="ready"]')).toBeVisible({ timeout: 30_000 });
       return (await frameSrc()) ?? '';
     }, { timeout: 120_000, intervals: [5_000] }).toContain('src="data:image/png;base64,');
 
@@ -181,10 +181,10 @@ test.describe('M4-QA-01: the "To show" flow through the real API, read back from
     await expect(rows(page)).toHaveCount(1);
     await rows(page).first().getByRole('button').first().click();
     // Opening is an act of its own, its email shown first (SEC-M4-03, UX4-08).
-    await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="new"]')).toBeVisible();
     await page.getByRole('button', { name: 'Start processing' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Send the email and change the status' }).click();
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="open"]')).toBeVisible();
     await expect(toast(page)).toContainText('Status: Open');
 
     const note = `Molimo skratite apstrakt na 250 reči. ${SERBIAN}`;
@@ -194,13 +194,13 @@ test.describe('M4-QA-01: the "To show" flow through the real API, read back from
     // The email is shown before anything changes, in a frame that may run nothing.
     await expect(dialog.locator('iframe[title="The email to the author"]')).toHaveAttribute('sandbox', '');
     await expect(dialog.frameLocator('iframe[title="The email to the author"]').getByText(note)).toBeVisible();
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="open"]')).toBeVisible();
     await dialog.getByRole('button', { name: 'Send the email and change the status' }).dblclick();
-    await expect(page.locator('[data-confera-submission-status="returned_for_revision"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="returned_for_revision"]')).toBeVisible();
 
     dialog = await changeStatus(page, 'Accept');
     await dialog.getByRole('button', { name: 'Change the status' }).click();
-    await expect(page.locator('[data-confera-submission-status="accepted"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="accepted"]')).toBeVisible();
     await expect(page.getByRole('table', { name: 'Emails' }).locator('tbody tr').filter({ hasText: /Returned for revision/ })).toHaveCount(1);
     // Firefox's own notes about preloads and bounce trackers are the browser's, not the application's.
     expect(problems.messages.filter((message) => !/preloaded with link preload|bounce tracker/.test(message))).toEqual([]);
@@ -268,7 +268,7 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
       '"><svg onload=alert(1)>',
       '{{constructor}} {{#each}} ${7*7} javascript:alert(1)',
     ].join(' ');
-    const body = page.locator('[data-confera-template-body] .ProseMirror');
+    const body = page.locator('[data-congresa-template-body] .ProseMirror');
     await body.locator('p').first().click();
     await page.keyboard.press('ControlOrMeta+End');
     await page.keyboard.press('Enter');
@@ -276,7 +276,7 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     await page.getByRole('button', { name: 'Save the template' }).click();
     await expect(toast(page)).toContainText('Template saved');
     await page.reload();
-    await expect(page.locator('[data-confera-template-preview="ready"]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-congresa-template-preview="ready"]')).toBeVisible({ timeout: 30_000 });
     await expect(body).toContainText('<script>parent.document.body.dataset.pwned="editor"</script>');
     expect(await body.locator('script, img:not(.ProseMirror-separator), svg, iframe, [onerror], [onload]').count()).toBe(0);
     const srcdoc = (await page.locator('iframe[title="Preview of the message"]').getAttribute('srcdoc')) ?? '';
@@ -292,22 +292,22 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     await page.goto(`${ADMIN_ORIGIN}/submissions?q=${encodeURIComponent(reference)}`);
     await rows(page).first().getByRole('button').first().click();
     // Opening is an act of its own, its email shown first (SEC-M4-03, UX4-08).
-    await expect(page.locator('[data-confera-submission-status="new"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="new"]')).toBeVisible();
     await page.getByRole('button', { name: 'Start processing' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Send the email and change the status' }).click();
-    await expect(page.locator('[data-confera-submission-status="open"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="open"]')).toBeVisible();
     const dialog = await changeStatus(page, 'Reject');
     // Reject shows its email first (SEC-M4-05) and its confirm names the consequence (UX4-07).
     await dialog.getByRole('button', { name: 'Show the email' }).click();
     await dialog.getByRole('button', { name: 'Reject and email the author' }).click();
-    await expect(page.locator('[data-confera-submission-status="rejected"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-submission-status="rejected"]')).toBeVisible();
     const mail = await waitForMail(email, /^Decision on your submission/);
     expect(mail.HTML).not.toMatch(/<script|<img src=x|<svg/i);
     expect(mail.HTML).toContain('&lt;script&gt;');
     await page.goto(`${ADMIN_ORIGIN}/mail-log`);
     await page.getByRole('table', { name: 'Mail log' }).locator('tbody tr').filter({ hasText: email }).filter({ hasText: /rejected/i }).first().getByRole('button').click();
     await expect(page.locator('iframe[title="Email body"]')).toHaveAttribute('sandbox', '');
-    await expect(page.locator('[data-confera-plain-body]')).toContainText('<script>');
+    await expect(page.locator('[data-congresa-plain-body]')).toContainText('<script>');
     expect(await pwned(page)).toBeNull();
 
     await page.goto(`${ADMIN_ORIGIN}/templates`);
@@ -328,7 +328,7 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     });
     await signIn(page, undefined, '/templates');
     await openTemplate(page, 'Submission back in processing', 'English');
-    const body = page.locator('[data-confera-template-body] .ProseMirror');
+    const body = page.locator('[data-congresa-template-body] .ProseMirror');
     await body.locator('p').first().click();
     await page.evaluate(async () => {
       const html = '<p><b>Podebljano</b> <img src="https://tracker.example.test/pixel.gif"> <img src="data:image/png;base64,iVBORw0KGgo="> <a href="javascript:alert(1)">veza</a></p>';
@@ -373,7 +373,7 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     const broken = PNG.subarray(0, 40);
     await signIn(page, undefined, '/templates');
     await openTemplate(page, 'Submission back in processing', 'English');
-    await page.locator('[data-confera-template-body] .ProseMirror p').first().click();
+    await page.locator('[data-congresa-template-body] .ProseMirror p').first().click();
     const cases: ReadonlyArray<readonly [string, Buffer, string, RegExp | null]> = [
       ['bomb.png', bomb, 'image/png', /too many pixels/],
       ['broken.png', broken, 'image/png', /cannot be read/],
@@ -409,7 +409,7 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     const listed = await page.request.get(`${ADMIN_ORIGIN}/api/v1/mail-templates?type=submission_resumed&language=en`, { headers: { Accept: 'application/json' } });
     const organisations = ((await listed.json()) as { items: { id: string; conferenceId: string | null }[] }).items.find((item) => item.conferenceId === null);
     await page.goto(`${ADMIN_ORIGIN}/templates/${organisations!.id}`);
-    await expect(page.locator('[data-confera-template-preview="ready"]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-congresa-template-preview="ready"]')).toBeVisible({ timeout: 30_000 });
     const claim = page.getByText(`${CONFERENCE} uses the organisation’s template`);
     const claimed = await claim.isVisible();
     let makeVersion = 'not offered';
@@ -430,7 +430,7 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     test.setTimeout(120_000);
     await signIn(page, undefined, '/templates');
     await openTemplate(page, 'Submission back in processing', 'Serbian');
-    const body = page.locator('[data-confera-template-body] .ProseMirror');
+    const body = page.locator('[data-congresa-template-body] .ProseMirror');
     const chips = body.locator('[data-placeholder="title"]');
     const before = await chips.count();
     await body.locator('p').last().click();
@@ -444,7 +444,7 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     await dialog.getByLabel('What the image shows').fill('Logo');
     await dialog.getByRole('button', { name: 'Upload and insert' }).click();
     await expect(dialog).toBeHidden({ timeout: 30_000 });
-    await expect(body.locator('figure[data-confera-image] img').last()).toBeVisible();
+    await expect(body.locator('figure[data-congresa-image] img').last()).toBeVisible();
     // The image goes next to the placeholder; it does not take its place.
     await expect(chips).toHaveCount(before + 1);
   });
@@ -454,7 +454,7 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
     test.setTimeout(120_000);
     await signIn(page, undefined, '/templates');
     await openTemplate(page, 'Submission back in processing', 'English');
-    await page.locator('[data-confera-template-body] .ProseMirror p').last().click();
+    await page.locator('[data-congresa-template-body] .ProseMirror p').last().click();
     await page.getByRole('toolbar', { name: 'Formatting' }).getByRole('button', { name: 'Image' }).click();
     const dialog = page.getByRole('dialog', { name: 'Insert an image' });
     await dialog.locator('input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG });
@@ -468,10 +468,10 @@ test.describe('M4-QA-01 edge cases through the real API', () => {
 
   test('a developer instance shows no staging banner, on the sign-in page and behind it', async ({ page }) => {
     await page.goto(`${ADMIN_ORIGIN}/sign-in`);
-    expect(await page.locator('[data-confera-staging]').count()).toBe(0);
+    expect(await page.locator('[data-congresa-staging]').count()).toBe(0);
     await signIn(page, undefined, '/submissions');
-    expect(await page.locator('[data-confera-staging]').count()).toBe(0);
+    expect(await page.locator('[data-congresa-staging]').count()).toBe(0);
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    expect(await page.locator('[data-confera-staging]').count()).toBe(0);
+    expect(await page.locator('[data-congresa-staging]').count()).toBe(0);
   });
 });

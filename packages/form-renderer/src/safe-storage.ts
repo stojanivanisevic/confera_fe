@@ -30,7 +30,7 @@ export function createDraftStorage(provider: () => Storage | undefined): DraftSt
     store = provider();
     if (!store) return memoryStorage();
     // Prove that it works: some browsers hand out a storage object that throws on use.
-    const probe = '__confera_probe__';
+    const probe = '__congresa_probe__';
     store.setItem(probe, '1');
     store.removeItem(probe);
   } catch {

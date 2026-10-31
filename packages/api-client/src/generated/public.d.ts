@@ -206,7 +206,7 @@ export interface components {
              * @description The trap: a field no person sees, with a name no autofill fills (SEC-M3-07; the page
              *     renders it `autocomplete="off"` in an inert container). It must be empty.
              */
-            confera_hp?: string;
+            congresa_hp?: string;
             /** @description The counter that answers the token's challenge (a decimal number as text). */
             proofOfWork?: string;
         };

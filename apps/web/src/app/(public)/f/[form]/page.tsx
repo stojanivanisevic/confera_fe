@@ -16,7 +16,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 }
 
 /**
- * The hosted form: a page of its own on Confera's public host, for a site that strips the snippet
+ * The hosted form: a page of its own on Congresa's public host, for a site that strips the snippet
  * and for the snippet's link (D5). It can be framed nowhere (frame-ancestors 'none', ADR-07); the
  * frame page is /embed. The form comes from the API (M3-FE-02).
  */

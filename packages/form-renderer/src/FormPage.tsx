@@ -16,7 +16,7 @@ export interface HostedFormProps {
   readonly banner?: ReactNode;
 }
 
-/** The form as a page of its own on Confera's domain (/f/[form]). */
+/** The form as a page of its own on Congresa's domain (/f/[form]). */
 export function HostedForm({ form, language, banner }: HostedFormProps) {
   return (
     <main className={styles.hosted}>
@@ -47,7 +47,7 @@ export function EmbeddedForm({ form, language, parentOrigins, banner }: Embedded
   const onShow = useCallback((element: HTMLElement) => requestIntoView({ element, parentOrigins: origins.split(' ').filter(Boolean) }), [origins]);
 
   return (
-    <main ref={root} className={styles.embedded} data-confera-embed-root="">
+    <main ref={root} className={styles.embedded} data-congresa-embed-root="">
       {banner}
       <FormRenderer form={form} language={language} embedded onShow={onShow} />
     </main>

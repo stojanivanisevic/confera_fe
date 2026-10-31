@@ -59,15 +59,15 @@ describe('an email image in the format (ADR-12)', () => {
     const read = handle.read();
     expect(read.ok && read.document.children.map((block) => block.type)).toEqual(['bulletList', 'image']);
     // In the page: the picture from the API's address behind the session, with its words.
-    const img = element_.querySelector('figure[data-confera-image] img')!;
+    const img = element_.querySelector('figure[data-congresa-image] img')!;
     expect(img.getAttribute('src')).toBe(`/api/v1/mail-images/${ID}`);
     expect(img.getAttribute('alt')).toBe('Logo');
     handle.destroy();
   });
 
   it('renders as an inline part when it is clean, and only its words in the text when it is not yet', () => {
-    const clean = renderBody(withImage, { values: {}, conditions: new Set(), images: new Map([[ID, { src: `cid:${ID}@confera`, width: 600, height: 120 }]]) });
-    expect(clean.html).toContain(`<img src="cid:${ID}@confera" alt="Logo konferencije" width="600" height="120" style="max-width:100%;height:auto">`);
+    const clean = renderBody(withImage, { values: {}, conditions: new Set(), images: new Map([[ID, { src: `cid:${ID}@congresa`, width: 600, height: 120 }]]) });
+    expect(clean.html).toContain(`<img src="cid:${ID}@congresa" alt="Logo konferencije" width="600" height="120" style="max-width:100%;height:auto">`);
     const pending = renderBody(withImage, { values: {}, conditions: new Set() });
     expect(pending.html).not.toContain('<img');
     // Its words stand in its place in the HTML too (UX4-04).
@@ -85,8 +85,8 @@ describe('what a paste may bring (ST-60)', () => {
   });
 
   it('only an image of this editor is read back, and only with an id of the format', () => {
-    expect(parseHtml(`<figure data-confera-image="${ID}" data-alt="Logo"></figure>`).children).toEqual([{ type: 'image', fileId: ID, alt: 'Logo' }]);
-    expect(JSON.stringify(parseHtml('<figure data-confera-image="https://evil.test/x.png" data-alt="Logo"></figure>'))).not.toContain('image');
+    expect(parseHtml(`<figure data-congresa-image="${ID}" data-alt="Logo"></figure>`).children).toEqual([{ type: 'image', fileId: ID, alt: 'Logo' }]);
+    expect(JSON.stringify(parseHtml('<figure data-congresa-image="https://evil.test/x.png" data-alt="Logo"></figure>'))).not.toContain('image');
   });
 
   it('the page is told when images of a web page were dropped, and an image file goes to the page to upload', () => {

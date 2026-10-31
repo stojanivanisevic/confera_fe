@@ -32,7 +32,7 @@ beforeEach(() => {
   const parsed = new DOMParser().parseFromString(`<body>${snippet}<iframe id="other"></iframe></body>`, 'text/html');
   const script = parsed.querySelector('script')!.textContent;
   document.body.replaceChildren(...Array.from(parsed.body.children).filter((el) => el.tagName !== 'SCRIPT').map((el) => document.importNode(el, true)));
-  frame = document.querySelector<HTMLIFrameElement>('#confera-form-itema-2026-abstract')!;
+  frame = document.querySelector<HTMLIFrameElement>('#congresa-form-itema-2026-abstract')!;
   other = document.querySelector<HTMLIFrameElement>('#other')!;
   const spy = vi.spyOn(window, 'addEventListener');
   try {
@@ -63,7 +63,7 @@ describe('the inline lines of the snippet, running in a host page', () => {
     expect(height()).toBe('900px');
   });
 
-  it("ignore a message from another window, even with Confera's origin", () => {
+  it("ignore a message from another window, even with Congresa's origin", () => {
     send({ type: HEIGHT_MESSAGE, height: 1234 }, ORIGIN, other.contentWindow);
     send({ type: HEIGHT_MESSAGE, height: 1234 }, ORIGIN, window);
     send({ type: HEIGHT_MESSAGE, height: 1234 }, ORIGIN, null);
@@ -93,9 +93,9 @@ describe('the inline lines of the snippet, running in a host page', () => {
   });
 
   it.each([
-    ['another type', { type: 'confera:navigate', height: 1234 }],
+    ['another type', { type: 'congresa:navigate', height: 1234 }],
     ['no type', { height: 1234 }],
-    ['a string', 'confera:height:1234'],
+    ['a string', 'congresa:height:1234'],
     ['null', null],
     ['a number', 1234],
   ])('ignore a message with %s', (_what, data) => {
@@ -197,7 +197,7 @@ describe('the scroll after Send (decision D1)', () => {
     expect(scrolled).toEqual([]);
   });
 
-  it('ignores a request from another origin or another window, even with Confera’s origin', () => {
+  it('ignores a request from another origin or another window, even with Congresa’s origin', () => {
     place(100);
     ask(1500, 'https://evil.example.test');
     ask(1500, 'http://forms.example.test');

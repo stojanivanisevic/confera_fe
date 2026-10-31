@@ -28,7 +28,7 @@ export interface AppConfig {
 export class ConfigError extends Error {
   readonly problems: readonly string[];
   constructor(problems: readonly string[]) {
-    super(`Confera web configuration is invalid:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
+    super(`Congresa web configuration is invalid:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
     this.name = 'ConfigError';
     this.problems = problems;
   }
@@ -88,20 +88,20 @@ export function parseConfig(env: Env): AppConfig {
     problems.push(`STAGE has an unknown value; it must be exactly one of ${STAGES.join(', ')}`);
   }
 
-  const publicOrigin = parseOrigin('CONFERA_PUBLIC_ORIGIN', env.CONFERA_PUBLIC_ORIGIN, problems);
-  const adminOrigin = parseOrigin('CONFERA_ADMIN_ORIGIN', env.CONFERA_ADMIN_ORIGIN, problems);
-  const apiOrigin = parseOrigin('CONFERA_API_ORIGIN', env.CONFERA_API_ORIGIN, problems);
+  const publicOrigin = parseOrigin('CONGRESA_PUBLIC_ORIGIN', env.CONGRESA_PUBLIC_ORIGIN, problems);
+  const adminOrigin = parseOrigin('CONGRESA_ADMIN_ORIGIN', env.CONGRESA_ADMIN_ORIGIN, problems);
+  const apiOrigin = parseOrigin('CONGRESA_API_ORIGIN', env.CONGRESA_API_ORIGIN, problems);
 
   if (publicOrigin && adminOrigin && publicOrigin.hostname.toLowerCase() === adminOrigin.hostname.toLowerCase()) {
     problems.push(
-      'CONFERA_PUBLIC_ORIGIN must have another host name than CONFERA_ADMIN_ORIGIN (ADR-02: two surfaces, two different host names; a port or a scheme does not make another host for a cookie)',
+      'CONGRESA_PUBLIC_ORIGIN must have another host name than CONGRESA_ADMIN_ORIGIN (ADR-02: two surfaces, two different host names; a port or a scheme does not make another host for a cookie)',
     );
   }
 
-  const devPages = env.CONFERA_DEV_PAGES === '1';
+  const devPages = env.CONGRESA_DEV_PAGES === '1';
   const surfaces = [
-    ['CONFERA_PUBLIC_ORIGIN', publicOrigin],
-    ['CONFERA_ADMIN_ORIGIN', adminOrigin],
+    ['CONGRESA_PUBLIC_ORIGIN', publicOrigin],
+    ['CONGRESA_ADMIN_ORIGIN', adminOrigin],
   ] as const;
 
   if (stage === 'prod') {
@@ -146,9 +146,9 @@ let cached: AppConfig | undefined;
 
 /** The validated configuration of this process. Throws ConfigError when it is invalid. */
 export function getConfig(): AppConfig {
-  // CONFERA_DEV_PAGES is fixed at build time by next.config.ts (`env`), so a
+  // CONGRESA_DEV_PAGES is fixed at build time by next.config.ts (`env`), so a
   // production build cannot be turned into a dev-pages build at run time.
-  cached ??= parseConfig({ ...process.env, CONFERA_DEV_PAGES: process.env.CONFERA_DEV_PAGES });
+  cached ??= parseConfig({ ...process.env, CONGRESA_DEV_PAGES: process.env.CONGRESA_DEV_PAGES });
   return cached;
 }
 

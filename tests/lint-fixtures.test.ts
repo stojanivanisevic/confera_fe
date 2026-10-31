@@ -52,7 +52,7 @@ describe('lint: planted violations (M1-FE-01)', () => {
 
   beforeAll(async () => {
     // The fixtures are ignored in a normal run; this switch (read by eslint.config.mjs) includes them.
-    process.env.CONFERA_LINT_FIXTURES = '1';
+    process.env.CONGRESA_LINT_FIXTURES = '1';
     const eslint = new ESLint({ cwd: root });
     results = await eslint.lintFiles(['lint-fixtures/**/*.{ts,tsx}']);
     // The typed lint builds a TypeScript program of the project first: a minute on a quiet machine, past

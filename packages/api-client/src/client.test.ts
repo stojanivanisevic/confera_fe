@@ -7,10 +7,10 @@ const json = (body: unknown, status = 200, type = 'application/json') => new Res
 
 describe('the typed call to /api/v1/meta', () => {
   it('asks the right address, without a cache, and returns what the contract says', async () => {
-    const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(json({ name: 'confera-api', version: '0.1.0' })));
+    const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(json({ name: 'congresa-api', version: '0.1.0' })));
     const meta = await getMeta(createAdminClient({ baseUrl: 'http://localhost:3000', fetch }));
 
-    expect(meta).toEqual({ name: 'confera-api', version: '0.1.0' });
+    expect(meta).toEqual({ name: 'congresa-api', version: '0.1.0' });
     const request = fetch.mock.calls[0]![0] as Request;
     expect(request.url).toBe('http://localhost:3000/api/v1/meta');
     expect(request.method).toBe('GET');

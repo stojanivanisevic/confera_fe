@@ -137,7 +137,7 @@ export function Submissions() {
         </Alert>
       ) : null}
       {list.state.phase === 'failed' && !list.state.data ? null : (
-        <div ref={table} className={styles.anchored} data-confera-submissions-table="">
+        <div ref={table} className={styles.anchored} data-congresa-submissions-table="">
         <DataTable<SubmissionSummary>
           caption={t.title}
           rows={rows}
@@ -184,7 +184,7 @@ export function Submissions() {
           toolbar={
             <FilterBar onReset={filtered ? clear : undefined}>
               {/* A visible label, and a hint short enough for a phone (UX4-20). */}
-              <TextField type="search" icon="search" label={t.search} placeholder={t.searchHint} value={typed} onChange={(event) => setTyped(event.target.value)} data-confera-submission-search="" />
+              <TextField type="search" icon="search" label={t.search} placeholder={t.searchHint} value={typed} onChange={(event) => setTyped(event.target.value)} data-congresa-submission-search="" />
               {/* A phone hides the column headers, and with them the sort: there it is a list (UX4-15). */}
               <div className={styles.narrowOnly}>
                 <Select

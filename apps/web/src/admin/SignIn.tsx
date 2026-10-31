@@ -70,7 +70,7 @@ export function SignIn() {
           {problem.text}
         </ProblemAlert>
       ) : null}
-      <form className={styles.form} onSubmit={(event) => void submit(event)} noValidate data-confera-sign-in>
+      <form className={styles.form} onSubmit={(event) => void submit(event)} noValidate data-congresa-sign-in>
         <TextField label={t.email} name="email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required />
         <PasswordField label={t.passwordLabel} name="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
         <div className={styles.actions}>

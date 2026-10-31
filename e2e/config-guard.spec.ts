@@ -14,12 +14,12 @@ const web = join(root, 'apps', 'web');
 // The framework is started directly, not through scripts/next.mjs: that wrapper would fill in missing
 // variables from a local .env file, and the point here is what the application itself does.
 const nextBin = join(dirname(createRequire(join(web, 'package.json')).resolve('next/package.json')), 'dist', 'bin', 'next');
-const good = { STAGE: 'test', CONFERA_PUBLIC_ORIGIN: 'http://127.0.0.1:3199', CONFERA_ADMIN_ORIGIN: 'http://localhost:3199', CONFERA_API_ORIGIN: 'http://127.0.0.1:3101' };
+const good = { STAGE: 'test', CONGRESA_PUBLIC_ORIGIN: 'http://127.0.0.1:3199', CONGRESA_ADMIN_ORIGIN: 'http://localhost:3199', CONGRESA_API_ORIGIN: 'http://127.0.0.1:3101' };
 
 /** Starts the test build with this environment and waits until it ends or has been up for a while. */
 function start(overrides: Record<string, string | undefined>): Promise<{ exited: boolean; code: number | null; output: string }> {
   return new Promise((done) => {
-    const env: Record<string, string | undefined> = { ...process.env, ...good, ...overrides, CONFERA_DEV_PAGES: '1', NEXT_TELEMETRY_DISABLED: '1' };
+    const env: Record<string, string | undefined> = { ...process.env, ...good, ...overrides, CONGRESA_DEV_PAGES: '1', NEXT_TELEMETRY_DISABLED: '1' };
     for (const [key, value] of Object.entries(env)) if (value === undefined) delete env[key];
     const child = spawn(process.execPath, [nextBin, 'start', '-p', '3199'], { cwd: web, env });
     let output = '';
@@ -44,10 +44,10 @@ test.describe('the built application refuses to start on a bad configuration', (
     ['STAGE is empty', { STAGE: '' }, /STAGE is missing/],
     ['STAGE is misspelt (production)', { STAGE: 'production' }, /STAGE has an unknown value/],
     ['STAGE is misspelt (PROD)', { STAGE: 'PROD' }, /STAGE has an unknown value/],
-    ['a non-production stage on a public origin', { CONFERA_PUBLIC_ORIGIN: 'https://forms.example.org' }, /CONFERA_PUBLIC_ORIGIN must be a loopback or \.test name/],
-    ['one host name for both surfaces', { CONFERA_ADMIN_ORIGIN: 'http://127.0.0.1:3199' }, /two different host names/],
-    ['a test build (dev pages) on prod', { STAGE: 'prod', CONFERA_PUBLIC_ORIGIN: 'https://forms.example.test', CONFERA_ADMIN_ORIGIN: 'https://admin.example.test' }, /STAGE=prod|dev pages/],
-    ['an address is missing', { CONFERA_API_ORIGIN: undefined }, /CONFERA_API_ORIGIN is missing/],
+    ['a non-production stage on a public origin', { CONGRESA_PUBLIC_ORIGIN: 'https://forms.example.org' }, /CONGRESA_PUBLIC_ORIGIN must be a loopback or \.test name/],
+    ['one host name for both surfaces', { CONGRESA_ADMIN_ORIGIN: 'http://127.0.0.1:3199' }, /two different host names/],
+    ['a test build (dev pages) on prod', { STAGE: 'prod', CONGRESA_PUBLIC_ORIGIN: 'https://forms.example.test', CONGRESA_ADMIN_ORIGIN: 'https://admin.example.test' }, /STAGE=prod|dev pages/],
+    ['an address is missing', { CONGRESA_API_ORIGIN: undefined }, /CONGRESA_API_ORIGIN is missing/],
   ];
 
   for (const [name, overrides, message] of cases) {

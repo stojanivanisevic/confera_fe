@@ -58,7 +58,7 @@ function ConferenceSwitch() {
       value={selected?.id ?? ''}
       options={[{ value: '', label: TEXTS.nav.allConferences }, ...conferences.map((conference) => ({ value: conference.id, label: conferenceLabel(conference) }))]}
       onChange={(event) => select(event.target.value === '' ? null : event.target.value)}
-      data-confera-conference-switch
+      data-congresa-conference-switch
     />
   );
 }
@@ -83,7 +83,7 @@ function SessionEnded({ onContinued }: { onContinued: () => void }) {
     }
   };
   return (
-    <div className={styles.banner} data-confera-session-ended>
+    <div className={styles.banner} data-congresa-session-ended>
       <Alert
         tone="warning"
         title={t.sessionEnded}
@@ -112,7 +112,7 @@ function Unreachable({ page = false }: { page?: boolean }) {
     return () => window.clearInterval(again);
   }, [refresh]);
   return (
-    <div className={styles.stack} data-confera-unreachable>
+    <div className={styles.stack} data-congresa-unreachable>
       {page ? <PageHeader title={TEXTS.connection.down} /> : null}
       <Alert tone="error" title={TEXTS.connection.down} action={<Button variant="dark" onClick={() => void refresh()}>{TEXTS.connection.tryNow}</Button>}>
         {contact ? fill(TEXTS.connection.downTextRetry, { contact }) : TEXTS.connection.downTextRetryNoContact}
@@ -124,7 +124,7 @@ function Unreachable({ page = false }: { page?: boolean }) {
 /** The mark of a staging instance in the sticky top bar: it stays in view after the banner scrolled away (UX4-27). */
 function StagingMark() {
   return (
-    <span data-confera-staging-mark="">
+    <span data-congresa-staging-mark="">
       <StatusBadge tone="warning">
         <span lang="en">{TEXTS.nav.staging}</span>
         <span aria-hidden="true"> · </span>
@@ -229,7 +229,7 @@ function Guarded({ children, staging }: { children: ReactNode; staging: boolean 
                 label={TEXTS.nav.userMenu}
                 align="end"
                 trigger={
-                  <TextButton icon="user" data-confera-user aria-label={`${TEXTS.nav.userMenu}: ${session.user.displayName}`}>
+                  <TextButton icon="user" data-congresa-user aria-label={`${TEXTS.nav.userMenu}: ${session.user.displayName}`}>
                     <span className={styles.userName}>{session.user.displayName}</span>
                   </TextButton>
                 }

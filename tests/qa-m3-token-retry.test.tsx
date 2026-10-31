@@ -82,11 +82,11 @@ describe('Q3-01: a token refused at Send (expired after an afternoon)', () => {
     await click(field('consent'));
     await click(container.querySelector<HTMLButtonElement>('button[type="submit"]')!);
     // Long enough for a renderer that waits out the minimum fill time of the new token.
-    for (let i = 0; i < 40 && container.querySelector('[data-confera-thanks]') === null; i += 1) {
+    for (let i = 0; i < 40 && container.querySelector('[data-congresa-thanks]') === null; i += 1) {
       await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
       await settle();
     }
-    expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
+    expect(container.querySelector('[data-congresa-thanks]')).not.toBeNull();
     expect(server.stored, 'the submission behind the thank-you').toHaveLength(1);
   }, 15_000);
 });

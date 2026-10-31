@@ -1,5 +1,5 @@
 // M3-FE-02, M3-FE-04, M3-QA-01 parts the frontend owns: the seeded abstract form of confera_be
-// (e2e/servers/public-forms.json, from the vendored contract) on Confera's own page and in a
+// (e2e/servers/public-forms.json, from the vendored contract) on Congresa's own page and in a
 // conference site's frame, in all three engines (no session is needed):
 //  - in Serbian from the snippet's address (D2), with a file of exactly 20 MB, sent once although
 //    Send is pressed twice (FR-FORM-14), the thank-you with the reference;
@@ -26,7 +26,7 @@ const scan = async (page: Page) =>
 
 async function open(page: Page, query = ''): Promise<void> {
   await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}${query}`);
-  await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+  await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
 }
 
 /** What the API stub stored for a title (every run of every engine sends titles of its own). */
@@ -65,14 +65,14 @@ test.describe('the abstract form on its own page', () => {
     await expect(page).toHaveTitle('Prijava apstrakta · ITEMA 2026');
     const title = `Održivi turizam ${test.info().project.name} ${Date.now().toString(36)}`;
     await fillInSerbian(page, title);
-    await page.locator('[data-confera-file="biographies"] input[type="file"]').setInputFiles({ name: 'Biografije – Šćepanović.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(MB20, 0x25) });
-    await expect(page.locator('[data-confera-file="biographies"]')).toHaveAttribute('data-confera-file-state', 'uploaded', { timeout: 60_000 });
+    await page.locator('[data-congresa-file="biographies"] input[type="file"]').setInputFiles({ name: 'Biografije – Šćepanović.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(MB20, 0x25) });
+    await expect(page.locator('[data-congresa-file="biographies"]')).toHaveAttribute('data-congresa-file-state', 'uploaded', { timeout: 60_000 });
     const send = page.getByRole('button', { name: 'Pošalji' });
     await send.dblclick();
-    await expect(page.locator('[data-confera-thanks]')).toBeFocused();
-    await expect(page.locator('[data-confera-thanks]')).toContainText('Apstrakt je poslat');
-    await expect(page.locator('[data-confera-thanks]')).toContainText('Potvrda stiže na zivana.dordevic@example.test.');
-    const reference = (await page.locator('[data-confera-reference]').innerText()).replace('Broj vaše prijave: ', '');
+    await expect(page.locator('[data-congresa-thanks]')).toBeFocused();
+    await expect(page.locator('[data-congresa-thanks]')).toContainText('Apstrakt je poslat');
+    await expect(page.locator('[data-congresa-thanks]')).toContainText('Potvrda stiže na zivana.dordevic@example.test.');
+    const reference = (await page.locator('[data-congresa-reference]').innerText()).replace('Broj vaše prijave: ', '');
     expect(reference).toMatch(/^IT27-\d{4}$/);
     const stored = await storedWith(page, title);
     expect(stored.map((s) => s.reference), 'one submission for two presses').toEqual([reference]);
@@ -87,38 +87,38 @@ test.describe('the abstract form on its own page', () => {
     page.on('request', (request) => {
       if (request.url().endsWith('/uploads')) uploads.push(request.url());
     });
-    await page.locator('[data-confera-file="biographies"] input[type="file"]').setInputFiles({ name: 'too-large.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(MB20 + 1, 0x25) });
-    await expect(page.locator('[data-confera-file="biographies"]')).toContainText('too-large.pdf is larger than 20 MB. Choose a smaller file.');
-    await expect(page.locator('[data-confera-file="biographies"]')).toHaveAttribute('data-confera-file-state', 'refused');
+    await page.locator('[data-congresa-file="biographies"] input[type="file"]').setInputFiles({ name: 'too-large.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(MB20 + 1, 0x25) });
+    await expect(page.locator('[data-congresa-file="biographies"]')).toContainText('too-large.pdf is larger than 20 MB. Choose a smaller file.');
+    await expect(page.locator('[data-congresa-file="biographies"]')).toHaveAttribute('data-congresa-file-state', 'refused');
     expect(uploads).toEqual([]);
   });
 
   test('a chosen and an uploaded file are said in the live region; a refusal is said once, as an alert (UX3-01)', async ({ page }) => {
     await open(page);
-    const input = page.locator('[data-confera-file="biographies"] input[type="file"]');
-    const announced = page.locator('[data-confera-announce]');
+    const input = page.locator('[data-congresa-file="biographies"] input[type="file"]');
+    const announced = page.locator('[data-congresa-announce]');
     await input.setInputFiles({ name: 'slika.png', mimeType: 'image/png', buffer: Buffer.from('png') });
-    await expect(page.locator('[data-confera-file="biographies"]').getByRole('alert')).toHaveText('slika.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
+    await expect(page.locator('[data-congresa-file="biographies"]').getByRole('alert')).toHaveText('slika.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
     await expect(announced).toHaveText('');
     await input.setInputFiles({ name: 'rad.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF\n') });
-    await expect(page.locator('[data-confera-file="biographies"]')).toHaveAttribute('data-confera-file-state', 'uploaded');
+    await expect(page.locator('[data-congresa-file="biographies"]')).toHaveAttribute('data-congresa-file-state', 'uploaded');
     await expect(announced).toHaveText('rad.pdf is uploaded.');
-    await expect(page.locator('[data-confera-file="biographies"]').getByRole('alert')).toHaveCount(0);
+    await expect(page.locator('[data-congresa-file="biographies"]').getByRole('alert')).toHaveCount(0);
     // A one-file field asks for one file (UX3-18).
-    await expect(page.locator('[data-confera-file="biographies"]')).toContainText('Drop a file here or click to choose');
+    await expect(page.locator('[data-congresa-file="biographies"]')).toContainText('Drop a file here or click to choose');
   });
 
   test('a file of another type is refused before the upload, with the types', async ({ page }) => {
     await open(page);
-    await page.locator('[data-confera-file="biographies"] input[type="file"]').setInputFiles({ name: 'slika.png', mimeType: 'image/png', buffer: Buffer.from('png') });
-    await expect(page.locator('[data-confera-file="biographies"]')).toContainText('slika.png is not one of these types: .pdf, .docx, .doc.');
+    await page.locator('[data-congresa-file="biographies"] input[type="file"]').setInputFiles({ name: 'slika.png', mimeType: 'image/png', buffer: Buffer.from('png') });
+    await expect(page.locator('[data-congresa-file="biographies"]')).toContainText('slika.png is not one of these types: .pdf, .docx, .doc.');
   });
 
   test('the API’s refusal comes back to its field, in the form’s words', async ({ page }) => {
     await open(page, '?lang=sr');
     await fillInSerbian(page, 'refused by the server');
     await page.getByRole('button', { name: 'Pošalji' }).click();
-    const summary = page.locator('[data-confera-errors]');
+    const summary = page.locator('[data-congresa-errors]');
     await expect(summary).toBeFocused();
     // The summary names the field first (UX3-04).
     await expect(summary.getByRole('link')).toHaveText(['Naslov: ne upisujte veb adrese']);
@@ -137,7 +137,7 @@ test.describe('the abstract form on its own page', () => {
 
   test('the trap field (SEC-M3-07) is out of reach of the keyboard and of assistive technology', async ({ page }) => {
     await open(page);
-    const trap = page.locator('input[name="confera_hp"]');
+    const trap = page.locator('input[name="congresa_hp"]');
     await expect(trap).toHaveCount(1);
     await expect(page.locator('input[name="website"]')).toHaveCount(0);
     await expect(trap).toHaveAttribute('autocomplete', 'off');
@@ -159,8 +159,8 @@ test.describe('the abstract form on its own page', () => {
 test.describe('a closed form (FR-DL-02)', () => {
   test('says so on its own page, with its deadline, and has nothing to fill in', async ({ page }) => {
     await page.goto(`${PUBLIC_ORIGIN}/f/itema-2026-closed?lang=sr`);
-    await expect(page.locator('[data-confera-state="closed"]')).toContainText('Ovaj obrazac je zatvoren');
-    await expect(page.locator('[data-confera-state="closed"]')).toContainText('Rok je bio 15.03.2026.');
+    await expect(page.locator('[data-congresa-state="closed"]')).toContainText('Ovaj obrazac je zatvoren');
+    await expect(page.locator('[data-congresa-state="closed"]')).toContainText('Rok je bio 15.03.2026.');
     await expect(page.locator('form')).toHaveCount(0);
   });
 
@@ -168,8 +168,8 @@ test.describe('a closed form (FR-DL-02)', () => {
     const snippet = buildEmbedSnippet({ publicOrigin: PUBLIC_ORIGIN, slug: 'itema-2026-closed', title: 'Abstract submission', linkText: 'Form not showing? Open it on its own page.' });
     await page.goto(`${HARNESS_ORIGIN}/hostile.html?paste=${Buffer.from(snippet, 'utf8').toString('base64url')}`);
     const frame = page.frameLocator(`#${frameId('itema-2026-closed')}`);
-    await expect(frame.locator('[data-confera-state="closed"]')).toContainText('This form is closed');
-    await expect(frame.locator('[data-confera-state="closed"]')).toContainText('The deadline was 15 March 2026.');
+    await expect(frame.locator('[data-congresa-state="closed"]')).toContainText('This form is closed');
+    await expect(frame.locator('[data-congresa-state="closed"]')).toContainText('The deadline was 15 March 2026.');
   });
 });
 
@@ -188,7 +188,7 @@ for (const width of [1440, 375]) {
       await open(page);
       await page.getByRole('button', { name: 'Add an author' }).click();
       await page.getByRole('button', { name: 'Send', exact: true }).click();
-      await expect(page.locator('[data-confera-errors]')).toBeFocused();
+      await expect(page.locator('[data-congresa-errors]')).toBeFocused();
       expect(await scan(page), 'the form with its errors').toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), 'no sideways scroll').toBe(true);
     });

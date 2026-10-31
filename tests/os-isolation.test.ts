@@ -29,7 +29,7 @@ function filesUnder(dir: string): string[] {
 describe('the isolated Chromium profile', () => {
   let scratch: string;
   beforeEach(() => {
-    scratch = mkdtempSync(join(tmpdir(), 'confera-os-isolation-test-'));
+    scratch = mkdtempSync(join(tmpdir(), 'congresa-os-isolation-test-'));
   });
   afterEach(() => {
     rmSync(scratch, { recursive: true, force: true });
@@ -74,9 +74,9 @@ describe('the guard on the bad-password count', () => {
   const saved = { ...process.env };
   let scratch: string;
   beforeEach(() => {
-    scratch = mkdtempSync(join(tmpdir(), 'confera-os-guard-test-'));
-    process.env.CONFERA_E2E_OS_GUARD_MARKER = join(scratch, 'tripped');
-    delete process.env.CONFERA_E2E_BAD_PASSWORD_BASELINE;
+    scratch = mkdtempSync(join(tmpdir(), 'congresa-os-guard-test-'));
+    process.env.CONGRESA_E2E_OS_GUARD_MARKER = join(scratch, 'tripped');
+    delete process.env.CONGRESA_E2E_BAD_PASSWORD_BASELINE;
   });
   afterEach(() => {
     process.env = { ...saved };

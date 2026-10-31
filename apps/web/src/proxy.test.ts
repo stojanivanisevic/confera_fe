@@ -16,10 +16,10 @@ let proxy: (request: NextRequest) => Promise<Response>;
 beforeAll(async () => {
   // The settings of a test build, as the configuration module reads them.
   vi.stubEnv('STAGE', 'test');
-  vi.stubEnv('CONFERA_PUBLIC_ORIGIN', 'http://127.0.0.1:3000');
-  vi.stubEnv('CONFERA_ADMIN_ORIGIN', 'http://localhost:3000');
-  vi.stubEnv('CONFERA_API_ORIGIN', 'http://127.0.0.1:3101');
-  vi.stubEnv('CONFERA_DEV_PAGES', '1');
+  vi.stubEnv('CONGRESA_PUBLIC_ORIGIN', 'http://127.0.0.1:3000');
+  vi.stubEnv('CONGRESA_ADMIN_ORIGIN', 'http://localhost:3000');
+  vi.stubEnv('CONGRESA_API_ORIGIN', 'http://127.0.0.1:3101');
+  vi.stubEnv('CONGRESA_DEV_PAGES', '1');
   ({ proxy } = await import('./proxy'));
 });
 afterAll(() => {

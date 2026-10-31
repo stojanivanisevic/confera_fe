@@ -45,7 +45,7 @@ test.describe('at 375 px', () => {
 test('a toggle of the editor that is on draws the ring of a chosen pill (UXUI-M2-22)', async ({ page }) => {
   test.skip(AGAINST_REAL_API, STUB_ONLY);
   await signIn(page, undefined, `/templates/${templateId('invitation', 'en')}`);
-  await page.locator('[data-confera-template-body] .ProseMirror p').first().click();
+  await page.locator('[data-congresa-template-body] .ProseMirror p').first().click();
   const bold = page.getByRole('toolbar', { name: 'Formatting' }).getByRole('button', { name: 'Bold' });
   const off = await bold.evaluate((el) => getComputedStyle(el).boxShadow);
   await bold.click();

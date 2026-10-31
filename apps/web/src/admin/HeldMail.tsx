@@ -22,7 +22,7 @@ import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
 
 /** The event the screen sends after a release: the shell's count reads again. */
-export const HELD_MAIL_CHANGED = 'confera:held-mail-changed';
+export const HELD_MAIL_CHANGED = 'congresa:held-mail-changed';
 
 /** Why an email is held, with the numbers that tripped the breaker when they were kept (UX3-06). */
 export function heldWhy(row: Pick<HeldMailRow, 'heldReason' | 'heldBy'>): string {
@@ -238,7 +238,7 @@ export function HeldMailAlert({ onOpen }: { onOpen: () => void }) {
   }, [background]);
   if (count === 0) return null;
   return (
-    <div className={styles.banner} data-confera-held-mail-alert="">
+    <div className={styles.banner} data-congresa-held-mail-alert="">
       {/* On a phone the count and the button only: the explanation would take a third of the first screen (UX4-26). */}
       <Alert tone="warning" title={count === 1 ? t.alertOne : fill(t.alert, { count })} action={<Button variant="dark" onClick={onOpen}>{t.review}</Button>}>
         <span className={styles.wideOnly}>{t.alertText}</span>

@@ -130,14 +130,14 @@ export function Submission({ id }: { id: string }) {
   };
 
   return (
-    <div className={styles.stack} data-confera-submission={record.reference}>
+    <div className={styles.stack} data-congresa-submission={record.reference}>
       <PageHeader
         title={<span className={styles.break}>{record.title ?? record.reference}</span>}
         description={`${record.reference} · ${record.conference.name}`}
         breadcrumbs={[{ label: t.back, href: '/submissions', onClick: () => router.push('/submissions') }, { label: record.reference }]}
         actions={
           <div className={styles.actionsInline}>
-            <span data-confera-submission-status={record.status}>
+            <span data-congresa-submission-status={record.status}>
               <StatusBadge tone={statusTone(record.status)}>{statusText(record.status)}</StatusBadge>
             </span>
             {mayManage ? (
@@ -146,7 +146,7 @@ export function Submission({ id }: { id: string }) {
               </Button>
             ) : null}
             {starts ? (
-              <Button type="button" onClick={() => setAsked('open')} data-confera-start-processing="">
+              <Button type="button" onClick={() => setAsked('open')} data-congresa-start-processing="">
                 {t.actions.open}
               </Button>
             ) : null}
@@ -155,7 +155,7 @@ export function Submission({ id }: { id: string }) {
         }
       />
       {opened ? (
-        <p className={styles.text} data-confera-opened="">
+        <p className={styles.text} data-congresa-opened="">
           {fill(t.openedBy, { name: opened.actor?.displayName ?? t.none, when: formatDateTime(opened.changedAt) })} {opened.email === 'template_off' ? t.openedNoEmail : opened.email === 'queued' ? t.openedEmailed : ''}
         </p>
       ) : null}
@@ -182,7 +182,7 @@ export function Submission({ id }: { id: string }) {
           ]}
         />
         {long.map((row) => (
-          <section key={row.key} className={styles.longAnswer} data-confera-long-answer={row.key}>
+          <section key={row.key} className={styles.longAnswer} data-congresa-long-answer={row.key}>
             <h3 className={styles.longAnswerLabel}>{row.kind === 'longText' ? fill(t.longAnswer, { label: row.label, n: countWords(row.text) }) : row.label}</h3>
             <p className={styles.longAnswerText}>{row.text}</p>
           </section>
@@ -209,7 +209,7 @@ export function Submission({ id }: { id: string }) {
         ) : (
           <ul className={styles.plainList}>
             {record.files.map((file) => (
-              <li key={file.id} className={styles.fileRow} data-confera-file-scan={file.scanState}>
+              <li key={file.id} className={styles.fileRow} data-congresa-file-scan={file.scanState}>
                 {/* Served only once the scan is clean (FR-FILE-02); the name keeps its letters (FR-FILE-03). */}
                 {file.scanState === 'clean' && !file.downloadBlocked ? (
                   <a className="ud-link" href={intake.fileHref(record.id, file.id)} download>
@@ -223,7 +223,7 @@ export function Submission({ id }: { id: string }) {
                 {file.scanFlag && t.scanFlags[file.scanFlag] ? <StatusBadge tone="warning">{t.scanFlags[file.scanFlag]}</StatusBadge> : null}
                 {/* Why it cannot be opened yet, or ever (UX3-07). */}
                 {file.downloadBlocked ? (
-                  <span className={`${styles.small} ${styles.fullLine}`} data-confera-file-blocked={file.downloadBlocked}>
+                  <span className={`${styles.small} ${styles.fullLine}`} data-congresa-file-blocked={file.downloadBlocked}>
                     {fill(t.blocked[file.downloadBlocked] ?? '', { when: file.nextScanAt ? formatDateTime(file.nextScanAt) : t.none })}
                   </span>
                 ) : null}
@@ -491,7 +491,7 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
         )
       }
     >
-      <div ref={body} className={styles.form} data-confera-status-dialog={action} data-confera-status-step={step}>
+      <div ref={body} className={styles.form} data-congresa-status-dialog={action} data-congresa-status-step={step}>
         <p className={styles.visuallyHidden} role="status">
           {said}
         </p>
@@ -509,7 +509,7 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
                     items={[
                       { label: t.emailTo, value: <span className={styles.break}>{email.to ?? t.none}</span> },
                       { label: t.emailLanguage, value: email.language ? (t.languages[email.language] ?? email.language) : t.none },
-                      { label: t.emailSubject, value: <strong className={styles.break} data-confera-status-email-subject="">{email.subject}</strong> },
+                      { label: t.emailSubject, value: <strong className={styles.break} data-congresa-status-email-subject="">{email.subject}</strong> },
                     ]}
                   />
                   {/* The server's rendering, never in the page itself (ST-28). */}
@@ -517,7 +517,7 @@ function StatusDialog({ record, action, onClose, onChanged, onStale }: { record:
                   {/* The plain-text alternative, folded, so the dialog stays one screen high. */}
                   <details className={styles.folded}>
                     <summary>{t.emailPlain}</summary>
-                    <pre className={styles.plain} data-confera-status-email-text="">
+                    <pre className={styles.plain} data-congresa-status-email-text="">
                       {email.text}
                     </pre>
                   </details>
@@ -568,7 +568,7 @@ function NotesCard({ record, mayManage, onSaved }: { record: ManagedSubmission; 
     }
   };
   return (
-    <Card title={t.notes} subtitle={t.notesLead} headingLevel={2} data-confera-notes="">
+    <Card title={t.notes} subtitle={t.notesLead} headingLevel={2} data-congresa-notes="">
       <div className={styles.stack}>
         {notes.length === 0 ? (
           <p className={styles.text}>{t.noNotes}</p>
@@ -644,7 +644,7 @@ const authorsDiffer = (a: readonly Record<string, unknown>[], b: readonly Record
 function RevisionsCard({ revisions, labelOf }: { revisions: readonly Revision[]; labelOf: (field: string) => string }) {
   const t = TEXTS.submissions;
   return (
-    <Card title={t.revisions} subtitle={revisions.length > 0 ? t.revisionsLead : undefined} headingLevel={2} data-confera-revisions="">
+    <Card title={t.revisions} subtitle={revisions.length > 0 ? t.revisionsLead : undefined} headingLevel={2} data-congresa-revisions="">
       {revisions.length === 0 ? (
         <p className={styles.text}>{t.noRevisions}</p>
       ) : (
@@ -731,9 +731,9 @@ function EditDrawer({ record, definition, onClose, onSaved, onStale }: { record:
         </>
       }
     >
-      <div className={styles.form} data-confera-edit-submission="">
+      <div className={styles.form} data-congresa-edit-submission="">
         <p className={styles.text}>{t.editLead}</p>
-        <p className={styles.text} data-confera-edit-not-here="">
+        <p className={styles.text} data-congresa-edit-not-here="">
           {t.editNotHere}
         </p>
         {problem ? (

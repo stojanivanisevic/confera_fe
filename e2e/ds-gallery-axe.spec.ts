@@ -28,7 +28,7 @@ async function scan(page: Page, include?: string) {
 
 async function openGallery(page: Page) {
   await page.goto('/dev/gallery');
-  await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+  await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
   await page.evaluate(() => document.fonts.ready);
 }
 const card = (page: Page, name: string) => page.locator(`[data-component="${name}"]`);
@@ -40,7 +40,7 @@ for (const width of [1440, 375]) {
     test('no WCAG 2.1 A or AA violation in any component', async ({ page }) => {
       const problems = watchPage(page);
       await openGallery(page);
-      await expect(page.locator('[data-confera-dev="gallery-card"]')).toHaveCount(COMPONENT_NAMES.length);
+      await expect(page.locator('[data-congresa-dev="gallery-card"]')).toHaveCount(COMPONENT_NAMES.length);
 
       const { violations, passes } = await scan(page);
       expect(violations).toEqual([]);
