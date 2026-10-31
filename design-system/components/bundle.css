@@ -217,8 +217,8 @@ select.ud-field__control { appearance: none; -webkit-appearance: none; cursor: p
 @media (max-width: 600px) { .ud-form-card { padding: var(--gutter-2xl) var(--gutter-xl); } }
 
 /* =====================================================================
-   Extended set for Confera admin and long forms (2026-10-12).
-   Built on the same tokens; colours marked "Confera" in tokens.json are
+   Extended set for Congresa admin and long forms (2026-10-12).
+   Built on the same tokens; colours marked "Congresa" in tokens.json are
    additions not present in the Figma file.
    ===================================================================== */
 .ud-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

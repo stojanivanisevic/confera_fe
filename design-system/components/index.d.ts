@@ -117,7 +117,7 @@ export interface FileButtonProps extends React.InputHTMLAttributes<HTMLInputElem
 export interface FormCardProps { title?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string; }
 export interface IconProps { name: IconName; size?: number; strokeWidth?: number; title?: string; className?: string; }
 
-// ---------- Extended set (Confera admin and long forms) ----------
+// ---------- Extended set (Congresa admin and long forms) ----------
 type Option = string | { value: string; label: string; disabled?: boolean };
 type Tone = "neutral" | "brand" | "success" | "warning" | "danger" | "info";
 

@@ -2,6 +2,15 @@
 
 The design system is released as a whole: tokens, stylesheet, script, types, fonts and previews carry one version. A release is cut with `pnpm ds:release` in `confera_fe`, which records the checksum of every file in `CHECKSUMS.sha256`. Nothing in this folder is changed outside a release.
 
+## 2.6.2 (2026-10-31)
+
+Text only: the application this system was extended for is renamed Confera → Congresa (Stojan, 2026-10-31). No token, class, component, label or behaviour changed; the sections below keep the name the application had when they were released.
+
+### The application is named Congresa
+
+- The README, the usage notes of the tokens added for the application (`tokens.json`, "Added for Congresa"), the comments of `components/bundle.css`, `components/bundle.js` and `components/index.d.ts`, and the READMEs of AppShell and FileDropzone name the application Congresa. The preview of AppShell shows the product name "Congresa".
+- `components/bundle.js` carries `@ds-version: 2.6.2` and `Udekom.version` is `"2.6.2"`. `tokens.json` stays at version 2; `tokens.css` is unchanged (the usage notes are not in it).
+
 ## 2.6.1 (2026-10-18)
 
 Fixes one fault of the narrow DataTable (2.4.0), seen in Chromium on the submission screen of Confera 0.4.0. No token changed; no new token, no new label.
