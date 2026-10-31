@@ -8,7 +8,7 @@
  */
 import { useState, type FormEvent } from 'react';
 
-import { Alert, Button, Card, DataTable, DateField, StatusBadge, TextButton, toast } from '@confera/ui';
+import { Alert, Button, Card, DataTable, DateField, StatusBadge, TextButton, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { formatDate, formatDateTime } from './format';

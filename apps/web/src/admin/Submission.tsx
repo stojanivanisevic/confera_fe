@@ -19,8 +19,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-import { countWords, parseSafeText, readDefinition, textOf, type FieldKind, type FormDefinition } from '@confera/form-renderer';
-import { Alert, Button, Card, Checkbox, DataTable, DescriptionList, Dialog, Drawer, Menu, PageHeader, SandboxedMarkupFrame, Select, Spinner, StatusBadge, Textarea, TextButton, TextField, toast } from '@confera/ui';
+import { countWords, parseSafeText, readDefinition, textOf, type FieldKind, type FormDefinition } from '@congresa/form-renderer';
+import { Alert, Button, Card, Checkbox, DataTable, DescriptionList, Dialog, Drawer, Menu, PageHeader, SandboxedMarkupFrame, Select, Spinner, StatusBadge, Textarea, TextButton, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { formatDateTime } from './format';

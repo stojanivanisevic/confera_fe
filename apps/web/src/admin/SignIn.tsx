@@ -8,8 +8,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { createSessionClient } from '@confera/api-client';
-import { Alert, Button, PageHeader, PasswordField, TextField } from '@confera/ui';
+import { createSessionClient } from '@congresa/api-client';
+import { Alert, Button, PageHeader, PasswordField, TextField } from '@congresa/ui';
 
 import { safeNextPath } from '@/lib/next-path';
 

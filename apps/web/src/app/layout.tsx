@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
-import '@confera/ui/styles';
+import '@congresa/ui/styles';
 
 import './globals.css';
 

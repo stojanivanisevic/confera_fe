@@ -8,7 +8,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { Alert, Button, DataTable, EmptyState, PageHeader, StatusBadge, TextButton, toast } from '@confera/ui';
+import { Alert, Button, DataTable, EmptyState, PageHeader, StatusBadge, TextButton, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';

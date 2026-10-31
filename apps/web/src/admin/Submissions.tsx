@@ -14,7 +14,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-import { Alert, DataTable, EmptyState, FilterBar, PageHeader, Pagination, Select, StatusBadge, TextButton, TextField } from '@confera/ui';
+import { Alert, DataTable, EmptyState, FilterBar, PageHeader, Pagination, Select, StatusBadge, TextButton, TextField } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';

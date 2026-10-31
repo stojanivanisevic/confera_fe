@@ -6,7 +6,7 @@
  */
 import Link from 'next/link';
 
-import { Card, Icon, PageHeader } from '@confera/ui';
+import { Card, Icon, PageHeader } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { Connection } from './Connection';

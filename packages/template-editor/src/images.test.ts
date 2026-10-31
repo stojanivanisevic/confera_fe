@@ -9,7 +9,7 @@
 import { DOMParser as SchemaParser } from 'prosemirror-model';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { catalogueOf, checkBody, DocumentError, renderBody, type Catalogue, type DocNode } from '@confera/api-client';
+import { catalogueOf, checkBody, DocumentError, renderBody, type Catalogue, type DocNode } from '@congresa/api-client';
 import { bodyFromEditor, bodySchema, bodyToEditor, insertImage, mountBodyEditor, normaliseBody } from './index';
 
 const ID = '0e2e9000-0000-4000-8000-000000000001';

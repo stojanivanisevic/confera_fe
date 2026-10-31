@@ -8,7 +8,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { SessionClient } from '@confera/api-client';
+import type { SessionClient } from '@congresa/api-client';
 
 import { explain, isUnauthenticated, type Explained } from './problems';
 import { useSession } from './session';

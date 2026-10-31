@@ -1,8 +1,8 @@
-// @confera/ui: the only way application code reaches the UdEkoM Balkans
+// @congresa/ui: the only way application code reaches the UdEkoM Balkans
 // design system (ADR-21, NFR-UI-01).
 //
-//   import { Button, TextField } from '@confera/ui';
-//   import '@confera/ui/styles';   // once, in the root layout
+//   import { Button, TextField } from '@congresa/ui';
+//   import '@congresa/ui/styles';   // once, in the root layout
 //
 // The components are the design system's own, wrapped unchanged by
 // `pnpm ds:build` so that they render on the server and hydrate.

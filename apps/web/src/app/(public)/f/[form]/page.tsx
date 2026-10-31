@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { HostedForm } from '@confera/form-renderer';
+import { HostedForm } from '@congresa/form-renderer';
 
 import { formMetadata, formOf, FormUnavailable, languageFor } from '@/server/form-page';
 import { StagingBanner } from '@/server/staging';

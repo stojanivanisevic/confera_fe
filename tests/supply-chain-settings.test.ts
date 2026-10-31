@@ -143,7 +143,7 @@ describe('exact versions everywhere (ST-11, ADR-01)', () => {
     const loose: string[] = [];
     for (const field of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
       for (const [name, version] of Object.entries(manifest[field] ?? {})) {
-        const internal = name.startsWith('@confera/') && version === 'workspace:*';
+        const internal = name.startsWith('@congresa/') && version === 'workspace:*';
         if (!internal && !EXACT.test(version)) loose.push(`${field}: ${name}@${version}`);
       }
     }

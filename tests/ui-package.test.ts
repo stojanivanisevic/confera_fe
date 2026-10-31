@@ -1,4 +1,4 @@
-// Small guards around @confera/ui that are cheap to check without a browser.
+// Small guards around @congresa/ui that are cheap to check without a browser.
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,9 +8,9 @@ import { describe, expect, it } from 'vitest';
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const read = (path: string) => readFileSync(join(root, path));
 
-describe('@confera/ui', () => {
+describe('@congresa/ui', () => {
   it('keeps its stylesheet entry out of tree shaking', () => {
-    // Without this the bundler drops `import "@confera/ui/styles"` (a module
+    // Without this the bundler drops `import "@congresa/ui/styles"` (a module
     // without exports) and the application is served with no design-system
     // styles and no fonts at all. e2e/ds-gallery.spec.ts proves the result in a browser.
     const pkg = JSON.parse(read('packages/ui/package.json').toString()) as { sideEffects: string[]; exports: Record<string, string> };

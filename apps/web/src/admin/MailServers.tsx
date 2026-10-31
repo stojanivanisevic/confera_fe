@@ -7,8 +7,8 @@
  */
 import { useRouter } from 'next/navigation';
 
-import type { MailServer } from '@confera/api-client';
-import { Alert, Button, DataTable, EmptyState, PageHeader, StatusBadge, TextButton } from '@confera/ui';
+import type { MailServer } from '@congresa/api-client';
+import { Alert, Button, DataTable, EmptyState, PageHeader, StatusBadge, TextButton } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { call } from './problems';

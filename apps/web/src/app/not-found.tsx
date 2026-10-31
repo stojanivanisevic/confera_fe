@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 
-import { FORM_TEXTS } from '@confera/form-renderer';
-import { EmptyState } from '@confera/ui';
+import { FORM_TEXTS } from '@congresa/form-renderer';
+import { EmptyState } from '@congresa/ui';
 
 import { getConfig } from '@/config/env';
 import { StagingBanner } from '@/server/staging';

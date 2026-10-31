@@ -7,8 +7,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
-import type { Conference, ConferenceState } from '@confera/api-client';
-import { Alert, Button, CheckboxGroup, DataTable, Dialog, EmptyState, FilterBar, PageHeader, Select, StatusBadge, TextButton, TextField, toast } from '@confera/ui';
+import type { Conference, ConferenceState } from '@congresa/api-client';
+import { Alert, Button, CheckboxGroup, DataTable, Dialog, EmptyState, FilterBar, PageHeader, Select, StatusBadge, TextButton, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';

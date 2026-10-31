@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { Gallery } from '@confera/ui/gallery';
+import { Gallery } from '@congresa/ui/gallery';
 
 export const metadata: Metadata = { title: 'Design system gallery' };
 

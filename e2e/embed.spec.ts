@@ -2,7 +2,7 @@
 //
 // The harness site (localhost:4000) is a "conference site" with hostile CSS and
 // a hostile script; it is on the site list of the spike form. The snippet under
-// test is the real one, built by @confera/embed-loader and pasted into the page.
+// test is the real one, built by @congresa/embed-loader and pasted into the page.
 // Confera's public surface is another site (127.0.0.1:3000), so the frame is a
 // real third-party frame, and the browsers run with third-party cookies blocked.
 import type { Frame, Page } from '@playwright/test';

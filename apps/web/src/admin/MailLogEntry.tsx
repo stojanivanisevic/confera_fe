@@ -11,8 +11,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import type { MailLogEntry as MailLogRecord } from '@confera/api-client';
-import { Alert, Button, Card, ConfirmDialog, DescriptionList, PageHeader, SandboxedMarkupFrame, StatusBadge, TextButton, toast } from '@confera/ui';
+import type { MailLogEntry as MailLogRecord } from '@congresa/api-client';
+import { Alert, Button, Card, ConfirmDialog, DescriptionList, PageHeader, SandboxedMarkupFrame, StatusBadge, TextButton, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';

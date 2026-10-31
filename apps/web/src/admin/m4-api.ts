@@ -4,7 +4,7 @@
  * call made with `fetch` itself is the upload of an email image, a multipart body (the contract
  * names the route; openapi-fetch sends JSON); its answer is the contract's `MailImageDto`.
  */
-import type { components, SessionClient } from '@confera/api-client';
+import type { components, SessionClient } from '@congresa/api-client';
 
 import { ApiError, call, callEmpty, UNREACHABLE } from './problems';
 

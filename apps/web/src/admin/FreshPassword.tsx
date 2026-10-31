@@ -11,7 +11,7 @@
 import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 
-import { Alert, Button, Dialog, PasswordField, TextButton } from '@confera/ui';
+import { Alert, Button, Dialog, PasswordField, TextButton } from '@congresa/ui';
 
 import { signInHref } from '@/lib/next-path';
 

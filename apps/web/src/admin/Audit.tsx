@@ -6,8 +6,8 @@
  */
 import { useState } from 'react';
 
-import type { AdminPaths, AuditEntry, AuditPage } from '@confera/api-client';
-import { Alert, DataTable, DateField, DescriptionList, Drawer, FilterBar, PageHeader, Pagination, Select, TextButton } from '@confera/ui';
+import type { AdminPaths, AuditEntry, AuditPage } from '@congresa/api-client';
+import { Alert, DataTable, DateField, DescriptionList, Drawer, FilterBar, PageHeader, Pagination, Select, TextButton } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel } from './conference-context';

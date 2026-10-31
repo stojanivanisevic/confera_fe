@@ -7,8 +7,8 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 
-import { compatibility, CONTRACT_VERSION, createAdminClient, getMeta, type Meta } from '@confera/api-client';
-import { Alert, Button, Card, DescriptionList, Spinner, StatusBadge } from '@confera/ui';
+import { compatibility, CONTRACT_VERSION, createAdminClient, getMeta, type Meta } from '@congresa/api-client';
+import { Alert, Button, Card, DescriptionList, Spinner, StatusBadge } from '@congresa/ui';
 
 import { useSession } from './session';
 import { fill, TEXTS } from './texts';

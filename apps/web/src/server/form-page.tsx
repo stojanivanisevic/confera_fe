@@ -9,8 +9,8 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { cache } from 'react';
 
-import { Alert } from '@confera/ui';
-import { fill, FORM_LANGUAGES, FORM_TEXTS, pickLanguage, textOf, type FormLanguage, type PublishedForm } from '@confera/form-renderer';
+import { Alert } from '@congresa/ui';
+import { fill, FORM_LANGUAGES, FORM_TEXTS, pickLanguage, textOf, type FormLanguage, type PublishedForm } from '@congresa/form-renderer';
 
 import { lookUpForm, lookUpFrameSites } from './public-forms';
 import { StagingBanner } from './staging';

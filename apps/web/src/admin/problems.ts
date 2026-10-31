@@ -3,7 +3,7 @@
  * the page explains). One place turns a problem document into a title, a text and, for refused
  * input, a message per field, so every screen says the same thing in the same words.
  */
-import { ApiError, type FieldError } from '@confera/api-client';
+import { ApiError, type FieldError } from '@congresa/api-client';
 
 import { fill, TEXTS } from './texts';
 

@@ -13,7 +13,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { createSessionClient, hasFreshPassword, type Session, type SessionClient } from '@confera/api-client';
+import { createSessionClient, hasFreshPassword, type Session, type SessionClient } from '@congresa/api-client';
 
 import { call, isUnauthenticated } from './problems';
 

@@ -9,7 +9,7 @@
  */
 import { useEffect, useRef } from 'react';
 
-import { FileDropzone, Icon } from '@confera/ui';
+import { FileDropzone, Icon } from '@congresa/ui';
 
 import type { FileRule, FileType } from './definition';
 import styles from './form.module.css';

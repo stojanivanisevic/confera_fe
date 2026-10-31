@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 
-import { requestIntoView, startHeightReporter } from '@confera/embed-loader';
+import { requestIntoView, startHeightReporter } from '@congresa/embed-loader';
 
 import type { PublishedForm } from './definition';
 import styles from './form.module.css';

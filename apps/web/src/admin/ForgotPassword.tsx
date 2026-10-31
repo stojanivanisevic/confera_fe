@@ -4,8 +4,8 @@
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 
-import { createSessionClient } from '@confera/api-client';
-import { Alert, Button, PageHeader, TextField } from '@confera/ui';
+import { createSessionClient } from '@congresa/api-client';
+import { Alert, Button, PageHeader, TextField } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { callEmpty, explain } from './problems';

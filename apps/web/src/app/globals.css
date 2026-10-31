@@ -1,6 +1,6 @@
 /* Page ground of the application. Every colour, type style, spacing and size is a
    design-system token (NFR-UI-01; the style lint holds it since design system 2.3.0);
-   component styles come from @confera/ui. */
+   component styles come from @congresa/ui. */
 
 html {
   -webkit-text-size-adjust: 100%;

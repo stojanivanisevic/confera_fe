@@ -20,7 +20,7 @@
 // The subject is one line of text and placeholders, without marks.
 import { Schema, type DOMOutputSpec, type MarkSpec, type NodeSpec } from 'prosemirror-model';
 
-import { isTypedLink } from '@confera/api-client';
+import { isTypedLink } from '@congresa/api-client';
 
 /** The address a link mark carries for the secure link of the message (`{ placeholder: 'link' }` in the format). */
 export const SECURE_LINK = 'confera:secure-link';

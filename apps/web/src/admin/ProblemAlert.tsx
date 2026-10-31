@@ -7,7 +7,7 @@
  */
 import { useEffect, useRef, type ComponentProps } from 'react';
 
-import { Alert } from '@confera/ui';
+import { Alert } from '@congresa/ui';
 
 import styles from './admin.module.css';
 

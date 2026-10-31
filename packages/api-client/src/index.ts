@@ -1,4 +1,4 @@
-// @confera/api-client: typed calls to the API of confera_be (ADR-19).
+// @congresa/api-client: typed calls to the API of confera_be (ADR-19).
 //
 // The types are generated from the vendored OpenAPI documents
 // (`pnpm api:sync`); there is no generated runtime code. Calls go to the

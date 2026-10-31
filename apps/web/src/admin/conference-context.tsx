@@ -8,7 +8,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import type { Conference } from '@confera/api-client';
+import type { Conference } from '@congresa/api-client';
 
 import { call } from './problems';
 import { useSession } from './session';

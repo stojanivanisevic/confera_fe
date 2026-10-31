@@ -5,7 +5,7 @@
 // "the same" is the same after `normaliseBody`, which does only that.
 import { Mark as EditorMark, type Node as EditorNode } from 'prosemirror-model';
 
-import { MARKS, type BlockNode, type DocNode, type InlineNode, type LinkNode, type Mark, type PlaceholderNode, type SubjectNode, type TextNode } from '@confera/api-client';
+import { MARKS, type BlockNode, type DocNode, type InlineNode, type LinkNode, type Mark, type PlaceholderNode, type SubjectNode, type TextNode } from '@congresa/api-client';
 
 import { bodySchema, SECURE_LINK, subjectSchema } from './schema';
 

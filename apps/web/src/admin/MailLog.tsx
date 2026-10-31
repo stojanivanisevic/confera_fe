@@ -9,8 +9,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { TEMPLATE_TYPES, type AdminPaths, type MailLogPage, type MailLogSummary, type Organisation } from '@confera/api-client';
-import { Alert, Button, Card, DataTable, EmptyState, FilterBar, NumberField, PageHeader, Pagination, Select, StatusBadge, Switch, TextButton, TextField, toast } from '@confera/ui';
+import { TEMPLATE_TYPES, type AdminPaths, type MailLogPage, type MailLogSummary, type Organisation } from '@congresa/api-client';
+import { Alert, Button, Card, DataTable, EmptyState, FilterBar, NumberField, PageHeader, Pagination, Select, StatusBadge, Switch, TextButton, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';

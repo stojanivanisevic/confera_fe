@@ -9,7 +9,7 @@
  */
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { Alert, Button, Card, ConfirmDialog, DataTable, EmptyState, NumberField, PageHeader, Pagination, TextButton, toast } from '@confera/ui';
+import { Alert, Button, Card, ConfirmDialog, DataTable, EmptyState, NumberField, PageHeader, Pagination, TextButton, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { formatDateTime } from './format';

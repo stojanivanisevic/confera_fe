@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { EmbeddedForm } from '@confera/form-renderer';
+import { EmbeddedForm } from '@congresa/form-renderer';
 
 import { formMetadata, formOf, frameSitesOf, FormUnavailable, languageFor } from '@/server/form-page';
 import { frameSitesFrom } from '@/server/security/frame-sites';

@@ -7,8 +7,8 @@
  */
 import { useRouter } from 'next/navigation';
 
-import type { MailTemplate } from '@confera/api-client';
-import { Alert, DataTable, EmptyState, PageHeader, StatusBadge, TextButton } from '@confera/ui';
+import type { MailTemplate } from '@congresa/api-client';
+import { Alert, DataTable, EmptyState, PageHeader, StatusBadge, TextButton } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';

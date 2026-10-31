@@ -1,4 +1,4 @@
-// @confera/embed-loader: the snippet for conference sites and the frame's
+// @congresa/embed-loader: the snippet for conference sites and the frame's
 // height reporter (ADR-07). With the snippet form of G2-17 (a) there is no
 // remote loader script: what runs in a conference site is the few inline
 // lines of the snippet itself.

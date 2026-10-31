@@ -2,7 +2,7 @@
 
 /**
  * The template editor (M4-FE-02, M4-FE-03; FR-MAIL-01, 02, 07; ADR-12). An admin writes an email
- * without any HTML: the rich-text engine (ProseMirror, @confera/template-editor) holds the closed
+ * without any HTML: the rich-text engine (ProseMirror, @congresa/template-editor) holds the closed
  * format of confera_be and nothing else, the toolbar is design-system controls, a placeholder is one
  * object from the type's catalogue (as the API gives it), a condition wraps blocks, an image is an
  * email image of the organisation, uploaded by the server's rules and shown in the page by its
@@ -28,8 +28,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
-import { checkBody, checkSubject, DocumentError, isTypedLink, MAX_IMAGES, type Catalogue, type DocNode, type SubjectNode } from '@confera/api-client';
-import { Alert, Button, Card, CheckboxGroup, ConfirmDialog, Dialog, FileButton, IconButton, PageHeader, RadioGroup, SandboxedMarkupFrame, SegmentedTabs, Select, Spinner, Switch, TextButton, TextField, toast, type IconName } from '@confera/ui';
+import { checkBody, checkSubject, DocumentError, isTypedLink, MAX_IMAGES, type Catalogue, type DocNode, type SubjectNode } from '@congresa/api-client';
+import { Alert, Button, Card, CheckboxGroup, ConfirmDialog, Dialog, FileButton, IconButton, PageHeader, RadioGroup, SandboxedMarkupFrame, SegmentedTabs, Select, Spinner, Switch, TextButton, TextField, toast, type IconName } from '@congresa/ui';
 import {
   insertHardBreak,
   insertImage,
@@ -53,7 +53,7 @@ import {
   type EditorHandle,
   type TextMark,
   type ToolbarState,
-} from '@confera/template-editor';
+} from '@congresa/template-editor';
 
 import styles from './admin.module.css';
 import { conferenceLabel, useConference } from './conference-context';

@@ -6,7 +6,7 @@ import type { Node as EditorNode } from 'prosemirror-model';
 import { EditorState, NodeSelection, type Command } from 'prosemirror-state';
 import { EditorView, type NodeView } from 'prosemirror-view';
 
-import { catalogueOf, checkBody, checkSubject, DocumentError, type Catalogue, type DocNode, type SubjectNode } from '@confera/api-client';
+import { catalogueOf, checkBody, checkSubject, DocumentError, type Catalogue, type DocNode, type SubjectNode } from '@congresa/api-client';
 
 import { bodyKeys, subjectKeys, toolbarState, type ToolbarState } from './commands';
 import { bodyFromEditor, bodyToEditor, subjectFromEditor, subjectToEditor } from './convert';

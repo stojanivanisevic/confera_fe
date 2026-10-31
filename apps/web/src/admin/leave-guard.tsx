@@ -14,7 +14,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { ConfirmDialog } from '@confera/ui';
+import { ConfirmDialog } from '@congresa/ui';
 
 export interface LeaveQuestion {
   readonly title: string;

@@ -15,11 +15,11 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
-import type { Conference } from '@confera/api-client';
-import { FORM_CONFIGURATION } from '@confera/api-client';
-import { buildEmbedSnippet, type SnippetLanguage } from '@confera/embed-loader';
-import { FORM_TEXTS, FormRenderer, noDraftStorage, previewApi, readDefinition, textOf, type Condition, type FormDefinition, type PublishedForm } from '@confera/form-renderer';
-import { Alert, Button, Card, Checkbox, CheckboxGroup, ConfirmDialog, DataTable, Drawer, NumberField, PageHeader, Select, StatusBadge, Switch, Textarea, TextButton, TextField, toast } from '@confera/ui';
+import type { Conference } from '@congresa/api-client';
+import { FORM_CONFIGURATION } from '@congresa/api-client';
+import { buildEmbedSnippet, type SnippetLanguage } from '@congresa/embed-loader';
+import { FORM_TEXTS, FormRenderer, noDraftStorage, previewApi, readDefinition, textOf, type Condition, type FormDefinition, type PublishedForm } from '@congresa/form-renderer';
+import { Alert, Button, Card, Checkbox, CheckboxGroup, ConfirmDialog, DataTable, Drawer, NumberField, PageHeader, Select, StatusBadge, Switch, Textarea, TextButton, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { conferenceLabel } from './conference-context';

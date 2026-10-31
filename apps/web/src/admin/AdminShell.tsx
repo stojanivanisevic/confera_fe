@@ -9,7 +9,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { Alert, AppShell, Button, Menu, PageHeader, Select, SidebarNav, Spinner, StatusBadge, TextButton, toast, ToastHost } from '@confera/ui';
+import { Alert, AppShell, Button, Menu, PageHeader, Select, SidebarNav, Spinner, StatusBadge, TextButton, toast, ToastHost } from '@congresa/ui';
 
 import { signInHref } from '@/lib/next-path';
 

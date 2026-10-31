@@ -9,8 +9,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
-import type { Conference as ConferenceRecord, ConferenceState, MailServer } from '@confera/api-client';
-import { Alert, Button, Card, CheckboxGroup, ConfirmDialog, DateField, Dialog, Menu, PageHeader, Select, StatusBadge, Textarea, TextButton, TextField, toast } from '@confera/ui';
+import type { Conference as ConferenceRecord, ConferenceState, MailServer } from '@congresa/api-client';
+import { Alert, Button, Card, CheckboxGroup, ConfirmDialog, DateField, Dialog, Menu, PageHeader, Select, StatusBadge, Textarea, TextButton, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';

@@ -11,7 +11,7 @@ import { DOMParser as SchemaParser } from 'prosemirror-model';
 import { EditorState, NodeSelection, TextSelection, type Command } from 'prosemirror-state';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { catalogueOf, checkBody, checkSubject, renderBody, renderSubject, TEMPLATE_RENDERED_VECTORS, type DocNode, type InlineNode, type SubjectNode } from '@confera/api-client';
+import { catalogueOf, checkBody, checkSubject, renderBody, renderSubject, TEMPLATE_RENDERED_VECTORS, type DocNode, type InlineNode, type SubjectNode } from '@congresa/api-client';
 import {
   bodyFromEditor,
   bodySchema,

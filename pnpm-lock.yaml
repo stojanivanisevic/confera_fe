@@ -89,19 +89,19 @@ importers:
 
   apps/web:
     dependencies:
-      '@confera/api-client':
+      '@congresa/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
-      '@confera/embed-loader':
+      '@congresa/embed-loader':
         specifier: workspace:*
         version: link:../../packages/embed-loader
-      '@confera/form-renderer':
+      '@congresa/form-renderer':
         specifier: workspace:*
         version: link:../../packages/form-renderer
-      '@confera/template-editor':
+      '@congresa/template-editor':
         specifier: workspace:*
         version: link:../../packages/template-editor
-      '@confera/ui':
+      '@congresa/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       next:
@@ -128,10 +128,10 @@ importers:
 
   packages/form-renderer:
     dependencies:
-      '@confera/embed-loader':
+      '@congresa/embed-loader':
         specifier: workspace:*
         version: link:../embed-loader
-      '@confera/ui':
+      '@congresa/ui':
         specifier: workspace:*
         version: link:../ui
       react:
@@ -143,7 +143,7 @@ importers:
 
   packages/template-editor:
     dependencies:
-      '@confera/api-client':
+      '@congresa/api-client':
         specifier: workspace:*
         version: link:../api-client
       prosemirror-commands:

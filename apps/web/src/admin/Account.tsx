@@ -7,7 +7,7 @@
  */
 import { useState, type FormEvent } from 'react';
 
-import { Alert, Button, Card, ConfirmDialog, DescriptionList, PageHeader, PasswordField, TextField, toast } from '@confera/ui';
+import { Alert, Button, Card, ConfirmDialog, DescriptionList, PageHeader, PasswordField, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';

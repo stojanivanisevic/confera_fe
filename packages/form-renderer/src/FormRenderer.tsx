@@ -32,7 +32,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react';
 
-import { Alert, Button, Checkbox, FormCard, LABELS_SR, LabelsProvider, PageHeader, RadioGroup, Repeater, SegmentedTabs, Select, Spinner, TextButton, TextField, Textarea } from '@confera/ui';
+import { Alert, Button, Checkbox, FormCard, LABELS_SR, LabelsProvider, PageHeader, RadioGroup, Repeater, SegmentedTabs, Select, Spinner, TextButton, TextField, Textarea } from '@congresa/ui';
 
 import { textOf, type FieldDefinition, type FormDefinition, type PublishedForm, type SectionDefinition } from './definition';
 import { draftKey, hasTyped, readDraft, writeDraft } from './draft';

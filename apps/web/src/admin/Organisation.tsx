@@ -7,8 +7,8 @@
  */
 import { useEffect, useState, type FormEvent } from 'react';
 
-import type { Organisation as Profile } from '@confera/api-client';
-import { Alert, Button, Card, PageHeader, Textarea, TextButton, TextField, toast } from '@confera/ui';
+import type { Organisation as Profile } from '@congresa/api-client';
+import { Alert, Button, Card, PageHeader, Textarea, TextButton, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';

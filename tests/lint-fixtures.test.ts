@@ -19,7 +19,7 @@ const ESLINT_PLANTED: Record<string, { rule: string; message: RegExp }> = {
   'other-ui-kit.tsx': { rule: 'no-restricted-imports', message: /design system/ },
   'tailwind-import.ts': { rule: 'no-restricted-imports', message: /Tailwind/ },
   'other-icon-set.tsx': { rule: 'no-restricted-imports', message: /icon set/ },
-  'design-system-direct.ts': { rule: 'no-restricted-imports', message: /public entry of @confera\/ui/ },
+  'design-system-direct.ts': { rule: 'no-restricted-imports', message: /public entry of @congresa\/ui/ },
   'raw-markup-jsx.tsx': { rule: 'no-restricted-syntax', message: /Raw markup/ },
   'raw-markup-dom.ts': { rule: 'no-restricted-syntax', message: /Raw markup/ },
   'raw-markup-insert.ts': { rule: 'no-restricted-syntax', message: /Raw markup/ },

@@ -10,8 +10,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
-import type { MailServer as MailServerRecord, TestMessageResult } from '@confera/api-client';
-import { Alert, Button, Card, ConfirmDialog, NumberField, PageHeader, PasswordField, Select, Switch, TextButton, TextField, toast } from '@confera/ui';
+import type { MailServer as MailServerRecord, TestMessageResult } from '@congresa/api-client';
+import { Alert, Button, Card, ConfirmDialog, NumberField, PageHeader, PasswordField, Select, Switch, TextButton, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';

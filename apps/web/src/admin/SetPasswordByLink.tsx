@@ -8,8 +8,8 @@
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { createSessionClient, type LinkPerson } from '@confera/api-client';
-import { Alert, Button, PageHeader, PasswordField } from '@confera/ui';
+import { createSessionClient, type LinkPerson } from '@congresa/api-client';
+import { Alert, Button, PageHeader, PasswordField } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';
