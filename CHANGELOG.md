@@ -42,6 +42,9 @@ Release 0.4.0 in progress (`m4/fe`), against `confera_be` `develop` (`ae29288`, 
 - **Q4-01 (the stub):** the stub's search folds đ both as d and as dj, as confera_be does ("dordevic" and "djordjevic" find "Đorđević").
 - **SEC-M4-06: the staging banner fails closed.** It shows unless the API confirmed an instance that is not staging (`production`, or a developer machine's API seen from a developer stage); a late, refused or unreadable answer shows it; a confirmation of the last 10 minutes outlives a short silence.
 
+### Fixed (the blank-slate verification of the rename, `confera-rename-congresa`)
+- **A conference chosen before a reload is waited for.** After a load of the page the switch knows the chosen conference by its id only, until the list of conferences answers. The templates, the mail log, the forms and the submissions listed every conference meanwhile and the chosen one a moment later, in its place: the rows moved under the person's pointer (in Firefox a click that went down on one row and up on another opened nothing), and a click in that moment could open a row of the wrong list, the organisation's template where the conference has its own. The switch now says when its choice is settled, and these four screens ask for their list only then, for the chosen conference (`conference-context.tsx`, `useLoad(…, { wait })`; `apps/web/src/admin/conference-switch.test.tsx`).
+
 ### Logged (not in this round)
 - UX4-04 (b), the frontend part: the preview says an image is being scanned, but not since when (the preview names the pending ids only).
 - UX4-21: the history's email column does not link to its row of the Emails card.

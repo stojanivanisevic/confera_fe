@@ -28,10 +28,11 @@ export function formStateText(state: string, reason: string | null): string {
 export function Forms() {
   const router = useRouter();
   const { client, contact, session } = useSession();
-  const { conferences, selected } = useConference();
+  const { conferences, selected, settled } = useConference();
   const t = TEXTS.forms;
   const mayManage = session?.user.permissions.includes('forms.manage') ?? false;
-  const list = useLoad<readonly FormSummary[]>((c) => intake.forms(c, selected?.id), [selected?.id]);
+  // The conference chosen before a reload is waited for: never every conference's forms first.
+  const list = useLoad<readonly FormSummary[]>((c) => intake.forms(c, selected?.id), [selected?.id], { wait: !settled });
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<Explained | null>(null);
 

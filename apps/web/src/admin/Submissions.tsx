@@ -49,7 +49,7 @@ export function Submissions() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const { selected } = useConference();
+  const { selected, settled } = useConference();
   const t = TEXTS.submissions;
   const conferenceId = selected?.id;
 
@@ -109,6 +109,8 @@ export function Submissions() {
   const list = useLoad<SubmissionPage>(
     (c) => m4.submissions(c, { conferenceId, search: search || undefined, status: (STATUSES as readonly string[]).includes(status) ? [status as Status] : undefined, participationType: participation || undefined, sort: sort ?? undefined, direction, page, pageSize }),
     [conferenceId, search, status, participation, sort, direction, page, pageSize],
+    // The conference chosen before a reload is waited for: never every conference's submissions first.
+    { wait: !settled },
   );
   const none = (value: string | null) => (value === null || value === '' ? t.none : value);
   const rows = [...(list.state.data?.items ?? [])];

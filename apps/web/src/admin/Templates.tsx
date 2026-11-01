@@ -21,11 +21,12 @@ type Listed = MailTemplate & { readonly inherited: boolean };
 
 export function Templates() {
   const router = useRouter();
-  const { selected } = useConference();
+  const { selected, settled } = useConference();
   const t = TEXTS.templates;
   const conferenceId = selected?.id;
   // A conference uses the organisation's template of a type and language until it has its own: the list
-  // shows both, the organisation's marked as such (UXUI-M2-05).
+  // shows both, the organisation's marked as such (UXUI-M2-05). A conference chosen before a reload is
+  // waited for, so the organisation's list is never shown in its place first.
   const list = useLoad<readonly Listed[]>(async (c) => {
     const own = await call(c.GET('/api/v1/mail-templates', { params: { query: {} } }));
     if (!conferenceId) return own.items.map((template) => ({ ...template, inherited: false }));
@@ -33,7 +34,7 @@ export function Templates() {
     const key = (template: MailTemplate) => `${template.type}:${template.language}`;
     const taken = new Set(theirs.items.map(key));
     return [...theirs.items.map((template) => ({ ...template, inherited: false })), ...own.items.filter((template) => !taken.has(key(template))).map((template) => ({ ...template, inherited: true }))].sort((a, b) => a.type.localeCompare(b.type) || a.language.localeCompare(b.language));
-  }, [conferenceId]);
+  }, [conferenceId], { wait: !settled });
 
   return (
     <div className={styles.stack}>

@@ -23,7 +23,13 @@ export interface Load<T> {
   readonly replace: (data: T) => void;
 }
 
-export function useLoad<T>(fetcher: (client: SessionClient) => Promise<T>, deps: readonly unknown[]): Load<T> {
+export interface LoadOptions {
+  /** Asks nothing yet: the screen stays loading until what the request depends on is known (the conference of the switch). */
+  readonly wait?: boolean;
+}
+
+export function useLoad<T>(fetcher: (client: SessionClient) => Promise<T>, deps: readonly unknown[], options: LoadOptions = {}): Load<T> {
+  const wait = options.wait === true;
   const { client, background, clear, contact } = useSession();
   const [state, setState] = useState<Loaded<T>>({ phase: 'loading', data: null });
   // Only the answer to the latest question is shown: an older answer that arrives later (the
@@ -47,8 +53,9 @@ export function useLoad<T>(fetcher: (client: SessionClient) => Promise<T>, deps:
   );
 
   useEffect(() => {
+    if (wait) return;
     void reload();
-  }, [reload]);
+  }, [reload, wait]);
 
   return {
     state,

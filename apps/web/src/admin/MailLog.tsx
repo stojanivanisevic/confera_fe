@@ -40,7 +40,7 @@ function useWide(query = '(min-width: 1000px)'): boolean {
 
 export function MailLog() {
   const router = useRouter();
-  const { selected, select } = useConference();
+  const { selected, settled, select } = useConference();
   const { session } = useSession();
   const mayReadServers = session?.user.permissions.includes('mail_servers.read') ?? false;
   const t = TEXTS.mailLog;
@@ -66,6 +66,8 @@ export function MailLog() {
   const log = useLoad<MailLogPage>(
     (c) => call(c.GET('/api/v1/mail-log', { params: { query: { ...(kind ? { kind } : {}), ...(result ? { result } : {}), ...(conferenceId ? { conferenceId } : {}), ...(search ? { q: search } : {}), page, pageSize } } })),
     [kind, result, conferenceId, search, page, pageSize],
+    // The conference chosen before a reload is waited for: never every conference's messages first.
+    { wait: !settled },
   );
   const clear = () => {
     setKind('');
