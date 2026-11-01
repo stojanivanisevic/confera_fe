@@ -8,8 +8,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { createSessionClient } from '@confera/api-client';
-import { Alert, Button, PageHeader, PasswordField, TextField } from '@confera/ui';
+import { createSessionClient } from '@congresa/api-client';
+import { Alert, Button, PageHeader, PasswordField, TextField } from '@congresa/ui';
 
 import { safeNextPath } from '@/lib/next-path';
 
@@ -70,7 +70,7 @@ export function SignIn() {
           {problem.text}
         </ProblemAlert>
       ) : null}
-      <form className={styles.form} onSubmit={(event) => void submit(event)} noValidate data-confera-sign-in>
+      <form className={styles.form} onSubmit={(event) => void submit(event)} noValidate data-congresa-sign-in>
         <TextField label={t.email} name="email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required />
         <PasswordField label={t.passwordLabel} name="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
         <div className={styles.actions}>

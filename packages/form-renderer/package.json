@@ -1,5 +1,5 @@
 {
-  "name": "@confera/form-renderer",
+  "name": "@congresa/form-renderer",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,8 +7,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@confera/embed-loader": "workspace:*",
-    "@confera/ui": "workspace:*"
+    "@congresa/embed-loader": "workspace:*",
+    "@congresa/ui": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.3.0",

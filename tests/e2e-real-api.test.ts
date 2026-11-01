@@ -1,4 +1,4 @@
-// The switch of the cross-repo smoke test (M1-QA-02): CONFERA_E2E_API_ORIGIN (e2e/env.ts) and
+// The switch of the cross-repo smoke test (M1-QA-02): CONGRESA_E2E_API_ORIGIN (e2e/env.ts) and
 // the question that is asked before any browser test runs (e2e/support/real-api.ts).
 //
 // The browser tests send odd and hostile requests. The switch must take an API on this
@@ -17,7 +17,7 @@ const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 
 const answering = (status: number, body: string) => vi.fn((_address: string | URL | Request, _options?: RequestInit) => Promise.resolve(new Response(body, { status })));
 
-describe('CONFERA_E2E_API_ORIGIN', () => {
+describe('CONGRESA_E2E_API_ORIGIN', () => {
   it.each([undefined, '', '   '])('unset or empty (%j): the run uses the stub', (value) => {
     expect(realApiOrigin(value)).toBeNull();
   });
@@ -27,8 +27,8 @@ describe('CONFERA_E2E_API_ORIGIN', () => {
   });
 
   it.each([
-    ['a server', 'https://api.confera.example.org'],
-    ['a server over http', 'http://api.confera.example.org:3001'],
+    ['a server', 'https://api.congresa.example.org'],
+    ['a server over http', 'http://api.congresa.example.org:3001'],
     ['another address of the network', 'http://192.168.1.20:3001'],
     ['every address of this machine', 'http://0.0.0.0:3001'],
     ['a name that starts like this machine', 'http://127.0.0.1.example.org:3001'],
@@ -45,14 +45,14 @@ describe('CONFERA_E2E_API_ORIGIN', () => {
     ['not an address', 'the real one'],
     ['the stub itself', API_STUB_ORIGIN],
   ])('%s (%s) is refused, and the message says how to write it', (_what, value) => {
-    expect(() => realApiOrigin(value)).toThrow(/CONFERA_E2E_API_ORIGIN is ".*http:\/\/127\.0\.0\.1:3001/s);
+    expect(() => realApiOrigin(value)).toThrow(/CONGRESA_E2E_API_ORIGIN is ".*http:\/\/127\.0\.0\.1:3001/s);
   });
 
   it('the web application under test forwards to the API this switch chose, and the configurations read no other variable for it', () => {
     const env = readFileSync(resolve(root, 'e2e', 'env.ts'), 'utf8');
-    expect(env).toContain('export const REAL_API_ORIGIN = realApiOrigin(process.env.CONFERA_E2E_API_ORIGIN);');
+    expect(env).toContain('export const REAL_API_ORIGIN = realApiOrigin(process.env.CONGRESA_E2E_API_ORIGIN);');
     expect(env).toContain('export const API_ORIGIN = REAL_API_ORIGIN ?? API_STUB_ORIGIN;');
-    expect(env).toContain('CONFERA_API_ORIGIN: API_ORIGIN,');
+    expect(env).toContain('CONGRESA_API_ORIGIN: API_ORIGIN,');
     // A real-API run never takes over a web application that is already running: it was started with another API address.
     const config = readFileSync(resolve(root, 'playwright.config.ts'), 'utf8');
     expect(config).toContain('const reuseWeb = reuse && REAL_API_ORIGIN === null;');
@@ -62,7 +62,7 @@ describe('CONFERA_E2E_API_ORIGIN', () => {
     // The three engines leave the smoke spec and the flows of 0.2.0 to that project, and, in such a run,
     // the specs that need the stub's records are left out of them by name, instead of failing.
     expect(config.match(/REAL_API_SPEC, REAL_API_FLOWS, \.\.\.STUB_ONLY_SPECS\]/g), 'the three engines leave the smoke spec, the flows and the stub-only specs alone').toHaveLength(3);
-    expect(config).toContain("const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts', '**/admin-intake.spec.ts', ...STUB_FORM_SPECS];");
+    expect(config).toContain("const STUB_ONLY_SPECS = REAL_API_ORIGIN === null ? [] : ['**/admin.spec.ts', '**/admin-part-b.spec.ts', '**/admin-intake.spec.ts', '**/admin-m4.spec.ts', ...STUB_FORM_SPECS];");
     // The specs on the stub's forms (Q3-09): every spec that opens one of its form addresses is named.
     expect(config).toContain("const STUB_FORM_SPECS = ['**/public-form.spec.ts', '**/embed.spec.ts', '**/embed.edge.spec.ts', '**/form-send.spec.ts', '**/security-headers.spec.ts', '**/qa-probes.spec.ts', '**/qa-hosts.spec.ts'];");
   });

@@ -3,7 +3,7 @@
 //
 // The API is started by the documented commands of confera_be and by nothing else (its
 // README, section 9: stack:up, db:provision, db:migrate, seed:e2e, build, start), and named
-// by CONFERA_E2E_API_ORIGIN (README of this repository, "Against the real API"). The file
+// by CONGRESA_E2E_API_ORIGIN (README of this repository, "Against the real API"). The file
 // belongs to the project "real-api", which exists only in such a run; every other spec then
 // runs against the real API as well.
 //
@@ -89,7 +89,7 @@ const expectNotFoundProblem = (answer: Answer, what: string) => {
 
 test.describe('the cross-repo smoke test: a real confera_be behind the web application (M1-QA-02)', () => {
   test('the control: this run was given a real API, and its database answers', async () => {
-    expect(API, 'CONFERA_E2E_API_ORIGIN').toMatch(/^http:\/\/(?:127\.0\.0\.1|localhost):\d+$/);
+    expect(API, 'CONGRESA_E2E_API_ORIGIN').toMatch(/^http:\/\/(?:127\.0\.0\.1|localhost):\d+$/);
     for (const path of ['/health', '/health/ready']) {
       const answer = await direct(path, `127.0.0.1:${String(apiPort())}`);
       expect(answer.status, path).toBe(200);
@@ -114,7 +114,7 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
     const answer = await throughWeb('/api/v1/meta', ADMIN_HOST);
     expect(answer.status).toBe(200);
     expect(String(answer.headers['content-type'])).toMatch(/^application\/json/);
-    expect(answer.json()).toEqual({ name: 'confera-api', version: ADMIN_CONTRACT.info.version });
+    expect(answer.json()).toEqual({ name: 'congresa-api', version: ADMIN_CONTRACT.info.version, instance: null });
     expect(String(answer.headers['x-trace-id']), 'the trace id of the API reaches the browser').toMatch(UUID);
     expectApiHeaders(answer, 'the forwarded answer');
     expect(answer.headers['set-cookie']).toBeUndefined();
@@ -145,7 +145,7 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
     expect((await throughWeb('/api/v1/meta', ADMIN_HOST)).status).toBe(200);
     const wrong = await throughWeb('/api/v1/meta', PUBLIC_HOST, { headers: { 'X-Forwarded-Host': ADMIN_HOST, Forwarded: `host=${ADMIN_HOST}` } });
     expect(wrong.status).toBe(404);
-    expect(wrong.text).not.toContain('confera-api');
+    expect(wrong.text).not.toContain('congresa-api');
   });
 
   test('one error format: what the real API refuses arrives in the browser as its problem document, with its trace id', async () => {
@@ -163,7 +163,7 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
       expect(answer.status, method).toBeGreaterThanOrEqual(400);
       expect(answer.status, method).toBeLessThan(500);
       expect(String(answer.headers['content-type']), method).toMatch(/^application\/problem\+json/);
-      expect(answer.text, method).not.toContain('confera-api');
+      expect(answer.text, method).not.toContain('congresa-api');
     }
   });
 
@@ -219,14 +219,15 @@ test.describe('the cross-repo smoke test: a real confera_be behind the web appli
       void response.json().then((body: unknown) => seen.push({ status: response.status(), traceId: response.headers()['x-trace-id'], body }));
     });
     await page.goto(`${ADMIN_ORIGIN}/`);
-    await expect(page.locator('[data-confera-connection="connected"]')).toContainText('Confera is working.');
+    await expect(page.locator('[data-congresa-connection="connected"]')).toContainText('Congresa is working.');
     await page.getByText('Technical details').click();
     const row = (label: string) => page.locator('.ud-dl__row', { has: page.locator('dt', { hasText: label }) }).locator('dd');
-    await expect(row('Service')).toHaveText('confera-api');
+    await expect(row('Service')).toHaveText('congresa-api');
     await expect(row('Version')).toHaveText(ADMIN_CONTRACT.info.version);
     await expect.poll(() => seen.length).toBe(1);
     expect(seen[0]?.status).toBe(200);
-    expect(seen[0]?.body).toEqual({ name: 'confera-api', version: ADMIN_CONTRACT.info.version });
+    // The decided shape of /meta (M4-OPS-02, the staging banner): name, version and instance, null on a developer machine's API.
+    expect(seen[0]?.body).toEqual({ name: 'congresa-api', version: ADMIN_CONTRACT.info.version, instance: null });
     expect(String(seen[0]?.traceId), 'the answer on the page came from the real API').toMatch(UUID);
     // One call of the meta route, and every call to the page's own origin (ADR-02): the browser never talks to the API's address.
     expect(problems.requests.filter((url) => url.endsWith('/api/v1/meta'))).toEqual([`${ADMIN_ORIGIN}/api/v1/meta`]);

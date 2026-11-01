@@ -51,7 +51,7 @@ test.describe('sign-in and the shell (M2-FE-01)', () => {
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page).toHaveURL(`${ADMIN_ORIGIN}/`);
     await expect(page.getByRole('heading', { level: 1, name: `Welcome, ${STUB.admin.name}` })).toBeVisible();
-    await expect(page.locator('[data-confera-connection="connected"]')).toContainText('Confera is working.');
+    await expect(page.locator('[data-congresa-connection="connected"]')).toContainText('Congresa is working.');
     // The password never went into an address, and every call stayed on this origin.
     expect(problems.requests.some((url) => url.includes(STUB.admin.password))).toBe(false);
     expect(problems.requests.filter((url) => url.includes('/api/')).every((url) => url.startsWith(ADMIN_ORIGIN))).toBe(true);
@@ -92,7 +92,7 @@ test.describe('sign-in and the shell (M2-FE-01)', () => {
     await signIn(page);
     const seen: Array<{ method: string; path: string; csrf: string | null; background: string | null }> = [];
     page.on('request', (request) => {
-      if (request.url().includes('/api/v1/')) seen.push({ method: request.method(), path: new URL(request.url()).pathname, csrf: request.headers()['x-csrf-token'] ?? null, background: request.headers()['x-confera-background'] ?? null });
+      if (request.url().includes('/api/v1/')) seen.push({ method: request.method(), path: new URL(request.url()).pathname, csrf: request.headers()['x-csrf-token'] ?? null, background: request.headers()['x-congresa-background'] ?? null });
     });
     await page.goto(`${ADMIN_ORIGIN}/account`);
     await signOutFromMenu(page);
@@ -107,15 +107,15 @@ test.describe('sign-in and the shell (M2-FE-01)', () => {
     await signIn(page);
     await page.route('**/api/v1/meta', (route) => route.fulfill({ status: 502, contentType: 'application/problem+json', json: { status: 502, code: 'api_unreachable' } }));
     await page.goto(`${ADMIN_ORIGIN}/`);
-    const down = page.locator('[data-confera-connection="unreachable"]');
-    await expect(down).toContainText('Confera cannot reach its server');
+    const down = page.locator('[data-congresa-connection="unreachable"]');
+    await expect(down).toContainText('Congresa cannot reach its server');
     await expect(down).toContainText(`write to ${STUB.organisation.contactEmail}`);
     await page.unroute('**/api/v1/meta');
     await down.getByRole('button', { name: 'Try again' }).click();
-    await expect(page.locator('[data-confera-connection="connected"]')).toContainText('Confera is working.');
-    await page.route('**/api/v1/meta', (route) => route.fulfill({ json: { name: 'confera-api', version: '9.0.0' } }));
+    await expect(page.locator('[data-congresa-connection="connected"]')).toContainText('Congresa is working.');
+    await page.route('**/api/v1/meta', (route) => route.fulfill({ json: { name: 'congresa-api', version: '9.0.0' } }));
     await page.goto(`${ADMIN_ORIGIN}/`);
-    await expect(page.locator('[data-confera-connection="mismatch"]')).toContainText('Confera has been updated');
+    await expect(page.locator('[data-congresa-connection="mismatch"]')).toContainText('Congresa has been updated');
     await expect(page.getByRole('button', { name: 'Reload page' })).toBeVisible();
   });
 });
@@ -200,7 +200,7 @@ test.describe('my account (M2-FE-01)', () => {
   test('the own password is changed with the checklist; the email through a link to the new address', async ({ page }) => {
     await signIn(page);
     await page.goto(`${ADMIN_ORIGIN}/account`);
-    const form = page.locator('[data-confera-change-password]');
+    const form = page.locator('[data-congresa-change-password]');
     await form.getByLabel('Current password').fill(STUB.admin.password);
     await form.getByRole('textbox', { name: 'New password', exact: true }).fill(CHANGED_PASSWORD);
     await form.getByLabel('New password, once more').fill(CHANGED_PASSWORD);
@@ -208,7 +208,7 @@ test.describe('my account (M2-FE-01)', () => {
     await form.getByRole('button', { name: 'Change the password' }).click();
     await expect(page.locator('.ud-toast')).toContainText('Password changed');
 
-    const emailForm = page.locator('[data-confera-change-email]');
+    const emailForm = page.locator('[data-congresa-change-email]');
     await emailForm.getByLabel('New email address').fill('zivana.nova@a.example.test');
     await emailForm.getByLabel('Your password').fill(CHANGED_PASSWORD);
     await emailForm.getByRole('button', { name: 'Send the link' }).click();
@@ -227,7 +227,7 @@ test.describe('my account (M2-FE-01)', () => {
   test('a wrong current password is said at the field; sign out everywhere asks first', async ({ page }) => {
     await signIn(page);
     await page.goto(`${ADMIN_ORIGIN}/account`);
-    const form = page.locator('[data-confera-change-password]');
+    const form = page.locator('[data-congresa-change-password]');
     await form.getByLabel('Current password').fill('invented-not-mine');
     await form.getByRole('textbox', { name: 'New password', exact: true }).fill(CHANGED_PASSWORD);
     await form.getByLabel('New password, once more').fill(CHANGED_PASSWORD);
@@ -333,7 +333,7 @@ test.describe('users (M2-FE-02)', () => {
     await page.goto(`${ADMIN_ORIGIN}/users`);
     await page.getByRole('button', { name: STUB.admin.name, exact: true }).click();
     // The last active admin cannot be demoted, deactivated or removed, and the page says why before anything is asked (UXUI-M2-07).
-    await expect(page.locator('[data-confera-last-admin]')).toContainText('This is the last active admin');
+    await expect(page.locator('[data-congresa-last-admin]')).toContainText('This is the last active admin');
     for (const name of ['Change the role', 'Deactivate', 'Remove']) await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
   });
 });
@@ -343,8 +343,8 @@ test.describe('the organisation (M2-FE-02)', () => {
 
   test('the issuer data is saved; the payment details ask for the password again and show the 14-day notice', async ({ page }) => {
     await signIn(page, STUB.admin, '/organisation');
-    await expect(page.locator('[data-confera-payment-notice]')).toHaveCount(0);
-    const issuer = page.locator('[data-confera-issuer]');
+    await expect(page.locator('[data-congresa-payment-notice]')).toHaveCount(0);
+    const issuer = page.locator('[data-congresa-issuer]');
     await issuer.getByLabel('Registration number (matični broj)').fill('1234');
     await issuer.getByRole('button', { name: 'Save the issuer data' }).click();
     await expect(issuer.getByLabel('Registration number (matični broj)')).toHaveAccessibleDescription('This is not a valid registration number. Check the digits.');
@@ -353,14 +353,14 @@ test.describe('the organisation (M2-FE-02)', () => {
     await issuer.getByRole('button', { name: 'Save the issuer data' }).click();
     await expect(page.locator('.ud-toast')).toContainText('Issuer data saved');
 
-    const payment = page.locator('[data-confera-payment]');
+    const payment = page.locator('[data-congresa-payment]');
     await payment.getByLabel('IBAN for payments in EUR').fill('RS35160000000000000222');
     await payment.getByRole('button', { name: 'Save the payment details' }).click();
     await answerPasswordAgain(page, STUB.admin.password);
     await expect(page.locator('.ud-toast').last()).toContainText('Payment details saved');
-    await expect(page.locator('[data-confera-payment-notice]')).toContainText(`by ${STUB.admin.name}`);
+    await expect(page.locator('[data-congresa-payment-notice]')).toContainText(`by ${STUB.admin.name}`);
     await page.reload();
-    await expect(page.locator('[data-confera-payment-notice]')).toContainText('Payment details changed on');
+    await expect(page.locator('[data-congresa-payment-notice]')).toContainText('Payment details changed on');
   });
 
   test('a change on an older version is refused and offers a reload', async ({ page }) => {
@@ -369,7 +369,7 @@ test.describe('the organisation (M2-FE-02)', () => {
     await page.route('**/api/v1/organisation', (route) =>
       route.request().method() === 'PATCH' ? route.fulfill({ status: 409, contentType: 'application/problem+json', json: { status: 409, code: 'version_conflict', traceId: 'x' } }) : route.continue(),
     );
-    const issuer = page.locator('[data-confera-issuer]');
+    const issuer = page.locator('[data-congresa-issuer]');
     await issuer.getByLabel('Short name').fill('Udruženje za probe A, novo');
     await issuer.getByRole('button', { name: 'Save the issuer data' }).click();
     await expect(issuer.locator('.ud-alert--error')).toContainText('Another admin changed this meanwhile');

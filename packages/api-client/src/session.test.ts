@@ -1,6 +1,6 @@
 // M2-FE-01: the CSRF plumbing of a signed-in browser (ADR-03). Every changing request carries
 // the session's value in the X-CSRF-Token header once it is known; a reading request never
-// does; a refetch the person did not ask for says so with X-Confera-Background.
+// does; a refetch the person did not ask for says so with X-Congresa-Background.
 import { describe, expect, it, vi } from 'vitest';
 
 import { BACKGROUND_HEADER, createSessionClient, CSRF_HEADER, hasFreshPassword } from './session';

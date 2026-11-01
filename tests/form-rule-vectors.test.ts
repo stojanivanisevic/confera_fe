@@ -64,9 +64,9 @@ describe('the shared vectors of the form rules (contracts/form-rule-vectors.json
   });
 
   it('the browser finds a counter the API accepts, as the API computes it', async () => {
-    const counter = await solveProofOfWork('confera-vector-1', 10);
-    expect(counter).toBe('2933'); // the smallest, as in the vectors
-    const hash = createHash('sha256').update(`confera-vector-1:${counter}`, 'utf8').digest();
+    const counter = await solveProofOfWork('congresa-vector-1', 10);
+    expect(counter).toBe('2552'); // the smallest, as in the vectors
+    const hash = createHash('sha256').update(`congresa-vector-1:${counter}`, 'utf8').digest();
     expect(hash[0]).toBe(0);
     expect(hash[1]! >> 6).toBe(0);
   });

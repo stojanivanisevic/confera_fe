@@ -64,7 +64,7 @@ export const CHROMIUM_PREFERENCES = {
 
 /** A new, empty Chromium profile directory with the two files above. The caller removes it. */
 export function createIsolatedChromiumProfile(parent: string = tmpdir()): string {
-  const dir = mkdtempSync(join(parent, 'confera-e2e-chromium-'));
+  const dir = mkdtempSync(join(parent, 'congresa-e2e-chromium-'));
   writeFileSync(join(dir, 'Local State'), JSON.stringify(CHROMIUM_LOCAL_STATE));
   mkdirSync(join(dir, 'Default'));
   writeFileSync(join(dir, 'Default', 'Preferences'), JSON.stringify(CHROMIUM_PREFERENCES));
@@ -113,12 +113,12 @@ export async function attachVirtualAuthenticator(context: BrowserContext): Promi
 // ---------------------------------------------------------------------------
 // 4: the guard
 
-const BASELINE_ENV = 'CONFERA_E2E_BAD_PASSWORD_BASELINE';
-const MARKER_ENV = 'CONFERA_E2E_OS_GUARD_MARKER';
+const BASELINE_ENV = 'CONGRESA_E2E_BAD_PASSWORD_BASELINE';
+const MARKER_ENV = 'CONGRESA_E2E_OS_GUARD_MARKER';
 
 /** One file per machine user, outside any clone, so a fresh clone cannot start where another one stopped. */
 export function guardMarkerPath(): string {
-  return process.env[MARKER_ENV] ?? join(tmpdir(), 'confera-e2e-os-account-guard.tripped');
+  return process.env[MARKER_ENV] ?? join(tmpdir(), 'congresa-e2e-os-account-guard.tripped');
 }
 
 /**

@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { createSessionClient, type EmailChangeLink } from '@confera/api-client';
-import { Alert, Button, PageHeader } from '@confera/ui';
+import { createSessionClient, type EmailChangeLink } from '@congresa/api-client';
+import { Alert, Button, PageHeader } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { call, callEmpty, explain, isApiError } from './problems';

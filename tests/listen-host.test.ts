@@ -27,8 +27,8 @@ describe('the address the web application listens on', () => {
       ['every IPv6 address', '::'],
       ['an address of the local network', '192.168.1.20'],
       ['a private address of a server', '10.0.0.5'],
-      ['a public host name', 'confera.example.org'],
-      ['a .test name, which may resolve to any interface', 'confera.test'],
+      ['a public host name', 'congresa.example.org'],
+      ['a .test name, which may resolve to any interface', 'congresa.test'],
     ])('refuses LISTEN_HOST set to %s', (_what, value) => {
       expect(listen({ STAGE: stage, LISTEN_HOST: value })).toEqual({ problem: `LISTEN_HOST ${LOOPBACK_ONLY as string}` });
     });

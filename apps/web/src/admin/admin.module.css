@@ -9,14 +9,14 @@
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--card-min), 100%), 1fr));
   gap: var(--gutter-2xl);
   align-items: start;
 }
 
 .fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--field-min), 100%), 1fr));
   gap: var(--gutter-l) var(--gutter-2xl);
 }
 
@@ -121,7 +121,7 @@
 }
 
 .toolbar > * {
-  flex: 1 1 180px;
+  flex: 1 1 var(--filter-field-min);
   max-width: var(--filter-field-max);
 }
 
@@ -225,9 +225,37 @@
 .editor :global(.ProseMirror) h1,
 .editor :global(.ProseMirror) h2,
 .editor :global(.ProseMirror) h3,
+.editor :global(.ProseMirror) [data-email-heading],
 .editor :global(.ProseMirror) ul,
 .editor :global(.ProseMirror) ol {
   margin: 0 0 var(--gutter-s);
+}
+
+/* A heading of the email: styled as one, but no heading of the page (UX4-18). */
+.editor :global([data-email-heading="1"]) {
+  font: var(--text-h4);
+}
+
+.editor :global([data-email-heading="2"]) {
+  font: var(--text-h5);
+}
+
+.editor :global([data-email-heading="3"]) {
+  font: var(--text-h6);
+}
+
+/* The editor and the preview side by side only where both have room; below, one under the other (UX4-17). */
+.editorCards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gutter-2xl);
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .editorCards {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
 }
 
 .editor :global(.ProseMirror) a {
@@ -253,7 +281,7 @@
   box-shadow: var(--focus-ring);
 }
 
-/* A block shown only when a condition holds. */
+/* A block shown only when a condition holds, with the condition named above it (UX4-11). */
 .editor :global(section[data-condition]) {
   margin: 0 0 var(--gutter-s);
   padding: var(--gutter-s) var(--gutter-m);
@@ -261,15 +289,27 @@
   background: var(--background-2);
 }
 
+.editor :global([data-condition-label]) {
+  margin: 0 0 var(--gutter-xs);
+  font: var(--text-caption);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--warning);
+  user-select: none;
+}
+
+/* The subject is one line of text, but a long one wraps rather than being cut (UX4-17). */
 .subject :global(.ProseMirror) {
   min-height: 0;
-  white-space: pre;
-  overflow-x: auto;
 }
 
 /* A long address or id breaks anywhere rather than pushing the page sideways at 375 px. */
 .break {
   overflow-wrap: anywhere;
+}
+
+/* A date and time on one line (the mail log's column, UX4-13). */
+.nowrap {
+  white-space: nowrap;
 }
 
 /* A message for the whole page above its content: the session ended, the server does not answer. */
@@ -304,6 +344,13 @@
 /* Shown from 600px: the person's name in the top bar, which a phone has no room for (UXUI-M2-24). */
 @media (max-width: 599px) {
   .wideOnly {
+    display: none;
+  }
+}
+
+/* Shown below 600px only: the sort of a table whose column headers a phone hides (UX4-15). */
+@media (min-width: 600px) {
+  .narrowOnly {
     display: none;
   }
 }
@@ -368,6 +415,66 @@
 
 /* Save and Publish of a form, with the state of its draft: in view at the foot of the window wherever the long
    page is scrolled (UX3-09). */
+/* The parts of a long screen, each a link to its card (M3-ISS-22). */
+.anchors ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gutter-xs) var(--gutter-l);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.anchors a {
+  display: inline-block;
+  min-height: var(--target-touch);
+  padding-block: var(--gutter-xs);
+}
+
+/* A card a link leads to keeps its heading clear of the top of the window. */
+.anchored {
+  scroll-margin-top: var(--gutter-l);
+}
+
+/* A part shown on request (the plain text of an email in a dialog). */
+.folded summary {
+  min-height: var(--target-touch);
+  padding-block: var(--gutter-s);
+  cursor: pointer;
+  font: var(--text-body-sm);
+}
+
+/* Said to a screen reader, not shown: the step of a dialog, the rows a table now shows (UX4-02, UX4-19). */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* A sentence of a dialog that must not be missed (the language the author's email is in, UX4-14). */
+.strongText {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* A note keeps its lines as written. */
+.preWrap {
+  white-space: pre-wrap;
+}
+
+/* A group of fields with its own name, without the browser's frame (an author in the edit). */
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter-m);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 .stickyActions {
   position: sticky;
   bottom: var(--gutter-null);

@@ -3,7 +3,7 @@
  * the page explains). One place turns a problem document into a title, a text and, for refused
  * input, a message per field, so every screen says the same thing in the same words.
  */
-import { ApiError, type FieldError } from '@confera/api-client';
+import { ApiError, type FieldError } from '@congresa/api-client';
 
 import { fill, TEXTS } from './texts';
 
@@ -33,7 +33,7 @@ interface Answer<T> {
  * a timeout) becomes an ApiError with the status 0 and the code `api_unreachable`.
  */
 /** The shell listens: a change met a session that has ended (UXUI-M2-02). */
-export const SESSION_ENDED_EVENT = 'confera:session-ended';
+export const SESSION_ENDED_EVENT = 'congresa:session-ended';
 
 function announce(status: number, error: unknown): void {
   const code = typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined;
@@ -106,6 +106,11 @@ export function explain(error: unknown, contact: string | null = null): Explaine
       return { ...base, title: TEXTS.problems.outOfStep, text: TEXTS.problems.outOfStepText };
     case 'too_many_requests':
       return { ...base, title: TEXTS.problems.tooMany, text: TEXTS.problems.tooManyText };
+    // A test message is capped per organisation and counts against its server's send rate (M3-ISS-02).
+    case 'test_message_limit':
+      return { ...base, title: TEXTS.mailServers.testLimit, text: TEXTS.mailServers.testLimitText };
+    case 'send_rate_reached':
+      return { ...base, title: TEXTS.mailServers.rateReached, text: TEXTS.mailServers.rateReachedText };
     case 'version_conflict':
       return { ...base, title: TEXTS.organisation.conflict, text: TEXTS.organisation.conflictText };
     case 'email_taken':

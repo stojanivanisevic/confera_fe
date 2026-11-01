@@ -67,7 +67,7 @@ it('a Send that waits for the proof-of-work says so after a second, keeps the fo
   expect(submit().textContent).toBe('Sending…');
   await wait(900);
   expect(submit().textContent).toBe('Checking that you are not a robot…');
-  expect(container.querySelector('[data-confera-phase]')!.getAttribute('data-confera-phase')).toBe('checking');
+  expect(container.querySelector('[data-congresa-phase]')!.getAttribute('data-congresa-phase')).toBe('checking');
   // The form is still usable: what the author types is taken.
   await typeInto(field('title'), 'Održivi turizam na Balkanu i u Podunavlju');
   expect(field('title').value).toBe('Održivi turizam na Balkanu i u Podunavlju');
@@ -80,7 +80,7 @@ it('a Send that waits for the proof-of-work says so after a second, keeps the fo
   });
   await settle();
   expect(api.calls.submits.map((s) => s.body.proofOfWork)).toEqual(['48213']);
-  expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
+  expect(container.querySelector('[data-congresa-thanks]')).not.toBeNull();
 }, 15_000);
 
 it('in Serbian the check has its own words', async () => {

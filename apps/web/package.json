@@ -1,15 +1,15 @@
 {
-  "name": "@confera/web",
+  "name": "@congresa/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@confera/api-client": "workspace:*",
-    "@confera/embed-loader": "workspace:*",
-    "@confera/form-renderer": "workspace:*",
-    "@confera/template-editor": "workspace:*",
-    "@confera/ui": "workspace:*",
-    "next": "16.4.0",
+    "@congresa/api-client": "workspace:*",
+    "@congresa/embed-loader": "workspace:*",
+    "@congresa/form-renderer": "workspace:*",
+    "@congresa/template-editor": "workspace:*",
+    "@congresa/ui": "workspace:*",
+    "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   }

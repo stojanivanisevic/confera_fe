@@ -2,8 +2,8 @@
 //
 // The harness site (localhost:4000) is a "conference site" with hostile CSS and
 // a hostile script; it is on the site list of the spike form. The snippet under
-// test is the real one, built by @confera/embed-loader and pasted into the page.
-// Confera's public surface is another site (127.0.0.1:3000), so the frame is a
+// test is the real one, built by @congresa/embed-loader and pasted into the page.
+// Congresa's public surface is another site (127.0.0.1:3000), so the frame is a
 // real third-party frame, and the browsers run with third-party cookies blocked.
 import type { Frame, Page } from '@playwright/test';
 
@@ -30,7 +30,7 @@ async function formFrame(page: Page): Promise<Frame> {
   if (!frame) throw new Error('The frame of the form has no document');
   await frame.getByRole('heading', { level: 1, name: 'Abstract submission' }).waitFor();
   // The form answers to typing and clicks only once the browser has attached it.
-  await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+  await frame.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
   return frame;
 }
 
@@ -43,7 +43,7 @@ const PROPERTIES = ['display', 'boxSizing', 'fontFamily', 'fontSize', 'fontWeigh
  * is attached and every transition has ended (Send turns from disabled to enabled when it is attached).
  */
 async function stylesOf(target: Page | Frame): Promise<Record<string, Record<string, string>>> {
-  await target.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+  await target.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
   await target.evaluate(() => Promise.all(document.getAnimations().filter((animation) => animation.effect?.getTiming().iterations !== Infinity).map((animation) => animation.finished)));
   return target.evaluate(
     ({ selectors, properties }) => {
@@ -62,7 +62,7 @@ async function stylesOf(target: Page | Frame): Promise<Record<string, Record<str
 
 const frameHeights = async (page: Page, frame: Frame) => ({
   element: await page.locator(FRAME).evaluate((el) => el.getBoundingClientRect().height),
-  content: await frame.locator('[data-confera-embed-root]').evaluate((el) => Math.ceil(el.getBoundingClientRect().height)),
+  content: await frame.locator('[data-congresa-embed-root]').evaluate((el) => Math.ceil(el.getBoundingClientRect().height)),
 });
 const expectHeightFollows = (page: Page, frame: Frame) =>
   expect
@@ -140,7 +140,7 @@ for (const width of [1440, 375]) {
       expect(frameBox.right, 'the frame sticks out of its place').toBeLessThanOrEqual(frameBox.slot + 0.5);
       expect(inside.scroll, 'the frame scrolls sideways').toBeLessThanOrEqual(inside.client);
       // Nothing of the form sticks out of the frame.
-      const widest = await frame.evaluate(() => Math.max(...[...document.querySelectorAll('[data-confera-embed-root] *')].map((el) => el.getBoundingClientRect().right)));
+      const widest = await frame.evaluate(() => Math.max(...[...document.querySelectorAll('[data-congresa-embed-root] *')].map((el) => el.getBoundingClientRect().right)));
       expect(widest).toBeLessThanOrEqual(inside.client + 0.5);
     });
 
@@ -363,7 +363,7 @@ test.describe('the embed: what the site and the frame can and cannot do to each 
     await expect(frame.locator('.ud-alert--success')).toContainText('Apstrakt je poslat');
     await expectHeightFollows(page, frame);
 
-    // Confera's public surface set no cookie at all.
+    // Congresa's public surface set no cookie at all.
     expect(await context.cookies(PUBLIC_ORIGIN)).toEqual([]);
   });
 
@@ -448,7 +448,7 @@ test.describe('a site that zooms its content (CSS zoom 1.25, Q3-12)', () => {
       const reach = () =>
         frame.evaluate(() => {
           const zoom = document.documentElement.clientHeight / window.innerHeight;
-          const form = document.querySelector('[data-confera-embed-root]')!.getBoundingClientRect();
+          const form = document.querySelector('[data-congresa-embed-root]')!.getBoundingClientRect();
           return { short: Math.ceil(form.height * zoom) - window.innerHeight, inside: document.documentElement.scrollHeight - window.innerHeight };
         });
       // A pointer under a zoomed ancestor lands elsewhere in Playwright's arithmetic: the buttons are pressed by the DOM.
@@ -465,7 +465,7 @@ test.describe('the snippet carries the language of the site (D2)', () => {
     const serbian = buildEmbedSnippet({ publicOrigin: PUBLIC_ORIGIN, slug: SLUG, title: 'Prijava apstrakta', linkText: 'Obrazac se ne prikazuje? Otvorite ga na posebnoj stranici.', language: 'sr' });
     await openSite(page, HARNESS_ORIGIN, serbian);
     const frame = await (await page.locator(FRAME).elementHandle()).contentFrame();
-    await frame!.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await frame!.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     await expect(frame!.getByRole('heading', { level: 1 })).toHaveText('Prijava apstrakta');
     await expect(frame!.getByLabel('Naslov rada')).toBeVisible();
     expect(await frame!.evaluate(() => document.documentElement.lang)).toBe('sr');
@@ -485,7 +485,7 @@ test.describe('a browser in Serbian (D2)', () => {
   test('opens a snippet without a language in Serbian', async ({ page }) => {
     await openSite(page, HARNESS_ORIGIN, snippetFor(SLUG));
     const frame = await (await page.locator(FRAME).elementHandle()).contentFrame();
-    await frame!.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await frame!.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     await expect(frame!.getByRole('heading', { level: 1 })).toHaveText('Prijava apstrakta');
   });
 });

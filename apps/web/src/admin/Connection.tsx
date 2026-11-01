@@ -1,14 +1,14 @@
 'use client';
 
 /**
- * The connection card of the home page (UX-M1-14, decision D8 pending): "Confera is working",
- * with the versions in small print; "Confera cannot reach its server" with a button to try
- * again; "Confera has been updated" when the API is of another major version (ADR-19).
+ * The connection card of the home page (UX-M1-14, decision D8 pending): "Congresa is working",
+ * with the versions in small print; "Congresa cannot reach its server" with a button to try
+ * again; "Congresa has been updated" when the API is of another major version (ADR-19).
  */
 import { useCallback, useEffect, useState } from 'react';
 
-import { compatibility, CONTRACT_VERSION, createAdminClient, getMeta, type Meta } from '@confera/api-client';
-import { Alert, Button, Card, DescriptionList, Spinner, StatusBadge } from '@confera/ui';
+import { compatibility, CONTRACT_VERSION, createAdminClient, getMeta, type Meta } from '@congresa/api-client';
+import { Alert, Button, Card, DescriptionList, Spinner, StatusBadge } from '@congresa/ui';
 
 import { useSession } from './session';
 import { fill, TEXTS } from './texts';
@@ -43,7 +43,7 @@ export function Connection() {
 
   const t = TEXTS.connection;
   return (
-    <Card title={t.title} headingLevel={2} data-confera-connection={state.phase}>
+    <Card title={t.title} headingLevel={2} data-congresa-connection={state.phase}>
       {state.phase === 'loading' ? (
         <p>
           <Spinner size="sm" label={t.checking} /> {t.checking}

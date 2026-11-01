@@ -9,8 +9,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
-import type { UserRecord } from '@confera/api-client';
-import { Alert, Button, Card, ConfirmDialog, DescriptionList, Dialog, PageHeader, Select, StatusBadge, TextButton, TextField, toast } from '@confera/ui';
+import type { UserRecord } from '@congresa/api-client';
+import { Alert, Button, Card, ConfirmDialog, DescriptionList, Dialog, PageHeader, Select, StatusBadge, TextButton, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';
@@ -125,7 +125,7 @@ export function User({ id }: { id: string }) {
         {record.status === 'active' ? <Button variant="dark" onClick={() => open('sessions')}>{t.endSessions}</Button> : null}
         {!removed ? <Button variant="danger" disabled={lastAdmin} onClick={() => open('remove')}>{t.remove}</Button> : null}
       </div>
-      {lastAdmin ? <p className={styles.text} data-confera-last-admin>{t.lastAdminNote}</p> : null}
+      {lastAdmin ? <p className={styles.text} data-congresa-last-admin>{t.lastAdminNote}</p> : null}
     </>
   );
 

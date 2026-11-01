@@ -95,7 +95,7 @@ describe('Menu', () => {
 describe('AppShell below 900 px', () => {
   function Shell() {
     return (
-      <U.AppShell product="Confera" sidebar={<U.SidebarNav items={[{ label: 'Conferences', value: 'conferences', href: '#c' }, { label: 'Forms', value: 'forms', href: '#f' }]} />}>
+      <U.AppShell product="Congresa" sidebar={<U.SidebarNav items={[{ label: 'Conferences', value: 'conferences', href: '#c' }, { label: 'Forms', value: 'forms', href: '#f' }]} />}>
         <p>Content</p>
       </U.AppShell>
     );

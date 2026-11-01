@@ -20,7 +20,7 @@ import { watchPage } from './support/page-problems';
 
 const SLUG = 'spike-abstract';
 /** The draft of the form in the tab: by form and version (0.3.0, D3). */
-const DRAFT_KEY = `confera:draft:${SLUG}:1`;
+const DRAFT_KEY = `congresa:draft:${SLUG}:1`;
 const FRAME = `#${frameId(SLUG)}`;
 const snippet = buildEmbedSnippet({ publicOrigin: PUBLIC_ORIGIN, slug: SLUG, title: 'Abstract submission', linkText: 'Open the form in a new page' });
 
@@ -32,13 +32,13 @@ async function formFrame(page: Page): Promise<Frame> {
   await page.locator(FRAME).scrollIntoViewIfNeeded();
   const frame = await (await page.locator(FRAME).elementHandle())?.contentFrame();
   if (!frame) throw new Error('The frame of the form has no document');
-  await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+  await frame.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
   return frame;
 }
 
 const frameHeights = async (page: Page, frame: Frame) => ({
   element: await page.locator(FRAME).evaluate((el) => el.getBoundingClientRect().height),
-  content: await frame.locator('[data-confera-embed-root]').evaluate((el) => Math.ceil(el.getBoundingClientRect().height)),
+  content: await frame.locator('[data-congresa-embed-root]').evaluate((el) => Math.ceil(el.getBoundingClientRect().height)),
 });
 const expectHeightFollows = (page: Page, frame: Frame) =>
   expect
@@ -55,7 +55,7 @@ const sidewaysOverflow = (target: Page | Frame) =>
 /** The parts of the form that are wider than the window they are in. */
 const widerThanWindow = (target: Page | Frame) =>
   target.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>('[data-confera-form] *')]
+    [...document.querySelectorAll<HTMLElement>('[data-congresa-form] *')]
       .filter((el) => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > window.innerWidth + 0.5)
       .slice(0, 5)
       .map((el) => `${el.tagName.toLowerCase()}.${el.className} right=${Math.round(el.getBoundingClientRect().right)} window=${window.innerWidth}`),
@@ -94,7 +94,7 @@ test.describe('320 px wide (WCAG 1.4.10 Reflow)', () => {
   test('the hosted form does not scroll sideways, with errors showing and after sending', async ({ page }) => {
     const problems = watchPage(page);
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     expect(await sidewaysOverflow(page), 'the empty form').toBe(0);
     expect(await widerThanWindow(page)).toEqual([]);
 
@@ -140,7 +140,7 @@ test.describe('zoom (WCAG 1.4.4 Resize text, 1.4.10 Reflow)', () => {
       try {
         const problems = watchPage(page);
         await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-        await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+        await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
         expect(await page.evaluate(() => window.devicePixelRatio)).toBe(factor);
         expect(await sidewaysOverflow(page)).toBe(0);
         expect(await widerThanWindow(page)).toEqual([]);
@@ -211,7 +211,7 @@ test.describe('a conference site that forges height messages', () => {
   }
 
   /**
-   * Gives the site a script of its own that dispatches message events which claim Confera's
+   * Gives the site a script of its own that dispatches message events which claim Congresa's
    * origin and, by default, the frame's own window as their source. One engine refuses to
    * build such an event at all (the window of a frame of another site is not accepted as a
    * source): there the forgery is impossible, and the script says "refused".
@@ -261,7 +261,7 @@ test.describe('a conference site that forges height messages', () => {
       expect(await forge(page, 0)).toBe(MIN_FRAME_HEIGHT);
       expect(await forge(page, 640.4)).toBe(640);
       for (const value of ['900', null, {}, [900], true]) expect(await forge(page, value), `height ${JSON.stringify(value)}`).toBe(640);
-      expect(await forge(page, 900, 'confera:navigate')).toBe(640);
+      expect(await forge(page, 900, 'congresa:navigate')).toBe(640);
       // Not a number, infinite or missing: values that cannot travel as JSON are made inside the page.
       expect(await page.evaluate(() => (window as unknown as ForgingWindow).__forgeWhatCannotTravel())).toBe(640);
     }
@@ -273,7 +273,7 @@ test.describe('a conference site that forges height messages', () => {
     expect((await frameHeights(page, frame)).element).toBeGreaterThan(honest);
   });
 
-  test("a message from another frame of the site, from the site itself or from nobody, in Confera's name, is ignored", async ({ page }) => {
+  test("a message from another frame of the site, from the site itself or from nobody, in Congresa's name, is ignored", async ({ page }) => {
     await openSite(page, `${snippet}\n<iframe id="other" title="another frame" srcdoc="<p>x</p>" style="display:block!important;height:50px!important;visibility:visible!important;max-height:none!important"></iframe>`);
     const frame = await formFrame(page);
     await expectHeightFollows(page, frame);
@@ -302,12 +302,12 @@ test.describe('the same form twice on one page, and a site that sets the height 
       await frames.nth(index).scrollIntoViewIfNeeded();
       const frame = await (await frames.nth(index).elementHandle())?.contentFrame();
       if (!frame) throw new Error(`frame ${String(index)} has no document`);
-      await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+      await frame.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
       return frame;
     };
     const forms = [await documentOf(0), await documentOf(1)];
     const heights = () => frames.evaluateAll((elements) => elements.map((element) => Math.round(element.getBoundingClientRect().height)));
-    const contentHeight = (frame: Frame) => frame.locator('[data-confera-embed-root]').evaluate((element) => Math.ceil(element.getBoundingClientRect().height));
+    const contentHeight = (frame: Frame) => frame.locator('[data-congresa-embed-root]').evaluate((element) => Math.ceil(element.getBoundingClientRect().height));
     const follows = (index: 0 | 1) =>
       expect
         .poll(async () => Math.abs((await heights())[index]! - (await contentHeight(forms[index]!))), { message: `frame ${String(index)} is as tall as its content` })
@@ -368,7 +368,7 @@ test.describe('storage that throws', () => {
     });
     const problems = watchPage(page);
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     await expect(page.getByText('This browser does not let the form keep a draft')).toBeVisible();
     await fillAndSend(page);
     expect(problems.messages).toEqual([]);
@@ -377,7 +377,7 @@ test.describe('storage that throws', () => {
   test('storage that fills up in the middle of a session does not break the form', async ({ page }) => {
     const problems = watchPage(page);
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     await page.getByLabel('Title of the paper').fill('Prvi naslov');
     // From now on every write and every read fails, as with a full or revoked store.
     await page.evaluate(() => {
@@ -408,7 +408,7 @@ test.describe('storage that throws', () => {
       if (page.url() !== `${PUBLIC_ORIGIN}/f/${SLUG}`) await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
       await page.evaluate(({ key, value }) => window.sessionStorage.setItem(key, value), { key: DRAFT_KEY, value: stored });
       await page.reload();
-      await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+      await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
       await expect(page.getByRole('heading', { level: 1 }), `with ${stored.slice(0, 30)} in the store`).toBeVisible();
       await expect(page.getByRole('button', { name: /Send abstract|Pošalji apstrakt/ })).toBeVisible();
     }
@@ -421,7 +421,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
 
   async function openGallery(page: Page) {
     await page.goto(`${PUBLIC_ORIGIN}/dev/gallery`);
-    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+    await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
   }
 
   test('Tab reaches every control of every form component, in order, and each shows where the focus is', async ({ page }) => {
@@ -577,7 +577,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
 
     // The same component as authors meet it, in the hosted form.
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     expect(await focusAfterRemoving(page.locator('.ud-repeater').first()), 'the authors of the hosted form').toEqual({ onTheBody: false, inTheRepeater: true });
   });
 
@@ -586,7 +586,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
   // stay keep their text, and what is typed next lands in the field that has the focus.
   test('a middle row, the first row and the last row of the authors are removed with the keyboard: each time the focus lands on the right row', async ({ page }) => {
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     const repeater = page.locator('.ud-repeater').first();
 
     const add = repeater.getByRole('button', { name: 'Add author' });
@@ -618,7 +618,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
       await page.keyboard.press(key);
       // The author holds data, so the form asks first, inside the form (D4); the question takes the
       // focus, and its first button, Remove, is one Tab away. All by keyboard.
-      await expect(repeater.locator('[data-confera-remove-question]')).toBeFocused();
+      await expect(repeater.locator('[data-congresa-remove-question]')).toBeFocused();
       await page.keyboard.press('Tab');
       await page.keyboard.press(key);
     };
@@ -666,7 +666,7 @@ test.describe('the form components of the gallery, by keyboard only (NFR-A11Y-02
     await repeater.getByRole('button', { name: 'Remove author 2' }).focus();
     await page.keyboard.press('Enter');
     // The author holds data: the form asks first, inside the frame too (D4), and is answered by keyboard.
-    await expect(repeater.locator('[data-confera-remove-question]')).toBeFocused();
+    await expect(repeater.locator('[data-congresa-remove-question]')).toBeFocused();
     await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
     await expect(repeater.locator('.ud-repeater__row')).toHaveCount(2);
@@ -695,7 +695,7 @@ test.describe('a slow connection: the form is on the screen before its scripts a
     });
 
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`, { waitUntil: 'commit' });
-    const form = page.locator('[data-confera-form]');
+    const form = page.locator('[data-congresa-form]');
     await form.waitFor();
     await expect(form, 'the control: the form is on the screen and not attached yet').toHaveAttribute('data-hydrated', 'false');
 
@@ -726,7 +726,7 @@ test.describe('a slow connection: the form is on the screen before its scripts a
     const problems = watchPage(page);
     const release = await holdScripts(page);
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`, { waitUntil: 'commit' });
-    const form = page.locator('[data-confera-form]');
+    const form = page.locator('[data-congresa-form]');
     await form.waitFor();
     await expect(form, 'the control: the form is on the screen and not attached yet').toHaveAttribute('data-hydrated', 'false');
 
@@ -768,7 +768,7 @@ test.describe('a slow connection: the form is on the screen before its scripts a
   test('a draft of an earlier visit fills the fields that were left alone, and never replaces what was typed before the form was attached', async ({ page }) => {
     // The earlier visit: both long texts were written and kept in the tab.
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     await page.getByLabel('Title of the paper').fill('Stari naslov');
     await page.getByLabel('Abstract').fill('Stari apstrakt od pet reči');
     await expect
@@ -779,7 +779,7 @@ test.describe('a slow connection: the form is on the screen before its scripts a
     // (Opened, not reloaded: on a reload some engines put the old text back into the fields themselves.)
     const release = await holdScripts(page);
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`, { waitUntil: 'commit' });
-    const form = page.locator('[data-confera-form]');
+    const form = page.locator('[data-congresa-form]');
     await form.waitFor();
     await expect(form).toHaveAttribute('data-hydrated', 'false');
     await page.getByLabel('Title of the paper').focus();
@@ -829,7 +829,7 @@ test.describe('nothing typed reaches an address, and the moment after Send', () 
       await route.continue();
     });
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`, { waitUntil: 'commit' });
-    const form = page.locator('[data-confera-form]');
+    const form = page.locator('[data-congresa-form]');
     await expect(form).toHaveAttribute('data-hydrated', 'false');
     await expect(page.getByRole('button', { name: 'Send abstract' }), 'Send waits for the scripts').toBeDisabled();
     // Enter in a field before the scripts arrive: the browser's own way to send a form.
@@ -846,7 +846,7 @@ test.describe('nothing typed reaches an address, and the moment after Send', () 
     await page.getByRole('button', { name: 'Send abstract' }).click();
     const summary = page.locator('.ud-alert--error');
     await expect(summary).toBeVisible();
-    await expect(page.locator('[data-confera-errors]'), 'the summary takes the focus').toBeFocused();
+    await expect(page.locator('[data-congresa-errors]'), 'the summary takes the focus').toBeFocused();
     await summary.getByRole('link').first().click();
     await expect(page.getByLabel('I accept the terms of publication')).toBeFocused();
 
@@ -855,7 +855,7 @@ test.describe('nothing typed reaches an address, and the moment after Send', () 
     await page.getByRole('button', { name: 'Send abstract' }).click();
     const thanks = page.locator('.ud-alert--success');
     await expect(thanks).toContainText('Abstract sent');
-    await expect(page.locator('[data-confera-thanks]'), 'the thank-you takes the focus').toBeFocused();
+    await expect(page.locator('[data-congresa-thanks]'), 'the thank-you takes the focus').toBeFocused();
 
     expect(page.url()).toBe(`${PUBLIC_ORIGIN}/f/${SLUG}`);
     expect(typed(seen), 'an address or a Referer with a typed value').toEqual([]);
@@ -881,7 +881,7 @@ test.describe('design system 2.2.0 by keyboard and pointer, beyond the gallery t
   test('a menu item and a list option show where the keyboard is, a choice gives the focus back, and a tooltip stays under the pointer', async ({ page }) => {
     const problems = watchPage(page);
     await page.goto(`${PUBLIC_ORIGIN}/dev/gallery`);
-    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+    await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
     const card = (name: string) => page.locator(`[data-component="${name}"]`);
     const showsFocus = (element: HTMLElement) => {
       const style = getComputedStyle(element);
@@ -933,12 +933,12 @@ test.describe('a visitor who asked for reduced motion', () => {
   test('the hosted form works, and the gallery slows what turns and what pulses', async ({ page }) => {
     const problems = watchPage(page);
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
     await fillAndSend(page);
 
     await page.goto(`${PUBLIC_ORIGIN}/dev/gallery`);
-    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+    await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
     const durations = await page.evaluate(() => {
       const seconds = (value: string) => Math.max(...value.split(',').map((part) => (part.trim().endsWith('ms') ? Number.parseFloat(part) / 1000 : Number.parseFloat(part))));
       return [...document.querySelectorAll<HTMLElement>('.ud-spinner, .ud-skeleton')].map((el) => seconds(getComputedStyle(el).animationDuration));

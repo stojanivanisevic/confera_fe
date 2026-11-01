@@ -5,7 +5,7 @@
 // "the same" is the same after `normaliseBody`, which does only that.
 import { Mark as EditorMark, type Node as EditorNode } from 'prosemirror-model';
 
-import { MARKS, type BlockNode, type DocNode, type InlineNode, type LinkNode, type Mark, type PlaceholderNode, type SubjectNode, type TextNode } from '@confera/api-client';
+import { MARKS, type BlockNode, type DocNode, type InlineNode, type LinkNode, type Mark, type PlaceholderNode, type SubjectNode, type TextNode } from '@congresa/api-client';
 
 import { bodySchema, SECURE_LINK, subjectSchema } from './schema';
 
@@ -47,6 +47,8 @@ function blockToEditor(node: BlockNode): EditorNode {
       );
     case 'conditional':
       return bodySchema.nodes.conditional.create({ key: node.key }, node.children.map(blockToEditor));
+    case 'image':
+      return bodySchema.nodes.image.create({ fileId: node.fileId, alt: node.alt });
   }
 }
 
@@ -120,6 +122,8 @@ function blockFromEditor(node: EditorNode): BlockNode {
       node.forEach((child) => children.push(blockFromEditor(child)));
       return { type: 'conditional', key: node.attrs.key as string, children };
     }
+    case 'image':
+      return { type: 'image', fileId: node.attrs.fileId as string, alt: node.attrs.alt as string };
     default:
       return { type: 'paragraph', children: inlineFromEditor(node) };
   }
@@ -187,6 +191,8 @@ function normaliseBlock(block: BlockNode): BlockNode {
       return { ...block, items: block.items.map((item) => ({ ...item, children: normaliseInline(item.children) })) };
     case 'conditional':
       return { ...block, children: block.children.map(normaliseBlock) };
+    case 'image':
+      return block;
   }
 }
 

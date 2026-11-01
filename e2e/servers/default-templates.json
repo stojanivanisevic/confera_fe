@@ -28,7 +28,7 @@
               { "type": "placeholder", "key": "inviterName" },
               { "type": "text", "text": " has invited you to " },
               { "type": "placeholder", "key": "organisationName" },
-              { "type": "text", "text": " on Confera. Choose your password through this link:" }
+              { "type": "text", "text": " on Congresa. Choose your password through this link:" }
             ]
           },
           {
@@ -58,7 +58,7 @@
       "subject": {
         "type": "subject",
         "children": [
-          { "type": "text", "text": "Vaš nalog kod " },
+          { "type": "text", "text": "Vaš nalog – organizacija: " },
           { "type": "placeholder", "key": "organisationName" }
         ]
       },
@@ -77,9 +77,9 @@
             "type": "paragraph",
             "children": [
               { "type": "placeholder", "key": "inviterName" },
-              { "type": "text", "text": " Vas je pozvao/la u " },
+              { "type": "text", "text": " Vas je pozvao/la na Conferu. Organizacija: " },
               { "type": "placeholder", "key": "organisationName" },
-              { "type": "text", "text": " na Conferi. Izaberite lozinku preko ovog linka:" }
+              { "type": "text", "text": ". Izaberite lozinku preko ovog linka:" }
             ]
           },
           {
@@ -163,7 +163,7 @@
       "subject": {
         "type": "subject",
         "children": [
-          { "type": "text", "text": "Nova lozinka kod " },
+          { "type": "text", "text": "Nova lozinka – organizacija: " },
           { "type": "placeholder", "key": "organisationName" }
         ]
       },
@@ -267,7 +267,7 @@
       "subject": {
         "type": "subject",
         "children": [
-          { "type": "text", "text": "Potvrdite novu adresu kod " },
+          { "type": "text", "text": "Potvrdite novu adresu – organizacija: " },
           { "type": "placeholder", "key": "organisationName" }
         ]
       },
@@ -366,9 +366,9 @@
           {
             "type": "paragraph",
             "children": [
-              { "type": "text", "text": "Neko se prijavio na Vaš nalog kod " },
+              { "type": "text", "text": "Neko se prijavio na Vaš nalog (organizacija: " },
               { "type": "placeholder", "key": "organisationName" },
-              { "type": "text", "text": " i zatražio promenu adrese na " },
+              { "type": "text", "text": ") i zatražio promenu adrese na " },
               { "type": "placeholder", "key": "newEmail" },
               {
                 "type": "text",
@@ -472,9 +472,9 @@
           {
             "type": "paragraph",
             "children": [
-              { "type": "text", "text": "Kod " },
+              { "type": "text", "text": "Organizacija: " },
               { "type": "placeholder", "key": "organisationName" },
-              { "type": "text", "text": " se dogodilo: " },
+              { "type": "text", "text": ". Dogodilo se: " },
               { "type": "placeholder", "key": "change" },
               { "type": "text", "text": "." }
             ]
@@ -570,11 +570,14 @@
           {
             "type": "paragraph",
             "children": [
-              { "type": "text", "text": "Neko pokušava da se prijavi na Vaš nalog kod " },
+              {
+                "type": "text",
+                "text": "Neko pokušava da se prijavi na Vaš nalog (organizacija: "
+              },
               { "type": "placeholder", "key": "organisationName" },
               {
                 "type": "text",
-                "text": " pogrešnom lozinkom. Prijava mu je usporena; Vaš poznati pregledač nije pogođen. Ako to niste bili Vi, ništa ne morate da radite; ako poruke ne prestaju, obavestite administratora."
+                "text": ") pogrešnom lozinkom. Prijava mu je usporena; Vaš poznati pregledač nije pogođen. Ako to niste bili Vi, ništa ne morate da radite; ako poruke ne prestaju, obavestite administratora."
               }
             ]
           }
@@ -587,7 +590,7 @@
       "subject": {
         "type": "subject",
         "children": [
-          { "type": "text", "text": "Confera test message from " },
+          { "type": "text", "text": "Congresa test message from " },
           { "type": "placeholder", "key": "serverName" }
         ]
       },
@@ -616,7 +619,7 @@
       "subject": {
         "type": "subject",
         "children": [
-          { "type": "text", "text": "Confera probna poruka sa " },
+          { "type": "text", "text": "Congresa probna poruka – server: " },
           { "type": "placeholder", "key": "serverName" }
         ]
       },
@@ -705,7 +708,7 @@
         "children": [
           { "type": "text", "text": "Vaša prijava " },
           { "type": "placeholder", "key": "reference" },
-          { "type": "text", "text": " za " },
+          { "type": "text", "text": " – konferencija: " },
           { "type": "placeholder", "key": "conferenceName" }
         ]
       },
@@ -715,9 +718,9 @@
           {
             "type": "paragraph",
             "children": [
-              { "type": "text", "text": "Hvala. Vaša prijava za " },
+              { "type": "text", "text": "Hvala. Vaša prijava je primljena. Konferencija: " },
               { "type": "placeholder", "key": "conferenceName" },
-              { "type": "text", "text": " je primljena." }
+              { "type": "text", "text": "." }
             ]
           },
           {
@@ -750,6 +753,1116 @@
                 "type": "text",
                 "text": ". Dobili ste je jer je ova adresa navedena u obrascu za prijavu. Ako niste ništa prijavili, možete je zanemariti."
               }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_opened",
+      "language": "en",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Your submission " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " is being processed" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Dear " },
+              { "type": "placeholder", "key": "authorName" },
+              { "type": "text", "text": "," }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Your submission has been taken into processing." }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Submission: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "conference: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Title: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "A message from the office:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "This is an automatic message from " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_opened",
+      "language": "sr",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Vaša prijava " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " je u obradi" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Poštovanje," }]
+          },
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Vaša prijava je uzeta u obradu." }]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Prijava: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "konferencija: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Naslov: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "Poruka kancelarije:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Ovo je automatska poruka organizacije " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_returned",
+      "language": "en",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Your submission " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " needs changes" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Dear " },
+              { "type": "placeholder", "key": "authorName" },
+              { "type": "text", "text": "," }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Your submission has been returned for revision." }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasContact",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Please reply to this message, or write to " },
+                  { "type": "placeholder", "key": "contactEmail" },
+                  {
+                    "type": "text",
+                    "text": ", with the corrected text; the office will enter it for you."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "noContact",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Please send the corrected text to the office of the conference; the office will enter it for you."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Submission: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "conference: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Title: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Please change the following:" }]
+          },
+          {
+            "type": "paragraph",
+            "children": [{ "type": "placeholder", "key": "message" }]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "This is an automatic message from " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_returned",
+      "language": "sr",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Vaša prijava " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " je vraćena na doradu" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Poštovanje," }]
+          },
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Vaša prijava je vraćena na doradu." }]
+          },
+          {
+            "type": "conditional",
+            "key": "hasContact",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Molimo Vas da ispravljeni tekst pošaljete odgovorom na ovu poruku ili na adresu "
+                  },
+                  { "type": "placeholder", "key": "contactEmail" },
+                  { "type": "text", "text": "; kancelarija će ga uneti umesto Vas." }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "noContact",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Molimo Vas da ispravljeni tekst pošaljete kancelariji konferencije; kancelarija će ga uneti umesto Vas."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Prijava: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "konferencija: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Naslov: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Molimo Vas da izmenite sledeće:" }]
+          },
+          {
+            "type": "paragraph",
+            "children": [{ "type": "placeholder", "key": "message" }]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Ovo je automatska poruka organizacije " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_resumed",
+      "language": "en",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Your submission " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " is back in processing" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Dear " },
+              { "type": "placeholder", "key": "authorName" },
+              { "type": "text", "text": "," }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "text": "Thank you for the corrections. Your submission is back in processing."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Submission: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "conference: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Title: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "A message from the office:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "This is an automatic message from " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_resumed",
+      "language": "sr",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Vaša prijava " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " je ponovo u obradi" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Poštovanje," }]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Hvala na ispravkama. Vaša prijava je ponovo u obradi." }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Prijava: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "konferencija: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Naslov: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "Poruka kancelarije:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Ovo je automatska poruka organizacije " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_accepted",
+      "language": "en",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Your submission " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " has been accepted" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Dear " },
+              { "type": "placeholder", "key": "authorName" },
+              { "type": "text", "text": "," }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "text": "We are pleased to tell you that your submission has been accepted."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Submission: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "conference: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Title: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "A message from the office:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "This is an automatic message from " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_accepted",
+      "language": "sr",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Vaša prijava " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " je prihvaćena" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Poštovanje," }]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "text": "Sa zadovoljstvom Vas obaveštavamo da je Vaša prijava prihvaćena."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Prijava: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "konferencija: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Naslov: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "Poruka kancelarije:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Ovo je automatska poruka organizacije " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_rejected",
+      "language": "en",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Decision on your submission " },
+          { "type": "placeholder", "key": "reference" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Dear " },
+              { "type": "placeholder", "key": "authorName" },
+              { "type": "text", "text": "," }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "text": "We regret to tell you that your submission has not been accepted."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Submission: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "conference: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Title: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "A message from the office:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "This is an automatic message from " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_rejected",
+      "language": "sr",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Odluka o Vašoj prijavi " },
+          { "type": "placeholder", "key": "reference" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Poštovanje," }]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "text": "Žao nam je što Vas obaveštavamo da Vaša prijava nije prihvaćena."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Prijava: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "konferencija: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Naslov: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "Poruka kancelarije:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Ovo je automatska poruka organizacije " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_withdrawn",
+      "language": "en",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Your submission " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " has been withdrawn" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Dear " },
+              { "type": "placeholder", "key": "authorName" },
+              { "type": "text", "text": "," }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Your submission has been withdrawn." }]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Submission: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "conference: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Title: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "A message from the office:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "This is an automatic message from " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_withdrawn",
+      "language": "sr",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Vaša prijava " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " je povučena" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Poštovanje," }]
+          },
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Vaša prijava je povučena." }]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Prijava: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "konferencija: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Naslov: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "Poruka kancelarije:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Ovo je automatska poruka organizacije " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_reopened",
+      "language": "en",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Your submission " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " has been reopened" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Dear " },
+              { "type": "placeholder", "key": "authorName" },
+              { "type": "text", "text": "," }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "text": "Your submission has been reopened and is in processing again."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Submission: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "conference: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Title: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "A message from the office:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "This is an automatic message from " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "submission_reopened",
+      "language": "sr",
+      "subject": {
+        "type": "subject",
+        "children": [
+          { "type": "text", "text": "Vaša prijava " },
+          { "type": "placeholder", "key": "reference" },
+          { "type": "text", "text": " je ponovo otvorena" }
+        ]
+      },
+      "body": {
+        "type": "doc",
+        "children": [
+          {
+            "type": "paragraph",
+            "children": [{ "type": "text", "text": "Poštovanje," }]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Vaša prijava je ponovo otvorena i ponovo je u obradi." }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Prijava: " },
+              { "type": "placeholder", "key": "reference" },
+              { "type": "text", "text": " (" },
+              { "type": "text", "text": "konferencija: " },
+              { "type": "placeholder", "key": "conferenceName" },
+              { "type": "text", "text": ")" }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasTitle",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  { "type": "text", "text": "Naslov: " },
+                  { "type": "placeholder", "key": "title" }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditional",
+            "key": "hasMessage",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [{ "type": "text", "text": "Poruka kancelarije:" }]
+              },
+              {
+                "type": "paragraph",
+                "children": [{ "type": "placeholder", "key": "message" }]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "text": "Ovo je automatska poruka organizacije " },
+              { "type": "placeholder", "key": "organisationName" },
+              { "type": "text", "text": "." }
             ]
           }
         ]

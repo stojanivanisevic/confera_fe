@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 import { freshPartB, handlePartB } from './api-stub-part-b.mjs';
 import { freshPartC, handlePartC } from './api-stub-part-c.mjs';
+import { handlePartD } from './api-stub-part-d.mjs';
 import { STUB } from './stub-fixture.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -26,11 +27,11 @@ const rules = JSON.parse(readFileSync(join(contractDir, 'password-rules.json'), 
 const COMMON = new Set(rules.lines.find((line) => line.id === 'not_common').common);
 
 const ADMIN_ORIGIN = 'http://localhost:3000';
-export const SESSION_COOKIE = '__Host-confera_session';
-const DEVICE_COOKIE = '__Host-confera_device';
+export const SESSION_COOKIE = '__Host-congresa_session';
+const DEVICE_COOKIE = '__Host-congresa_device';
 const CONFIRMATION_MS = 5 * 60 * 1000;
 const PERMISSIONS = {
-  admin: ['account.manage', 'users.read', 'users.manage', 'organisation.read', 'organisation.manage', 'audit.read', 'mail_servers.read', 'mail_servers.manage', 'conferences.read', 'conferences.manage', 'templates.read', 'mail_log.read', 'forms.read', 'forms.manage', 'submissions.read', 'held_mail.manage'],
+  admin: ['account.manage', 'users.read', 'users.manage', 'organisation.read', 'organisation.manage', 'audit.read', 'mail_servers.read', 'mail_servers.manage', 'conferences.read', 'conferences.manage', 'templates.read', 'mail_log.read', 'forms.read', 'forms.manage', 'submissions.read', 'held_mail.manage', 'submissions.manage', 'templates.manage', 'mail_log.manage'],
   reviewer: ['account.manage'],
 };
 
@@ -109,7 +110,12 @@ const invitationDelivery = (user) => {
   return user.invitedAt && Date.now() - user.invitedAt < 2000 ? 'queued' : 'sent';
 };
 const userDto = (user) => ({ id: user.id, email: user.email, displayName: user.displayName, role: user.role, status: user.status, createdAt: user.createdAt, version: user.version, invitationDelivery: invitationDelivery(user) });
-const organisationDto = () => ({ ...state.organisation });
+const organisationDto = () => {
+  // The retention is read and set on its own route (GET/PUT /api/v1/mail-log/retention), not in the profile.
+  const rest = { ...state.organisation };
+  delete rest.mailLogRetentionDays;
+  return rest;
+};
 
 function cookieValue(req, name) {
   const header = req.headers.cookie ?? '';
@@ -133,6 +139,19 @@ function sessionDto(session) {
     confirmationValidUntil: session.confirmedUntil && Date.parse(session.confirmedUntil) > Date.now() ? session.confirmedUntil : null,
     secondFactor: 'not_required',
   };
+}
+
+/** The bytes of a request, for an upload (an email image, 0.4.0): at most `limit`, else null. */
+function readBytes(req, limit) {
+  return new Promise((resolve) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size <= limit) chunks.push(chunk);
+    });
+    req.on('end', () => resolve(size > limit ? null : Buffer.concat(chunks)));
+  });
 }
 
 function readJson(req) {
@@ -169,7 +188,7 @@ export async function handleAdmin(req, url) {
   const changing = method !== 'GET' && method !== 'HEAD';
   const publicRoute = /^\/api\/v1\/(meta|session$|password-resets|invitations\/|email-changes\/)/.test(path) && !(path === '/api/v1/session' && method !== 'POST');
 
-  if (path === '/api/v1/meta' && method === 'GET') return { status: 200, body: { name: 'confera-api', version } };
+  if (path === '/api/v1/meta' && method === 'GET') return { status: 200, body: { name: 'congresa-api', version, instance: null } };
   enter(req);
   if (path === '/__stub/reset' && method === 'POST') {
     reset(req);
@@ -178,8 +197,12 @@ export async function handleAdmin(req, url) {
 
   // 1. A changing request needs an exact Origin.
   if (changing && req.headers.origin !== ADMIN_ORIGIN) refuse(403, 'origin_refused');
-  const body = changing ? await readJson(req) : {};
+  // An email image is the one upload of the admin API (0.4.0): its bytes, not JSON.
+  const upload = path === '/api/v1/mail-images' && method === 'POST';
+  const raw = upload ? await readBytes(req, 6 * 1024 * 1024) : null;
+  const body = changing && !upload ? await readJson(req) : {};
   if (body === null) refuse(400, 'bad_request');
+  if (upload && raw === null) refuse(413, 'image_too_large');
 
   // ---- public routes ----------------------------------------------------------------------
   if (path === '/api/v1/session' && method === 'POST') {
@@ -455,6 +478,8 @@ export async function handleAdmin(req, url) {
     return { status: 200, body: { items: all.slice((page - 1) * pageSize, page * pageSize), total: all.length, page, pageSize } };
   }
 
+  const partD = handlePartD({ state, me, req, method, path, url, body, raw, need, versionOf, refuse, record, now });
+  if (partD) return partD;
   const partB = handlePartB({ state, me, method, path, url, body, need, fresh, versionOf, refuse, record, id, now });
   if (partB) return partB;
   const partC = handlePartC({ state, me, method, path, url, body, need, versionOf, refuse, record });

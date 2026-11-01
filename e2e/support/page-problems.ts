@@ -24,6 +24,8 @@ const BROWSER_NOTICES = [
   // Chromium, for every script in the sandboxed frame of stored markup (ST-28), the init scripts of
   // the test fixtures included: the sandbox refusing a script is what the frame is there for.
   /^Blocked script execution in 'about:srcdoc' because the document's frame is sandboxed and the 'allow-scripts' permission is not set\.$/,
+  // Firefox, when a navigation of the page cuts off a font still loading (NS_BINDING_ABORTED, 0x804B0002): an abort, not a failure.
+  /downloadable font: download failed .*status=2152398850/,
 ];
 
 // Chromium writes a console error for every answer with a status of 4xx, also one the page asked

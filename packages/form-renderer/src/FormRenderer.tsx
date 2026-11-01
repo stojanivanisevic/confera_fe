@@ -32,7 +32,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react';
 
-import { Alert, Button, Checkbox, FormCard, LABELS_SR, LabelsProvider, PageHeader, RadioGroup, Repeater, SegmentedTabs, Select, Spinner, TextButton, TextField, Textarea } from '@confera/ui';
+import { Alert, Button, Checkbox, FormCard, LABELS_SR, LabelsProvider, PageHeader, RadioGroup, Repeater, SegmentedTabs, Select, Spinner, TextButton, TextField, Textarea } from '@congresa/ui';
 
 import { textOf, type FieldDefinition, type FormDefinition, type PublishedForm, type SectionDefinition } from './definition';
 import { draftKey, hasTyped, readDraft, writeDraft } from './draft';
@@ -208,9 +208,9 @@ export function FormRenderer(props: FormRendererProps) {
 
   return (
     <LabelsProvider labels={language === 'sr' ? LABELS_SR : {}}>
-      <div className={styles.form} data-confera-form={form.slug} data-hydrated={hydrated ? 'true' : 'false'} lang={language}>
+      <div className={styles.form} data-congresa-form={form.slug} data-hydrated={hydrated ? 'true' : 'false'} lang={language}>
         {props.preview ? null : props.embedded ? <h1 className="ud-sr">{title}</h1> : <PageHeader title={title} description={form.conference.name} />}
-        {form.conference.languages.length > 1 ? <div data-confera-language="">{switcher}</div> : null}
+        {form.conference.languages.length > 1 ? <div data-congresa-language="">{switcher}</div> : null}
         {/* The intro speaks to a person who fills the form in: a closed form shows its closed text instead (UX3-13). */}
         {intro && form.state === 'open' ? (
           <p className={styles.intro}>
@@ -232,7 +232,7 @@ function Closed({ form, language }: { form: PublishedForm; language: FormLanguag
   const contact = form.conference.contactEmail ? ` ${fill(t.contact, { email: form.conference.contactEmail })}` : '';
   if (form.state === 'not_open') {
     return (
-      <div data-confera-state="not-open">
+      <div data-congresa-state="not-open">
         <Alert tone="info" title={t.notOpenTitle}>
           {t.notOpenText}
           {contact}
@@ -243,7 +243,7 @@ function Closed({ form, language }: { form: PublishedForm; language: FormLanguag
   // The date only when the deadline closed it; the office may close a form before its deadline (UX3-03).
   const date = form.deadline && form.closedReason !== 'conference_closed' ? ` ${endSentence(fill(t.closedText, { date: formatDate(form.deadline, language, form.conference.timeZone) }))}` : '';
   return (
-    <div data-confera-state="closed">
+    <div data-congresa-state="closed">
       <Alert tone="info" title={t.closedTitle}>
         <SafeText text={textOf(form.definition.texts.closed, language)} newTab={FORM_TEXTS[language].consent.newTab} links={form.conference.links} />
         {date}
@@ -530,7 +530,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
       if (error.code === 'preview') return { title: p.previewTitle, text: p.previewText };
       if (error.status === 0) return { title: p.networkTitle, text: p.networkText };
       if (error.status === 429) return { title: p.tooManyTitle, text: fill(p.tooManyText, { minutes: Math.max(1, Math.ceil((error.retryAfterSeconds ?? 600) / 60)) }) };
-      if (error.code === 'form_closed' || error.code === 'formClosed') return { title: p.closedTitle, text: p.closedText + (contact ? ` ${fill(t.states.contact, { email: contact })}` : '') };
+      if (error.code === 'form_closed' || error.code === 'formClosed') return { title: p.closedTitle, text: `${p.closedText} ${p.closedNext}${contact ? ` ${fill(t.states.contact, { email: contact })}` : ''}` };
       const traceId = error.traceId ?? '-';
       return { title: p.unknownTitle, text: contact ? fill(p.unknownTextContact, { email: contact, traceId }) : fill(p.unknownText, { traceId }) };
     }
@@ -692,7 +692,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
     }
     if (field.kind === 'file') return <div key={name} hidden={!shown}>{control}</div>;
     return (
-      <div key={name} className={wide || block ? 'ud-span-all' : undefined} hidden={!shown} data-confera-field={path}>
+      <div key={name} className={wide || block ? 'ud-span-all' : undefined} hidden={!shown} data-congresa-field={path}>
         {control}
       </div>
     );
@@ -702,7 +702,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
   const renderSection = (section: SectionDefinition): ReactNode => {
     const shown = holds(section.visibleWhen, answers);
     return (
-      <div key={section.key} hidden={!shown} data-confera-section={section.key}>
+      <div key={section.key} hidden={!shown} data-congresa-section={section.key}>
         <FormCard title={section.repeat ? undefined : textOf(section.label, language) || undefined}>
           {section.repeat ? renderBlocks(section) : section.fields.map((field) => renderField(field, section))}
         </FormCard>
@@ -749,7 +749,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
                   {blockTitle(section, index + 1, language)}
                 </p>
                 {isAsking ? (
-                  <div ref={askRef} tabIndex={-1} className={`ud-span-all ${styles.landing}`} data-confera-remove-question="">
+                  <div ref={askRef} tabIndex={-1} className={`ud-span-all ${styles.landing}`} data-congresa-remove-question="">
                     <Alert
                       tone="warning"
                       title={name ? fill(t.authors.removeQuestion, { n: index + 1, name }) : fill(t.authors.removeQuestionNoName, { n: index + 1 })}
@@ -783,15 +783,15 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
   // ---- the page -------------------------------------------------------------------------------
   if (phase === 'sent') {
     return (
-      <div className={styles.stack} data-confera-sent="">
-        <div ref={thanksRef} tabIndex={-1} className={styles.landing} data-confera-thanks="">
+      <div className={styles.stack} data-congresa-sent="">
+        <div ref={thanksRef} tabIndex={-1} className={styles.landing} data-congresa-thanks="">
           <Alert tone="success" title={t.states.thanksTitle[definition.type]}>
             <span className={styles.lines}>
               <span>
                 <SafeText text={textOf(definition.texts.thankYou, language)} newTab={t.consent.newTab} links={form.conference.links} />
               </span>
               {sentTo ? <span>{fill(t.states.sentTo, { email: sentTo })}</span> : null}
-              {reference ? <strong data-confera-reference="">{fill(t.states.reference, { reference })}</strong> : null}
+              {reference ? <strong data-congresa-reference="">{fill(t.states.reference, { reference })}</strong> : null}
             </span>
           </Alert>
         </div>
@@ -820,7 +820,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
         if (!busy) void send();
       }}
       className={styles.stack}
-      data-confera-phase={phase}
+      data-congresa-phase={phase}
     >
       <noscript>
         <p className={styles.note}>{t.noScript}</p>
@@ -829,9 +829,9 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
       {starExplained ? null : <p className={styles.note}>{t.requiredNote}</p>}
       {deadline ? <p className={styles.note}>{deadline}</p> : null}
       {summary ? (
-        <div ref={summaryRef} tabIndex={-1} className={styles.landing} data-confera-errors="" aria-describedby="confera-error-count">
+        <div ref={summaryRef} tabIndex={-1} className={styles.landing} data-congresa-errors="" aria-describedby="congresa-error-count">
           <Alert tone="error" title={t.errorsTitle[definition.type]}>
-            <span id="confera-error-count" className="ud-sr">
+            <span id="congresa-error-count" className="ud-sr">
               {plural(t.errorCount, shownErrors.length, language)}
             </span>
             <ul className={styles.list}>
@@ -850,7 +850,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
         </div>
       ) : null}
       {problem ? (
-        <div ref={problemRef} tabIndex={-1} className={styles.landing} data-confera-problem="">
+        <div ref={problemRef} tabIndex={-1} className={styles.landing} data-congresa-problem="">
           <Alert tone="error" title={problem.title}>
             {problem.text}
           </Alert>
@@ -868,7 +868,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
             SEC-M3-07: a name and a label no autofill heuristic maps, `autocomplete="off"` and the ignore hints of the
             password managers, so the browser never fills it for a person; the container is out of sight, hidden from
             assistive technology and inert, so neither Tab nor a screen reader reaches it. */}
-        <div className="ud-sr" aria-hidden="true" inert data-confera-trap="">
+        <div className="ud-sr" aria-hidden="true" inert data-congresa-trap="">
           <label>
             Extra field
             <input
@@ -895,7 +895,7 @@ function FormInstance({ form, language, onLanguage, onAgain, onShow, fresh = fal
           </div>
         ) : null}
       </FormCard>
-      <p className="ud-sr" role="status" aria-live="polite" data-confera-announce="">
+      <p className="ud-sr" role="status" aria-live="polite" data-congresa-announce="">
         {announcement}
       </p>
     </form>

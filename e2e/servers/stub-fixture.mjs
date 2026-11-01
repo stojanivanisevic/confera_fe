@@ -24,6 +24,8 @@ export const STUB = {
     paymentDetailsChangedAt: null,
     paymentDetailsChangedBy: null,
     mailLogContent: true,
+    // How long the mail log keeps an entry (FR-SMTP-06): 24 months by default (SA-19).
+    mailLogRetentionDays: 730,
     version: 1,
   },
   users: [
@@ -86,12 +88,13 @@ export const STUB_PART_B = {
       result: 'sent',
       errorCode: null,
       sentAt: '2026-10-10T09:00:05.000Z',
+      diverted: false, resendOf: null, resendMode: null, imageIds: [],
       subject: 'Your account at Udruženje za probe A (izmišljeno)',
       // A stored body is markup from outside the page (ST-28): what it tries must stay inside its frame.
       bodyHtml: '<p>Dear Lazar Primerić,</p><script>parent.document.body.dataset.pwned = "script"</script><img src="x" onerror="parent.document.body.dataset.pwned = \'image\'"><p><a href="[link]">Set your password</a></p>',
       bodyText: 'Dear Lazar Primerić,\n\nSet your password <[link]>\n',
     },
-    { id: '0e2e1000-0000-4000-8000-0000000000f2', messageId: '0e2e1100-0000-4000-8000-0000000000f2', recipient: 'marta.kovac@a.example.test', kind: 'security_notice', language: 'sr', conferenceId: CONFERENCE_KP, mailServerId: SERVER_SPARE, serverName: 'Rezerva', attempt: 2, result: 'failed', errorCode: 'connection_failed', sentAt: '2026-10-11T10:00:00.000Z', subject: null, bodyHtml: null, bodyText: null },
+    { id: '0e2e1000-0000-4000-8000-0000000000f2', messageId: '0e2e1100-0000-4000-8000-0000000000f2', recipient: 'marta.kovac@a.example.test', kind: 'security_notice', language: 'sr', conferenceId: CONFERENCE_KP, mailServerId: SERVER_SPARE, serverName: 'Rezerva', attempt: 2, result: 'failed', errorCode: 'connection_failed', sentAt: '2026-10-11T10:00:00.000Z', diverted: false, resendOf: null, resendMode: null, imageIds: [], subject: null, bodyHtml: null, bodyText: null },
   ],
   templates: seeded.map((template, index) => ({ id: `0e2e7000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`, conferenceId: null, type: template.type, language: template.language, subject: template.subject, body: template.body, mailServerId: null, updatedAt: '2026-10-01T08:00:00.000Z', version: 1 })),
   catalogue: {

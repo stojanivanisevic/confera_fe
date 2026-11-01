@@ -35,12 +35,12 @@ async function formFrame(page: Page | Frame): Promise<Frame> {
   await locator.scrollIntoViewIfNeeded();
   const frame = await (await locator.elementHandle())?.contentFrame();
   if (!frame) throw new Error('The frame of the form has no document');
-  await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+  await frame.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
   await frame.evaluate(() => document.fonts.ready);
   return frame;
 }
 
-const contentHeight = (frame: Frame) => frame.locator('[data-confera-embed-root]').evaluate((el) => Math.ceil(el.getBoundingClientRect().height));
+const contentHeight = (frame: Frame) => frame.locator('[data-congresa-embed-root]').evaluate((el) => Math.ceil(el.getBoundingClientRect().height));
 const elementHeight = (page: Page | Frame) => page.locator(FRAME).evaluate((el) => el.getBoundingClientRect().height);
 
 /** The frame has told its parent its height at least once. */

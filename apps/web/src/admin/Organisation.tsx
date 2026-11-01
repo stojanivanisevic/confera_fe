@@ -7,8 +7,8 @@
  */
 import { useEffect, useState, type FormEvent } from 'react';
 
-import type { Organisation as Profile } from '@confera/api-client';
-import { Alert, Button, Card, PageHeader, Switch, Textarea, TextButton, TextField, toast } from '@confera/ui';
+import type { Organisation as Profile } from '@congresa/api-client';
+import { Alert, Button, Card, PageHeader, Textarea, TextButton, TextField, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';
@@ -43,7 +43,6 @@ export function Organisation() {
   const [issuerFields, setIssuerFields] = useState<Record<string, string>>({});
   const [paymentFields, setPaymentFields] = useState<Record<string, string>>({});
   const [loadedVersion, setLoadedVersion] = useState<number | null>(null);
-  const [mailLogContent, setMailLogContent] = useState(true);
 
   // What the API holds goes into the fields when it arrives, and again after a reload: state
   // derived from the loaded record, adjusted while rendering (React's pattern for it).
@@ -51,7 +50,6 @@ export function Organisation() {
     setLoadedVersion(record.version);
     setIssuer(Object.fromEntries(ISSUER_KEYS.map((key) => [key, text(record[key])])) as Record<keyof Issuer, string>);
     setPayment(Object.fromEntries(PAYMENT_KEYS.map((key) => [key, text(record[key])])) as Record<keyof Payment, string>);
-    setMailLogContent(record.mailLogContent);
   }
   const contactEmail = record?.contactEmail ?? null;
   useEffect(() => {
@@ -76,7 +74,6 @@ export function Organisation() {
             contactEmail: orNull(issuer.contactEmail),
             vatNoteSr: orNull(issuer.vatNoteSr),
             vatNoteEn: orNull(issuer.vatNoteEn),
-            mailLogContent,
             version: record.version,
           },
         }),
@@ -84,7 +81,6 @@ export function Organisation() {
       // Only this form takes the saved record; what is typed in the payment form stays (E2-17).
       setLoadedVersion(next.version);
       setIssuer(Object.fromEntries(ISSUER_KEYS.map((key) => [key, text(next[key])])) as Record<keyof Issuer, string>);
-      setMailLogContent(next.mailLogContent);
       profile.replace(next);
       toast({ title: t.issuerSaved, tone: 'success' });
     } catch (error) {
@@ -151,14 +147,14 @@ export function Organisation() {
     <div className={styles.stack}>
       <PageHeader title={t.title} description={t.lead} />
       {recent ? (
-        <div data-confera-payment-notice>
+        <div data-congresa-payment-notice>
           <Alert tone="warning" title={fill(t.recentChange, { when: formatDate(record.paymentDetailsChangedAt), who: record.paymentDetailsChangedBy?.displayName ?? TEXTS.audit.system })}>
             {t.recentChangeText}
           </Alert>
         </div>
       ) : null}
       <Card title={t.issuer} headingLevel={2}>
-        <form className={styles.fields} onSubmit={(event) => void saveIssuer(event)} noValidate data-confera-issuer>
+        <form className={styles.fields} onSubmit={(event) => void saveIssuer(event)} noValidate data-congresa-issuer>
           {issuerProblem ? (
             <div className={styles.all}>
               <ProblemAlert title={issuerProblem.title} action={conflict(issuerProblem) ? reloadAction : undefined}>
@@ -180,9 +176,13 @@ export function Organisation() {
           <div className={styles.all}>
             <Textarea label={t.vatNoteEn} name="vatNoteEn" rows={2} value={issuer.vatNoteEn} onChange={(event) => setIssuer({ ...issuer, vatNoteEn: event.target.value })} status={issuerFields.vatNoteEn ? 'error' : 'default'} message={issuerFields.vatNoteEn} />
           </div>
-          <div className={styles.all}>
-            <Switch label={t.mailLogContent} description={t.mailLogContentHint} checked={mailLogContent} onChange={(event) => setMailLogContent(event.target.checked)} />
-          </div>
+          {/* What the mail log keeps, and how long, is set on the mail log's own screen (UXUI-M2-31). */}
+          <p className={`${styles.all} ${styles.text}`}>
+            {t.mailLogMoved}{' '}
+            <a className="ud-link" href="/mail-log#mail-log-settings">
+              {TEXTS.mailLog.settings}
+            </a>
+          </p>
           <div className={`${styles.all} ${styles.actions}`}>
             <Button type="submit" disabled={issuerBusy}>
               {issuerBusy ? TEXTS.setPassword.working : t.saveIssuer}
@@ -191,7 +191,7 @@ export function Organisation() {
         </form>
       </Card>
       <Card title={t.payment} subtitle={t.paymentLead} headingLevel={2}>
-        <form className={styles.fields} onSubmit={(event) => void savePayment(event)} noValidate data-confera-payment>
+        <form className={styles.fields} onSubmit={(event) => void savePayment(event)} noValidate data-congresa-payment>
           {paymentProblem ? (
             <div className={styles.all}>
               <ProblemAlert title={paymentProblem.title} action={conflict(paymentProblem) ? reloadAction : undefined}>

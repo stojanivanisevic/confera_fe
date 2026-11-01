@@ -3,14 +3,14 @@
 /**
  * The live password checklist (ADR-03, FR-USR-06, G2-25, ST-62): the four lines of the rule
  * set, each ticked as it is met while the person types. The lines are the API's own rule set,
- * run in the browser (@confera/api-client, password-rules): nothing is sent while the password
+ * run in the browser (@congresa/api-client, password-rules): nothing is sent while the password
  * is typed. The server checks the same rules when the password is sent, and names a broken
  * rule by its code; the checklist shows it at the line.
  */
 import { useId } from 'react';
 
-import { checkPassword, type PasswordContext, type PasswordRuleId } from '@confera/api-client';
-import { Icon } from '@confera/ui';
+import { checkPassword, type PasswordContext, type PasswordRuleId } from '@congresa/api-client';
+import { Icon } from '@congresa/ui';
 
 import styles from './checklist.module.css';
 import { fill, TEXTS } from './texts';

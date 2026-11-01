@@ -3,35 +3,35 @@
   "source": {
     "repository": "confera_be",
     "directory": "openapi",
-    "commit": "652131082f6e323f2f2b413feb23cb24fddc9b78",
+    "commit": "87e6bc3c7d94774cdd8e796177df36b6acd77d4e",
     "tag": null,
-    "branch": "release/0.3.0",
+    "branch": "m4/rename-congresa",
     "committed": true
   },
   "files": {
     "openapi.json": {
-      "title": "Confera admin API",
+      "title": "Congresa admin API",
       "version": "0.3.0",
-      "sha256": "a439f4c89d7263cbdb64ca6b8735969cde6c2c39bc438b8c31f68ae11fddf416",
-      "commit": "652131082f6e323f2f2b413feb23cb24fddc9b78"
+      "sha256": "445375be0ea7c231879b30bb2192ee4fd62df5238cc70ac89ee124deadc35a95",
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     },
     "openapi.public.json": {
-      "title": "Confera public API",
+      "title": "Congresa public API",
       "version": "0.3.0",
-      "sha256": "e65dc65cad392c9ec2b13eb4f161d59f68c51e338bf09348662f50b2df5dad6e",
-      "commit": "652131082f6e323f2f2b413feb23cb24fddc9b78"
+      "sha256": "e054b6baed608a9f83ba359ee7362b9f77e5e19f4a5bb38558f690847d861a7b",
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     },
     "password-rules.json": {
       "title": "contracts/password-rules.json",
       "version": "1",
-      "sha256": "50c24619647c9387fc01bec9ae9d0b3817f0b9a5a9da85a8d8fea279b9244004",
-      "commit": "77add5fee31d591fdf88a1fedce30466763b2daf"
+      "sha256": "c4e6f184367d5ed369a88321dc3c92136683295ff53a30056d15981fc14c9efe",
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     },
     "template-vectors.json": {
       "title": "contracts/template-vectors.json",
       "version": "1",
-      "sha256": "0e17110c7f8ef5b6eef1f0561e9c1bd3ad8fdb98cae6b440f8cb3a614262aacc",
-      "commit": "c52dec1a620819155c1234bcf6e2dc604994ebc5"
+      "sha256": "ce81e1fe8a7051aee6f242efd48fd99027736757aa3c39119ae6d04d7cb6ce9c",
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     },
     "form-definition.schema.json": {
       "title": "contracts/form-definition.schema.json",
@@ -48,8 +48,8 @@
     "form-rule-vectors.json": {
       "title": "contracts/form-rule-vectors.json",
       "version": "1",
-      "sha256": "7b3e475e570f89c1479d31038c7d0ff72c4c715113fb1bfa19b8cfa62a845331",
-      "commit": "45ee1320ce8ec2ef1f8654c9d7ceb87e8245c5dd"
+      "sha256": "458bb150d8b2d0e3e70c22e9c09f6868409c7f29f61e8c812515da4b93fd9482",
+      "commit": "93fd44b05f88e371efabe335fec604407b683d3b"
     }
   },
   "generator": {

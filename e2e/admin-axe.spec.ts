@@ -62,7 +62,7 @@ for (const width of [1440, 375]) {
         await signIn(page, ADMIN, path);
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
         if (['/users', '/audit', '/conferences', '/mail-servers', '/mail-log', '/templates'].includes(path)) await expect(page.getByRole('table').locator('tbody tr').first()).toBeVisible();
-        if (path.startsWith('/templates/')) await expect(page.locator('[data-confera-template-body] [data-placeholder]').first()).toBeVisible();
+        if (path.startsWith('/templates/')) await expect(page.locator('[data-congresa-template-body] [data-placeholder]').first()).toBeVisible();
         expect(await scan(page), `${name} at ${width}px`).toEqual([]);
       });
     }

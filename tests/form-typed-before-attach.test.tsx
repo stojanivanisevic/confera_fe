@@ -18,7 +18,7 @@ import { fakeApi, publishedForm } from './support/form-harness';
 // jsdom lays nothing out and has no scrollIntoView; the form asks for it before it moves the focus.
 Element.prototype.scrollIntoView = function scrollIntoView() {};
 
-const DRAFT_KEY = 'confera:draft:spike-abstract:1';
+const DRAFT_KEY = 'congresa:draft:spike-abstract:1';
 const FORM = publishedForm('spike-abstract');
 const storage = () => createDraftStorage(() => window.sessionStorage);
 let tree: ReactElement;
@@ -84,7 +84,7 @@ afterEach(async () => {
 describe('typing before the form is attached', () => {
   it('the server sends plain controls: no value is forced on them', () => {
     serverPage();
-    expect(container.querySelector('[data-confera-form]')!.getAttribute('data-hydrated')).toBe('false');
+    expect(container.querySelector('[data-congresa-form]')!.getAttribute('data-hydrated')).toBe('false');
     for (const name of ['title', 'abstract', 'authors.1.name', 'authors.1.email', 'consent']) expect(field(name), name).not.toBeNull();
   });
 
@@ -98,7 +98,7 @@ describe('typing before the form is attached', () => {
 
     const recoverable = await attach();
 
-    expect(container.querySelector('[data-confera-form]')!.getAttribute('data-hydrated')).toBe('true');
+    expect(container.querySelector('[data-congresa-form]')!.getAttribute('data-hydrated')).toBe('true');
     expect(field('title').value).toBe('Održivi turizam na Balkanu');
     expect(field<HTMLTextAreaElement>('abstract').value).toBe('Prva druga treća četvrta');
     expect(field('authors.1.name').value).toBe('Marta Kovač');
@@ -143,7 +143,7 @@ describe('typing before the form is attached', () => {
     expect(keptValues()).toMatchObject({ title: 'Održivi turizam na Balkanu', abstract: '' });
     // Never the consent, never the trap field.
     expect(keptValues()).not.toHaveProperty('consent');
-    expect(keptValues()).not.toHaveProperty('confera_hp');
+    expect(keptValues()).not.toHaveProperty('congresa_hp');
   });
 
   it('a field that was left empty is still reported, with its message', async () => {

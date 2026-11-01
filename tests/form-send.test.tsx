@@ -31,7 +31,7 @@ const send = async () => {
   await click(container.querySelector<HTMLButtonElement>('button[type="submit"]')!);
   await settle();
 };
-const summary = () => container.querySelector<HTMLElement>('[data-confera-errors]');
+const summary = () => container.querySelector<HTMLElement>('[data-congresa-errors]');
 const items = () => [...(summary()?.querySelectorAll('li a') ?? [])].map((a) => a.textContent);
 const button = (text: string) => [...container.querySelectorAll('button')].find((b) => b.textContent === text)!;
 
@@ -118,7 +118,7 @@ describe('every rule of the form is checked on Send', () => {
     await send();
     // In the summary the field is named first (UX3-04).
     expect(items()).toEqual(['Abstract: 385 of 300 words. Shorten the text by 85 words.']);
-    expect(container.querySelector('[data-confera-thanks]')).toBeNull();
+    expect(container.querySelector('[data-congresa-thanks]')).toBeNull();
     expect(api.calls.submits).toHaveLength(0);
   });
 
@@ -165,7 +165,7 @@ describe('where the focus goes after Send', () => {
   it('a successful Send: to the thank-you, with the reference, and the page around is asked to show it', async () => {
     await fillValid();
     await send();
-    const thanks = container.querySelector<HTMLElement>('[data-confera-thanks]')!;
+    const thanks = container.querySelector<HTMLElement>('[data-congresa-thanks]')!;
     expect(thanks.textContent).toContain('Abstract sent');
     expect(thanks.textContent).toContain('Thank you. A confirmation with its reference is on its way to your email address.');
     expect(thanks.textContent).toContain('The confirmation goes to marta@example.test.');

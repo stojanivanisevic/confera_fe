@@ -9,10 +9,11 @@
  */
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { Alert, Button, Card, ConfirmDialog, DataTable, EmptyState, NumberField, PageHeader, Pagination, TextButton, toast } from '@confera/ui';
+import { Alert, Button, Card, ConfirmDialog, DataTable, EmptyState, NumberField, PageHeader, Pagination, TextButton, toast } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { formatDateTime } from './format';
+import { m4 } from './m4-api';
 import { intake, type HeldMail as HeldMailRow, type HeldMailPage } from './intake-api';
 import { ProblemAlert } from './ProblemAlert';
 import { explain, type Explained } from './problems';
@@ -21,7 +22,7 @@ import { fill, TEXTS } from './texts';
 import { useLoad } from './useLoad';
 
 /** The event the screen sends after a release: the shell's count reads again. */
-export const HELD_MAIL_CHANGED = 'confera:held-mail-changed';
+export const HELD_MAIL_CHANGED = 'congresa:held-mail-changed';
 
 /** Why an email is held, with the numbers that tripped the breaker when they were kept (UX3-06). */
 export function heldWhy(row: Pick<HeldMailRow, 'heldReason' | 'heldBy'>): string {
@@ -41,6 +42,8 @@ export function HeldMail() {
   const list = useLoad<HeldMailPage>((c) => intake.heldMail(c, { page, pageSize }), [page, pageSize]);
   const [selected, setSelected] = useState<Array<string | number>>([]);
   const [asking, setAsking] = useState<'selected' | 'all' | null>(null);
+  // A held email that is not wanted (a bot's, a test's) is discarded: never sent, never released (M3-ISS-14).
+  const [discarding, setDiscarding] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<Explained | null>(null);
   const total = list.state.data?.total ?? 0;
@@ -63,6 +66,24 @@ export function HeldMail() {
     }
   };
 
+  const discard = async () => {
+    setBusy(true);
+    setProblem(null);
+    try {
+      const answer = await m4.discardHeld(client, { ids: selected.map(String) });
+      toast({ title: answer.discarded === 1 ? t.discardedOne : fill(t.discarded, { count: answer.discarded }), tone: 'success' });
+      setSelected([]);
+      setDiscarding(false);
+      window.dispatchEvent(new Event(HELD_MAIL_CHANGED));
+      await list.reload({ background: true });
+    } catch (error) {
+      setDiscarding(false);
+      setProblem(explain(error, contact));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className={styles.stack}>
       <PageHeader
@@ -77,6 +98,9 @@ export function HeldMail() {
               <Button disabled={busy} onClick={() => setAsking('all')}>
                 {fill(t.releaseAll, { count: total })}
               </Button>
+              <TextButton tone="danger" icon="trash" disabled={busy || selected.length === 0} onClick={() => setDiscarding(true)}>
+                {t.discardSelected}
+              </TextButton>
             </div>
           ) : undefined
         }
@@ -136,6 +160,9 @@ export function HeldMail() {
         onConfirm={() => void release()}
       >
         {t.releaseText}
+      </ConfirmDialog>
+      <ConfirmDialog open={discarding} title={selected.length === 1 ? t.discardQuestionOne : fill(t.discardQuestion, { count: selected.length })} confirmText={t.discardSelected} destructive busy={busy} onCancel={() => setDiscarding(false)} onConfirm={() => void discard()}>
+        {t.discardText}
       </ConfirmDialog>
     </div>
   );
@@ -211,9 +238,10 @@ export function HeldMailAlert({ onOpen }: { onOpen: () => void }) {
   }, [background]);
   if (count === 0) return null;
   return (
-    <div className={styles.banner} data-confera-held-mail-alert="">
+    <div className={styles.banner} data-congresa-held-mail-alert="">
+      {/* On a phone the count and the button only: the explanation would take a third of the first screen (UX4-26). */}
       <Alert tone="warning" title={count === 1 ? t.alertOne : fill(t.alert, { count })} action={<Button variant="dark" onClick={onOpen}>{t.review}</Button>}>
-        {t.alertText}
+        <span className={styles.wideOnly}>{t.alertText}</span>
       </Alert>
     </div>
   );

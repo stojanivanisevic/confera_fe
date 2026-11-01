@@ -25,7 +25,7 @@ const NOT_KEPT = new Set(['consent', TRAP_FIELD]);
 /** A draft larger than this is not kept: the storage of a tab is small, and a form is not that long. */
 const MAX_DRAFT = 400_000;
 
-export const draftKey = (slug: string, version: number): string => `confera:draft:${slug}:${version}`;
+export const draftKey = (slug: string, version: number): string => `congresa:draft:${slug}:${version}`;
 
 export function readDraft(storage: DraftStorage, key: string): Draft | null {
   const text = storage.get(key);

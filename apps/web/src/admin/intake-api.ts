@@ -7,7 +7,7 @@
  * the calls still go through the typed client and its paths, and `pnpm api:sync` with a typed
  * contract will replace these by the generated ones.
  */
-import type { components, SessionClient } from '@confera/api-client';
+import type { components, SessionClient } from '@congresa/api-client';
 
 import { call } from './problems';
 

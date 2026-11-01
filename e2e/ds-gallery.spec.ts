@@ -41,9 +41,9 @@ test.describe('design-system gallery: server rendering and hydration', () => {
   test('all components hydrate without a console message or an error', async ({ page }) => {
     const problems = watchPage(page);
     await page.goto('/dev/gallery');
-    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+    await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
 
-    const cards = page.locator('[data-confera-dev="gallery-card"]');
+    const cards = page.locator('[data-congresa-dev="gallery-card"]');
     await expect(cards).toHaveCount(COMPONENT_NAMES.length);
     // One question to the page for all components. (Asked one component at a time it was 53 round
     // trips, each with its own before-and-after record of a page of 1,500 elements.)
@@ -64,7 +64,7 @@ test.describe('design-system gallery: server rendering and hydration', () => {
   test('no request goes to Google or to any other origin; the fonts are self-hosted', async ({ page }) => {
     const problems = watchPage(page);
     await page.goto('/dev/gallery');
-    await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+    await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
     await page.evaluate(() => document.fonts.ready);
 
     expect(originsOf(problems.requests)).toEqual([PUBLIC_ORIGIN]);
@@ -108,7 +108,7 @@ test.describe('design-system gallery: server rendering and hydration', () => {
     const openGallery = async (page: Page) => {
       const problems = watchPage(page);
       await page.goto('/dev/gallery');
-      await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+      await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
       return problems;
     };
 
@@ -201,7 +201,7 @@ test.describe('design-system gallery: server rendering and hydration', () => {
     test('Menu, AppShell, Tooltip; and nothing scrolls sideways', async ({ page }) => {
       const problems = watchPage(page);
       await page.goto('/dev/gallery');
-      await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+      await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
       const card = (name: string) => page.locator(`[data-component="${name}"]`);
 
       // The Stepper fits: the page is no wider than the window (it was 17 px wider).

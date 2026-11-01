@@ -35,10 +35,10 @@ const OTHER_UI_KITS = [
   '@heroicons/*', '@tabler/*', '@fortawesome/*',
 ];
 const UI_KIT_MESSAGE =
-  'The UI comes only from the UdEkoM Balkans design system, through @confera/ui (NFR-UI-01, ADR-21). No second UI kit, icon set or Tailwind.';
-const DS_INTERNALS = ['**/design-system/**', '@confera/ui/src/**', '**/packages/ui/src/**'];
+  'The UI comes only from the UdEkoM Balkans design system, through @congresa/ui (NFR-UI-01, ADR-21). No second UI kit, icon set or Tailwind.';
+const DS_INTERNALS = ['**/design-system/**', '@congresa/ui/src/**', '**/packages/ui/src/**'];
 const DS_INTERNALS_MESSAGE =
-  'Application code imports only the public entry of @confera/ui, never the design-system folder or the adapter internals (ADR-21).';
+  'Application code imports only the public entry of @congresa/ui, never the design-system folder or the adapter internals (ADR-21).';
 
 // ---- Selector groups for no-restricted-syntax --------------------------------
 const HEX = String.raw`/(^|[^\w&])#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})(?![\w-])/`;
@@ -60,7 +60,7 @@ const colourLiterals = [
 ];
 
 const RAW_MARKUP_MESSAGE =
-  'Raw markup is rendered only by the one reviewed component, SandboxedMarkupFrame in @confera/ui (ADR-20, SEC-A-19).';
+  'Raw markup is rendered only by the one reviewed component, SandboxedMarkupFrame in @congresa/ui (ADR-20, SEC-A-19).';
 const rawMarkup = [
   { selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']", message: RAW_MARKUP_MESSAGE },
   { selector: "Property[key.name='dangerouslySetInnerHTML']", message: RAW_MARKUP_MESSAGE },
@@ -119,7 +119,7 @@ export default tseslint.config(
       'packages/ui/src/generated/**',
       'packages/api-client/src/generated/**',
       // Planted violations: linted only by tests/lint-fixtures.test.ts.
-      ...(process.env.CONFERA_LINT_FIXTURES === '1' ? [] : ['lint-fixtures/**']),
+      ...(process.env.CONGRESA_LINT_FIXTURES === '1' ? [] : ['lint-fixtures/**']),
     ],
   },
 

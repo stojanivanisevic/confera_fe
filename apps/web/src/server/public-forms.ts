@@ -9,7 +9,7 @@
  * failure and a timeout are "unavailable", never a form: the frame page then carries
  * `frame-ancestors 'none'` and the page says the form cannot be shown (fail closed).
  */
-import { readPublishedForm, type PublishedForm } from '@confera/form-renderer';
+import { readPublishedForm, type PublishedForm } from '@congresa/form-renderer';
 
 import { getConfig } from '@/config/env';
 

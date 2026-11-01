@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
   await resetStub(page);
 });
 
-const conferenceSwitch = (page: Page) => page.locator('select[data-confera-conference-switch]');
+const conferenceSwitch = (page: Page) => page.locator('select[data-congresa-conference-switch]');
 const toast = (page: Page) => page.locator('.ud-toast').last();
 
 test.describe('the conference switch (M2-FE-03)', () => {
@@ -44,14 +44,14 @@ test.describe('the conference switch (M2-FE-03)', () => {
     await page.getByRole('link', { name: 'Email templates' }).click();
     await expect(page.getByText('The templates of Konferencija za probe (KP 2026).')).toBeVisible();
     await expect(conferenceSwitch(page)).toHaveValue(PART_B.ids.conference);
-    // The conference has no templates of its own: the organisation's are listed, marked as such (16 since 0.3.0: the confirmation of a submission, in two languages).
-    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(16);
-    await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(16);
+    // The conference has no templates of its own: the organisation's are listed, marked as such (30 since 0.4.0: the seven status emails, in two languages, after the 16 of 0.3.0).
+    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(30);
+    await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(30);
     await page.reload();
     await expect(conferenceSwitch(page)).toHaveValue(PART_B.ids.conference);
 
     await conferenceSwitch(page).selectOption({ label: 'All conferences' });
-    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(16);
+    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(30);
     await expect(page.getByRole('table').getByText('Organisation’s')).toHaveCount(0);
 
     // An empty log of one conference says which, and offers all conferences.
@@ -78,7 +78,7 @@ test.describe('conferences (M2-FE-03)', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Konferencija tri' })).toBeVisible();
     await expect(page.locator('.ud-badge').first()).toHaveText('Draft');
 
-    const settings = page.locator('[data-confera-conference-settings]');
+    const settings = page.locator('[data-congresa-conference-settings]');
     await settings.getByLabel('Listed sites').fill('https://kt.example.test\nhttps://kt.example.test/forms\nhttps://other.example.test');
     await settings.getByRole('button', { name: 'Save the settings' }).click();
     await expect(settings).toContainText('Line 2: Only the site: no path after the address');
@@ -121,7 +121,7 @@ test.describe('conferences (M2-FE-03)', () => {
     await dialog.getByRole('button', { name: 'Make the copy' }).click();
     await expect(toast(page)).toContainText('Konferencija za probe 2027 (KP 2027) created as a copy');
     await expect(page.locator('.ud-badge').first()).toHaveText('Draft');
-    const settings = page.locator('[data-confera-conference-settings]');
+    const settings = page.locator('[data-congresa-conference-settings]');
     await expect(settings.getByLabel('First day')).toHaveValue('');
     await expect(settings.getByLabel('Listed sites')).toHaveValue('https://kp.example.test');
 
@@ -138,7 +138,7 @@ test.describe('mail servers (M2-FE-04)', () => {
     await expect(page.getByRole('table')).toContainText('Kancelarija');
     await expect(page.getByRole('table')).toContainText('Default');
     await page.getByRole('button', { name: 'Kancelarija', exact: true }).click();
-    const form = page.locator('[data-confera-mail-server]');
+    const form = page.locator('[data-congresa-mail-server]');
     await expect(form.getByRole('textbox', { name: 'Password', exact: true })).toHaveValue('');
     await expect(form).toContainText('A password is stored since');
 
@@ -162,10 +162,10 @@ test.describe('mail servers (M2-FE-04)', () => {
 
   test('a test message is sent and logged; a server in use is not deleted; a target on this network is refused', async ({ page }) => {
     await signIn(page, STUB.admin, `/mail-servers/${PART_B.ids.server}`);
-    const test = page.locator('[data-confera-test-message]');
+    const test = page.locator('[data-congresa-test-message]');
     await expect(test.getByLabel('Send to')).toHaveValue(STUB.admin.email);
     await test.getByRole('button', { name: 'Send a test message' }).click();
-    await expect(page.locator('[data-confera-test-result="sent"]')).toContainText(`Test message sent to ${STUB.admin.email}`);
+    await expect(page.locator('[data-congresa-test-result="sent"]')).toContainText(`Test message sent to ${STUB.admin.email}`);
 
     await page.getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
@@ -176,7 +176,7 @@ test.describe('mail servers (M2-FE-04)', () => {
     await expect(page.getByRole('table').locator('tbody tr').first()).toContainText('Test message');
 
     await page.goto(`${ADMIN_ORIGIN}/mail-servers/new`);
-    const form = page.locator('[data-confera-mail-server]');
+    const form = page.locator('[data-congresa-mail-server]');
     await form.getByRole('textbox', { name: 'Name', exact: true }).fill('Interni');
     await form.getByLabel('Host').fill('10.0.0.5');
     await form.getByLabel('Sender address').fill('office@a.example.test');
@@ -198,7 +198,7 @@ test.describe('the mail log (M2-FE-04, ST-28)', () => {
     const frame = page.locator('iframe[title="Email body"]');
     await expect(frame).toHaveAttribute('sandbox', '');
     await expect(page.frameLocator('iframe[title="Email body"]').getByText('Dear Lazar Primerić,')).toBeVisible();
-    await expect(page.locator('[data-confera-plain-body]')).toContainText('Set your password <[link]>');
+    await expect(page.locator('[data-congresa-plain-body]')).toContainText('Set your password <[link]>');
     // Nothing of the stored markup is in the page itself, and nothing of it ran.
     await expect(page.locator('main script, main img[src="x"]')).toHaveCount(0);
     expect(await page.evaluate(() => document.body.dataset.pwned ?? null)).toBeNull();
@@ -210,16 +210,17 @@ test.describe('the mail log (M2-FE-04, ST-28)', () => {
   });
 });
 
-test.describe('the template editor (M2-FE-05, the spike of ADR-12)', () => {
-  const body = (page: Page) => page.locator('[data-confera-template-body] .ProseMirror');
+test.describe('the template editor (M2-FE-05, M4-FE-02; ADR-12)', () => {
+  const body = (page: Page) => page.locator('[data-congresa-template-body] .ProseMirror');
   const chips = (page: Page) => body(page).locator('[data-placeholder]');
 
-  test('a seeded template loads; a placeholder is one object; the toolbar formats; the check and the preview agree with the server', async ({ page }) => {
+  test('a seeded template loads; a placeholder is one object; the toolbar formats; the server previews it', async ({ page }) => {
     const problems = watchPage(page);
     await signIn(page, STUB.admin, '/templates');
     await page.getByRole('table').locator('tbody tr').filter({ hasText: 'Invitation' }).filter({ hasText: 'English' }).getByRole('button').click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Invitation (English)' })).toBeVisible();
-    await expect(page.locator('[data-confera-template-subject] [data-placeholder="organisationName"]')).toHaveText('Organisation name');
+    await expect(page.getByRole('heading', { level: 1, name: 'Invitation' })).toBeVisible();
+    await expect(page.getByRole('radiogroup', { name: 'Language of the template' }).getByRole('radio', { name: 'English' })).toBeChecked();
+    await expect(page.locator('[data-congresa-template-subject] [data-placeholder="organisationName"]')).toHaveText('Organisation name');
     await expect(body(page).locator('[data-placeholder="recipientName"]')).toHaveText('Recipient’s name');
     await expect(body(page).locator('a[data-secure-link="true"]')).toHaveText('Set your password');
     const before = await chips(page).count();
@@ -227,7 +228,7 @@ test.describe('the template editor (M2-FE-05, the spike of ADR-12)', () => {
     // A placeholder from the catalogue at the end of the first paragraph, then removed with one Backspace.
     await body(page).locator('p').first().click();
     await page.keyboard.press('End');
-    await page.locator('[data-confera-insert-placeholder]').selectOption({ label: 'Inviter’s name' });
+    await page.locator('[data-congresa-insert-placeholder]').selectOption({ label: 'Inviter’s name' });
     await expect(chips(page)).toHaveCount(before + 1);
     await expect(body(page).locator('p').first().locator('[data-placeholder]').last()).toHaveText('Inviter’s name');
     await body(page).locator('p').first().click();
@@ -245,14 +246,13 @@ test.describe('the template editor (M2-FE-05, the spike of ADR-12)', () => {
     await expect(body(page).locator('strong')).toHaveText(' {{recipientName}}');
     await expect(page.getByRole('toolbar', { name: 'Formatting' }).getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'true');
 
-    // The check passes, and the preview renders the made-up values in the sandboxed frame.
-    await page.getByRole('button', { name: 'Check the template' }).click();
-    await expect(page.locator('[data-confera-template-check="valid"]')).toContainText('The template is valid');
-    await expect(page.locator('[data-confera-preview-subject]')).toHaveText('Your account at Udruženje za probe');
+    // The server's preview renders the made-up values in the sandboxed frame.
+    await expect(page.locator('[data-congresa-template-preview="ready"]')).toBeVisible();
+    await expect(page.locator('[data-congresa-preview-subject]')).toHaveText('Your account at Udruženje za probe A (izmišljeno)');
     const preview = page.frameLocator('iframe[title="Preview of the message"]');
-    await expect(preview.getByText('Dear Mila Primer, {{recipientName}}')).toBeVisible();
+    await expect(preview.getByText('Dear Đorđe Šćepanović, {{recipientName}}')).toBeVisible();
     await expect(preview.locator('strong')).toHaveText(' {{recipientName}}');
-    await expect(preview.getByRole('link', { name: 'Set your password' })).toHaveAttribute('href', 'https://admin.confera.example/invitations/sample');
+    await expect(preview.getByRole('link', { name: 'Set your password' })).toHaveAttribute('href', 'https://admin.congresa.example/invitations/sample');
     expect(problems.messages).toEqual([]);
   });
 
@@ -285,10 +285,9 @@ test.describe('the template editor (M2-FE-05, the spike of ADR-12)', () => {
     await page.keyboard.type('After the list');
     await expect(body(page).locator('ul li')).toHaveText(['Help', 'Second']);
     await expect(body(page).locator('ul + p')).toHaveText('After the list');
-    await page.getByRole('toolbar', { name: 'Formatting' }).getByLabel('Paragraph style').selectOption('heading2');
-    await expect(body(page).locator('h2')).toHaveText('After the list');
-    await page.getByRole('button', { name: 'Check the template' }).click();
-    await expect(page.locator('[data-confera-template-check="valid"]')).toBeVisible();
+    await page.getByRole('toolbar', { name: 'Formatting' }).getByLabel('Style in the email').selectOption('heading2');
+    // A heading of the email, not of the page (UX4-18): under the card's h2 it is level 4.
+    await expect(body(page).locator('[role="heading"][aria-level="4"]')).toHaveText('After the list');
     const preview = page.frameLocator('iframe[title="Preview of the message"]');
     await expect(preview.locator('ul li')).toHaveText(['Help', 'Second']);
     await expect(preview.locator('h2')).toHaveText('After the list');

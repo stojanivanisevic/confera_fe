@@ -15,15 +15,15 @@ import { ConfigError, parseConfig } from './env';
 
 const prod = {
   STAGE: 'prod',
-  CONFERA_PUBLIC_ORIGIN: 'https://forms.example.test',
-  CONFERA_ADMIN_ORIGIN: 'https://admin.example.test',
-  CONFERA_API_ORIGIN: 'http://api:3001',
+  CONGRESA_PUBLIC_ORIGIN: 'https://forms.example.test',
+  CONGRESA_ADMIN_ORIGIN: 'https://admin.example.test',
+  CONGRESA_API_ORIGIN: 'http://api:3001',
 };
 const local = {
   STAGE: 'local',
-  CONFERA_PUBLIC_ORIGIN: 'http://127.0.0.1:3000',
-  CONFERA_ADMIN_ORIGIN: 'http://localhost:3000',
-  CONFERA_API_ORIGIN: 'http://127.0.0.1:3001',
+  CONGRESA_PUBLIC_ORIGIN: 'http://127.0.0.1:3000',
+  CONGRESA_ADMIN_ORIGIN: 'http://localhost:3000',
+  CONGRESA_API_ORIGIN: 'http://127.0.0.1:3001',
 };
 
 const problemsOf = (env: Record<string, string | undefined>): string[] => {
@@ -38,10 +38,10 @@ const problemsOf = (env: Record<string, string | undefined>): string[] => {
 
 describe('edge cases of the web configuration (M1-REV-01)', () => {
   it.each([
-    ['prod, the default port and another one', { ...prod, CONFERA_PUBLIC_ORIGIN: 'https://confera.example.test', CONFERA_ADMIN_ORIGIN: 'https://confera.example.test:8443' }],
-    ['prod, two ports', { ...prod, CONFERA_PUBLIC_ORIGIN: 'https://confera.example.test:8443', CONFERA_ADMIN_ORIGIN: 'https://confera.example.test:9443' }],
-    ['local, localhost on two ports', { ...local, CONFERA_PUBLIC_ORIGIN: 'http://localhost:3002', CONFERA_ADMIN_ORIGIN: 'http://localhost:3000' }],
-    ['local, http and https of one name', { ...local, CONFERA_PUBLIC_ORIGIN: 'http://confera.test', CONFERA_ADMIN_ORIGIN: 'https://confera.test' }],
+    ['prod, the default port and another one', { ...prod, CONGRESA_PUBLIC_ORIGIN: 'https://congresa.example.test', CONGRESA_ADMIN_ORIGIN: 'https://congresa.example.test:8443' }],
+    ['prod, two ports', { ...prod, CONGRESA_PUBLIC_ORIGIN: 'https://congresa.example.test:8443', CONGRESA_ADMIN_ORIGIN: 'https://congresa.example.test:9443' }],
+    ['local, localhost on two ports', { ...local, CONGRESA_PUBLIC_ORIGIN: 'http://localhost:3002', CONGRESA_ADMIN_ORIGIN: 'http://localhost:3000' }],
+    ['local, http and https of one name', { ...local, CONGRESA_PUBLIC_ORIGIN: 'http://congresa.test', CONGRESA_ADMIN_ORIGIN: 'https://congresa.test' }],
   ])('refuses one host name for both surfaces, also on two ports or schemes (%s)', (_what, env) => {
     expect(problemsOf(env).join('\n')).toMatch(/two different host names/);
   });

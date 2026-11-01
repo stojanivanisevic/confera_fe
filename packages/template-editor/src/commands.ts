@@ -5,7 +5,7 @@ import { baseKeymap, chainCommands, setBlockType, splitBlock, toggleMark, wrapIn
 import { history, redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import type { MarkType, Node as EditorNode, NodeType, Schema } from 'prosemirror-model';
-import { TextSelection, type Command, type EditorState, type Plugin } from 'prosemirror-state';
+import { NodeSelection, TextSelection, type Command, type EditorState, type Plugin } from 'prosemirror-state';
 
 import { bodySchema, SECURE_LINK, subjectSchema } from './schema';
 
@@ -92,14 +92,41 @@ const leaveEmptyItem: Command = (state, dispatch) => {
   return true;
 };
 
-/** A placeholder at the cursor: one object, never text. */
+/**
+ * A placeholder at the cursor: one object, never text. The chip takes no mark, so the marks that
+ * were about to apply (Bold pressed before the chip) stay pending for the text typed after it
+ * (UX4-12): Bold on, chip, words, Bold off gives bold words, as the person meant.
+ */
 export const insertPlaceholder =
   (key: string, schema: Schema = bodySchema): Command =>
   (state, dispatch) => {
     const type = schema.nodes.placeholder as NodeType;
-    const { $from } = state.selection;
+    const { $from, empty } = state.selection;
     if (!$from.parent.canReplaceWith($from.index(), $from.index(), type)) return false;
-    if (dispatch) dispatch(state.tr.replaceSelectionWith(type.create({ key }), false).scrollIntoView());
+    if (dispatch) {
+      const pending = state.storedMarks ?? (empty ? $from.marks() : null);
+      const tr = state.tr.replaceSelectionWith(type.create({ key }), false);
+      if (pending && pending.length > 0) tr.setStoredMarks(pending);
+      dispatch(tr.scrollIntoView());
+    }
+    return true;
+  };
+
+/** An email image as a block of its own, after the block of the cursor (ADR-12). */
+export const insertImage =
+  (fileId: string, alt: string): Command =>
+  (state, dispatch) => {
+    const type = nodes.image;
+    const { $from } = state.selection;
+    // After the block of the cursor that sits in the body or in a condition (never inside a list).
+    let depth = $from.depth;
+    while (depth > 1 && $from.node(depth - 1).type !== nodes.conditional) depth--;
+    const at = $from.depth === 0 ? $from.pos : $from.after(depth);
+    if (dispatch) {
+      const tr = state.tr.insert(at, type.create({ fileId, alt }));
+      tr.setSelection(NodeSelection.create(tr.doc, at));
+      dispatch(tr.scrollIntoView());
+    }
     return true;
   };
 
@@ -170,8 +197,22 @@ export interface ToolbarState {
   readonly block: BlockKind | 'list' | 'mixed';
   readonly list: ListKind | null;
   readonly link: string | null;
+  /** The key of the condition the cursor is in (the innermost), or null: "Remove the condition" is offered only then (UX4-10). */
+  readonly condition: string | null;
   readonly canUndo: boolean;
   readonly canRedo: boolean;
+}
+
+/** The condition around the cursor: the key of the innermost conditional block, if any. */
+function conditionAround(state: EditorState): string | null {
+  const { $from } = state.selection;
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const node = $from.node(depth);
+    if (node.type === nodes.conditional) return node.attrs.key as string;
+  }
+  // A selected block (an image) directly inside a condition.
+  if (state.selection instanceof NodeSelection && $from.parent.type === nodes.conditional) return $from.parent.attrs.key as string;
+  return null;
 }
 
 export function toolbarState(state: EditorState): ToolbarState {
@@ -186,6 +227,7 @@ export function toolbarState(state: EditorState): ToolbarState {
     block,
     list: list ? (list.node.type.name as ListKind) : null,
     link: link ? (link.attrs.href as string) : null,
+    condition: conditionAround(state),
     canUndo: undo(state),
     canRedo: redo(state),
   };

@@ -7,13 +7,13 @@
 //
 // Through the web application's forward, as the admin screens call it: the session cookie, the
 // CSRF value of the session and the admin surface's Origin; the password asked again before the
-// change (`x-confera-fresh-password`). No browser is involved, so it works in every engine, also
+// change (`x-congresa-fresh-password`). No browser is involved, so it works in every engine, also
 // in WebKit, which keeps no Secure cookie on http://localhost. Idempotent: a matching default
 // server is left as it is.
 import { ADMIN_ORIGIN } from '../env';
 import { ADMIN, AGAINST_REAL_API } from './admin';
 
-export const MAILPIT_SMTP_PORT = Number(process.env.CONFERA_E2E_MAILPIT_SMTP_PORT ?? '1025');
+export const MAILPIT_SMTP_PORT = Number(process.env.CONGRESA_E2E_MAILPIT_SMTP_PORT ?? '1025');
 const HOST = '127.0.0.1';
 
 interface MailServer { readonly host: string; readonly port: number; readonly isDefault: boolean; readonly enabled: boolean; readonly tlsMode: string }

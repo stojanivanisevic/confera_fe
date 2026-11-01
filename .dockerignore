@@ -1,0 +1,25 @@
+# The build context of the image (Dockerfile). An allowlist: everything is left out unless it is
+# named here, so a .env, a build of the dev pages or a test file can never reach the image.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!.npmrc
+!tsconfig.base.json
+!tsconfig.json
+!scripts/next.mjs
+!scripts/lib.mjs
+!scripts/listen-host.mjs
+!scripts/verify-build.mjs
+!apps/web/
+!packages/
+!design-system/
+
+# Never, even inside an allowed folder.
+**/node_modules/
+**/.next/
+**/.next-test/
+**/.env
+**/.env.*
+**/*.test.ts
+**/*.test.tsx

@@ -19,7 +19,7 @@ const ESLINT_PLANTED: Record<string, { rule: string; message: RegExp }> = {
   'other-ui-kit.tsx': { rule: 'no-restricted-imports', message: /design system/ },
   'tailwind-import.ts': { rule: 'no-restricted-imports', message: /Tailwind/ },
   'other-icon-set.tsx': { rule: 'no-restricted-imports', message: /icon set/ },
-  'design-system-direct.ts': { rule: 'no-restricted-imports', message: /public entry of @confera\/ui/ },
+  'design-system-direct.ts': { rule: 'no-restricted-imports', message: /public entry of @congresa\/ui/ },
   'raw-markup-jsx.tsx': { rule: 'no-restricted-syntax', message: /Raw markup/ },
   'raw-markup-dom.ts': { rule: 'no-restricted-syntax', message: /Raw markup/ },
   'raw-markup-insert.ts': { rule: 'no-restricted-syntax', message: /Raw markup/ },
@@ -52,7 +52,7 @@ describe('lint: planted violations (M1-FE-01)', () => {
 
   beforeAll(async () => {
     // The fixtures are ignored in a normal run; this switch (read by eslint.config.mjs) includes them.
-    process.env.CONFERA_LINT_FIXTURES = '1';
+    process.env.CONGRESA_LINT_FIXTURES = '1';
     const eslint = new ESLint({ cwd: root });
     results = await eslint.lintFiles(['lint-fixtures/**/*.{ts,tsx}']);
     // The typed lint builds a TypeScript program of the project first: a minute on a quiet machine, past

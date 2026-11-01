@@ -8,7 +8,7 @@ import { emptyAnswer, expect, isLocalSecuritySoftware, neutraliseLocalSoftware, 
 import { watchPage } from './support/page-problems';
 
 // A name under the host the fixture knows; nothing is ever sent to it: the fixture answers first.
-const ADDED = 'http://confera-fixture-test.kaspersky-labs.com';
+const ADDED = 'http://congresa-fixture-test.kaspersky-labs.com';
 const PAGE_WITH_ADDITIONS = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>a page the security software changed</title>
 <link rel="stylesheet" href="${ADDED}/added.css">
 <script src="${ADDED}/added.js"></script>

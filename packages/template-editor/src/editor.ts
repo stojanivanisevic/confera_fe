@@ -6,7 +6,7 @@ import type { Node as EditorNode } from 'prosemirror-model';
 import { EditorState, NodeSelection, type Command } from 'prosemirror-state';
 import { EditorView, type NodeView } from 'prosemirror-view';
 
-import { catalogueOf, checkBody, checkSubject, DocumentError, type DocNode, type SubjectNode } from '@confera/api-client';
+import { catalogueOf, checkBody, checkSubject, DocumentError, type Catalogue, type DocNode, type SubjectNode } from '@congresa/api-client';
 
 import { bodyKeys, subjectKeys, toolbarState, type ToolbarState } from './commands';
 import { bodyFromEditor, bodyToEditor, subjectFromEditor, subjectToEditor } from './convert';
@@ -23,6 +23,22 @@ export interface EditorOptions {
   readonly placeholderLabel: (key: string) => string;
   /** Every change, and every move of the cursor. */
   readonly onChange?: () => void;
+  /** The catalogue of the type as the API gives it (0.4.0); without one, the vendored one of the format. */
+  readonly catalogue?: Catalogue;
+  /** Where the page shows an email image (the API's address of it, read with the session). */
+  readonly imageSrc?: (fileId: string) => string;
+  /** An image file pasted or dropped into the body: the page uploads it and inserts it (ADR-12). */
+  readonly onImageFile?: (file: File) => void;
+  /** A paste held images of a web page (a remote address, an embedded data: image): they were dropped (ADR-12). */
+  readonly onImagesDropped?: () => void;
+  /**
+   * The level of the page's heading that the editor sits under (UX4-18). A heading of the email is
+   * not a heading of the page: it is shown with `role="heading"` one level or more below this one
+   * ("Heading 1" of the email under the card's h2 is level 3), never as the page's h1.
+   */
+  readonly headingLevelUnder?: number;
+  /** The words above a block shown on a condition ("Only when the office wrote a message", UX4-11), by its key. */
+  readonly conditionLabel?: (key: string) => string;
 }
 
 export type Checked<T> = { readonly ok: true; readonly document: T } | { readonly ok: false; readonly code: string; readonly path: string };
@@ -57,6 +73,64 @@ function placeholderView(label: (key: string) => string) {
   };
 }
 
+/** An email image in the page: the picture with its words, not editable, selected and deleted as a whole. */
+function imageView(src: (fileId: string) => string) {
+  return (node: EditorNode): NodeView => {
+    const dom = document.createElement('figure');
+    dom.dataset.congresaImage = node.attrs.fileId as string;
+    dom.setAttribute('contenteditable', 'false');
+    const img = document.createElement('img');
+    img.src = src(node.attrs.fileId as string);
+    img.alt = node.attrs.alt as string;
+    img.draggable = false;
+    dom.append(img);
+    return {
+      dom,
+      selectNode: () => dom.classList.add('is-selected'),
+      deselectNode: () => dom.classList.remove('is-selected'),
+      ignoreMutation: () => true,
+      stopEvent: () => false,
+    };
+  };
+}
+
+/**
+ * A heading of the email in the page: its text styled as the heading it is, named a heading one or
+ * more levels below the card it sits in (UX4-18), so the page keeps one h1 and a screen reader's list
+ * of headings is not led by the email's words. The clipboard still carries h1 to h3 (the schema's).
+ */
+function headingView(under: number) {
+  return (node: EditorNode): NodeView => {
+    const level = node.attrs.level as number;
+    const dom = document.createElement('div');
+    dom.className = `congresa-heading congresa-heading--${String(level)}`;
+    dom.dataset.emailHeading = String(level);
+    dom.setAttribute('role', 'heading');
+    dom.setAttribute('aria-level', String(Math.min(6, under + level)));
+    return { dom, contentDOM: dom };
+  };
+}
+
+/** A block shown on a condition: its words above it, not editable, then the blocks it holds (UX4-11). */
+function conditionView(label: (key: string) => string) {
+  return (node: EditorNode): NodeView => {
+    const dom = document.createElement('section');
+    dom.dataset.condition = node.attrs.key as string;
+    const head = document.createElement('div');
+    head.className = 'congresa-condition__label';
+    head.setAttribute('contenteditable', 'false');
+    head.dataset.conditionLabel = '';
+    head.textContent = label(node.attrs.key as string);
+    const content = document.createElement('div');
+    content.className = 'congresa-condition__blocks';
+    dom.append(head, content);
+    return { dom, contentDOM: content, ignoreMutation: (mutation) => head.contains(mutation.target) };
+  };
+}
+
+/** The image files of a paste or a drop. */
+const imageFiles = (data: DataTransfer | null): File[] => [...(data?.files ?? [])].filter((file) => /^image\//.test(file.type));
+
 function mount<T>(element: HTMLElement, doc: EditorNode, plugins: EditorState['plugins'], options: EditorOptions, read: (doc: EditorNode) => T, check: (value: T) => T, multiline: boolean, transformPastedText?: (text: string) => string): EditorHandle<T> {
   const state = EditorState.create({ doc, plugins });
   const view = new EditorView(element, {
@@ -68,7 +142,30 @@ function mount<T>(element: HTMLElement, doc: EditorNode, plugins: EditorState['p
       ...(options.describedBy ? { 'aria-describedby': options.describedBy } : {}),
       spellcheck: 'true',
     },
-    nodeViews: { placeholder: placeholderView(options.placeholderLabel) },
+    nodeViews: {
+      placeholder: placeholderView(options.placeholderLabel),
+      ...(multiline && options.imageSrc ? { image: imageView(options.imageSrc) } : {}),
+      ...(multiline && options.headingLevelUnder !== undefined ? { heading: headingView(options.headingLevelUnder) } : {}),
+      ...(multiline && options.conditionLabel ? { conditional: conditionView(options.conditionLabel) } : {}),
+    },
+    // A pasted or dropped image file is uploaded by the page, never put in as data (ADR-12, ST-60).
+    handlePaste: (_view, event) => {
+      const files = imageFiles(event.clipboardData);
+      if (files.length === 0) return false;
+      if (multiline && options.onImageFile) for (const file of files) options.onImageFile(file);
+      return true;
+    },
+    // Pasted markup keeps what the schema has; an image of a web page is never taken over, and the page says so.
+    transformPastedHTML: (html) => {
+      if (multiline && /<img[\s>](?![^>]*data-congresa-image)/i.test(html)) options.onImagesDropped?.();
+      return html;
+    },
+    handleDrop: (_view, event) => {
+      const files = imageFiles((event).dataTransfer);
+      if (files.length === 0) return false;
+      if (multiline && options.onImageFile) for (const file of files) options.onImageFile(file);
+      return true;
+    },
     // Pasted markup keeps only what the schema has; a line of the subject stays one line.
     ...(transformPastedText ? { transformPastedText } : {}),
     dispatchTransaction(transaction) {
@@ -100,13 +197,13 @@ function mount<T>(element: HTMLElement, doc: EditorNode, plugins: EditorState['p
 
 /** The body editor of a template of `options.type`, with `body` loaded. */
 export function mountBodyEditor(element: HTMLElement, body: DocNode, options: EditorOptions): EditorHandle<DocNode> {
-  const catalogue = catalogueOf(options.type);
+  const catalogue = options.catalogue ?? catalogueOf(options.type);
   return mount(element, bodyToEditor(body), bodyKeys(), options, bodyFromEditor, (value) => checkBody(value, catalogue), true);
 }
 
 /** The subject editor: one line of text and placeholders. */
 export function mountSubjectEditor(element: HTMLElement, subject: SubjectNode, options: EditorOptions): EditorHandle<SubjectNode> {
-  const catalogue = catalogueOf(options.type);
+  const catalogue = options.catalogue ?? catalogueOf(options.type);
   return mount(element, subjectToEditor(subject), subjectKeys(), options, subjectFromEditor, (value) => checkSubject(value, catalogue), false, (text) => text.replace(/\s+/g, ' '));
 }
 

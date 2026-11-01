@@ -9,7 +9,7 @@ import { expect, test } from './support/fixtures';
 
 async function sendLimitAlert(page: Page) {
   await page.goto(`${PUBLIC_ORIGIN}/dev/gallery`);
-  await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+  await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
   const alert = page.locator('.ud-alert', { hasText: 'The send limit is close' }).first();
   await alert.scrollIntoViewIfNeeded();
   return alert;
@@ -38,8 +38,8 @@ test.describe('at 375 px', () => {
     await resetStub(page);
     await signIn(page, undefined, '/account');
     // The banner of a session that ended has a link and a button beside its text.
-    await page.evaluate(() => window.dispatchEvent(new Event('confera:session-ended')));
-    const banner = page.locator('[data-confera-session-ended] .ud-alert');
+    await page.evaluate(() => window.dispatchEvent(new Event('congresa:session-ended')));
+    const banner = page.locator('[data-congresa-session-ended] .ud-alert');
     await expect(banner).toBeVisible();
     const at = await boxes(page, banner);
     expect(at.actionTop).toBeGreaterThanOrEqual(at.bodyBottom - 1);

@@ -27,9 +27,9 @@
 <header id="host-header">ITEMA 2026: a site that fights every embed</header>
 <main>
   <h1 id="host-title">Submit your abstract</h1>
-  <p id="host-text">The form below comes from Confera.</p>
+  <p id="host-text">The form below comes from Congresa.</p>
   <p><input id="host-input" value="an input of the site"></p>
-  <div id="confera-slot"><!--CONFERA_SNIPPET--></div>
+  <div id="congresa-slot"><!--CONGRESA_SNIPPET--></div>
   <p id="host-after">Text of the site after the form.</p>
 </main>
 <script>
@@ -37,15 +37,15 @@
   // height of the frame with messages of its own, and writes into the frame.
   window.__received = [];
   window.addEventListener('message', function (e) {
-    var frame = document.querySelector('#confera-slot iframe');
+    var frame = document.querySelector('#congresa-slot iframe');
     window.__received.push({ origin: e.origin, fromFrame: !!frame && e.source === frame.contentWindow, data: e.data });
   });
   window.__attack = setInterval(function () {
-    window.postMessage({ type: 'confera:height', height: 5 }, '*');
-    window.postMessage({ type: 'confera:height', height: 99999999 }, '*');
-    var frame = document.querySelector('#confera-slot iframe');
+    window.postMessage({ type: 'congresa:height', height: 5 }, '*');
+    window.postMessage({ type: 'congresa:height', height: 99999999 }, '*');
+    var frame = document.querySelector('#congresa-slot iframe');
     if (frame && frame.contentWindow) {
-      try { frame.contentWindow.postMessage({ type: 'confera:height', height: 1, submit: true }, '*'); } catch (error) { /* blocked */ }
+      try { frame.contentWindow.postMessage({ type: 'congresa:height', height: 1, submit: true }, '*'); } catch (error) { /* blocked */ }
     }
   }, 40);
 </script>

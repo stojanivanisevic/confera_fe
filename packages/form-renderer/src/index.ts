@@ -1,4 +1,4 @@
-// @confera/form-renderer: forms as authors see them, hosted and embedded (ADR-09).
+// @congresa/form-renderer: forms as authors see them, hosted and embedded (ADR-09).
 // A published form definition becomes the fields of the design system; its rules are checked by
 // the interpreter of ./rules in the browser and again by the API; the fields are plain controls
 // read through a store (what is typed before the form is attached survives); the draft is kept in

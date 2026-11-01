@@ -19,7 +19,7 @@ const original = join(root, 'design-system');
 
 let work: string;
 beforeAll(() => {
-  work = mkdtempSync(join(tmpdir(), 'confera-ds-check-'));
+  work = mkdtempSync(join(tmpdir(), 'congresa-ds-check-'));
 });
 afterAll(() => {
   rmSync(work, { recursive: true, force: true });

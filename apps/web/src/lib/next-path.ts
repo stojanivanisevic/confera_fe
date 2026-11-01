@@ -16,8 +16,8 @@ export function safeNextPath(next: string | null | undefined): string {
   // What a browser would make of it must stay on this origin and keep the path; an encoded slash or
   // backslash right after the first one is refused too, so that nothing can read as another host.
   try {
-    const url = new URL(next, 'https://confera.invalid');
-    if (url.origin !== 'https://confera.invalid' || `${url.pathname}${url.search}${url.hash}` !== next) return HOME_PATH;
+    const url = new URL(next, 'https://congresa.invalid');
+    if (url.origin !== 'https://congresa.invalid' || `${url.pathname}${url.search}${url.hash}` !== next) return HOME_PATH;
     if (/^\/(?:%2f|%5c)/i.test(next) || /^\/[/\\]/.test(decodeURIComponent(url.pathname))) return HOME_PATH;
   } catch {
     return HOME_PATH;

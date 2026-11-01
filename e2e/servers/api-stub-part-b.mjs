@@ -206,9 +206,9 @@ export function handlePartB(ctx) {
       if (!MAIL.test(String(body.to ?? ''))) refuse(400, 'validation_failed', [{ path: 'to', code: 'isMailAddress' }]);
       // A host of the reserved `.invalid` domain never answers: the attempt fails.
       const result = server.host.endsWith('.invalid') ? 'failed' : 'sent';
-      state.mailLog.unshift({ id: id('0e2e1000-0000'), messageId: id('0e2e1100-0000'), recipient: body.to, kind: 'test_message', language: body.language ?? 'en', conferenceId: null, mailServerId: server.id, serverName: server.name, attempt: 1, result, errorCode: result === 'failed' ? 'connection_failed' : null, sentAt: now(), subject: state.organisation.mailLogContent === false ? null : `Test message from ${state.organisation.name}`, bodyHtml: state.organisation.mailLogContent === false ? null : `<p>This is a test message sent through ${server.name}.</p>`, bodyText: state.organisation.mailLogContent === false ? null : `This is a test message sent through ${server.name}.\n` });
+      state.mailLog.unshift({ id: id('0e2e1000-0000'), messageId: id('0e2e1100-0000'), recipient: body.to, kind: 'test_message', language: body.language ?? 'en', conferenceId: null, mailServerId: server.id, serverName: server.name, attempt: 1, result, errorCode: result === 'failed' ? 'connection_failed' : null, sentAt: now(), diverted: false, resendOf: null, resendMode: null, imageIds: [], subject: state.organisation.mailLogContent === false ? null : `Test message from ${state.organisation.name}`, bodyHtml: state.organisation.mailLogContent === false ? null : `<p>This is a test message sent through ${server.name}.</p>`, bodyText: state.organisation.mailLogContent === false ? null : `This is a test message sent through ${server.name}.\n` });
       record(me.id, 'mail_server.tested', 'mail_server', server.id, { detail: { result } });
-      return { status: 200, body: { result, reason: null } };
+      return { status: 200, body: { result, cause: result === 'failed' ? 'connection_failed' : null, reason: null } };
     }
     fresh();
     if (!serverRoute[2] && method === 'PATCH') {
@@ -258,10 +258,13 @@ export function handlePartB(ctx) {
     const q = url.searchParams;
     const page = Number(q.get('page') ?? 1);
     const pageSize = Number(q.get('pageSize') ?? 25);
+    // `q`: words searched in the recipient and the subject, any case; every word in one of them (UX4-13, as confera_be).
+    const words = (q.get('q') ?? '').toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+    const found = (e) => words.every((word) => e.recipient.toLowerCase().includes(word) || (e.subject ?? '').toLowerCase().includes(word));
     const all = state.mailLog
-      .filter((e) => (!q.get('kind') || e.kind === q.get('kind')) && (!q.get('result') || e.result === q.get('result')) && (!q.get('conferenceId') || e.conferenceId === q.get('conferenceId')) && (!q.get('messageId') || e.messageId === q.get('messageId')))
+      .filter((e) => (!q.get('kind') || e.kind === q.get('kind')) && (!q.get('result') || e.result === q.get('result')) && (!q.get('conferenceId') || e.conferenceId === q.get('conferenceId')) && (!q.get('messageId') || e.messageId === q.get('messageId')) && found(e))
       .sort((a, b) => b.sentAt.localeCompare(a.sentAt));
-    const summary = (entry) => Object.fromEntries(Object.entries(entry).filter(([key]) => !['subject', 'bodyHtml', 'bodyText'].includes(key)));
+    const summary = (entry) => Object.fromEntries(Object.entries(entry).filter(([key]) => !['bodyHtml', 'bodyText', 'imageIds'].includes(key)));
     return { status: 200, body: { items: all.slice((page - 1) * pageSize, page * pageSize).map(summary), total: all.length, page, pageSize } };
   }
   const logRoute = /^\/api\/v1\/mail-log\/([^/]+)$/.exec(path);

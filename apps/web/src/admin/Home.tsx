@@ -6,7 +6,7 @@
  */
 import Link from 'next/link';
 
-import { Card, Icon, PageHeader } from '@confera/ui';
+import { Card, Icon, PageHeader } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { Connection } from './Connection';
@@ -58,7 +58,7 @@ export function Home() {
       <div className={styles.cards}>
         {steps.length > 0 ? (
           <Card title={t.first} headingLevel={2}>
-            <ol className={styles.steps} data-confera-first-steps>
+            <ol className={styles.steps} data-congresa-first-steps>
               {steps.map((step) => (
                 <li key={step.key} data-step={step.key} data-done={step.done === null ? undefined : String(step.done)}>
                   <Icon name={step.done ? 'check-circle-2' : 'circle'} size={16} />

@@ -6,7 +6,7 @@
 //                                                 holds design system 2.2.0), or by default the first
 //                                                 commit of the repository (version 1)
 // A preview expects global React, ReactDOM and Udekom, which is exactly how the
-// design system works outside Confera ("one plain script"). React 19 ships no
+// design system works outside Congresa ("one plain script"). React 19 ships no
 // script build, so a small one is bundled here from the installed packages.
 // Both sides get the same self-hosted fonts, so that the comparison shows
 // the design changes and not a difference in font loading.

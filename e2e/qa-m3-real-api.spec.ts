@@ -8,8 +8,8 @@
 //  - the API's Origin and Sec-Fetch-Site checks reached through this web application's forward;
 //  - NFR-PERF-01: the form usable within 2 s, a submit without files answered within 2 s.
 //
-// Skipped without CONFERA_E2E_API_ORIGIN (the stub has no such form). Needs, from that checkout:
-//   CONFERA_E2E_MAILPIT_ORIGIN  the web address of its mail catcher
+// Skipped without CONGRESA_E2E_API_ORIGIN (the stub has no such form). Needs, from that checkout:
+//   CONGRESA_E2E_MAILPIT_ORIGIN  the web address of its mail catcher
 // and a default mail server of organisation A that sends to it: the setup below adds one when there is none.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -25,11 +25,11 @@ import { watchPage } from './support/page-problems';
 
 const SLUG = 'e2eprobnaforma01';
 const FRAME = `#${frameId(SLUG)}`;
-const MAILPIT = process.env.CONFERA_E2E_MAILPIT_ORIGIN ?? 'http://127.0.0.1:8025';
+const MAILPIT = process.env.CONGRESA_E2E_MAILPIT_ORIGIN ?? 'http://127.0.0.1:8025';
 /** The PostgreSQL container of that checkout's stack, for the one probe that has to age a token (optional). */
-const PG_CONTAINER = process.env.CONFERA_E2E_PG_CONTAINER ?? '';
+const PG_CONTAINER = process.env.CONGRESA_E2E_PG_CONTAINER ?? '';
 const sql = (statement: string): string => {
-  const result = spawnSync('docker', ['exec', PG_CONTAINER, 'psql', '-U', 'postgres', '-d', 'confera', '-tAc', statement], { encoding: 'utf8' });
+  const result = spawnSync('docker', ['exec', PG_CONTAINER, 'psql', '-U', 'postgres', '-d', 'congresa', '-tAc', statement], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(`psql: ${result.stderr}`);
   return result.stdout.trim();
 };
@@ -48,7 +48,7 @@ async function formFrame(page: Page): Promise<Frame> {
   await locator.scrollIntoViewIfNeeded();
   const frame = await (await locator.elementHandle())?.contentFrame();
   if (!frame) throw new Error('The frame of the form has no document');
-  await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor({ timeout: 30_000 });
+  await frame.locator('[data-congresa-form][data-hydrated="true"]').waitFor({ timeout: 30_000 });
   return frame;
 }
 
@@ -113,9 +113,9 @@ for (const width of [1440, 375]) {
       // No cookie is needed or kept: the frame is third-party and its cookies are blocked.
       expect(await frame.evaluate(() => document.cookie)).toBe('');
       await fillInEnglish(frame, email, title);
-      await frame.locator('[data-confera-file="biographies"] input[type="file"]').setInputFiles({ name: 'Biografije – Šćepanović Đurđa.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n% QA\n%%EOF\n') });
-      await expect(frame.locator('[data-confera-file="biographies"]')).toHaveAttribute('data-confera-file-state', 'uploaded', { timeout: 30_000 });
-      await expect(frame.locator('[data-confera-file="biographies"]')).toContainText('Biografije – Šćepanović Đurđa.pdf');
+      await frame.locator('[data-congresa-file="biographies"] input[type="file"]').setInputFiles({ name: 'Biografije – Šćepanović Đurđa.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n% QA\n%%EOF\n') });
+      await expect(frame.locator('[data-congresa-file="biographies"]')).toHaveAttribute('data-congresa-file-state', 'uploaded', { timeout: 30_000 });
+      await expect(frame.locator('[data-congresa-file="biographies"]')).toContainText('Biografije – Šćepanović Đurđa.pdf');
 
       // The language switch keeps every value (FR-FORM-09).
       await press(frame.getByRole('radio', { name: 'Srpski' }), browserName);
@@ -131,9 +131,9 @@ for (const width of [1440, 375]) {
       // Past the minimum fill time of the API (3 s from the token): a person takes longer anyway.
       await page.waitForTimeout(3_500);
       await press(frame.getByRole('button', { name: 'Pošalji' }), browserName, true);
-      await expect(frame.locator('[data-confera-thanks]')).toBeFocused({ timeout: 60_000 });
-      await expect(frame.locator('[data-confera-thanks]')).toContainText(`Potvrda stiže na ${email}.`);
-      const reference = (await frame.locator('[data-confera-reference]').innerText()).replace(/^.*: /, '');
+      await expect(frame.locator('[data-congresa-thanks]')).toBeFocused({ timeout: 60_000 });
+      await expect(frame.locator('[data-congresa-thanks]')).toContainText(`Potvrda stiže na ${email}.`);
+      const reference = (await frame.locator('[data-congresa-reference]').innerText()).replace(/^.*: /, '');
       expect(reference).toMatch(/^PK27-\d{4}$/);
 
       // One confirmation, with the reference, however many presses (FR-FORM-14, FR-FORM-15). The outbox worker of
@@ -220,7 +220,7 @@ test.describe('the seeded form on sites that do things to it (M3-QA-01, edge cas
     await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 20, downloadThroughput: (4 * 1024 * 1024) / 8, uploadThroughput: (3 * 1024 * 1024) / 8 });
     const started = Date.now();
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     const usable = Date.now() - started;
     const id = run();
     await fillInEnglish(page, `qa3.perf.${id}@autori.example.test`, `Brzina ${id}`);
@@ -230,7 +230,7 @@ test.describe('the seeded form on sites that do things to it (M3-QA-01, edge cas
     await page.getByRole('button', { name: 'Send' }).click();
     const response = await answered;
     const submit = Date.now() - sent;
-    await expect(page.locator('[data-confera-thanks]')).toBeVisible();
+    await expect(page.locator('[data-congresa-thanks]')).toBeVisible();
     test.info().annotations.push({ type: 'NFR-PERF-01', description: `usable after ${String(usable)} ms; submit answered after ${String(submit)} ms (${String(response.status())})` });
     console.log(`NFR-PERF-01 ${browserName}: usable after ${String(usable)} ms; submit answered after ${String(submit)} ms`);
     // The load time is measured, not judged, on this machine (1.2 to 5.1 s on a shared developer machine in
@@ -261,11 +261,11 @@ test.describe('the seeded form on sites that do things to it (M3-QA-01, edge cas
   });
 
   test('Q3-01: a token that expired while the author typed: the thank-you stands for a stored submission and its email', async ({ page, browserName }) => {
-    test.skip(PG_CONTAINER === '', 'needs CONFERA_E2E_PG_CONTAINER to age the token');
+    test.skip(PG_CONTAINER === '', 'needs CONGRESA_E2E_PG_CONTAINER to age the token');
     test.setTimeout(90_000);
     const tokenAnswer = page.waitForResponse((response) => response.request().method() === 'POST' && response.url().endsWith('/tokens'));
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     const { formToken } = (await (await tokenAnswer).json()) as { formToken: string };
     const id = run();
     const email = `qa3.expired.${id}@autori.example.test`;
@@ -275,8 +275,8 @@ test.describe('the seeded form on sites that do things to it (M3-QA-01, edge cas
     const hash = createHash('sha256').update(formToken, 'utf8').digest('hex');
     expect(sql(`UPDATE form_tokens SET issued_at = issued_at - interval '7 hours', expires_at = now() - interval '1 minute' WHERE token_hash = '${hash}' RETURNING 1`).split(/\r?\n/)[0]).toBe('1');
     await press(page.getByRole('button', { name: 'Send' }), browserName);
-    await expect(page.locator('[data-confera-thanks]')).toBeVisible({ timeout: 20_000 });
-    const reference = (await page.locator('[data-confera-reference]').innerText()).replace(/^.*: /, '');
+    await expect(page.locator('[data-congresa-thanks]')).toBeVisible({ timeout: 20_000 });
+    const reference = (await page.locator('[data-congresa-reference]').innerText()).replace(/^.*: /, '');
     expect(sql(`SELECT count(*) FROM submissions WHERE reference = '${reference}' AND title = '${title}'`), `submission ${reference}`).toBe('1');
     await expect.poll(async () => (await mailsTo(email)).length, { timeout: 30_000, intervals: [1_000] }).toBe(1);
   });
@@ -284,7 +284,7 @@ test.describe('the seeded form on sites that do things to it (M3-QA-01, edge cas
   test('the proof-of-work a busy address is asked for (difficulty 13) is solved in reasonable time in this engine', async ({ page, browserName }) => {
     test.setTimeout(150_000);
     await page.goto(`${PUBLIC_ORIGIN}/f/${SLUG}`);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     // The loop of solveProofOfWork (packages/form-renderer/src/public-api.ts, fix round): rounds of 32
     // hashes at once, a yield every 12 ms; its rate, for 15 s or 100 000 hashes at most.
     const { hashes, ms } = await page.evaluate(async () => {

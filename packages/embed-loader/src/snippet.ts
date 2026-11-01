@@ -1,9 +1,9 @@
 /**
  * The snippet an admin pastes into a conference site (FR-FORM-06; decision
  * G2-17, form (a)): a line with a link to the hosted form, a plain frame
- * served by Confera, and a few inline lines that set the frame's height and,
+ * served by Congresa, and a few inline lines that set the frame's height and,
  * after Send, bring the frame's summary or thank-you into view. No code is
- * loaded from Confera into the conference site; to update, the snippet is
+ * loaded from Congresa into the conference site; to update, the snippet is
  * pasted again.
  *
  * Decided for 0.3.0 (the owner's decisions of the 0.1.0 reviews, built as recommended):
@@ -21,7 +21,7 @@
  *  - the frame address is built from the configured origin and a slug that
  *    matches [a-z0-9-]; anything else builds no snippet;
  *  - no markup is written and no text is run as code;
- *  - a message is read only when it comes from Confera's origin AND from the
+ *  - a message is read only when it comes from Congresa's origin AND from the
  *    window of a frame with this id that is in the page when it arrives;
  *    everything else is ignored;
  *  - the lines never talk to the frame and never wait for anything; they work
@@ -40,7 +40,7 @@ export const SNIPPET_LANGUAGES = ['en', 'sr'] as const;
 export type SnippetLanguage = (typeof SNIPPET_LANGUAGES)[number];
 
 export interface EmbedSnippetOptions {
-  /** Origin of Confera's public surface, from configuration. */
+  /** Origin of Congresa's public surface, from configuration. */
   readonly publicOrigin: string;
   readonly slug: string;
   /** Accessible name of the frame, for example the form's title. */
@@ -94,7 +94,7 @@ function frameStyle(height: number): string {
  * only be repaired by pasting it again, so the lines assume nothing about when they run:
  *  - the frame is looked up when a message arrives, as the frame with this id whose window
  *    sent it, never kept from the moment the lines ran (the origin is checked first);
- *  - a frame that already shows Confera's page when the lines run (its document is no longer
+ *  - a frame that already shows Congresa's page when the lines run (its document is no longer
  *    the parent's to read) has told its height before anyone listened. The lines make it one
  *    pixel taller; a frame the page has never yet made as tall as it said answers that by
  *    telling its height again.
@@ -131,7 +131,7 @@ export function listenerSource(frameId: string, origin: string): string {
 }
 
 export function frameId(slug: string): string {
-  return `confera-form-${slug}`;
+  return `congresa-form-${slug}`;
 }
 
 /** The address of the frame page or of the hosted form, with the snippet's language. */

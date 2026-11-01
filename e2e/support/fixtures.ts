@@ -169,7 +169,7 @@ export const test = base.extend<{ injectedByLocalSoftware: string[]; virtualAuth
   // The engine's own string with the worker's slot added gives every worker a universe of its own,
   // so a spec that resets the stub never ends the sessions of a spec running beside it.
   userAgent: async ({ userAgent }, provide, testInfo) => {
-    await provide(userAgent === undefined ? undefined : `${userAgent} confera-e2e/${testInfo.parallelIndex}`);
+    await provide(userAgent === undefined ? undefined : `${userAgent} congresa-e2e/${testInfo.parallelIndex}`);
   },
   injectedByLocalSoftware: [
     async ({ context }, use) => {

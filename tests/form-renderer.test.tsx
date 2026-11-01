@@ -19,7 +19,7 @@ import { click, fakeApi, PublicApiError, publishedForm, settle, typeInto, type F
 Element.prototype.scrollIntoView = function scrollIntoView() {};
 
 const ABSTRACT = publishedForm('itema-2026-abstract');
-const DRAFT_KEY = 'confera:draft:itema-2026-abstract:3';
+const DRAFT_KEY = 'congresa:draft:itema-2026-abstract:3';
 /** The block keys of the renderer: the first block is 1, the ones added later 100, 101, … */
 const SECOND = 100;
 
@@ -46,8 +46,8 @@ const send = async () => {
   await click(container.querySelector<HTMLButtonElement>('button[type="submit"]')!);
   await settle();
 };
-const items = () => [...(container.querySelector('[data-confera-errors]')?.querySelectorAll('li a') ?? [])].map((a) => a.textContent);
-const announced = () => container.querySelector('[data-confera-announce]')!.textContent;
+const items = () => [...(container.querySelector('[data-congresa-errors]')?.querySelectorAll('li a') ?? [])].map((a) => a.textContent);
+const announced = () => container.querySelector('[data-congresa-announce]')!.textContent;
 const choose = async (element: HTMLInputElement) => {
   await act(async () => {
     element.click();
@@ -60,7 +60,7 @@ const file = (name: string, size: number, type = 'application/pdf') => {
   return made;
 };
 const dropFile = async (key: string, chosen: File) => {
-  const input = container.querySelector<HTMLInputElement>(`[data-confera-file="${key}"] input[type="file"]`)!;
+  const input = container.querySelector<HTMLInputElement>(`[data-congresa-file="${key}"] input[type="file"]`)!;
   Object.defineProperty(input, 'files', { configurable: true, value: [chosen] });
   await act(async () => {
     input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -119,7 +119,7 @@ describe('authors (FR-FORM-03; UX-M1-09, 10; D4, D7)', () => {
     await click(buttonNamed('Add an author')!);
     await click(buttonNamed('Remove author 2')!);
     expect(field(`authors.${SECOND}.firstName`)).toBeNull();
-    expect(container.querySelector('[data-confera-remove-question]')).toBeNull();
+    expect(container.querySelector('[data-congresa-remove-question]')).toBeNull();
     expect(announced()).toBe('Author 2 removed.');
   });
 
@@ -129,13 +129,13 @@ describe('authors (FR-FORM-03; UX-M1-09, 10; D4, D7)', () => {
     await typeInto(field(`authors.${SECOND}.firstName`), 'Đorđe');
     await typeInto(field(`authors.${SECOND}.lastName`), 'Šćepanović');
     await click(buttonNamed('Remove author 2')!);
-    const question = container.querySelector<HTMLElement>('[data-confera-remove-question]')!;
+    const question = container.querySelector<HTMLElement>('[data-congresa-remove-question]')!;
     expect(question.textContent).toContain('Remove author 2, Đorđe Šćepanović? What you wrote for this author is lost.');
     expect(document.activeElement).toBe(question);
     expect(container.querySelector('[role="dialog"]')).toBeNull(); // no dialog inside a form (ADR-07)
     await click([...question.querySelectorAll('button')].find((b) => b.textContent === 'Keep')!);
     expect(field(`authors.${SECOND}.firstName`).value).toBe('Đorđe');
-    expect(container.querySelector('[data-confera-remove-question]')).toBeNull();
+    expect(container.querySelector('[data-congresa-remove-question]')).toBeNull();
     expect(document.activeElement).toBe(field(`authors.${SECOND}.firstName`));
   });
 
@@ -146,7 +146,7 @@ describe('authors (FR-FORM-03; UX-M1-09, 10; D4, D7)', () => {
     await typeInto(field(`authors.${SECOND}.firstName`), 'Đorđe');
     await typeInto(field(`authors.${SECOND}.lastName`), 'Šćepanović');
     await click(buttonNamed('Remove author 1')!);
-    const question = container.querySelector<HTMLElement>('[data-confera-remove-question]')!;
+    const question = container.querySelector<HTMLElement>('[data-congresa-remove-question]')!;
     await click([...question.querySelectorAll('button')].find((b) => b.textContent === 'Remove')!);
     expect(field('authors.1.firstName')).toBeNull();
     expect(field(`authors.${SECOND}.firstName`).value).toBe('Đorđe');
@@ -183,8 +183,8 @@ describe('authors (FR-FORM-03; UX-M1-09, 10; D4, D7)', () => {
 });
 
 describe('sections and fields on a condition (FR-FORM-05)', () => {
-  const card = (key: string) => container.querySelector<HTMLElement>(`[data-confera-section="${key}"]`)!;
-  const wrapper = (path: string) => container.querySelector<HTMLElement>(`[data-confera-field="${path}"]`)!;
+  const card = (key: string) => container.querySelector<HTMLElement>(`[data-congresa-section="${key}"]`)!;
+  const wrapper = (path: string) => container.querySelector<HTMLElement>(`[data-congresa-field="${path}"]`)!;
 
   it('the paper shows only for a participation with a paper', async () => {
     await mount();
@@ -227,7 +227,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
   it('a complete form is sent once, with the token, the idempotency key, the language and the file, as the API keeps it', async () => {
     await mount();
     await fillAll();
-    expect(container.querySelector('[data-confera-file="biographies"]')!.getAttribute('data-confera-file-state')).toBe('uploaded');
+    expect(container.querySelector('[data-congresa-file="biographies"]')!.getAttribute('data-congresa-file-state')).toBe('uploaded');
     await send();
     expect(items()).toEqual([]);
     expect(api.calls.submits).toHaveLength(1);
@@ -237,7 +237,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     expect(api.calls.uploads).toEqual([{ token: 'invented-form-token-1', field: 'biographies', name: 'Biografije autora – Šćepanović.pdf' }]);
     expect(JSON.parse(JSON.stringify(submit!.body))).toEqual({
       language: 'en',
-      confera_hp: '',
+      congresa_hp: '',
       answers: {
         participationType: 'with_paper',
         authors: [{ firstName: 'Marta', lastName: 'Kovač', institution: 'Ekonomski fakultet, Univerzitet Primer', email: 'marta@example.test' }],
@@ -255,21 +255,21 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
         consent: true,
       },
     });
-    const thanks = container.querySelector('[data-confera-thanks]')!;
+    const thanks = container.querySelector('[data-congresa-thanks]')!;
     expect(thanks.textContent).toContain('Abstract sent');
     expect(thanks.textContent).toContain('The confirmation goes to marta@example.test.');
-    expect(container.querySelector('[data-confera-reference]')!.textContent).toBe('Your reference: IT27-0042');
+    expect(container.querySelector('[data-congresa-reference]')!.textContent).toBe('Your reference: IT27-0042');
     expect(window.sessionStorage.getItem(DRAFT_KEY)).toBeNull(); // nothing is kept once it is sent
   });
 
-  it('the trap field (SEC-M3-07): confera_hp, no autofill, in an inert container out of sight and hidden from assistive technology', async () => {
+  it('the trap field (SEC-M3-07): congresa_hp, no autofill, in an inert container out of sight and hidden from assistive technology', async () => {
     await mount();
     expect(container.querySelector('[name="website"]')).toBeNull();
-    const trap = field('confera_hp');
+    const trap = field('congresa_hp');
     expect(trap.getAttribute('autocomplete')).toBe('off');
     expect(trap.getAttribute('tabindex')).toBe('-1');
     for (const hint of ['data-1p-ignore', 'data-lpignore', 'data-bwignore', 'data-form-type']) expect(trap.hasAttribute(hint)).toBe(true);
-    const box = trap.closest('[data-confera-trap]')!;
+    const box = trap.closest('[data-congresa-trap]')!;
     expect(box.hasAttribute('inert')).toBe(true);
     expect(box.getAttribute('aria-hidden')).toBe('true');
     expect(box.classList.contains('ud-sr')).toBe(true);
@@ -287,7 +287,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     const described = (field('title').getAttribute('aria-describedby') ?? '').split(' ').map((id) => document.getElementById(id)?.textContent ?? '');
     expect(described).toContain('Leave out web addresses here');
     expect(field('title').getAttribute('aria-invalid')).toBe('true');
-    expect(document.activeElement).toBe(container.querySelector('[data-confera-errors]'));
+    expect(document.activeElement).toBe(container.querySelector('[data-congresa-errors]'));
   });
 
   // Q3-01: the API answers a submit inside its fill time with a success that stores nothing.
@@ -301,13 +301,13 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     fillMs = Date.now() - opened + 800;
     await send();
     expect(api.calls.submits, 'nothing sent inside the fill time').toHaveLength(0);
-    expect(container.querySelector('form')!.getAttribute('data-confera-phase')).toBe('sending');
+    expect(container.querySelector('form')!.getAttribute('data-congresa-phase')).toBe('sending');
     for (let i = 0; i < 30 && api.calls.submits.length === 0; i += 1) {
       await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
     }
     await settle();
     expect(api.calls.submits).toHaveLength(1);
-    expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
+    expect(container.querySelector('[data-congresa-thanks]')).not.toBeNull();
   });
 
   it('a token that expired while the author typed is replaced before Send, presenting the old one for renewal', async () => {
@@ -318,7 +318,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     await send();
     expect(token.mock.calls).toEqual([['itema-2026-abstract'], ['itema-2026-abstract', 'invented-form-token-old']]);
     expect(api.calls.submits.map((s) => s.token)).toEqual(['invented-form-token-1']);
-    expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
+    expect(container.querySelector('[data-congresa-thanks]')).not.toBeNull();
   });
 
   it('a proof-of-work asked for only at submit: the token is renewed with its challenge, solved, and sent once more', async () => {
@@ -334,7 +334,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     expect(api.calls.submits.map((s) => s.token)).toEqual(['invented-form-token-1', 'invented-form-token-renewed']);
     expect(api.calls.submits[1]!.body.proofOfWork).toMatch(/^[0-9]+$/);
     expect(api.calls.submits[0]!.key).toBe(api.calls.submits[1]!.key);
-    expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
+    expect(container.querySelector('[data-congresa-thanks]')).not.toBeNull();
   });
 
   it('a second refusal of the renewed token is not renewed again: the form says what happened', async () => {
@@ -345,8 +345,8 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     await send();
     expect(api.calls.tokens).toBe(2);
     expect(api.calls.submits).toHaveLength(2);
-    expect(container.querySelector('[data-confera-problem]')).not.toBeNull();
-    expect(container.querySelector('[data-confera-thanks]')).toBeNull();
+    expect(container.querySelector('[data-congresa-problem]')).not.toBeNull();
+    expect(container.querySelector('[data-congresa-thanks]')).toBeNull();
   });
 
   it('a used or refused token: a new one, once, with the same idempotency key', async () => {
@@ -356,7 +356,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     await send();
     expect(api.calls.submits.map((s) => s.token)).toEqual(['invented-form-token-1', 'invented-form-token-2']);
     expect(api.calls.submits[0]!.key).toBe(api.calls.submits[1]!.key);
-    expect(container.querySelector('[data-confera-thanks]')).not.toBeNull();
+    expect(container.querySelector('[data-congresa-thanks]')).not.toBeNull();
   });
 
   it.each([
@@ -369,7 +369,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     await fillAll();
     api.failNext(error);
     await send();
-    const problem = container.querySelector<HTMLElement>('[data-confera-problem]')!;
+    const problem = container.querySelector<HTMLElement>('[data-congresa-problem]')!;
     expect(problem.textContent).toContain(title);
     expect(problem.textContent).toContain(text);
     expect(document.activeElement).toBe(problem);
@@ -388,7 +388,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
     await send();
     expect(api.calls.submits).toHaveLength(0);
     expect(items()).toEqual(['Wait until the file is uploaded, then send.']);
-    expect(container.querySelector('[data-confera-file="biographies"]')!.textContent).toContain('Wait until the file is uploaded, then send.');
+    expect(container.querySelector('[data-congresa-file="biographies"]')!.textContent).toContain('Wait until the file is uploaded, then send.');
     finish!();
     await settle();
     await send();
@@ -419,7 +419,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
   it('a switch of the language keeps the focus on the switch, also with the summary showing, and is said (UX3-14)', async () => {
     await mount();
     await send();
-    expect(document.activeElement).toBe(container.querySelector('[data-confera-errors]'));
+    expect(document.activeElement).toBe(container.querySelector('[data-congresa-errors]'));
     const srpski = [...container.querySelectorAll<HTMLElement>('[role="radio"]')].find((r) => r.textContent === 'Srpski')!;
     srpski.focus();
     await click(srpski);
@@ -436,7 +436,7 @@ describe('sending (FR-FORM-13, 14, 15; ADR-08)', () => {
 });
 
 describe('files (M3-FE-04; FR-FORM-10)', () => {
-  const at = () => container.querySelector('[data-confera-file="biographies"]')!.textContent;
+  const at = () => container.querySelector('[data-congresa-file="biographies"]')!.textContent;
 
   it('a file of another type is refused before any upload, with the types', async () => {
     await mount();
@@ -447,7 +447,7 @@ describe('files (M3-FE-04; FR-FORM-10)', () => {
 
   it('a chosen and an uploaded file are said in the live region; a refusal is said once, as the alert at the file (UX3-01)', async () => {
     await mount();
-    const zone = () => container.querySelector('[data-confera-file="biographies"]')!;
+    const zone = () => container.querySelector('[data-congresa-file="biographies"]')!;
     await dropFile('biographies', file('photo.png', 1000, 'image/png'));
     expect(zone().querySelector('[role="alert"]')!.textContent).toBe('photo.png is not one of these types: .pdf, .docx, .doc. Save it as one of them and add it again.');
     // Not in the polite region as well: a screen reader would hear it twice.
@@ -525,7 +525,7 @@ describe('the draft of the tab (D3, FR-FORM-18)', () => {
     expect(field('authors.1.firstName').value).toBe('Marta');
     expect(field(`authors.${SECOND}.firstName`).value).toBe('Đorđe');
     expect(field('consent').checked).toBe(false); // the consent is given when the form is sent
-    expect(container.querySelector('[data-confera-form]')!.getAttribute('lang')).toBe('sr');
+    expect(container.querySelector('[data-congresa-form]')!.getAttribute('lang')).toBe('sr');
     expect(container.textContent).toContain('Vratili smo ono što ste ranije upisali u ovoj kartici. Fajlove dodajte ponovo.');
     await fillAll();
     await typeInto(field(`authors.${SECOND}.lastName`), 'Šćepanović');
@@ -553,7 +553,7 @@ describe('the draft of the tab (D3, FR-FORM-18)', () => {
 describe('states of the form (FR-DL-02)', () => {
   it('a closed form says so, with its deadline in the language and the zone of the conference, and has no fields', async () => {
     await mount(publishedForm('itema-2026-closed'), 'sr');
-    const closed = container.querySelector('[data-confera-state="closed"]')!.textContent;
+    const closed = container.querySelector('[data-congresa-state="closed"]')!.textContent;
     expect(closed).toContain('Ovaj obrazac je zatvoren');
     expect(closed).toContain('Prijave za ovu konferenciju su zatvorene.');
     expect(closed).toContain('Rok je bio 15.03.2026.');
@@ -568,7 +568,7 @@ describe('states of the form (FR-DL-02)', () => {
 
   it('a form the office closed before its deadline names no date (UX3-03)', async () => {
     await mount({ ...publishedForm('itema-2026-abstract'), state: 'closed', closedReason: 'conference_closed' });
-    const closed = container.querySelector('[data-confera-state="closed"]')!.textContent;
+    const closed = container.querySelector('[data-congresa-state="closed"]')!.textContent;
     expect(closed).toContain('This form is closed');
     expect(closed).not.toContain('The deadline was');
     expect(closed).not.toContain('2027');

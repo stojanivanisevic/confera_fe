@@ -8,8 +8,8 @@
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { createSessionClient, type LinkPerson } from '@confera/api-client';
-import { Alert, Button, PageHeader, PasswordField } from '@confera/ui';
+import { createSessionClient, type LinkPerson } from '@congresa/api-client';
+import { Alert, Button, PageHeader, PasswordField } from '@congresa/ui';
 
 import styles from './admin.module.css';
 import { ProblemAlert } from './ProblemAlert';
@@ -133,7 +133,7 @@ export function SetPasswordByLink({ purpose, token }: SetPasswordByLinkProps) {
           {problem.text}
         </ProblemAlert>
       ) : null}
-      <form className={styles.form} onSubmit={(event) => void submit(event)} noValidate data-confera-set-password>
+      <form className={styles.form} onSubmit={(event) => void submit(event)} noValidate data-congresa-set-password>
         <PasswordField label={t.passwordLabel} name="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required aria-describedby="password-checklist" />
         <PasswordField label={t.repeat} name="passwordRepeat" autoComplete="new-password" value={repeat} onChange={(event) => setRepeat(event.target.value)} required aria-describedby="password-checklist" />
         <PasswordChecklist id="password-checklist" password={password} repeat={repeat} context={context} refused={refused} />

@@ -36,7 +36,7 @@ beforeAll(async () => {
         return;
       }
       res.writeHead(200, { 'content-type': 'application/json', 'set-cookie': ['a=1; Path=/', 'b=2; Path=/'], connection: 'close', 'x-trace-id': 't-1' });
-      res.end(JSON.stringify({ name: 'confera-api', version: '0.1.0' }));
+      res.end(JSON.stringify({ name: 'congresa-api', version: '0.1.0' }));
     });
   });
   await new Promise<void>((resolve) => api.listen(0, '127.0.0.1', resolve));
@@ -52,7 +52,7 @@ describe('forwarding to the API', () => {
   it("keeps the browser's Host header, so the API sees the surface that was asked", async () => {
     const response = await forward();
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ name: 'confera-api', version: '0.1.0' });
+    expect(await response.json()).toEqual({ name: 'congresa-api', version: '0.1.0' });
     expect(last().headers.host).toBe('localhost:3000');
   });
 

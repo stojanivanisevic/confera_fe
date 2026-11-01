@@ -117,7 +117,7 @@ describe('1. only the configuration module reads the environment (ADR-01)', () =
   it('in the application the environment is read in the configuration module, and once more for the runtime the framework fills in', () => {
     expect(scanAll(environmentAccesses)).toEqual([
       'apps/web/src/config/env.ts:151: process.env',
-      'apps/web/src/config/env.ts:151: process.env.CONFERA_DEV_PAGES',
+      'apps/web/src/config/env.ts:151: process.env.CONGRESA_DEV_PAGES',
       'apps/web/src/config/env.ts:157: process.env.NODE_ENV',
       // Not configuration: the framework replaces it at build time (see the comment in the file).
       'apps/web/src/instrumentation.ts:8: process.env.NEXT_RUNTIME',
@@ -231,7 +231,7 @@ const REVIEWED_MODULES: readonly RegExp[] = [
   /^\.{1,2}\//, // files of the same package
   /^@\//, // files of the web application
   /^#dev-fixtures$/,
-  /^@confera\/(?:ui|form-renderer|embed-loader|api-client|template-editor)(?:\/(?:styles|gallery))?$/, // the internal packages, by their public entries (the template editor since 0.2.0)
+  /^@congresa\/(?:ui|form-renderer|embed-loader|api-client|template-editor)(?:\/(?:styles|gallery))?$/, // the internal packages, by their public entries (the template editor since 0.2.0)
   /^react$/,
   /^react-dom\/server$/,
   /^next$/,
@@ -243,7 +243,7 @@ const REVIEWED_MODULES: readonly RegExp[] = [
 
 describe('3. application code imports from a reviewed list: no second UI kit (NFR-UI-01)', () => {
   /** The design-system folder and the inside of the adapter, by whatever path (ADR-21). */
-  const DESIGN_SYSTEM_INTERNALS = /(?:^|\/)design-system\/|(?:^|\/)packages\/ui\/src\/|^@confera\/ui\/src\//;
+  const DESIGN_SYSTEM_INTERNALS = /(?:^|\/)design-system\/|(?:^|\/)packages\/ui\/src\/|^@congresa\/ui\/src\//;
   const unreviewed = (name: string, text: string) =>
     importsOf(name, text)
       .filter(({ specifier }) => DESIGN_SYSTEM_INTERNALS.test(specifier) || !REVIEWED_MODULES.some((pattern) => pattern.test(specifier)))
@@ -261,7 +261,7 @@ describe('3. application code imports from a reviewed list: no second UI kit (NF
     ['Tailwind', "import 'tailwindcss/tailwind.css';"],
     ['a module whose name is built', 'export const load = (name: string) => import(name);'],
     ['the design-system folder itself', "import '../../../design-system/components/bundle.css';"],
-    ['the inside of the adapter', "import x from '@confera/ui/src/generated/udekom.client.js';\nexport { x };"],
+    ['the inside of the adapter', "import x from '@congresa/ui/src/generated/udekom.client.js';\nexport { x };"],
     ['the inside of the adapter, by its path', "import { x } from '../../../packages/ui/src/labels';\nexport { x };"],
   ])('the scan finds %s', (_name, code) => {
     expect(unreviewed('apps/web/src/sample.tsx', code).length).toBeGreaterThan(0);

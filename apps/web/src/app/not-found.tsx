@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 
-import { FORM_TEXTS } from '@confera/form-renderer';
-import { EmptyState } from '@confera/ui';
+import { FORM_TEXTS } from '@congresa/form-renderer';
+import { EmptyState } from '@congresa/ui';
 
 import { getConfig } from '@/config/env';
+import { StagingBanner } from '@/server/staging';
 
 export const metadata: Metadata = { title: 'Page not found' };
 
@@ -17,7 +18,8 @@ export default async function NotFound() {
   const host = (await headers()).get('host')?.toLowerCase() ?? '';
   if (host === getConfig().publicHost) {
     return (
-      <main className="confera-page" data-confera-not-found="public">
+      <main className="congresa-page" data-congresa-not-found="public">
+        <StagingBanner inside />
         <h1 className="ud-sr">{FORM_TEXTS.en.page.notFoundTitle}</h1>
         <EmptyState icon="search" title={FORM_TEXTS.en.page.notFoundTitle} description={FORM_TEXTS.en.page.notFoundText} />
         <div lang="sr">
@@ -27,7 +29,8 @@ export default async function NotFound() {
     );
   }
   return (
-    <main className="confera-page" data-confera-not-found="admin">
+    <main className="congresa-page" data-congresa-not-found="admin">
+      <StagingBanner inside />
       <h1 className="ud-sr">Page not found</h1>
       <EmptyState
         icon="search"
@@ -35,7 +38,7 @@ export default async function NotFound() {
         description="This address does not exist. Check the link you followed."
         action={
           <a className="ud-link" href="/">
-            Go to Confera
+            Go to Congresa
           </a>
         }
       />

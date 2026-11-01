@@ -54,7 +54,16 @@ export interface ConditionalNode {
   readonly key: string;
   readonly children: readonly BlockNode[];
 }
-export type BlockNode = ParagraphNode | HeadingNode | ListNode | ConditionalNode;
+/**
+ * An image of the message (ADR-12, M4-FE-03): a private email image of the organisation, by its
+ * id, with the words that stand for it. It travels inside the message; there is no address.
+ */
+export interface ImageNode {
+  readonly type: 'image';
+  readonly fileId: string;
+  readonly alt: string;
+}
+export type BlockNode = ParagraphNode | HeadingNode | ListNode | ConditionalNode | ImageNode;
 
 export interface DocNode {
   readonly type: 'doc';
@@ -77,7 +86,8 @@ export type DocumentErrorCode =
   | 'link_scheme'
   | 'link_placeholder'
   | 'text_control_character'
-  | 'subject_too_long';
+  | 'subject_too_long'
+  | 'too_many_images';
 
 /** What a check refuses, with the code the API gives and where. */
 export class DocumentError extends Error {
@@ -96,6 +106,17 @@ export interface Catalogue {
   readonly placeholders: ReadonlySet<string>;
   readonly conditions: ReadonlySet<string>;
 }
+
+/** At most this many images in one template (ADR-12). */
+export const MAX_IMAGES: number = vectors.limits.images;
+/** The words of an image: one line, at most this many characters. */
+export const ALT_LIMIT: number = vectors.limits.altCharacters;
+/** The rendered body must stay under this (ADR-12). */
+export const RENDERED_LIMIT_BYTES: number = vectors.limits.renderedBodyBytes;
+/** The placeholders whose value keeps its lines (the admin's message to the author), each line a `<br>`. */
+export const MULTILINE_PLACEHOLDERS: ReadonlySet<string> = new Set(vectors.multilinePlaceholders);
+// The id of an email image: a UUID of version 4, as the API makes them.
+const FILE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 interface TypeEntry {
   readonly placeholders: readonly string[];
@@ -222,9 +243,29 @@ function checkBlock(node: unknown, path: string, catalogue: Catalogue, depth: nu
       const key = checkKey(node.key, `${path}.key`, catalogue.conditions, 'unknown_condition');
       return { type: 'conditional', key, children: checkBlocks(node.children, `${path}.children`, catalogue, depth) };
     }
+    case 'image': {
+      attributes(node, path, ['type', 'fileId', 'alt']);
+      if (typeof node.fileId !== 'string' || !FILE_ID.test(node.fileId)) throw new DocumentError('wrong_attribute', `${path}.fileId`);
+      if (typeof node.alt !== 'string' || Array.from(node.alt).length > ALT_LIMIT) throw new DocumentError('wrong_attribute', `${path}.alt`);
+      if (CONTROL.test(node.alt) || /[\r\n\t]/.test(node.alt)) throw new DocumentError('text_control_character', `${path}.alt`);
+      return { type: 'image', fileId: node.fileId.toLowerCase(), alt: node.alt };
+    }
     default:
       throw new DocumentError('unknown_node', path);
   }
+}
+
+/** The file ids of the images of a checked body, each once, in the order they appear (as the API counts them). */
+export function imagesOf(body: DocNode): string[] {
+  const found: string[] = [];
+  const walk = (blocks: readonly BlockNode[]): void => {
+    for (const block of blocks) {
+      if (block.type === 'image') found.push(block.fileId);
+      else if (block.type === 'conditional') walk(block.children);
+    }
+  };
+  walk(body.children);
+  return [...new Set(found)];
 }
 
 function checkBlocks(value: unknown, path: string, catalogue: Catalogue, depth: number): BlockNode[] {
@@ -239,7 +280,9 @@ export function checkBody(value: unknown, catalogue: Catalogue): DocNode {
   if (typeof value === 'string' || !isRecord(value) || value.type !== 'doc') throw new DocumentError('not_a_document', '$');
   if (utf8Bytes(JSON.stringify(value)) > DOCUMENT_LIMIT_BYTES) throw new DocumentError('too_large', '$');
   attributes(value, '$', ['type', 'children']);
-  return { type: 'doc', children: checkBlocks(value.children, '$.children', catalogue, 1) };
+  const body: DocNode = { type: 'doc', children: checkBlocks(value.children, '$.children', catalogue, 1) };
+  if (imagesOf(body).length > MAX_IMAGES) throw new DocumentError('too_many_images', '$');
+  return body;
 }
 
 /** Checks a subject: one line of text and placeholders, without any line or control character. */
@@ -261,6 +304,13 @@ export function checkSubject(value: unknown, catalogue: Catalogue): SubjectNode 
 
 // ---- rendering: the server's serialiser, for the preview --------------------------------
 
+/** An image as the message shows it: `cid:` in a message, `data:` in the preview, never a remote address. */
+export interface RenderedImage {
+  readonly src: string;
+  readonly width: number;
+  readonly height: number;
+}
+
 export interface RenderInput {
   /** The placeholder values, plain text. */
   readonly values: Readonly<Record<string, string>>;
@@ -268,31 +318,39 @@ export interface RenderInput {
   readonly conditions: ReadonlySet<string>;
   /** The secure link of the message, when the type carries one. */
   readonly link?: string | undefined;
+  /** The images that may be shown, by file id; one without an entry is left out of the HTML, its words stay in the text. */
+  readonly images?: ReadonlyMap<string, RenderedImage> | undefined;
 }
 
 export class RenderError extends Error {
-  readonly code: 'missing_value' | 'missing_link' | 'too_large';
+  readonly code: 'missing_value' | 'missing_link' | 'too_large' | 'unsafe_html';
 
-  constructor(code: 'missing_value' | 'missing_link' | 'too_large') {
+  constructor(code: 'missing_value' | 'missing_link' | 'too_large' | 'unsafe_html') {
     super(code);
     this.name = 'RenderError';
     this.code = code;
   }
 }
 
-/** The rendered body must stay under this (ADR-12). */
-export const RENDERED_LIMIT_BYTES = 100 * 1024;
-
 export const escapeHtml = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 // A placeholder value as one line of text: no line or control character survives.
 const oneLine = (text: string): string => text.replace(/[\u0000-\u001F\u007F-\u009F\u2028\u2029]+/gu, ' ').trim();
 
-function valueOf(key: string, input: RenderInput): string {
+function rawValueOf(key: string, input: RenderInput): string {
   const value = Object.hasOwn(input.values, key) ? input.values[key] : undefined;
   if (value === undefined) throw new RenderError('missing_value');
-  return oneLine(value);
+  return value;
 }
+
+const valueOf = (key: string, input: RenderInput): string => oneLine(rawValueOf(key, input));
+
+/** A value of several lines (the admin's message): its lines kept, each one made one line. */
+const linesOf = (text: string): string[] =>
+  text
+    .replace(/\r\n?/g, '\n')
+    .split(/[\n\u2028\u2029]/u)
+    .map((line) => oneLine(line));
 
 function linkOf(input: RenderInput): string {
   if (input.link === undefined) throw new RenderError('missing_link');
@@ -311,7 +369,11 @@ function inlineHtml(node: InlineNode, input: RenderInput): string {
     case 'hardBreak':
       return '<br>';
     case 'placeholder':
-      return escapeHtml(valueOf(node.key, input));
+      return MULTILINE_PLACEHOLDERS.has(node.key)
+        ? linesOf(rawValueOf(node.key, input))
+            .map((line) => escapeHtml(line))
+            .join('<br>')
+        : escapeHtml(valueOf(node.key, input));
     case 'link': {
       const href = typeof node.href === 'string' ? node.href : linkOf(input);
       return `<a href="${escapeHtml(href)}">${node.children.map((child) => inlineHtml(child, input)).join('')}</a>`;
@@ -326,7 +388,7 @@ function inlineText(node: InlineNode, input: RenderInput): string {
     case 'hardBreak':
       return '\n';
     case 'placeholder':
-      return valueOf(node.key, input);
+      return MULTILINE_PLACEHOLDERS.has(node.key) ? linesOf(rawValueOf(node.key, input)).join('\n') : valueOf(node.key, input);
     case 'link': {
       const href = typeof node.href === 'string' ? node.href : linkOf(input);
       const label = node.children.map((child) => inlineText(child, input)).join('');
@@ -348,6 +410,13 @@ function blockHtml(node: BlockNode, input: RenderInput): string {
     }
     case 'conditional':
       return input.conditions.has(node.key) ? node.children.map((child) => blockHtml(child, input)).join('') : '';
+    case 'image': {
+      const image = input.images?.get(node.fileId);
+      // Not clean (yet), or gone: its words in its place, as in the text (UX4-04, confera_be m4/be-fixes).
+      if (image === undefined) return node.alt === '' ? '' : `<p>[${escapeHtml(node.alt)}]</p>`;
+      // Never wider than the screen of a phone (UX4-04): the width is the most it takes.
+      return `<p><img src="${escapeHtml(image.src)}" alt="${escapeHtml(node.alt)}" width="${String(image.width)}" height="${String(image.height)}" style="${IMAGE_STYLE}"></p>`;
+    }
   }
 }
 
@@ -366,7 +435,37 @@ function blockText(node: BlockNode, input: RenderInput): string {
             .filter((part) => part !== '')
             .join('\n\n')
         : '';
+    case 'image':
+      return node.alt === '' ? '' : `[${node.alt}]`;
   }
+}
+
+/** The tags the serialiser writes, and the attributes each may carry (the API's allowlist, SEC-A-42 (7)). */
+/** The one style the serialiser writes, on an image only (the API's IMAGE_STYLE). */
+export const IMAGE_STYLE = 'max-width:100%;height:auto';
+const ALLOWED_TAGS: Readonly<Record<string, readonly string[]>> = { p: [], h1: [], h2: [], h3: [], ul: [], ol: [], li: [], strong: [], em: [], u: [], br: [], a: ['href'], img: ['src', 'alt', 'width', 'height', 'style'] };
+const TAG = /<(\/?)([a-z0-9]+)((?:\s[a-z]+="[^"<>]*")*)>/g;
+const ATTRIBUTE = /\s([a-z]+)="([^"<>]*)"/g;
+// The secure-link mark of a stored rendering holds a control character on purpose (the API's mail-composer.ts).
+const SAFE_HREF = /^(https:\/\/|mailto:|\u0001link\u0001$|\[link\]$)/u;
+const SAFE_SRC = /^(cid:[A-Za-z0-9@.-]+|data:image\/(png|jpeg|gif);base64,[A-Za-z0-9+/=]+)$/;
+
+/** The sanitiser pass on the rendered result, as the API runs it: its own tags and attributes only. */
+export function assertSafeHtml(html: string): void {
+  const rest = html.replace(TAG, (_tag, closing: string, name: string, attributes: string) => {
+    const allowed = Object.hasOwn(ALLOWED_TAGS, name) ? ALLOWED_TAGS[name] : undefined;
+    if (allowed === undefined || (closing === '/' && attributes !== '')) throw new RenderError('unsafe_html');
+    for (const [, attribute = '', value = ''] of attributes.matchAll(ATTRIBUTE)) {
+      if (!allowed.includes(attribute)) throw new RenderError('unsafe_html');
+      const decoded = value.replace(/&amp;/g, '&');
+      if (attribute === 'href' && !SAFE_HREF.test(decoded)) throw new RenderError('unsafe_html');
+      if (attribute === 'src' && !SAFE_SRC.test(decoded)) throw new RenderError('unsafe_html');
+      if ((attribute === 'width' || attribute === 'height') && !/^\d{1,4}$/.test(value)) throw new RenderError('unsafe_html');
+      if (attribute === 'style' && value !== IMAGE_STYLE) throw new RenderError('unsafe_html');
+    }
+    return '';
+  });
+  if (rest.includes('<') || rest.includes('>')) throw new RenderError('unsafe_html');
 }
 
 /** Renders a body: the HTML of the message and its plain-text alternative. */
@@ -377,6 +476,7 @@ export function renderBody(document: DocNode, input: RenderInput): { html: strin
     .filter((part) => part !== '')
     .join('\n\n');
   if (utf8Bytes(html) > RENDERED_LIMIT_BYTES) throw new RenderError('too_large');
+  assertSafeHtml(html);
   return { html, text: `${text}\n` };
 }
 
@@ -399,7 +499,7 @@ export interface RenderedVector {
   readonly type: string;
   readonly subject: unknown;
   readonly body: unknown;
-  readonly input: { readonly values: Readonly<Record<string, string>>; readonly conditions: readonly string[]; readonly link?: string };
+  readonly input: { readonly values: Readonly<Record<string, string>>; readonly conditions: readonly string[]; readonly link?: string; readonly images?: Readonly<Record<string, RenderedImage>> };
   readonly expected: { readonly subject: string; readonly html: string; readonly text: string };
 }
 

@@ -1,4 +1,4 @@
-// The moment after Send, in a real browser (UX-M1-01, 02, 03; UI-M1-06, 11), on Confera's own
+// The moment after Send, in a real browser (UX-M1-01, 02, 03; UI-M1-06, 11), on Congresa's own
 // page and in the frame of a conference site, in all three engines:
 //  - nothing the author typed ever travels in an address: before the scripts arrive Send is not
 //    pressable and Enter submits nothing; the form posts in any case (method=post, 204);
@@ -54,7 +54,7 @@ test.describe('nothing typed into the form ever travels in an address (UX-M1-03)
     const release = await holdScripts(page);
     // The page is not loaded while its scripts are held: wait for the server's markup, not for the load event.
     await page.goto(FORM, { waitUntil: 'commit' });
-    const form = page.locator('[data-confera-form]');
+    const form = page.locator('[data-congresa-form]');
     await form.waitFor();
     await expect(form, 'the control: the form is on the screen and not attached yet').toHaveAttribute('data-hydrated', 'false');
     await expect(page.locator('form')).toHaveAttribute('method', 'post');
@@ -80,11 +80,11 @@ test.describe('nothing typed into the form ever travels in an address (UX-M1-03)
     await expect(form).toHaveAttribute('data-hydrated', 'true', { timeout: 30_000 });
     await expect(page.getByLabel('Title of the paper'), 'what was typed is still there').toHaveValue(`Sustainable tourism ${MARK}`);
     await page.getByRole('button', { name: 'Send abstract' }).click(); // the consent is missing
-    await expect(page.locator('[data-confera-errors]')).toBeFocused();
+    await expect(page.locator('[data-congresa-errors]')).toBeFocused();
     await page.getByRole('radio', { name: 'Srpski' }).click();
     await page.getByText('Prihvatam uslove objavljivanja').click();
     await page.getByRole('button', { name: 'Pošalji apstrakt' }).click();
-    await expect(page.locator('[data-confera-thanks]')).toBeFocused();
+    await expect(page.locator('[data-congresa-thanks]')).toBeFocused();
 
     expect(sends, 'the form sent itself, not the browser').toEqual([]);
     expect(page.url()).toBe(FORM);
@@ -109,12 +109,12 @@ test.describe('nothing typed into the form ever travels in an address (UX-M1-03)
   });
 });
 
-test.describe('on a phone, on Confera\'s page: the result of Send is where the author is (UX-M1-01, 02)', () => {
+test.describe('on a phone, on Congresa\'s page: the result of Send is where the author is (UX-M1-01, 02)', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test('a failed Send: the summary has the focus and is in view, every time; each item takes the focus to its field', async ({ page }) => {
     await page.goto(FORM);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     await page.getByLabel('Title of the paper').fill('Održivi turizam na Balkanu');
     await page.getByLabel('First and last name of author 1').fill('Marta Kovač');
     await page.getByLabel('Email of author 1').fill('marta@example'); // not an address
@@ -122,9 +122,9 @@ test.describe('on a phone, on Confera\'s page: the result of Send is where the a
     await send.scrollIntoViewIfNeeded();
     await send.click();
 
-    const summary = page.locator('[data-confera-errors]');
+    const summary = page.locator('[data-congresa-errors]');
     await expect(summary).toBeFocused();
-    expect(await inWindow(page, '[data-confera-errors]'), 'the summary is in the window').toBe(true);
+    expect(await inWindow(page, '[data-congresa-errors]'), 'the summary is in the window').toBe(true);
     await expect(summary.getByRole('link')).toHaveText(['Author 1: Enter an email address like name@university.edu', 'Accept the terms to send your abstract']);
     // The consent says so at the box too (UI-M1-06), and is marked as required.
     await expect(page.getByLabel('I accept the terms of publication')).toHaveAttribute('aria-invalid', 'true');
@@ -141,7 +141,7 @@ test.describe('on a phone, on Confera\'s page: the result of Send is where the a
 
   test('too many words: the counter is the error at once; Send refuses', async ({ page }) => {
     await page.goto(FORM);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     await page.getByLabel('Abstract').fill(Array.from({ length: 385 }, (_, i) => `reč${i}`).join(' '));
     await expect(page.getByLabel('Abstract')).toHaveAttribute('aria-invalid', 'true');
     await expect(page.getByLabel('Abstract')).toHaveAccessibleDescription('385 of 300 words. Shorten the text by 85 words.');
@@ -149,14 +149,14 @@ test.describe('on a phone, on Confera\'s page: the result of Send is where the a
 
   test('a successful Send: the thank-you has the focus and is in view', async ({ page }) => {
     await page.goto(FORM);
-    await page.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await page.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     await page.getByLabel('Title of the paper').fill('Održivi turizam na Balkanu');
     await page.getByLabel('First and last name of author 1').fill('Marta Kovač');
     await page.getByLabel('Email of author 1').fill('marta@example.test');
     await page.getByText('I accept the terms of publication').click();
     await page.getByRole('button', { name: 'Send abstract' }).click();
-    await expect(page.locator('[data-confera-thanks]')).toBeFocused();
-    expect(await inWindow(page, '[data-confera-thanks]')).toBe(true);
+    await expect(page.locator('[data-congresa-thanks]')).toBeFocused();
+    expect(await inWindow(page, '[data-congresa-thanks]')).toBe(true);
   });
 });
 
@@ -172,7 +172,7 @@ test.describe('in the frame of a long conference page (UX-M1-01, 02)', () => {
     await page.locator(FRAME).scrollIntoViewIfNeeded();
     const frame = await (await page.locator(FRAME).elementHandle())?.contentFrame();
     if (!frame) throw new Error('the frame of the form has no document');
-    await frame.locator('[data-confera-form][data-hydrated="true"]').waitFor();
+    await frame.locator('[data-congresa-form][data-hydrated="true"]').waitFor();
     return frame;
   }
   /** Is a part of the form in the window of the site (the frame's place plus the part's place in it)? */
@@ -191,11 +191,11 @@ test.describe('in the frame of a long conference page (UX-M1-01, 02)', () => {
     const send = frame.getByRole('button', { name: 'Send abstract' });
     await send.scrollIntoViewIfNeeded();
     await send.click();
-    await expect(frame.locator('[data-confera-errors]')).toBeFocused();
+    await expect(frame.locator('[data-congresa-errors]')).toBeFocused();
     await expect.poll(() => askedIntoView(page), 'the frame asked the site to show the summary').toBeGreaterThan(0);
     // Chromium and Firefox bring the focused summary into the site's window by themselves; in WebKit
     // the snippet's lines do it (D1). In every engine it ends in the site's window.
-    await expect.poll(() => inSiteWindow(page, frame, '[data-confera-errors]'), `the summary is in the site's window (${browserName})`).toBe(true);
+    await expect.poll(() => inSiteWindow(page, frame, '[data-congresa-errors]'), `the summary is in the site's window (${browserName})`).toBe(true);
 
     await frame.getByLabel('Title of the paper').fill('Održivi turizam na Balkanu');
     await frame.getByLabel('First and last name of author 1').fill('Marta Kovač');
@@ -204,8 +204,8 @@ test.describe('in the frame of a long conference page (UX-M1-01, 02)', () => {
     const before = await askedIntoView(page);
     await send.scrollIntoViewIfNeeded();
     await send.click();
-    await expect(frame.locator('[data-confera-thanks]')).toBeFocused();
+    await expect(frame.locator('[data-congresa-thanks]')).toBeFocused();
     await expect.poll(() => askedIntoView(page), 'the frame asked the site to show the thank-you').toBeGreaterThan(before);
-    await expect.poll(() => inSiteWindow(page, frame, '[data-confera-thanks]'), `the thank-you is in the site's window (${browserName})`).toBe(true);
+    await expect.poll(() => inSiteWindow(page, frame, '[data-congresa-thanks]'), `the thank-you is in the site's window (${browserName})`).toBe(true);
   });
 });

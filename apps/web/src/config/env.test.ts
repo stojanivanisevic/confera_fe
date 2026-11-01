@@ -4,15 +4,15 @@ import { ConfigError, parseConfig } from './env';
 
 const local = {
   STAGE: 'local',
-  CONFERA_PUBLIC_ORIGIN: 'http://127.0.0.1:3000',
-  CONFERA_ADMIN_ORIGIN: 'http://localhost:3000',
-  CONFERA_API_ORIGIN: 'http://127.0.0.1:3001',
+  CONGRESA_PUBLIC_ORIGIN: 'http://127.0.0.1:3000',
+  CONGRESA_ADMIN_ORIGIN: 'http://localhost:3000',
+  CONGRESA_API_ORIGIN: 'http://127.0.0.1:3001',
 };
 const prod = {
   STAGE: 'prod',
-  CONFERA_PUBLIC_ORIGIN: 'https://forms.example.test',
-  CONFERA_ADMIN_ORIGIN: 'https://admin.example.test',
-  CONFERA_API_ORIGIN: 'http://api:3001',
+  CONGRESA_PUBLIC_ORIGIN: 'https://forms.example.test',
+  CONGRESA_ADMIN_ORIGIN: 'https://admin.example.test',
+  CONGRESA_API_ORIGIN: 'http://api:3001',
 };
 
 const problemsOf = (env: Record<string, string | undefined>): string[] => {
@@ -50,26 +50,26 @@ describe('web configuration (ADR-24, ADR-02)', () => {
   );
 
   it.each(['local', 'dev', 'test'])('%s refuses a public origin', (stage) => {
-    const problems = problemsOf({ ...prod, STAGE: stage, CONFERA_PUBLIC_ORIGIN: 'https://forms.example.org', CONFERA_ADMIN_ORIGIN: 'https://admin.example.org' });
-    expect(problems.join('\n')).toMatch(/CONFERA_PUBLIC_ORIGIN must be a loopback or \.test name/);
-    expect(problems.join('\n')).toMatch(/CONFERA_ADMIN_ORIGIN must be a loopback or \.test name/);
+    const problems = problemsOf({ ...prod, STAGE: stage, CONGRESA_PUBLIC_ORIGIN: 'https://forms.example.org', CONGRESA_ADMIN_ORIGIN: 'https://admin.example.org' });
+    expect(problems.join('\n')).toMatch(/CONGRESA_PUBLIC_ORIGIN must be a loopback or \.test name/);
+    expect(problems.join('\n')).toMatch(/CONGRESA_ADMIN_ORIGIN must be a loopback or \.test name/);
   });
 
-  it.each(['http://localhost:3000', 'http://admin.localhost:3000', 'http://127.0.0.1:3000', 'http://[::1]:3000', 'https://confera.test'])(
+  it.each(['http://localhost:3000', 'http://admin.localhost:3000', 'http://127.0.0.1:3000', 'http://[::1]:3000', 'https://congresa.test'])(
     'a non-production stage accepts %s',
     (origin) => {
       const other = origin === 'http://localhost:3000' ? 'http://127.0.0.1:3000' : 'http://localhost:3000';
-      expect(parseConfig({ ...local, CONFERA_PUBLIC_ORIGIN: origin, CONFERA_ADMIN_ORIGIN: other }).publicOrigin).toBe(origin);
+      expect(parseConfig({ ...local, CONGRESA_PUBLIC_ORIGIN: origin, CONGRESA_ADMIN_ORIGIN: other }).publicOrigin).toBe(origin);
     },
   );
 
   it('refuses a look-alike of a loopback name', () => {
-    expect(problemsOf({ ...local, CONFERA_PUBLIC_ORIGIN: 'http://localhost.example.com' }).join('\n')).toMatch(/loopback/);
-    expect(problemsOf({ ...local, CONFERA_PUBLIC_ORIGIN: 'http://127.0.0.1.example.com' }).join('\n')).toMatch(/loopback/);
+    expect(problemsOf({ ...local, CONGRESA_PUBLIC_ORIGIN: 'http://localhost.example.com' }).join('\n')).toMatch(/loopback/);
+    expect(problemsOf({ ...local, CONGRESA_PUBLIC_ORIGIN: 'http://127.0.0.1.example.com' }).join('\n')).toMatch(/loopback/);
   });
 
   it('refuses one host name for both surfaces', () => {
-    expect(problemsOf({ ...local, CONFERA_ADMIN_ORIGIN: local.CONFERA_PUBLIC_ORIGIN }).join('\n')).toMatch(/two different host names/);
+    expect(problemsOf({ ...local, CONGRESA_ADMIN_ORIGIN: local.CONGRESA_PUBLIC_ORIGIN }).join('\n')).toMatch(/two different host names/);
   });
 
   it.each([
@@ -81,23 +81,23 @@ describe('web configuration (ADR-24, ADR-02)', () => {
     ['no scheme', 'localhost:3000'],
     ['another scheme', 'ftp://localhost'],
   ])('refuses an origin with %s', (_what, origin) => {
-    expect(problemsOf({ ...local, CONFERA_PUBLIC_ORIGIN: origin }).join('\n')).toMatch(/CONFERA_PUBLIC_ORIGIN/);
+    expect(problemsOf({ ...local, CONGRESA_PUBLIC_ORIGIN: origin }).join('\n')).toMatch(/CONGRESA_PUBLIC_ORIGIN/);
   });
 
   it('names every missing variable at once', () => {
     const problems = problemsOf({}).join('\n');
-    for (const name of ['STAGE', 'CONFERA_PUBLIC_ORIGIN', 'CONFERA_ADMIN_ORIGIN', 'CONFERA_API_ORIGIN']) {
+    for (const name of ['STAGE', 'CONGRESA_PUBLIC_ORIGIN', 'CONGRESA_ADMIN_ORIGIN', 'CONGRESA_API_ORIGIN']) {
       expect(problems).toContain(name);
     }
   });
 
   it('prod requires https on both surfaces', () => {
-    const problems = problemsOf({ ...prod, CONFERA_PUBLIC_ORIGIN: 'http://forms.example.test' });
-    expect(problems.join('\n')).toMatch(/CONFERA_PUBLIC_ORIGIN must use https/);
+    const problems = problemsOf({ ...prod, CONGRESA_PUBLIC_ORIGIN: 'http://forms.example.test' });
+    expect(problems.join('\n')).toMatch(/CONGRESA_PUBLIC_ORIGIN must use https/);
   });
 
   it('prod refuses a build that contains the dev pages', () => {
-    expect(problemsOf({ ...prod, CONFERA_DEV_PAGES: '1' }).join('\n')).toMatch(/dev pages/);
+    expect(problemsOf({ ...prod, CONGRESA_DEV_PAGES: '1' }).join('\n')).toMatch(/dev pages/);
   });
 
   it('prod refuses every DEV_ variable, known or not', () => {
@@ -107,7 +107,7 @@ describe('web configuration (ADR-24, ADR-02)', () => {
   });
 
   it('never repeats a value in its message', () => {
-    const problems = problemsOf({ ...local, STAGE: 'canary-value-1', CONFERA_API_ORIGIN: 'canary-value-2' }).join('\n');
+    const problems = problemsOf({ ...local, STAGE: 'canary-value-1', CONGRESA_API_ORIGIN: 'canary-value-2' }).join('\n');
     expect(problems).not.toContain('canary-value');
   });
 });

@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 const toast = (page: Page) => page.locator('.ud-toast').last();
-const conferenceSwitch = (page: Page) => page.locator('select[data-confera-conference-switch]');
+const conferenceSwitch = (page: Page) => page.locator('select[data-congresa-conference-switch]');
 
 test.describe('forms (M3-FE-03, M3-FE-05)', () => {
   test('the list narrows by the conference switch; a conference without a form gets one', async ({ page }) => {
@@ -43,12 +43,12 @@ test.describe('forms (M3-FE-03, M3-FE-05)', () => {
 
   test('the snippet: in the language of the site, the link above the frame, the listed sites named', async ({ page }) => {
     await signIn(page, undefined, `/forms/${PART_C.form}`);
-    const card = page.locator('[data-confera-embed-card]');
+    const card = page.locator('[data-congresa-embed-card]');
     const snippet = card.getByLabel('Snippet');
     // The visitor's browser decides until the site's language is chosen (UX3-12).
     await expect(card.getByLabel('Language of the site')).toHaveValue('browser');
     await card.getByLabel('Language of the site').selectOption('en');
-    await expect(snippet).toHaveValue(new RegExp(`^<p lang="en"><a href="${PUBLIC_ORIGIN}/f/kp-2026-abstract\\?lang=en">Form not showing\\? Open it on its own page\\.</a></p>\\n<iframe id="confera-form-kp-2026-abstract" src="${PUBLIC_ORIGIN}/embed/kp-2026-abstract\\?lang=en"`));
+    await expect(snippet).toHaveValue(new RegExp(`^<p lang="en"><a href="${PUBLIC_ORIGIN}/f/kp-2026-abstract\\?lang=en">Form not showing\\? Open it on its own page\\.</a></p>\\n<iframe id="congresa-form-kp-2026-abstract" src="${PUBLIC_ORIGIN}/embed/kp-2026-abstract\\?lang=en"`));
     await card.getByLabel('Language of the site').selectOption('sr');
     await expect(snippet).toHaveValue(/Obrazac se ne prikazuje\? Otvorite ga na posebnoj stranici\./);
     await expect(snippet).toHaveValue(/embed\/kp-2026-abstract\?lang=sr/);
@@ -81,11 +81,11 @@ test.describe('forms (M3-FE-03, M3-FE-05)', () => {
     await expect(actions).toContainText('Version 1 is published; the draft has changes that are not published');
     await expect(actions.getByRole('button', { name: 'Publish the draft' })).toBeEnabled();
     // The preview is the renderer of the sites, with the draft.
-    const preview = page.locator('[data-confera-form-preview]');
+    const preview = page.locator('[data-congresa-form-preview]');
     await preview.getByRole('radio', { name: 'With an abstract and a paper' }).check({ force: true });
     await expect(preview.getByLabel('Key words')).toBeVisible();
     await preview.getByRole('button', { name: 'Send' }).click();
-    await expect(preview.locator('[data-confera-errors]')).toBeFocused();
+    await expect(preview.locator('[data-congresa-errors]')).toBeFocused();
     await page.getByRole('button', { name: 'Publish the draft' }).click();
     await page.getByRole('alertdialog', { name: 'Publish the draft as version 2?' }).getByRole('button', { name: 'Publish the draft' }).click();
     await expect(toast(page)).toContainText('Version 2 is published');
@@ -111,9 +111,9 @@ test.describe('forms (M3-FE-03, M3-FE-05)', () => {
 test.describe('deadlines (M3-FE-06; FR-DL-03)', () => {
   test('a later day is saved, the history keeps the old and the new day and who changed it', async ({ page }) => {
     await signIn(page, undefined, `/conferences/${PART_B.ids.conference}`);
-    const card = page.locator('[data-confera-deadlines]');
+    const card = page.locator('[data-congresa-deadlines]');
     await expect(card).toContainText('A deadline ends at the end of its day in Europe/Belgrade.');
-    const abstract = card.locator('[data-confera-deadline="abstract_submission"]');
+    const abstract = card.locator('[data-congresa-deadline="abstract_submission"]');
     // The last day as set, inclusive (UX3-08); the Save of each deadline has a name of its own (UX3-11).
     await expect(abstract).toContainText('Open until the end of 15 Mar 2027 (Europe/Belgrade)');
     // Exact: the Save's name holds the field's name as part of what it does ("Save the abstract submission deadline").
@@ -157,17 +157,17 @@ test.describe('submissions (M3-FE-06; FR-SUB-02, FR-SUB-04)', () => {
     await expect(download).toHaveAttribute('href', `/api/v1/submissions/${PART_C.submissions[0]}/files/${PART_C.files.clean}`);
     const [file] = await Promise.all([page.waitForEvent('download'), download.click()]);
     expect(file.suggestedFilename()).toBe('Biografije – Šćepanović.pdf');
-    await expect(page.locator('[data-confera-file-scan="pending"]')).toContainText('Scan pending since');
-    await expect(page.locator('[data-confera-file-scan="pending"]')).toContainText('An old .doc with macros: open it with care');
-    await expect(page.locator('[data-confera-file-scan="pending"]').getByRole('link')).toHaveCount(0);
+    await expect(page.locator('[data-congresa-file-scan="pending"]')).toContainText('Scan pending since');
+    await expect(page.locator('[data-congresa-file-scan="pending"]')).toContainText('An old .doc with macros: open it with care');
+    await expect(page.locator('[data-congresa-file-scan="pending"]').getByRole('link')).toHaveCount(0);
     // A .docx with an external relationship (a remote template) is kept, served once clean, and flagged (SEC-M3-06).
-    const linked = page.locator('[data-confera-file-scan="clean"]', { has: page.getByRole('link', { name: 'Download Rad.docx' }) });
+    const linked = page.locator('[data-congresa-file-scan="clean"]', { has: page.getByRole('link', { name: 'Download Rad.docx' }) });
     await expect(linked).toContainText('Links to content outside the file, such as a remote template: open it with care');
-    await expect(page.locator('[data-confera-file-scan="clean"]', { has: page.getByRole('link', { name: 'Download Biografije – Šćepanović.pdf' }) })).not.toContainText('open it with care');
+    await expect(page.locator('[data-congresa-file-scan="clean"]', { has: page.getByRole('link', { name: 'Download Biografije – Šćepanović.pdf' }) })).not.toContainText('open it with care');
     // A pending file says when it can be opened (UX3-07).
-    await expect(page.locator('[data-confera-file-scan="pending"]')).toContainText('The file can be downloaded when the scan is done.');
+    await expect(page.locator('[data-congresa-file-scan="pending"]')).toContainText('The file can be downloaded when the scan is done.');
     // The abstract has a row of its own, the width of the card, with its paragraphs (UX3-02).
-    const abstract = page.locator('[data-confera-long-answer="abstract"]');
+    const abstract = page.locator('[data-congresa-long-answer="abstract"]');
     await expect(abstract.getByRole('heading')).toHaveText(/^Abstract, \d+ words$/);
     await expect(abstract.locator('p')).toHaveCSS('white-space', 'pre-wrap');
     expect(await abstract.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(500);
@@ -184,7 +184,7 @@ test.describe('submissions (M3-FE-06; FR-SUB-02, FR-SUB-04)', () => {
 test.describe('held emails (M3-FE-08)', () => {
   test('the shell says they are held; the screen says why and that one click releases them; all are released', async ({ page }) => {
     await signIn(page);
-    const alert = page.locator('[data-confera-held-mail-alert]');
+    const alert = page.locator('[data-congresa-held-mail-alert]');
     await expect(alert).toContainText('2 confirmation emails are held');
     await alert.getByRole('button', { name: 'Review held emails' }).click();
     await expect(page).toHaveURL(`${ADMIN_ORIGIN}/held-mail`);
@@ -197,7 +197,7 @@ test.describe('held emails (M3-FE-08)', () => {
     await expect(toast(page)).toContainText('2 emails released');
     await expect(page.getByText('No email is held')).toBeVisible();
     await page.goto(`${ADMIN_ORIGIN}/`);
-    await expect(page.locator('[data-confera-held-mail-alert]')).toHaveCount(0);
+    await expect(page.locator('[data-congresa-held-mail-alert]')).toHaveCount(0);
   });
 
   test('a selected one is released alone', async ({ page }) => {

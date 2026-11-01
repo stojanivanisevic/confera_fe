@@ -2,7 +2,7 @@
 // universe (one per worker, keyed by the User-Agent), and signing in through the page.
 //
 // Two modes. Against the stub (the default) the people are the stub's fixture. Against a real
-// confera_be (CONFERA_E2E_API_ORIGIN; README, "Against the real API") they are the people of its
+// confera_be (CONGRESA_E2E_API_ORIGIN; README, "Against the real API") they are the people of its
 // `seed:e2e` (test/e2e/seed/e2e-seed.json there): the same names and addresses, their own
 // password. `signIn` is the one way a spec signs in; against a real API it refuses, before
 // anything is typed, a person `seed:e2e` does not have, so that no spec causes a failed
@@ -80,12 +80,12 @@ export async function signIn(page: Page, person: Person = ADMIN, next = '/'): Pr
   const address = `${ADMIN_ORIGIN}/sign-in${next === '/' ? '' : `?next=${encodeURIComponent(next)}`}`;
   // Already there (a link led to it): no second load, which would cut off the scripts still loading.
   if (page.url() !== address) await page.goto(address);
-  await expect(page.locator('[data-confera-sign-in]')).toBeVisible();
+  await expect(page.locator('[data-congresa-sign-in]')).toBeVisible();
   await page.getByLabel('Email address').fill(person.email);
   await page.getByRole('textbox', { name: 'Password', exact: true }).fill(person.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(`${ADMIN_ORIGIN}${next}`);
-  await expect(page.locator('[data-confera-user]')).toHaveText(person.name);
+  await expect(page.locator('[data-congresa-user]')).toHaveText(person.name);
 }
 
 /** The password asked again: the dialog of the design system, answered with the person's password. */
@@ -102,7 +102,7 @@ export const fitsTheWidth = (page: Page) => page.evaluate(() => document.documen
 
 /** Signs out through the person's menu of the top bar (UXUI-M2-24: the name and its two entries). */
 export async function signOutFromMenu(page: Page): Promise<void> {
-  await page.locator('[data-confera-user]').click();
+  await page.locator('[data-congresa-user]').click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
 }
 

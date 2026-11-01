@@ -30,7 +30,7 @@ export function sandboxedDocument(markup: string): string {
 
 export function SandboxedMarkupFrame({ markup, title, className, style }: SandboxedMarkupFrameProps) {
   return (
-    <iframe
+    <iframe key={markOf(markup)}
       title={title}
       className={className}
       style={style}
@@ -41,4 +41,15 @@ export function SandboxedMarkupFrame({ markup, title, className, style }: Sandbo
       srcDoc={sandboxedDocument(markup)}
     />
   );
+}
+
+/**
+ * A short mark of the markup (FNV-1a), the frame's key: new markup gets a new frame. Changing the
+ * srcdoc of a frame adds an entry to the tab's history in Chromium, so the back button would step
+ * through the previews instead of leaving the page (UX4-01).
+ */
+function markOf(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193);
+  return `${String(text.length)}-${(hash >>> 0).toString(36)}`;
 }

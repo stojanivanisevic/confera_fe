@@ -19,7 +19,7 @@ const BLUE = 'rgb(11, 118, 215)';
 
 async function openGallery(page: Page) {
   await page.goto(`${PUBLIC_ORIGIN}/dev/gallery`);
-  await expect(page.locator('[data-confera-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+  await expect(page.locator('[data-congresa-dev="gallery"]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
 }
 const card = (page: Page, name: string) => page.locator(`[data-component="${name}"]`);
 /** Where the focus is: inside the element the locator names, or not. */
@@ -38,7 +38,7 @@ test.describe('item 1: one focus ring everywhere, and a text link', () => {
     await page.locator('h1').first().click();
     await page.keyboard.press('Tab');
     const walk = await page.evaluate((blue) => {
-      const root = document.querySelector('[data-confera-dev="gallery"]')!;
+      const root = document.querySelector('[data-congresa-dev="gallery"]')!;
       const describe = (el: Element) => `${el.closest('[data-component]')?.getAttribute('data-component') ?? '?'} <${el.tagName.toLowerCase()}${el.getAttribute('type') ? ` type=${el.getAttribute('type')}` : ''}> ${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 30)}`;
       /** 'blue' when the control, a part around it or the part drawn next to it shows the system's blue; else what it shows. */
       const signOf = (el: HTMLElement): string => {
@@ -77,9 +77,9 @@ test.describe('item 1: one focus ring everywhere, and a text link', () => {
   test('the links of the form’s error summary are text links: underlined, in ink, with the blue outline', async ({ page }) => {
     test.skip(AGAINST_REAL_API, STUB_FORMS);
     await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
-    await expect(page.locator('[data-confera-form]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+    await expect(page.locator('[data-congresa-form]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
     await page.getByRole('button', { name: 'Send abstract' }).click();
-    const summary = page.locator('[data-confera-errors]');
+    const summary = page.locator('[data-congresa-errors]');
     await expect(summary).toBeFocused();
     // A key first, so that a focus moved by a script shows as a keyboard focus does. Tab itself would
     // pass the link in WebKit, which leaves links out of the Tab order (Safari's default).
@@ -136,7 +136,7 @@ test.describe('item 2: targets of 44 px where the pointer is a finger', () => {
     const context = await phone(browser, browserName);
     const page = await context.newPage();
     await openGallery(page);
-    const result = await smallTargets(page, '[data-confera-dev="gallery"]');
+    const result = await smallTargets(page, '[data-congresa-dev="gallery"]');
     await context.close();
     expect(result.coarse, 'the engine reports a finger as the pointer').toBe(true);
     expect(result.measured).toBeGreaterThan(100);
@@ -148,11 +148,11 @@ test.describe('item 2: targets of 44 px where the pointer is a finger', () => {
     const context = await phone(browser, browserName);
     const page = await context.newPage();
     await page.goto(`${PUBLIC_ORIGIN}/f/spike-abstract`);
-    await expect(page.locator('[data-confera-form]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
+    await expect(page.locator('[data-congresa-form]')).toHaveAttribute('data-hydrated', 'true', { timeout: 60_000 });
     await page.getByRole('button', { name: 'Add author' }).click();
     await page.getByRole('button', { name: 'Send abstract' }).click();
-    await expect(page.locator('[data-confera-errors]')).toBeVisible();
-    const result = await smallTargets(page, '[data-confera-form]');
+    await expect(page.locator('[data-congresa-errors]')).toBeVisible();
+    const result = await smallTargets(page, '[data-congresa-form]');
     await context.close();
     expect(result.coarse).toBe(true);
     expect(result.measured).toBeGreaterThan(10);

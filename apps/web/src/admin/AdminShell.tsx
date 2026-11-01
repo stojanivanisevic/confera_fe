@@ -9,7 +9,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { Alert, AppShell, Button, Menu, PageHeader, Select, SidebarNav, Spinner, TextButton, toast, ToastHost } from '@confera/ui';
+import { Alert, AppShell, Button, Menu, PageHeader, Select, SidebarNav, Spinner, StatusBadge, TextButton, toast, ToastHost } from '@congresa/ui';
 
 import { signInHref } from '@/lib/next-path';
 
@@ -18,6 +18,7 @@ import { FreshPasswordProvider } from './FreshPassword';
 import { HeldMailAlert } from './HeldMail';
 import { conferenceLabel, ConferenceProvider, useConference } from './conference-context';
 import { DRAWER_EVENT } from './drawer-event';
+import { LeaveGuardProvider, useLeave } from './leave-guard';
 import { call, callEmpty, SESSION_ENDED_EVENT } from './problems';
 import { SessionProvider, useSession } from './session';
 import { fill, TEXTS } from './texts';
@@ -57,7 +58,7 @@ function ConferenceSwitch() {
       value={selected?.id ?? ''}
       options={[{ value: '', label: TEXTS.nav.allConferences }, ...conferences.map((conference) => ({ value: conference.id, label: conferenceLabel(conference) }))]}
       onChange={(event) => select(event.target.value === '' ? null : event.target.value)}
-      data-confera-conference-switch
+      data-congresa-conference-switch
     />
   );
 }
@@ -82,7 +83,7 @@ function SessionEnded({ onContinued }: { onContinued: () => void }) {
     }
   };
   return (
-    <div className={styles.banner} data-confera-session-ended>
+    <div className={styles.banner} data-congresa-session-ended>
       <Alert
         tone="warning"
         title={t.sessionEnded}
@@ -111,7 +112,7 @@ function Unreachable({ page = false }: { page?: boolean }) {
     return () => window.clearInterval(again);
   }, [refresh]);
   return (
-    <div className={styles.stack} data-confera-unreachable>
+    <div className={styles.stack} data-congresa-unreachable>
       {page ? <PageHeader title={TEXTS.connection.down} /> : null}
       <Alert tone="error" title={TEXTS.connection.down} action={<Button variant="dark" onClick={() => void refresh()}>{TEXTS.connection.tryNow}</Button>}>
         {contact ? fill(TEXTS.connection.downTextRetry, { contact }) : TEXTS.connection.downTextRetryNoContact}
@@ -120,10 +121,25 @@ function Unreachable({ page = false }: { page?: boolean }) {
   );
 }
 
-function Guarded({ children }: { children: ReactNode }) {
+/** The mark of a staging instance in the sticky top bar: it stays in view after the banner scrolled away (UX4-27). */
+function StagingMark() {
+  return (
+    <span data-congresa-staging-mark="">
+      <StatusBadge tone="warning">
+        <span lang="en">{TEXTS.nav.staging}</span>
+        <span aria-hidden="true"> · </span>
+        <span lang="sr">{TEXTS.nav.stagingSr}</span>
+      </StatusBadge>
+    </span>
+  );
+}
+
+function Guarded({ children, staging }: { children: ReactNode; staging: boolean }) {
   const { status, session, client, background, clear, setContact } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  // Every move the shell makes asks first while the page has unsaved changes (UX4-01).
+  const leave = useLeave();
   // The session a change found ended, by its CSRF value: a new session (signed in again) has another,
   // and the message goes by itself (UXUI-M2-02).
   const csrfNow = useRef<string | null>(null);
@@ -202,23 +218,24 @@ function Guarded({ children }: { children: ReactNode }) {
       <AppShell
         product={TEXTS.product}
         logo={<img src="/icon.png" alt="" width={28} height={28} />}
-        sidebar={<SidebarNav label={TEXTS.nav.main} value={current(pathname)} items={nav} onNavigate={(value) => router.push(value)} />}
+        sidebar={<SidebarNav label={TEXTS.nav.main} value={current(pathname)} items={nav} onNavigate={(value) => leave(() => router.push(value))} />}
         topbar={
           <div className={styles.topbar}>
             <div className={styles.conference}>{permissions.includes('conferences.read') && narrows(pathname) ? <ConferenceSwitch /> : null}</div>
             <div className={styles.topbarEnd}>
+              {staging ? <StagingMark /> : null}
               {/* The person's menu (UXUI-M2-24): the name and two entries, one target at any width. */}
               <Menu
                 label={TEXTS.nav.userMenu}
                 align="end"
                 trigger={
-                  <TextButton icon="user" data-confera-user aria-label={`${TEXTS.nav.userMenu}: ${session.user.displayName}`}>
+                  <TextButton icon="user" data-congresa-user aria-label={`${TEXTS.nav.userMenu}: ${session.user.displayName}`}>
                     <span className={styles.userName}>{session.user.displayName}</span>
                   </TextButton>
                 }
                 items={[
-                  { label: TEXTS.nav.account, icon: 'user', onSelect: () => router.push('/account') },
-                  { label: TEXTS.nav.signOut, icon: 'log-out', onSelect: () => void signOut() },
+                  { label: TEXTS.nav.account, icon: 'user', onSelect: () => leave(() => router.push('/account')) },
+                  { label: TEXTS.nav.signOut, icon: 'log-out', onSelect: () => leave(() => void signOut()) },
                 ]}
               />
             </div>
@@ -227,7 +244,7 @@ function Guarded({ children }: { children: ReactNode }) {
       >
         {ended ? <SessionEnded onContinued={() => setEndedFor(null)} /> : null}
         {status === 'unreachable' ? <Unreachable /> : null}
-        {permissions.includes('held_mail.manage') && current(pathname) !== '/held-mail' ? <HeldMailAlert onOpen={() => router.push('/held-mail')} /> : null}
+        {permissions.includes('held_mail.manage') && current(pathname) !== '/held-mail' ? <HeldMailAlert onOpen={() => leave(() => router.push('/held-mail'))} /> : null}
         <FreshPasswordProvider>{children}</FreshPasswordProvider>
       </AppShell>
     </ConferenceProvider>
@@ -245,11 +262,13 @@ function Toasts() {
   return <ToastHost position={drawer ? 'top' : 'bottom'} />;
 }
 
-export function AdminShell({ children }: { children: ReactNode }) {
+export function AdminShell({ children, staging = false }: { children: ReactNode; staging?: boolean }) {
   return (
     <SessionProvider>
       <Toasts />
-      <Guarded>{children}</Guarded>
+      <LeaveGuardProvider>
+        <Guarded staging={staging}>{children}</Guarded>
+      </LeaveGuardProvider>
     </SessionProvider>
   );
 }

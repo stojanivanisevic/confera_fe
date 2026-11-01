@@ -7,12 +7,12 @@
 //   through the first admin's invitation; the audit log.
 //
 // The file belongs to the project "real-api" (playwright.config.ts), which exists only when
-// CONFERA_E2E_API_ORIGIN names a confera_be started by its documented commands (its README,
+// CONGRESA_E2E_API_ORIGIN names a confera_be started by its documented commands (its README,
 // section 9). What else it needs of that checkout, by environment, with the defaults of a
 // fresh `.env`:
-//   CONFERA_E2E_MAILPIT_ORIGIN     the web address of its mail catcher (http://127.0.0.1:8025)
-//   CONFERA_E2E_MAILPIT_SMTP_PORT  the SMTP port of its mail catcher (1025)
-//   CONFERA_E2E_BE_DIR             the checkout, for seed:production and first-admin (../confera_be)
+//   CONGRESA_E2E_MAILPIT_ORIGIN     the web address of its mail catcher (http://127.0.0.1:8025)
+//   CONGRESA_E2E_MAILPIT_SMTP_PORT  the SMTP port of its mail catcher (1025)
+//   CONGRESA_E2E_BE_DIR             the checkout, for seed:production and first-admin (../confera_be)
 // Every address is new in every run, so the file runs again on the same database.
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -32,9 +32,9 @@ test.beforeAll(async () => {
   await ensureMailServer();
 });
 
-const MAILPIT = process.env.CONFERA_E2E_MAILPIT_ORIGIN ?? 'http://127.0.0.1:8025';
-const MAILPIT_SMTP = process.env.CONFERA_E2E_MAILPIT_SMTP_PORT ?? '1025';
-const BE_DIR = resolve(process.env.CONFERA_E2E_BE_DIR ?? '../confera_be');
+const MAILPIT = process.env.CONGRESA_E2E_MAILPIT_ORIGIN ?? 'http://127.0.0.1:8025';
+const MAILPIT_SMTP = process.env.CONGRESA_E2E_MAILPIT_SMTP_PORT ?? '1025';
+const BE_DIR = resolve(process.env.CONGRESA_E2E_BE_DIR ?? '../confera_be');
 
 /** The admin of organisation A of confera_be's seed:e2e (test/e2e/seed/e2e-seed.json). */
 const SEED_ADMIN = { email: 'zivana.djordjevic@a.example.test', name: 'Živana Đorđević', password: 'invented-Jasen-Kula-Reka-42' };
@@ -75,12 +75,12 @@ function linkIn(text: string, path: 'invitations' | 'password-resets'): string {
 
 async function signInAs(page: Page, person: { email: string; name: string }, password: string, next = '/'): Promise<void> {
   await page.goto(`${ADMIN_ORIGIN}/sign-in${next === '/' ? '' : `?next=${encodeURIComponent(next)}`}`);
-  await expect(page.locator('[data-confera-sign-in]')).toBeVisible();
+  await expect(page.locator('[data-congresa-sign-in]')).toBeVisible();
   await page.getByLabel('Email address').fill(person.email);
   await page.getByRole('textbox', { name: 'Password', exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(`${ADMIN_ORIGIN}${next}`);
-  await expect(page.locator('[data-confera-user]')).toHaveText(person.name);
+  await expect(page.locator('[data-congresa-user]')).toHaveText(person.name);
 }
 
 /** Sets a password on the page of a link, with the checklist ticking and nothing sent while it is typed. */
@@ -113,7 +113,7 @@ test.describe('the flows of 0.2.0 against the real API, with their mail (M2-QA-0
   test('a mail server is added with the password asked again, its test message arrives, and the mail log shows it only in the sandboxed frame', async ({ page }) => {
     const problems = watchPage(page);
     await signInAs(page, SEED_ADMIN, SEED_ADMIN.password, '/mail-servers/new');
-    const form = page.locator('[data-confera-mail-server]');
+    const form = page.locator('[data-congresa-mail-server]');
     await form.getByRole('textbox', { name: 'Name', exact: true }).fill(`Mailpit ${RUN}`);
     await form.getByLabel('Host').fill('127.0.0.1');
     await form.getByLabel('Port').fill(MAILPIT_SMTP);
@@ -127,11 +127,11 @@ test.describe('the flows of 0.2.0 against the real API, with their mail (M2-QA-0
     await expect(page.locator('.ud-toast').last()).toContainText(`Mailpit ${RUN} added`);
 
     const sent = Date.now();
-    const tester = page.locator('[data-confera-test-message]');
+    const tester = page.locator('[data-congresa-test-message]');
     await expect(tester.getByLabel('Send to')).toHaveValue(SEED_ADMIN.email);
     await tester.getByRole('button', { name: 'Send a test message' }).click();
-    await expect(page.locator('[data-confera-test-result="sent"]')).toContainText(`Test message sent to ${SEED_ADMIN.email}`);
-    await waitForMail(SEED_ADMIN.email, new RegExp(`^Confera test message from Mailpit ${RUN}$`), sent);
+    await expect(page.locator('[data-congresa-test-result="sent"]')).toContainText(`Test message sent to ${SEED_ADMIN.email}`);
+    await waitForMail(SEED_ADMIN.email, new RegExp(`^Congresa test message from Mailpit ${RUN}$`), sent);
 
     await page.goto(`${ADMIN_ORIGIN}/mail-log`);
     const entry = page.getByRole('table').locator('tbody tr').filter({ hasText: 'Test message' }).first();
@@ -196,7 +196,7 @@ test.describe('the flows of 0.2.0 against the real API, with their mail (M2-QA-0
     // A new session: the password was not given again in it.
     await signInAs(page, SEED_ADMIN, SEED_ADMIN.password, '/organisation');
     const since = Date.now();
-    const payment = page.locator('[data-confera-payment]');
+    const payment = page.locator('[data-congresa-payment]');
     const field = payment.getByLabel('IBAN for payments in EUR');
     await page.waitForLoadState('networkidle');
     const IBAN = (await field.inputValue()).replace(/\s/g, '') === IBANS[0] ? IBANS[1] : IBANS[0];
@@ -204,7 +204,7 @@ test.describe('the flows of 0.2.0 against the real API, with their mail (M2-QA-0
     await payment.getByRole('button', { name: 'Save the payment details' }).click();
     await answerPasswordAgain(page, SEED_ADMIN.password);
     await expect(page.locator('.ud-toast').last()).toContainText('Payment details saved');
-    await expect(page.locator('[data-confera-payment-notice]')).toContainText(`by ${SEED_ADMIN.name}`);
+    await expect(page.locator('[data-congresa-payment-notice]')).toContainText(`by ${SEED_ADMIN.name}`);
     const notice = await waitForMail(SEED_ADMIN.email, /^Security notice: the payment details/, since);
     expect(notice.text).not.toContain(IBAN);
   });
