@@ -2,7 +2,7 @@
 
 The web application of **Congresa**, the conference and membership application of UdEkoM Balkans: the admin application, and the public forms that are shown as pages of their own or inside the association's conference sites. The API is in the sibling repository `confera_be`.
 
-This is release **0.3.0** (forms, embed and intake), on top of release 0.2.0 and against `confera_be` 0.3.0: the public abstract form from the API, hosted and in the frame of a conference site, in English and Serbian; the snippet; the configuration of the forms, the deadlines, the submissions and the held emails in the admin (section 2b). What it does not do yet is in the changelog, "Known gaps".
+This branch is release **0.4.0 in development**, against `confera_be` 0.4.0 in development: the statuses and status emails of a submission, the template editor, the mail log (section 2c) and the production image with its pipeline (section 13). The latest release is **0.3.0** (forms, embed and intake), on top of release 0.2.0 and against `confera_be` 0.3.0: the public abstract form from the API, hosted and in the frame of a conference site, in English and Serbian; the snippet; the configuration of the forms, the deadlines, the submissions and the held emails in the admin (section 2b). The version in `package.json` stays 0.3.0 until 0.4.0 is released. What it does not do yet is in the changelog, "Known gaps".
 
 Everything here runs on Windows, macOS and Linux. Commands are written for PowerShell or any other shell.
 
@@ -122,6 +122,8 @@ So http://localhost:3000/f/<form> and http://127.0.0.1:3000/sign-in answer "not 
 | `corepack pnpm ds:visual` | pictures of every component in an earlier release and in the working tree, and their difference, for review (section 7) |
 | `corepack pnpm api:sync` / `api:check` | the API contract (section 8) |
 
+**One unit test file:** `corepack pnpm test tests/<file>`, for example `corepack pnpm test tests/ds-2-3-0.test.tsx` (Vitest runs the files whose path contains what you give; `-t "<part of a title>"` narrows it to the tests of that name). One browser spec is in section 6.
+
 ## 5. Layout
 
 ```
@@ -152,6 +154,16 @@ corepack pnpm e2e
 ```
 
 The full run takes about 26 minutes on a quiet development machine (the clean-machine verification of 0.4.0, against the stub), and about 52 minutes on a loaded one (that of 0.3.0, against the real API). It needs the ports **3000, 3100, 3101, 4000 and 4001** free (stop `pnpm dev` first). It builds a test build, starts it, starts the application once more in development mode, a harness "conference site" and an API stub, and stops them all at the end.
+
+**One spec, in one engine, or one test of it:** name the engine, the file and a part of the test's title:
+
+```
+corepack pnpm e2e --project=firefox e2e/admin-m4.spec.ts -g "the template editor and the mail log"
+```
+
+The servers are built and started as for the full run, so even one test takes a minute or two. `--repeat-each=5` runs what was chosen five times, which tells a flaky test from a broken one; the account guard below stays on in every such run.
+
+**`e2e:install` and other checkouts.** The browsers go to one folder for the whole machine, `%LOCALAPPDATA%\ms-playwright` on Windows (`~/Library/Caches/ms-playwright` on macOS, `~/.cache/ms-playwright` on Linux). Each `e2e:install` also removes from it the builds of older Playwright versions that no installed Playwright refers to any more ("Removing unused browser at …"). Another checkout pinned to an older Playwright then finds its browsers gone: run `corepack pnpm e2e:install` there again before its browser tests.
 
 - **Three engines**, each with third-party cookies blocked; one test proves the blocking is in effect.
 - **Tests that are skipped or left out, each for a stated reason** (and only these):
