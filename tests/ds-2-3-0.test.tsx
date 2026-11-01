@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import postcss from 'postcss';
 import { act, useState, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DS_VERSION } from '../packages/ui/src/generated/manifest';
 import * as U from '../packages/ui/src/generated/udekom.client';
@@ -215,6 +215,19 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
   describe('Toast: its time stops while the pointer or the focus is on it, and an error stays', () => {
     const toasts = () => [...container.querySelectorAll('.ud-toast')].map((t) => t.querySelector('.ud-toast__title')!.textContent);
     const region = () => container.querySelector('.ud-toasts')!;
+    // The toast's time is the test's clock, not the machine's: on a busy machine (a `check` with dozens of
+    // test processes) more real time than a toast's 60 ms could pass between showing it and pointing at it.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+    const elapse = (ms: number) =>
+      act(async () => {
+        vi.advanceTimersByTime(ms);
+        await Promise.resolve();
+      });
 
     it('goes by itself after its time', async () => {
       await mount(<U.ToastHost />);
@@ -223,7 +236,9 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
         await Promise.resolve();
       });
       expect(toasts()).toEqual(['Saved']);
-      await settle(150);
+      await elapse(59);
+      expect(toasts()).toEqual(['Saved']);
+      await elapse(1);
       expect(toasts()).toEqual([]);
     });
 
@@ -233,11 +248,15 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
         U.toast({ title: 'Saved', duration: 60 });
         await Promise.resolve();
       });
+      await elapse(40);
       await fire(region(), new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body }));
-      await settle(150);
+      await elapse(150);
       expect(toasts()).toEqual(['Saved']);
       await fire(region(), new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
-      await settle(150);
+      // The time runs on from where it stopped: 20 ms were left.
+      await elapse(19);
+      expect(toasts()).toEqual(['Saved']);
+      await elapse(1);
       expect(toasts()).toEqual([]);
     });
 
@@ -248,16 +267,15 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
           <U.ToastHost />
         </div>,
       );
-      // A time long enough that a busy machine still focuses the toast before it would have gone.
       await act(async () => {
-        U.toast({ title: 'Saved', duration: 1000 });
+        U.toast({ title: 'Saved', duration: 60 });
         await Promise.resolve();
       });
       await focus(container.querySelector('.ud-toast button')!);
-      await settle(1200);
+      await elapse(150);
       expect(toasts()).toEqual(['Saved']);
       await focus(byText('Elsewhere')!);
-      await settle(1200);
+      await elapse(60);
       expect(toasts()).toEqual([]);
     });
 
@@ -267,7 +285,7 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
         U.toast({ title: 'The server did not answer', tone: 'error', duration: 60 });
         await Promise.resolve();
       });
-      await settle(150);
+      await elapse(150);
       expect(toasts()).toEqual(['The server did not answer']);
       expect(container.querySelector('.ud-toast')!.getAttribute('role')).toBe('alert');
     });
@@ -292,7 +310,7 @@ describe('the feedback components of 0.2.0 (item 3: M1-ISS-26)', () => {
         await Promise.resolve();
       });
       await click(close);
-      await settle(10);
+      await elapse(10);
       expect(toasts()).toEqual([]);
       expect(document.activeElement).toBe(from);
     });
