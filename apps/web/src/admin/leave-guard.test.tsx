@@ -8,7 +8,7 @@
 // React runs here as in a browser, outside `act()`: a commit, the microtasks after it, and the passive
 // effects in a task of their own. The check sits in that gap, in a MutationObserver's callback.
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { LeaveGuardProvider, useLeaveGuard } from './leave-guard';
 
@@ -34,6 +34,8 @@ const asks = (): boolean => {
   return event.defaultPrevented;
 };
 const later = (ms = 30) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Until React has drawn it and run its effects: on a busy machine that takes longer than any fixed wait. */
+const until = (check: () => void) => vi.waitFor(check, { timeout: 10_000, interval: 10 });
 
 let root: Root | undefined;
 let container: HTMLElement | undefined;
@@ -52,15 +54,16 @@ describe('the leave guard and a screen that has just been saved', () => {
     root = createRoot(container);
     const shown = root;
     shown.render(page(false));
+    const state = () => container!.querySelector('span')?.getAttribute('data-state');
+    await until(() => expect(state()).toBe('saved'));
     await later();
-    const state = () => container!.querySelector('span')!.getAttribute('data-state');
-    expect(state()).toBe('saved');
     expect(asks()).toBe(false);
 
     shown.render(page(true));
-    await later();
-    expect(state()).toBe('unsaved');
-    expect(asks()).toBe(true);
+    await until(() => {
+      expect(state()).toBe('unsaved');
+      expect(asks()).toBe(true);
+    });
 
     // The moment "saved" is in the page, before any later task: what a reload would meet.
     const seen = new Promise<boolean>((resolve) => {
