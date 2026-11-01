@@ -79,7 +79,9 @@ describe('the guard on the bad-password count', () => {
     delete process.env.CONGRESA_E2E_BAD_PASSWORD_BASELINE;
   });
   afterEach(() => {
-    process.env = { ...saved };
+    // Back in place, not a new object: the real environment follows only the process.env Node made.
+    for (const key of Object.keys(process.env)) if (!(key in saved)) Reflect.deleteProperty(process.env, key);
+    Object.assign(process.env, saved);
     rmSync(scratch, { recursive: true, force: true });
   });
 

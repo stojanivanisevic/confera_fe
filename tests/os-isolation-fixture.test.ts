@@ -73,7 +73,10 @@ describe('the `browser` fixture and the "switched off" marker', () => {
     delete process.env.CONGRESA_E2E_BAD_PASSWORD_BASELINE;
   });
   afterEach(() => {
-    process.env = { ...saved };
+    // Back in place, not a new object: on Linux os.tmpdir() reads TMPDIR from the real environment,
+    // which a new process.env object no longer changes (every later test made its folder in this one).
+    for (const key of Object.keys(process.env)) if (!(key in saved)) Reflect.deleteProperty(process.env, key);
+    Object.assign(process.env, saved);
     rmSync(scratch, { recursive: true, force: true });
   });
 
