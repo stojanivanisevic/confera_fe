@@ -204,6 +204,9 @@ test.describe('the template editor (M4-FE-02, M4-FE-03)', () => {
     await expect(page.getByText('The template has changes that are not saved.')).toBeVisible();
     await page.getByRole('button', { name: 'Save the template' }).click();
     await expect(toast(page)).toContainText('Template saved');
+    // The editor is made again from the saved version a moment after the toast; until it says "saved",
+    // the leave guard still holds, and Firefox asks the page before a reload.
+    await expect(page.locator('[data-congresa-template-state]')).toHaveAttribute('data-congresa-template-state', 'saved');
     await page.reload();
     await expect(body).toContainText('Srdačno.');
 

@@ -12,7 +12,7 @@
  *     "back" lands on this page again and the question is asked; "Leave" then goes back for real;
  *   - a reload, closing the tab, typing another address: the browser's own question (`beforeunload`).
  */
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 import { ConfirmDialog } from '@congresa/ui';
 
@@ -88,8 +88,10 @@ export function LeaveGuardProvider({ children }: { children: ReactNode }) {
   const active = question !== null;
   useEffect(() => {
     if (!active) return undefined;
+    // Each handler asks the question held now, not the one held when it was added: the page that has
+    // just drawn "saved" lets the person go at once, also before these handlers are taken off.
     const onClick = (event: MouseEvent) => {
-      if (passing.current) return;
+      if (passing.current || !held.current) return;
       const link = leavingLink(event);
       if (!link) return;
       event.preventDefault();
@@ -100,7 +102,7 @@ export function LeaveGuardProvider({ children }: { children: ReactNode }) {
       });
     };
     const onUnload = (event: BeforeUnloadEvent) => {
-      if (passing.current) return;
+      if (passing.current || !held.current) return;
       event.preventDefault();
       // Older engines show their question only with a return value.
       event.returnValue = '';
@@ -108,7 +110,7 @@ export function LeaveGuardProvider({ children }: { children: ReactNode }) {
     // The back button: the page's own entry stays on top, so "back" comes here first.
     if (sentinel.current === null || markOf(window.history.state) !== sentinel.current) sentinel.current = pushSentinel();
     const onPop = () => {
-      if (passing.current || markOf(window.history.state) === sentinel.current) return;
+      if (passing.current || !held.current || markOf(window.history.state) === sentinel.current) return;
       setPending(() => () => window.history.back());
     };
     document.addEventListener('click', onClick, true);
@@ -154,11 +156,15 @@ export function LeaveGuardProvider({ children }: { children: ReactNode }) {
 /** The guard of the page: `leave(go)` asks first while there are unsaved changes. */
 export const useLeave = (): LeaveGuardApi['leave'] => useContext(LeaveGuardContext).leave;
 
-/** Holds the question while `dirty`: every way out of the page asks it first. */
+/**
+ * Holds the question while `dirty`: every way out of the page asks it first. It is held and let go in
+ * the same commit that draws the screen's state (a layout effect), so a page that shows "saved" never
+ * asks any more, not even in the moment before the passive effects run (a reload right after Save).
+ */
 export function useLeaveGuard(dirty: boolean, question: LeaveQuestion): void {
   const { hold } = useContext(LeaveGuardContext);
   const { title, text, leave } = question;
-  useEffect(() => {
+  useLayoutEffect(() => {
     hold(dirty ? { title, text, leave } : null);
     return () => hold(null);
   }, [dirty, hold, title, text, leave]);
