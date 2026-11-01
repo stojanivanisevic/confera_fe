@@ -326,40 +326,70 @@ test.describe('the mail log and held emails (M4-FE-04, M3-ISS-14)', () => {
   });
 });
 
+// One page, or one state of a page, per test (README, "Browser tests"): a scan costs Firefox about a
+// second on a quiet machine and five times that in a loaded full run, where a test that scanned three
+// pages or four states in a row came to its 60 s limit.
 for (const width of [1440, 375]) {
   test.describe(`the screens of 0.4.0 at ${width}px`, () => {
     test.use({ viewport: { width, height: 900 } });
 
-    test('a submission, its status dialog with the email and its edit pass axe and fit the width', async ({ page }) => {
+    test('a new submission, as it is read, with Start processing, passes axe and fits the width', async ({ page }) => {
       await signIn(page, undefined, `/submissions/${PART_C.submissions[0]}`);
       // A new submission, as it is read, with Start processing (UX4-08).
       await expect(page.locator('[data-congresa-submission-status="new"]')).toBeVisible();
       expect(await scan(page)).toEqual([]);
       expect(await overflowing(page)).toEqual([]);
+    });
+
+    test('a submission taken into processing passes axe', async ({ page }) => {
+      await signIn(page, undefined, `/submissions/${PART_C.submissions[0]}`);
       await startProcessing(page);
       expect(await scan(page)).toEqual([]);
+    });
+
+    test('its status dialog showing the email passes axe', async ({ page }) => {
+      await signIn(page, undefined, `/submissions/${PART_C.submissions[0]}`);
+      await startProcessing(page);
       const dialog = await changeStatus(page, 'Return for revision');
       await dialog.getByLabel('Message for the author').fill('Molimo skratite apstrakt.');
       await dialog.getByRole('button', { name: 'Show the email' }).click();
       await expect(dialog.locator('[data-congresa-status-step="email"]')).toBeVisible();
       expect(await scan(page)).toEqual([]);
-      await dialog.getByRole('button', { name: 'Cancel' }).click();
+    });
+
+    test('its edit on the author’s behalf passes axe', async ({ page }) => {
+      await signIn(page, undefined, `/submissions/${PART_C.submissions[0]}`);
+      await startProcessing(page);
       await page.getByRole('button', { name: 'Edit on the author’s behalf' }).click();
       await expect(page.getByRole('dialog', { name: 'Edit on the author’s behalf' })).toBeVisible();
       expect(await scan(page)).toEqual([]);
     });
 
-    test('the template editor and the mail log pass axe and fit the width', async ({ page }) => {
+    test('the template editor, with a conference chosen, passes axe and fits the width', async ({ page }) => {
       await signIn(page, undefined, '/templates');
       await conferenceSwitch(page).selectOption({ label: 'Konferencija za probe (KP 2026)' });
+      // openTemplate loads the list again: the conference chosen before that load is waited for (conference-context.tsx).
       await openTemplate(page, 'Submission returned for revision');
       expect(await scan(page)).toEqual([]);
       expect(await fitsTheWidth(page)).toBe(true);
-      await page.goto(`${ADMIN_ORIGIN}/mail-log`);
+    });
+
+    test('the mail log, with a conference chosen, passes axe and fits the width', async ({ page }) => {
+      await signIn(page, undefined, '/mail-log');
+      await conferenceSwitch(page).selectOption({ label: 'Konferencija za probe (KP 2026)' });
+      await page.reload();
+      await expect(page.getByText('The messages of Konferencija za probe (KP 2026).')).toBeVisible();
       await expect(page.locator('[data-congresa-mail-log-settings]')).toBeVisible();
+      await expect(page.getByRole('table', { name: 'Mail log' })).toContainText('marta.kovac@a.example.test');
       expect(await scan(page)).toEqual([]);
       expect(await fitsTheWidth(page)).toBe(true);
-      await page.goto(`${ADMIN_ORIGIN}/submissions`);
+    });
+
+    test('the submissions list, with a conference chosen, passes axe and fits the width', async ({ page }) => {
+      await signIn(page, undefined, '/submissions');
+      await conferenceSwitch(page).selectOption({ label: 'Konferencija za probe (KP 2026)' });
+      await page.reload();
+      await expect(conferenceSwitch(page)).toHaveValue(PART_B.ids.conference);
       await expect(rows(page)).toHaveCount(2);
       expect(await scan(page)).toEqual([]);
       expect(await fitsTheWidth(page)).toBe(true);
